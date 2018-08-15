@@ -42,7 +42,7 @@ else
         out.perf(i) = corr(Hd,pdist(Z)');
     end
 
-    [~,idx] = max(perf);
+    [~,idx] = max(out.perf);
     out.A = reshape(alpha(1:2*n,idx),2,n);
     out.Z = X*out.A';
     B = reshape(alpha((2*n)+1:end,idx),m,2);

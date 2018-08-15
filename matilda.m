@@ -42,21 +42,21 @@ disp('-> Removing extreme outliers from the feature values.');
 % ---------------------------------------------------------------------
 % Normalize the data using Box-Cox and Z-transformations
 disp('-> Normalizing the data.');
-[X, Y, out.norm] = autoNormalize(X,Y);
+[X, Y, out.norm] = autoNormalize(X, Y);
 % ---------------------------------------------------------------------
 % Check for diversity, i.e., we want features that have non-repeating
 % values for each instance. Eliminate any that have only DIVTHRESHOLD unique values.
 disp('-> Checking for feature diversity.');
 [X, out.diverse] = checkDiversity(X, opts.thresholds.DIVTHRESHOLD);
 disp(['-> Keeping ' num2str(size(X,2)) ' out of ' num2str(nfeats) ' features (diversity).']);
-nfeats = size(X,2);
+nfeats = size(X, 2);
 % ---------------------------------------------------------------------
 % Detect correlations between features and algorithms. Keep the top CORTHRESHOLD
 % correlated features for each algorithm
 disp('-> Checking for feature correlation with performance.');
 [X, out.corr] = checkCorrelation(X, Y, opts.thresholds.CORTHRESHOLD);
 disp(['-> Keeping ' num2str(size(X,2)) ' out of ' num2str(nfeats) ' features (correlation).']);
-nfeats = size(X,2);
+nfeats = size(X, 2);
 % ---------------------------------------------------------------------
 % Detect similar features, by clustering them according to their
 % correlation. We assume that the lowest value possible is best, as this 
@@ -64,8 +64,12 @@ nfeats = size(X,2);
 % 10 features. The selection criteria is an average silhouete value above
 % 0.65
 disp('-> Selecting features based on correlation clustering.');
-[X, out.clust] = clusterFeatureSelection(X, Ybin, opts.thresholds.KDEFAULT, opts.thresholds.SILTHRESHOLD);
-disp(['-> Keeping ' num2str(size(X,2)) ' out of ' num2str(nfeats) ' features (clustering).']);
+[X, out.clust] = clusterFeatureSelection(X, Ybin,...
+                                         opts.thresholds.KDEFAULT,...
+                                         opts.thresholds.SILTHRESHOLD,...
+                                         opts.thresholds.NTREES);
+disp(['-> Keeping ' num2str(size(X, 2)) ' out of ' num2str(nfeats) ' features (clustering).']);
+nfeats = size(X, 2);
 % ---------------------------------------------------------------------
 % This is the final subset of features. Calculate the two dimensional
 % projection using the PBLDR algorithm (Munoz et al. Mach Learn 2018)
@@ -74,23 +78,12 @@ out.pbldr = PBLDR(X, Y, opts.pbldr);
 disp('-> Completed - Projection calculated. Matrix A:');
 disp(out.pbldr.A);
 % ---------------------------------------------------------------------
-% Plotting the features and performance as scatter plots.
-for i=1:size(X,2)
-    figure;
-    drawScatter(X, out.pbldr.Z, ['FEATURE # ' num2str(i)]);
-end
-
-for i=1:size(Y,2)
-    figure;
-    drawScatter(Y, out.pbldr.Z, ['ALGORITHM # ' num2str(i)]);
-end
-% ---------------------------------------------------------------------
 % Calculating the algorithm footprints. First step is to transform the
-% data to the footprint space, and to calculate the 'space' footprint.
+% data to the footprint space, and to calculate the 'space' exafootprint.
 % This is also the maximum area possible for a footprint.
 disp('-> Calculating the space area and density.');
-spaceFootprint = findPureFootprint(out.pbldr.Z, false(ninst,1), opts.thresholds);
-spaceFootprint = recalculatePerformance(spaceFootprint, out.pbldr.Z, false(ninst,1));
+spaceFootprint = findPureFootprint(out.pbldr.Z, true(ninst,1), opts.thresholds);
+spaceFootprint = recalculatePerformance(spaceFootprint, out.pbldr.Z, true(ninst,1));
 out.footprint.spaceArea = spaceFootprint.area;
 out.footprint.spaceDensity = spaceFootprint.density;
 disp(['    Area: ' num2str(out.footprint.spaceArea) ' | Density: ' num2str(out.footprint.spaceDensity)]);
@@ -122,12 +115,15 @@ for i=1:nalgos
     for j=1:nalgos
         if i~=j
             startTest = tic;
-            out.footprint.best{i} = calculateFootprintCollisions(out.footprint.best{i},out.footprint.best{j});
+            out.footprint.best{i} = calculateFootprintCollisions(out.footprint.best{i}, ...
+                                                                 out.footprint.best{j});
             disp(['    -> Test algorithm No. ' num2str(j) ' - Elapsed time: ' num2str(toc(startTest)) 's']);
         end
     end
-    out.footprint.good{i} = calculateFootprintCollisions(out.footprint.good{i},out.footprint.bad{i});
-    out.footprint.bad{i} = calculateFootprintCollisions(out.footprint.bad{i},out.footprint.good{i});
+    out.footprint.good{i} = calculateFootprintCollisions(out.footprint.good{i},...
+                                                         out.footprint.bad{i});
+    out.footprint.bad{i} = calculateFootprintCollisions(out.footprint.bad{i},...
+                                                        out.footprint.good{i});
     disp(['-> Base algorithm No. ' num2str(i) ' - Elapsed time: ' num2str(toc(startBase)) 's']);
 end
 % -------------------------------------------------------------------------
@@ -175,15 +171,27 @@ out.footprint.performance(nalgos+1,:) = [calculateFootprintPerformance(out.footp
                                          calculateFootprintPerformance(out.footprint.hard,...
                                                                        out.footprint.spaceArea,...
                                                                        out.footprint.spaceDensity)];
-% -------------------------------------------------------------------------
-% Drawing the footprints
+% ---------------------------------------------------------------------
+% Making all the plots. First, plotting the features and performance as
+% scatter plots.
+for i=1:nfeats
+    figure;
+    drawScatter(X(:,i), out.pbldr.Z, ['FEATURE # ' num2str(i)]);
+end
+
+for i=1:nalgos
+    figure;
+    drawScatter(Y(:,i), out.pbldr.Z, ['ALGORITHM # ' num2str(i)]);
+end
+% Drawing the footprints for good and bad performance acording to the
+% binary measure
 for i=1:nalgos
     figure;
     drawGoodBadFootprint(out.footprint.good{i},...
                          out.footprint.bad{i},...
                          ['ALGORITHM # ' num2str(i)]);
 end
-
+% Drawing the footprints as portfolio.
 figure;
 drawPortfolioFootprint(out.footprint.best, algolabels);
 % -------------------------------------------------------------------------

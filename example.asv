@@ -11,7 +11,7 @@ opts.thresholds.PI = 0.75;           % Purity threshold
 opts.thresholds.LOWER_PCTILE = 1;
 opts.thresholds.UPPER_PCTILE = 25;
 
-opts.pbldr.ntries = 10;
+opts.pbldr.ntries = 30;
 opts.pbldr.analytic = false;
 opts.pbldr.cmaopts = bipopcmaes;
 opts.pbldr.cmaopts.StopFitness = 0;

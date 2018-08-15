@@ -1,7 +1,8 @@
-function [X, out] = clusterFeatureSelection(X, Ybin, KDEFAULT, SILTHRESHOLD)
+function [X, out] = clusterFeatureSelection(X, Ybin, KDEFAULT, SILTHRESHOLD, NTREES)
 
 rng('default');
 nfeats = size(X,2);
+nalgos = size(Ybin,2);
 Kmax = min(KDEFAULT,nfeats);
 out.eva = evalclusters(X', 'kmeans', 'Silhouette', 'KList', 2:Kmax, ...
                                      'Distance', 'correlation');
@@ -11,7 +12,7 @@ out.clust = bsxfun(@eq, kmeans(X', K, 'Distance', 'correlation', ...
                                       'Replicates', 100, ...
                                       'Options', statset('UseParallel', false), ...
                                       'OnlinePhase', 'on'), 1:K);
-disp(['-> ' num2str(K) ' out.clusters of features detected.']);
+disp(['-> ' num2str(K) ' clusters of features detected.']);
 % ---------------------------------------------------------------------
 % Using these out.clusters, determine all possible combinations that take one
 % feature from each out.cluster.

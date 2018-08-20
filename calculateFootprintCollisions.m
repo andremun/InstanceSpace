@@ -3,7 +3,7 @@ function baseFootprint = calculateFootprintCollisions(baseFootprint,testFootprin
 numBasePolygons = size(baseFootprint.polygon,3);
 numTestPolygons = size(testFootprint.polygon,3);
 totalTestArea   = zeros(numBasePolygons,numTestPolygons);
-testArea        = testFootprint.area;
+testArea        = testFootprint.polyArea;
 for i=1:numBasePolygons
     basePolygon  = baseFootprint.polygon(:,:,i);
     testPolygon1 = squeeze(testFootprint.polygon(:,1,:));
@@ -15,11 +15,13 @@ for i=1:numBasePolygons
     end
 end
 totalTestArea = sum(totalTestArea,2);
-idx           = baseFootprint.area<totalTestArea;
-baseFootprint.area    = baseFootprint.area(~idx);
-baseFootprint.density = baseFootprint.density(~idx);
-baseFootprint.elements     = baseFootprint.elements(~idx);
-baseFootprint.goodElements = baseFootprint.goodElements(~idx);
-baseFootprint.purity  = baseFootprint.purity(~idx);
+idx = baseFootprint.polyArea<totalTestArea;
+
+baseFootprint.polyArea = baseFootprint.polyArea(~idx);
+baseFootprint.polyDensity = baseFootprint.polyDensity(~idx);
+baseFootprint.polyElements = baseFootprint.polyElements(~idx);
+baseFootprint.polyGoodElements = baseFootprint.polyGoodElements(~idx);
+baseFootprint.polyPurity = baseFootprint.polyPurity(~idx);
 baseFootprint.polygon = baseFootprint.polygon(:,:,~idx);
+
 end

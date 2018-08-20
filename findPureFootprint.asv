@@ -34,7 +34,7 @@ for i=1:numPolygons
 end
 polyDensity = cardPoly./polyArea;
 polyPurity  = cardPolyG./cardPoly;
-idx = (polyDensity>=opts.RHO) & (polyPurity>=opts.PI);
+idx            = (polyDensity>=opts.RHO) & (polyPurity>=opts.PI);
 for i=1:numPolygons
     if ~idx(i)
         sumCardPoly     = sum(cardPoly(idx));
@@ -50,7 +50,7 @@ numPolygons = size(polygon,1);
 % Setting the footprint data
 footprint.polyArea    = polyArea(idx);
 footprint.polyDensity = polyDensity(idx);
-footprint.polyElements = cardPoly(idx);
+footprint.polyElements     = cardPoly(idx);
 footprint.polyGoodElements = cardPolyG(idx);
 footprint.polyPurity = polyPurity(idx);
 footprint.polygon = zeros(3,2,numPolygons);
@@ -65,13 +65,12 @@ distGraph   = zeros(numInst);
 for i=1:numInst
     distGraph(i,:) = graphshortestpath(graph,i);
 end
-finish = find(~isinf(distGraph(1,:)),1,'last');
-start  = finish + 1;
-footprint.pieces = 1;
+finish    = find(~isinf(distGraph(1,:)),1,'last');
+start     = finish + 1;
+pieces = 1;
 while start<numInst && finish<=numInst
-    finish = start + find(~isinf(distGraph(start,start:numInst)),1,'last');
-    start  = finish + 1;
-    footprint.pieces = footprint.pieces + 1;
+    finish    = start + find(~isinf(distGraph(start,start:numInst)),1,'last');
+    start     = finish + 1;
+    pieces = pieces + 1;
 end
-
 end

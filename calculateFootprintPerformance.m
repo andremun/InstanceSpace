@@ -1,10 +1,14 @@
-function out = calculateFootprintPerformance(footprint, spaceArea, spaceDensity)
+function footprint = calculateFootprintPerformance(footprint,x,y)
 % 
-aux = sum(footprint.elements);
-out = zeros(1,5);
-out(1) = sum(footprint.area);
-out(2) = out(1)/spaceArea;
-out(3) = aux./out(1);
-out(4) = out(3)/spaceDensity;
-out(5) = sum(footprint.goodElements)./aux;
+elements     = false(size(x,1),1);
+goodElements = false(size(x,1),1);
+for i=1:size(footprint.polygon,3)
+    elements     = elements     |  inpolygon(x(:,1),x(:,2),footprint.polygon(:,1,i),footprint.polygon(:,2,i));
+    goodElements = goodElements | (inpolygon(x(:,1),x(:,2),footprint.polygon(:,1,i),footprint.polygon(:,2,i)) & ~y);
+end
+footprint.elements     = elements;
+footprint.goodElements = goodElements;
+footprint.area         = sum(footprint.polyArea);
+footprint.density      = sum(elements)./footprint.area;
+footprint.purity       = sum(goodElements)./sum(elements);
 end

@@ -1,15 +1,21 @@
 load('E:\InstanceSpace_WorkforceScheduling\rawdata.mat')
 
 opts.thresholds.DIVTHRESHOLD = 0.01; % Minimum percentage allowed of repeated values [?]
-opts.thresholds.SILTHRESHOLD = 0.55; % Minimum accepted value for the average silhoute value
 opts.thresholds.CORTHRESHOLD = 3;    % Top N features (by correlation) per algorithm that are selected
+
 opts.thresholds.BETATHRESHOLD = 0.5; % Beta-easy threshold
-opts.thresholds.KDEFAULT = 10;       % Default maximum number of clusters
-opts.thresholds.NTREES = 50;         % Number of trees for the Random Forest (to determine highest separability in the 2-d projection)
-opts.thresholds.RHO = 10;            % Density threshold
-opts.thresholds.PI = 0.75;           % Purity threshold
-opts.thresholds.LOWER_PCTILE = 1;
-opts.thresholds.UPPER_PCTILE = 25;
+
+opts.clust.KDEFAULT = 10;            % Default maximum number of clusters
+opts.clust.SILTHRESHOLD = 0.55;      % Minimum accepted value for the average silhoute value
+opts.clust.NTREES = 50;              % Number of trees for the Random Forest (to determine highest separability in the 2-d projection)
+opts.clust.MaxIter = 1000;
+opts.clust.Replicates = 100;
+opts.clust.UseParallel = false;
+
+opts.footprint.RHO = 10;             % Density threshold
+opts.footprint.PI = 0.75;            % Purity threshold
+opts.footprint.LOWER_PCTILE = 1;     % 
+opts.footprint.UPPER_PCTILE = 25;
 
 opts.pbldr.ntries = 10;
 opts.pbldr.analytic = false;

@@ -13,9 +13,12 @@ function [out] = matilda(X, Y, Ybin, opts)
 %
 % Input parameters:
 %
-% X:    A matrix of features.
-% Y:    A matrix of algorithm performance.
-% Ybin: A matrix with a binary measure of algorithm performance.
+% X:    A cell matrix of features. The first row corresponds to the feature
+%       names.
+% Y:    A cell matrix of algorithm performance. The first row corresponds
+%       to the algorithm names.
+% Ybin: A cell matrix with a binary measure of algorithm performance. The
+%       first row corresponds to the algorithm names.
 % opts: An structure with all the options.
 %
 % Output paramters:
@@ -25,6 +28,13 @@ function [out] = matilda(X, Y, Ybin, opts)
 % -------------------------------------------------------------------------
 
 startProcess = tic;
+% -------------------------------------------------------------------------
+%
+featlabels = X(1,:);
+algolabels = Y(1,:);
+X = cell2mat(X(2:end,:));
+Y = cell2mat(Y(2:end,:));
+Ybin = cell2mat(Ybin(2:end,:));
 % -------------------------------------------------------------------------
 %
 ninst = size(X,1);
@@ -50,6 +60,7 @@ disp('-> Checking for feature diversity.');
 [X, out.diverse] = checkDiversity(X, opts.thresholds.DIVTHRESHOLD);
 disp(['-> Keeping ' num2str(size(X,2)) ' out of ' num2str(nfeats) ' features (diversity).']);
 nfeats = size(X, 2);
+featlabels = featlabels(out.diverse.selvars);
 % ---------------------------------------------------------------------
 % Detect correlations between features and algorithms. Keep the top CORTHRESHOLD
 % correlated features for each algorithm
@@ -57,6 +68,7 @@ disp('-> Checking for feature correlation with performance.');
 [X, out.corr] = checkCorrelation(X, Y, opts.thresholds.CORTHRESHOLD);
 disp(['-> Keeping ' num2str(size(X,2)) ' out of ' num2str(nfeats) ' features (correlation).']);
 nfeats = size(X, 2);
+featlabels = featlabels(out.corr.selvars);
 % ---------------------------------------------------------------------
 % Detect similar features, by clustering them according to their
 % correlation. We assume that the lowest value possible is best, as this 
@@ -65,24 +77,28 @@ nfeats = size(X, 2);
 % 0.65
 disp('-> Selecting features based on correlation clustering.');
 [X, out.clust] = clusterFeatureSelection(X, Ybin,...
-                                         opts.thresholds.KDEFAULT,...
-                                         opts.thresholds.SILTHRESHOLD,...
-                                         opts.thresholds.NTREES);
+                                         opts.clust);
 disp(['-> Keeping ' num2str(size(X, 2)) ' out of ' num2str(nfeats) ' features (clustering).']);
 nfeats = size(X, 2);
+featlabels = featlabels(out.clust.selvars);
 % ---------------------------------------------------------------------
 % This is the final subset of features. Calculate the two dimensional
 % projection using the PBLDR algorithm (Munoz et al. Mach Learn 2018)
 disp('-> Finding optimum projection.');
 out.pbldr = PBLDR(X, Y, opts.pbldr);
 disp('-> Completed - Projection calculated. Matrix A:');
-disp(out.pbldr.A);
+projectionMatrix = cell(nalgos+1, nfeats+1);
+projectionMatrix(1,2:end) = featlabels;
+projectionMatrix(2:end,1) = algolabels;
+projectionMatrix(2:end,2:end) = num2cell(out.pbldr.A);
+disp(' ');
+disp(projectionMatrix);
 % ---------------------------------------------------------------------
 % Calculating the algorithm footprints. First step is to transform the
 % data to the footprint space, and to calculate the 'space' exafootprint.
 % This is also the maximum area possible for a footprint.
 disp('-> Calculating the space area and density.');
-spaceFootprint = findPureFootprint(out.pbldr.Z, true(ninst,1), opts.thresholds);
+spaceFootprint = findPureFootprint(out.pbldr.Z, true(ninst,1), opts.footprint);
 spaceFootprint = recalculatePerformance(spaceFootprint, out.pbldr.Z, true(ninst,1));
 out.footprint.spaceArea = spaceFootprint.area;
 out.footprint.spaceDensity = spaceFootprint.density;
@@ -98,14 +114,14 @@ for i=1:nalgos
     tic;
     out.footprint.good{i} = findPureFootprint(out.pbldr.Z,...
                                               Ybin(:,i),...
-                                              opts.thresholds);
+                                              opts.footprint);
     out.footprint.bad{i} = findPureFootprint( out.pbldr.Z,...
                                              ~Ybin(:,i),...
-                                              opts.thresholds);
+                                              opts.footprint);
     out.footprint.best{i} = findPureFootprint(out.pbldr.Z,...
                                               portfolio==i,...
-                                              opts.thresholds);
-    disp(['    -> Algorithm No. ' num2str(i) ' - Elapsed time: ' num2str(toc) 's']);
+                                              opts.footprint);
+    disp(['    -> Algorithm No. ' num2str(i) ' - Elapsed time: ' num2str(toc,'%.2f\n') 's']);
 end
 % ---------------------------------------------------------------------
 % Detecting collisions and removing them.
@@ -128,8 +144,8 @@ for i=1:nalgos
 end
 % -------------------------------------------------------------------------
 % Calculating performance
-disp('-> Calculating the footprint''s area and density. Collecting the footprint analysis results.');
-out.footprint.performance = zeros(nalgos+1,10);
+disp('-> Calculating the footprint''s area and density.');
+performanceTable = zeros(nalgos+2,10);
 for i=1:nalgos
     out.footprint.best{i} = recalculatePerformance(out.footprint.best{i},...
                                                    out.pbldr.Z,...
@@ -140,48 +156,65 @@ for i=1:nalgos
     out.footprint.bad{i} = recalculatePerformance( out.footprint.bad{i},...
                                                    out.pbldr.Z,...
                                                   ~Ybin(:,i));
-    out.footprint.performance(i,:) = [calculateFootprintPerformance(out.footprint.good{i},...
-                                                                    out.footprint.spaceArea,...
-                                                                    out.footprint.spaceDensity), ...
-                                      calculateFootprintPerformance(out.footprint.best{i},...
-                                                                    out.footprint.spaceArea,...
-                                                                    out.footprint.spaceDensity)];
+    performanceTable(i,:) = [calculateFootprintPerformance(out.footprint.good{i},...
+                                                           out.footprint.spaceArea,...
+                                                           out.footprint.spaceDensity), ...
+                             calculateFootprintPerformance(out.footprint.best{i},...
+                                                           out.footprint.spaceArea,...
+                                                           out.footprint.spaceDensity)];
 end
 % -------------------------------------------------------------------------
 % Beta hard footprints. First step is to calculate them.
 disp('-> Calculating beta-footprints.');
-out.footprint.easy = findPureFootprint(out.pbldr.Z,  beta, opts.thresholds);
-out.footprint.hard = findPureFootprint(out.pbldr.Z, ~beta, opts.thresholds);
+out.footprint.easy = findPureFootprint(out.pbldr.Z,  beta, opts.footprint);
+out.footprint.hard = findPureFootprint(out.pbldr.Z, ~beta, opts.footprint);
 % Remove the collisions
 out.footprint.easy = calculateFootprintCollisions(out.footprint.easy,...
                                                   out.footprint.hard);
 out.footprint.hard = calculateFootprintCollisions(out.footprint.hard,...
                                                   out.footprint.easy);
 % Calculating performance
-disp('-> Calculating the beta-footprint''s area and density. Collecting the footprint analysis results.');
+disp('-> Calculating the beta-footprint''s area and density.');
 out.footprint.easy = recalculatePerformance(out.footprint.easy,...
                                             out.pbldr.Z,...
                                             beta);
 out.footprint.hard = recalculatePerformance(out.footprint.hard,...
                                             out.pbldr.Z,...
                                             ~beta);
-out.footprint.performance(nalgos+1,:) = [calculateFootprintPerformance(out.footprint.easy,...
-                                                                       out.footprint.spaceArea,...
-                                                                       out.footprint.spaceDensity),...
-                                         calculateFootprintPerformance(out.footprint.hard,...
-                                                                       out.footprint.spaceArea,...
-                                                                       out.footprint.spaceDensity)];
+performanceTable(end-1,6:10) = calculateFootprintPerformance(out.footprint.easy,...
+                                                             out.footprint.spaceArea,...
+                                                             out.footprint.spaceDensity);
+performanceTable(end,6:10) = calculateFootprintPerformance(out.footprint.hard,...
+                                                           out.footprint.spaceArea,...
+                                                           out.footprint.spaceDensity);
+out.footprint.performance = cell(nalgos+3,11);
+out.footprint.performance(1,2:end) = {'Easy_Area',...
+                                      'Easy_Area_{norm}',...
+                                      'Easy_Density',...
+                                      'Easy_Density_{norm}',...
+                                      'Easy_Purity',...
+                                      'Best_Area',...
+                                      'Best_Area_{norm}',...
+                                      'Best_Density',...
+                                      'Best_Density_{norm}',...
+                                      'Best_Purity'};
+out.footprint.performance(2:end-2,1) = algolabels;
+out.footprint.performance(end-1:end,1) = {'Beta-easy', 'Beta-hard'};
+out.footprint.performance(2:end,2:end) = num2cell(performanceTable);
+disp('-> Completed - Footprint analysis results:');
+disp(' ');
+disp(out.footprint.performance);
 % ---------------------------------------------------------------------
 % Making all the plots. First, plotting the features and performance as
 % scatter plots.
 for i=1:nfeats
     figure;
-    drawScatter(X(:,i), out.pbldr.Z, ['FEATURE # ' num2str(i)]);
+    drawScatter(X(:,i), out.pbldr.Z, featlabels{i});
 end
 
 for i=1:nalgos
     figure;
-    drawScatter(Y(:,i), out.pbldr.Z, ['ALGORITHM # ' num2str(i)]);
+    drawScatter(Y(:,i), out.pbldr.Z, algolabels{i});
 end
 % Drawing the footprints for good and bad performance acording to the
 % binary measure
@@ -189,7 +222,7 @@ for i=1:nalgos
     figure;
     drawGoodBadFootprint(out.footprint.good{i},...
                          out.footprint.bad{i},...
-                         ['ALGORITHM # ' num2str(i)]);
+                         algolabels{i});
 end
 % Drawing the footprints as portfolio.
 figure;

@@ -3,7 +3,7 @@ function [X, out] = clusterFeatureSelection(X, Ybin, opts)
 rng('default');
 nfeats = size(X,2);
 nalgos = size(Ybin,2);
-Kmax = min(opts.KDEFAULT, nfeats);
+Kmax = min(opts.KDEFAULT,nfeats);
 out.eva = evalclusters(X', 'kmeans', 'Silhouette', 'KList', 2:Kmax, ...
                                      'Distance', 'correlation');
 K = out.eva.InspectedK(find(out.eva.CriterionValues>opts.SILTHRESHOLD,1));
@@ -44,8 +44,8 @@ for i=1:ncomb
         out.ooberr(i,j) = mean(Ybin(:,j)~=str2double(oobPredict(tree)));
     end
     etime = toc;
-    disp(['    Combination No. ' num2str(i) ' | Elapsed Time: ' num2str(etime,'%.2f\n') ...
-          's | Average error : ' num2str(mean(out.ooberr(i,:)))]);
+    disp(['    Combination No. ' num2str(i) ' | Elapsed Time: ' num2str(etime) ...
+          ' | Average error : ' num2str(mean(out.ooberr(i,:)))]);
 end
 [~,best] = min(sum(out.ooberr,2));
 out.selvars = comb(best,:);

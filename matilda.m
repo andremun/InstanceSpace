@@ -17,8 +17,9 @@ function [out] = matilda(X, Y, Ybin, opts)
 %       names.
 % Y:    A cell matrix of algorithm performance. The first row corresponds
 %       to the algorithm names.
-% Ybin: A cell matrix with a binary measure of algorithm performance. The
-%       first row corresponds to the algorithm names.
+% Ybin: A cell matrix with a binary measure of algorithm performance, where
+%       '1' is good performance and '0' is bad. The first row corresponds
+%       to the algorithm names.
 % opts: An structure with all the options.
 %
 % Output paramters:
@@ -38,12 +39,15 @@ Ybin = cell2mat(Ybin(2:end,:));
 % -------------------------------------------------------------------------
 %
 ninst = size(X,1);
-nfeats = size(X,2);
 nalgos = size(Y,2);
 % -------------------------------------------------------------------------
 %
-[~,portfolio] = max(Y,[],2);
-beta = sum(Ybin,2)>opts.thresholds.BETATHRESHOLD*nalgos;
+if opts.general.performanceFlag
+    [~,portfolio] = max(Y,[],2);
+else
+    [~,portfolio] = min(Y,[],2);
+end
+beta = sum(Ybin,2)>opts.general.betaThreshold*nalgos;
 % ---------------------------------------------------------------------
 % Eliminate extreme outliers, i.e., any point that exceedes 5 times the
 % inter quantile range, by bounding them to that value.
@@ -51,22 +55,17 @@ disp('-> Removing extreme outliers from the feature values.');
 [X, out.bound] = boundOutliers(X);
 % ---------------------------------------------------------------------
 % Normalize the data using Box-Cox and Z-transformations
-disp('-> Normalizing the data.');
+disp('-> Auto-normalizing the data.');
 [X, Y, out.norm] = autoNormalize(X, Y);
 % ---------------------------------------------------------------------
 % Check for diversity, i.e., we want features that have non-repeating
 % values for each instance. Eliminate any that have only DIVTHRESHOLD unique values.
-disp('-> Checking for feature diversity.');
-[X, out.diverse] = checkDiversity(X, opts.thresholds.DIVTHRESHOLD);
-disp(['-> Keeping ' num2str(size(X,2)) ' out of ' num2str(nfeats) ' features (diversity).']);
-nfeats = size(X, 2);
-featlabels = featlabels(out.diverse.selvars);
+[X, out.diversity] = checkDiversity(X, opts.diversity);
+featlabels = featlabels(out.diversity.selvars);
 % ---------------------------------------------------------------------
 % Detect correlations between features and algorithms. Keep the top CORTHRESHOLD
 % correlated features for each algorithm
-disp('-> Checking for feature correlation with performance.');
-[X, out.corr] = checkCorrelation(X, Y, opts.thresholds.CORTHRESHOLD);
-disp(['-> Keeping ' num2str(size(X,2)) ' out of ' num2str(nfeats) ' features (correlation).']);
+[X, out.corr] = checkCorrelation(X, Y, opts.corr);
 nfeats = size(X, 2);
 featlabels = featlabels(out.corr.selvars);
 % ---------------------------------------------------------------------
@@ -87,9 +86,9 @@ featlabels = featlabels(out.clust.selvars);
 disp('-> Finding optimum projection.');
 out.pbldr = PBLDR(X, Y, opts.pbldr);
 disp('-> Completed - Projection calculated. Matrix A:');
-projectionMatrix = cell(nalgos+1, nfeats+1);
+projectionMatrix = cell(3, nfeats+1);
 projectionMatrix(1,2:end) = featlabels;
-projectionMatrix(2:end,1) = algolabels;
+projectionMatrix(2:end,1) = {'Z_{1}','Z_{2}'};
 projectionMatrix(2:end,2:end) = num2cell(out.pbldr.A);
 disp(' ');
 disp(projectionMatrix);
@@ -133,14 +132,14 @@ for i=1:nalgos
             startTest = tic;
             out.footprint.best{i} = calculateFootprintCollisions(out.footprint.best{i}, ...
                                                                  out.footprint.best{j});
-            disp(['    -> Test algorithm No. ' num2str(j) ' - Elapsed time: ' num2str(toc(startTest)) 's']);
+            disp(['    -> Test algorithm No. ' num2str(j) ' - Elapsed time: ' num2str(toc(startTest),'%.2f\n') 's']);
         end
     end
     out.footprint.good{i} = calculateFootprintCollisions(out.footprint.good{i},...
                                                          out.footprint.bad{i});
     out.footprint.bad{i} = calculateFootprintCollisions(out.footprint.bad{i},...
                                                         out.footprint.good{i});
-    disp(['-> Base algorithm No. ' num2str(i) ' - Elapsed time: ' num2str(toc(startBase)) 's']);
+    disp(['-> Base algorithm No. ' num2str(i) ' - Elapsed time: ' num2str(toc(startBase),'%.2f\n') 's']);
 end
 % -------------------------------------------------------------------------
 % Calculating performance
@@ -204,6 +203,11 @@ out.footprint.performance(2:end,2:end) = num2cell(performanceTable);
 disp('-> Completed - Footprint analysis results:');
 disp(' ');
 disp(out.footprint.performance);
+% -------------------------------------------------------------------------
+% Algorithm selection. Fit a model that would separate the space into
+% classes of good and bad performance. 
+
+
 % ---------------------------------------------------------------------
 % Making all the plots. First, plotting the features and performance as
 % scatter plots.

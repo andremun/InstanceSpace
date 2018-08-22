@@ -1,7 +1,17 @@
-function [X, out] = checkCorrelation(X,Y,CORTHRESHOLD)
+function [X, out] = checkCorrelation(X,Y,opts)
 
-out.rho = corr(X,Y,'rows','pairwise');
-[~,row] = sort(abs(out.rho),1,'descend');
-out.selvars = unique(row(1:CORTHRESHOLD,:));
-X = X(:,out.selvars);
+[~,nfeats] = size(X);
+if opts.flag
+    disp('-> Checking for feature correlation with performance.');
+    out.rho = corr(X,Y,'rows','pairwise');
+    [~,row] = sort(abs(out.rho),1,'descend');
+    out.selvars = false(1,nfeats);
+    out.selvars(unique(row(1:opts.threshold,:))) = true;
+    X = X(:,out.selvars);
+    disp(['-> Keeping ' num2str(size(X,2)) ' out of ' num2str(nfeats) ' features (correlation).']);
+else
+    out.rho = NaN.*ones(nfeats,size(Y,2));
+    out.selvars = ones(1,nfeats);
+end
+
 end

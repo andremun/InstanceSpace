@@ -1,8 +1,0 @@
-function out = calculateFootprintSummary(footprint, spaceArea, spaceDensity)
-% 
-out = [footprint.area;
-       footprint.area/spaceArea;
-       sum(footprint.elements)./footprint.area;
-out(4) = out(3)/spaceDensity;
-out(5) = sum(footprint.goodElements)./sum(footprint.elements);
-end

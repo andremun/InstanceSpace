@@ -213,24 +213,24 @@ disp(out.footprint.performance);
 % scatter plots.
 for i=1:nfeats
     figure;
-    drawScatter(X(:,i), out.pbldr.Z, featlabels{i});
+    aux = drawScatter(X(:,i), out.pbldr.Z, featlabels{i});
 end
 
 for i=1:nalgos
     figure;
-    drawScatter(Y(:,i), out.pbldr.Z, algolabels{i});
+    aux = drawScatter(Y(:,i), out.pbldr.Z, algolabels{i});
 end
 % Drawing the footprints for good and bad performance acording to the
 % binary measure
 for i=1:nalgos
     figure;
-    drawGoodBadFootprint(out.footprint.good{i},...
+    aux = drawGoodBadFootprint(out.footprint.good{i},...
                          out.footprint.bad{i},...
                          algolabels{i});
 end
 % Drawing the footprints as portfolio.
 figure;
-drawPortfolioFootprint(out.footprint.best, algolabels);
+aux = drawPortfolioFootprint(out.footprint.best, algolabels);
 % -------------------------------------------------------------------------
 % 
 disp(['-> Completed! Elapsed time: ' num2str(toc(startProcess)) 's']);

@@ -212,25 +212,29 @@ disp(out.footprint.performance);
 % Making all the plots. First, plotting the features and performance as
 % scatter plots.
 for i=1:nfeats
-    figure;
+    clf;
     aux = drawScatter(X(:,i), out.pbldr.Z, featlabels{i});
+    print(gcf,'-dpng',['scatter_' featlabels{i} '.png']);
 end
 
 for i=1:nalgos
-    figure;
+    clf;
     aux = drawScatter(Y(:,i), out.pbldr.Z, algolabels{i});
+    print(gcf,'-dpng',['scatter_' algolabels{i} '.png']);
 end
 % Drawing the footprints for good and bad performance acording to the
 % binary measure
 for i=1:nalgos
-    figure;
+    clf;
     aux = drawGoodBadFootprint(out.footprint.good{i},...
                          out.footprint.bad{i},...
                          algolabels{i});
+    print(gcf,'-dpng',['footprint_' algolabels{i} '.png']);
 end
 % Drawing the footprints as portfolio.
-figure;
+clf;
 aux = drawPortfolioFootprint(out.footprint.best, algolabels);
+print(gcf,'-dpng','footprint_portfolio.png');
 % -------------------------------------------------------------------------
 % 
 disp(['-> Completed! Elapsed time: ' num2str(toc(startProcess)) 's']);

@@ -1,5 +1,5 @@
-% load('E:\InstanceSpace_WorkforceScheduling\rawdata.mat')
-load('E:\InstanceSpace_Knapsack\MATLAB\rawdata.mat');
+load('E:\InstanceSpace_WorkforceScheduling\rawdata.mat')
+% load('E:\InstanceSpace_Knapsack\MATLAB\rawdata.mat');
 
 opts.general.performanceFlag = false;   % True if Y is a performance measure, False if it is a cost measure.
 opts.general.betaThreshold = 0.5;       % Beta-easy threshold

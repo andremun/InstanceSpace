@@ -1,5 +1,5 @@
-load('E:\InstanceSpace_WorkforceScheduling\rawdata.mat')
-% load('E:\InstanceSpace_Knapsack\MATLAB\rawdata.mat');
+% load('E:\InstanceSpace_WorkforceScheduling\rawdata.mat')
+load('E:\InstanceSpace_Knapsack\MATLAB\rawdata.mat');
 
 opts.general.performanceFlag = false;   % True if Y is a performance measure, False if it is a cost measure.
 opts.general.betaThreshold = 0.5;       % Beta-easy threshold
@@ -34,4 +34,5 @@ opts.pbldr.cmaopts.MaxFunEvals  = 1e4;
 opts.pbldr.cmaopts.EvalParallel = 'no';
 opts.pbldr.cmaopts.DispFinal = 'off';
 
-out = matilda(X, Y, Ybin, opts);
+% out = matilda(X, Y, Ybin, opts);
+out = matilda(X(1:500,:), Y(1:500,:), Ybin(1:500,:), opts);

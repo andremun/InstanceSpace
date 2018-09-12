@@ -22,17 +22,18 @@ opts.clust.UseParallel = false;
 
 opts.footprint.RHO = 10;                % Density threshold
 opts.footprint.PI = 0.75;               % Purity threshold
-opts.footprint.LOWER_PCTILE = 1;        % 
-opts.footprint.UPPER_PCTILE = 25;
+opts.footprint.LOWER_PCTILE = 1;        % Lower distance threshold
+opts.footprint.UPPER_PCTILE = 25;       % Higher distance threshold
 
-opts.pbldr.ntries = 10;
-opts.pbldr.analytic = false;
-opts.pbldr.cmaopts = bipopcmaes;
-opts.pbldr.cmaopts.StopFitness = 0;
-opts.pbldr.cmaopts.MaxRestartFunEvals = 0;
-opts.pbldr.cmaopts.MaxFunEvals  = 1e4;
-opts.pbldr.cmaopts.EvalParallel = 'no';
-opts.pbldr.cmaopts.DispFinal = 'off';
+opts.pbldr.ntries = 10;                 % Number of attempts carried out by PBLDR
+opts.pbldr.analytic = false;            % Calculate the analytical or numerical solution
+opts.pbldr.cmaopts = bipopcmaes;        % Get the default params for BIPOP-CMA-ES
+opts.pbldr.cmaopts.StopFitness = 0;     % Stop if the fitness is 0
+opts.pbldr.cmaopts.MaxRestartFunEvals = 0;  % Allow multiple restarts
+opts.pbldr.cmaopts.MaxFunEvals  = 1e4;      % Maximum number of evaluations
+opts.pbldr.cmaopts.EvalParallel = 'no';     % This should be kept as 'no'
+opts.pbldr.cmaopts.DispFinal = 'off';       % To make BIPOP-CMA-ES silent
 
 % out = matilda(X, Y, Ybin, opts);
 out = matilda(X(1:500,:), Y(1:500,:), Ybin(1:500,:), opts);
+

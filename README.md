@@ -12,4 +12,4 @@ opts: An structure with all the options. These can be found in the 'example.m' f
 
 Output paramters:
 
-out: An structure with all the outputs. The most important results are those in out.footprint.performance which contains the table with areas, and out.pbldr.A that contains the projection matrix. The location of the instances in the space is defined by out.pbldr.Z
+out: An structure with all the outputs. The most important results are those in out.footprint.performance which contains the table with areas and densities, and out.pbldr.A that contains the projection matrix. The location of the instances in the space is defined by out.pbldr.Z

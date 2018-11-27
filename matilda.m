@@ -1,4 +1,4 @@
-function [out] = matilda(X, Y, Ybin, opts)
+function [out] = matilda(featfile, algofile, opts)
 % -------------------------------------------------------------------------
 % matilda.m
 % -------------------------------------------------------------------------
@@ -31,43 +31,80 @@ function [out] = matilda(X, Y, Ybin, opts)
 startProcess = tic;
 % -------------------------------------------------------------------------
 %
-featlabels = X(1,:);
-algolabels = Y(1,:);
-X = cell2mat(X(2:end,:));
-Y = cell2mat(Y(2:end,:));
-Ybin = cell2mat(Ybin(2:end,:));
+X = readtable(featfile);
+Y = readtable(algofile);
+featlabels = X.Properties.VariableNames(2:end);
+algolabels = Y.Properties.VariableNames(2:end);
+
+X = sortrows(table2cell(X),1);
+Y = sortrows(table2cell(Y),1);
+featfiles = X(:,1);
+algofiles = Y(:,1);
+X = cell2mat(X(:,2:end));
+Y = cell2mat(Y(:,2:end));
+Y(isnan(Y)) = 1e6;
+
+isvalidY = false(length(algofiles),1);
+for i=1:length(featfiles)
+    isvalidY = isvalidY | strcmp(featfiles{i},algofiles);
+end
+algofiles = algofiles(isvalidY);
+Y = Y(isvalidY,:);
+
+isvalidX = false(length(featfiles),1);
+for i=1:length(algofiles)
+    isvalidX = isvalidX | strcmp(algofiles{i},featfiles);
+end
+X = X(isvalidX,:);
+featfiles = featfiles(isvalidX);
+
+Xbackup = X;
+Ybackup = Y;
+% Ybin = cell2mat(Ybin(2:end,:));
 % -------------------------------------------------------------------------
 %
 ninst = size(X,1);
 nalgos = size(Y,2);
 % -------------------------------------------------------------------------
 %
-if opts.general.performanceFlag
-    [~,portfolio] = max(Y,[],2);
+if opts.perf.MaxMin
+    [bestPerformace,portfolio] = max(Y,[],2);
+    if opts.perf.AbsPerf
+        Ybin = Y>=opts.perf.epsilon;
+    else
+        Ybin = bsxfun(@ge,Y,(1+opts.perf.epsilon).*bestPerformace); % One is good, zero is bad
+    end
 else
-    [~,portfolio] = min(Y,[],2);
+    [bestPerformace,portfolio] = min(Y,[],2);
+    if opts.perf.AbsPerf
+        Ybin = Y<=opts.perf.epsilon;
+    else
+        Ybin = bsxfun(@le,Y,(1+opts.perf.epsilon).*bestPerformace); 
+    end
 end
 beta = sum(Ybin,2)>opts.general.betaThreshold*nalgos;
 % ---------------------------------------------------------------------
 % Eliminate extreme outliers, i.e., any point that exceedes 5 times the
 % inter quantile range, by bounding them to that value.
 disp('-> Removing extreme outliers from the feature values.');
-[X, out.bound] = boundOutliers(X);
+[X, out.bound] = boundOutliers(X, opts.bound);
 % ---------------------------------------------------------------------
 % Normalize the data using Box-Cox and Z-transformations
 disp('-> Auto-normalizing the data.');
-[X, Y, out.norm] = autoNormalize(X, Y);
+[X, Y, out.norm] = autoNormalize(X, Y, opts.norm);
 % ---------------------------------------------------------------------
 % Check for diversity, i.e., we want features that have non-repeating
 % values for each instance. Eliminate any that have only DIVTHRESHOLD unique values.
 [X, out.diversity] = checkDiversity(X, opts.diversity);
 featlabels = featlabels(out.diversity.selvars);
+Xbackup = Xbackup(:,out.diversity.selvars);
 % ---------------------------------------------------------------------
 % Detect correlations between features and algorithms. Keep the top CORTHRESHOLD
 % correlated features for each algorithm
 [X, out.corr] = checkCorrelation(X, Y, opts.corr);
 nfeats = size(X, 2);
 featlabels = featlabels(out.corr.selvars);
+Xbackup = Xbackup(:,out.corr.selvars);
 % ---------------------------------------------------------------------
 % Detect similar features, by clustering them according to their
 % correlation. We assume that the lowest value possible is best, as this 
@@ -80,6 +117,7 @@ disp('-> Selecting features based on correlation clustering.');
 disp(['-> Keeping ' num2str(size(X, 2)) ' out of ' num2str(nfeats) ' features (clustering).']);
 nfeats = size(X, 2);
 featlabels = featlabels(out.clust.selvars);
+Xbackup = Xbackup(:,out.clust.selvars);
 % ---------------------------------------------------------------------
 % This is the final subset of features. Calculate the two dimensional
 % projection using the PBLDR algorithm (Munoz et al. Mach Learn 2018)
@@ -209,26 +247,29 @@ disp(out.footprint.performance);
 
 
 % ---------------------------------------------------------------------
+% Storing the output data as a csv file
+writetable(array2table(out.pbldr.Z,'VariableNames',{'z_1','z_2'}),'coordinates.csv');
+% ---------------------------------------------------------------------
 % Making all the plots. First, plotting the features and performance as
 % scatter plots.
 for i=1:nfeats
     clf;
-    aux = drawScatter(X(:,i), out.pbldr.Z, featlabels{i});
+    aux = drawScatter(log10(Xbackup(:,i)+1), out.pbldr.Z, featlabels{i});
     print(gcf,'-dpng',['scatter_' featlabels{i} '.png']);
 end
 
 for i=1:nalgos
     clf;
-    aux = drawScatter(Y(:,i), out.pbldr.Z, algolabels{i});
+    aux = drawScatter(log10(Ybackup(:,i)), out.pbldr.Z, algolabels{i});
     print(gcf,'-dpng',['scatter_' algolabels{i} '.png']);
 end
 % Drawing the footprints for good and bad performance acording to the
 % binary measure
 for i=1:nalgos
     clf;
-    aux = drawGoodBadFootprint(out.footprint.good{i},...
-                         out.footprint.bad{i},...
-                         algolabels{i});
+    aux = drawGoodBadFootprint(out.pbldr.Z, Ybin(:,i), ...
+                               out.footprint.good{i},...
+                               algolabels{i});
     print(gcf,'-dpng',['footprint_' algolabels{i} '.png']);
 end
 % Drawing the footprints as portfolio.

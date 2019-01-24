@@ -21,11 +21,16 @@ opts.corr.threshold = 5;                % Top N features (by correlation) per al
 opts.clust.flag = true;
 opts.clust.KDEFAULT = 10;               % Default maximum number of clusters
 % opts.clust.SILTHRESHOLD = 0.55;       % Minimum accepted value for the average silhoute value
-opts.clust.SILTHRESHOLD = 0.90;         % Minimum accepted value for the average silhoute value
+opts.clust.SILTHRESHOLD = 0.7;         % Minimum accepted value for the average silhoute value
 opts.clust.NTREES = 50;                 % Number of trees for the Random Forest (to determine highest separability in the 2-d projection)
 opts.clust.MaxIter = 1000;
 opts.clust.Replicates = 100;
 opts.clust.UseParallel = false;
+
+opts.oracle.cvgrid = 30;
+opts.oracle.maxcvgrid = 15;
+opts.oracle.mincvgrid = -5;
+opts.oracle.cvfolds = 10;
 
 opts.footprint.RHO = 10;                % Density threshold
 opts.footprint.PI = 0.75;               % Purity threshold
@@ -44,5 +49,5 @@ opts.pbldr.cmaopts.DispFinal = 'off';       % To make BIPOP-CMA-ES silent
 % out = matilda(X, Y, Ybin, opts);
 % out = matilda(X(1:500,:), Y(1:500,:), Ybin(1:500,:), opts);
 % out = matilda('graph-colouring-features.csv', 'graph-colouring-algorithms.csv', opts);
-out = matilda('KnapX.csv', 'KnapY.csv', opts);
+out = matilda('meta_feature.csv', 'algorithm_performance.csv', opts);
 

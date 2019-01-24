@@ -1,5 +1,5 @@
 function footprint = findPureFootprint(X, Y, opts)
-
+% If there is no Y to work with, then there is not point on this one
 Ig        = unique(X(Y,:),'rows');   % There might be points overlapped, so eliminate them to avoid problems
 numInst   = size(Ig,1);
 D         = pdist(Ig)';               % Calculate the distance among all points

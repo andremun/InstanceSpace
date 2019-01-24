@@ -130,6 +130,10 @@ projectionMatrix(2:end,1) = {'Z_{1}','Z_{2}'};
 projectionMatrix(2:end,2:end) = num2cell(out.pbldr.A);
 disp(' ');
 disp(projectionMatrix);
+% -------------------------------------------------------------------------
+% Algorithm selection. Fit a model that would separate the space into
+% classes of good and bad performance. 
+out.algosel = fitoracle(out.pbldr.Z,Ybin,opts.oracle);
 % ---------------------------------------------------------------------
 % Calculating the algorithm footprints. First step is to transform the
 % data to the footprint space, and to calculate the 'space' exafootprint.
@@ -241,11 +245,6 @@ out.footprint.performance(2:end,2:end) = num2cell(performanceTable);
 disp('-> Completed - Footprint analysis results:');
 disp(' ');
 disp(out.footprint.performance);
-% -------------------------------------------------------------------------
-% Algorithm selection. Fit a model that would separate the space into
-% classes of good and bad performance. 
-
-
 % ---------------------------------------------------------------------
 % Storing the output data as a csv file
 writetable(array2table(out.pbldr.Z,'VariableNames',{'z_1','z_2'},'RowNames',featfiles),...

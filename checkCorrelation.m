@@ -4,6 +4,7 @@ function [X, out] = checkCorrelation(X,Y,opts)
 if opts.flag
     disp('-> Checking for feature correlation with performance.');
     out.rho = corr(X,Y,'rows','pairwise');
+    out.rho(isnan(out.rho)) = 0;
     [~,row] = sort(abs(out.rho),1,'descend');
     out.selvars = false(1,nfeats);
     out.selvars(unique(row(1:min(opts.threshold,nfeats),:))) = true;

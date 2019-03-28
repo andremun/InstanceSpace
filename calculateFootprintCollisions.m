@@ -1,5 +1,9 @@
 function baseFootprint = calculateFootprintCollisions(baseFootprint,testFootprint)
 % 
+if isempty(baseFootprint.polyArea) || isempty(testFootprint.polyArea)
+    return;
+end
+
 numBasePolygons = size(baseFootprint.polygon,3);
 numTestPolygons = size(testFootprint.polygon,3);
 totalTestArea   = zeros(numBasePolygons,numTestPolygons);

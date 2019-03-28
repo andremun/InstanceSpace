@@ -5,7 +5,11 @@ if opts.flag
     disp('-> Checking for feature diversity.');
     out.pctage = zeros(1,nfeats);
     for i=1:nfeats
-        out.pctage(i) = length(unique(X(:,i)))./ninst;
+        if all(isnan(X(:,i))) || all(isinf(X(:,i)))
+            out.pctage(i) = 0;
+        else
+            out.pctage(i) = length(unique(X(:,i)))./ninst;
+        end
     end
     out.selvars = out.pctage>opts.threshold;
     X = X(:,out.selvars);

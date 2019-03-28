@@ -1,6 +1,6 @@
-function footprint = findPureFootprint(X, Y, opts)
+function footprint = findPureFootprint(Z, Y, opts)
 % If there is no Y to work with, then there is not point on this one
-Ig        = unique(X(Y,:),'rows');   % There might be points overlapped, so eliminate them to avoid problems
+Ig        = unique(Z(Y,:),'rows');   % There might be points overlapped, so eliminate them to avoid problems
 numInst   = size(Ig,1);
 D         = pdist(Ig)';               % Calculate the distance among all points
 % Eliminate those candidates that are too small or too big
@@ -16,7 +16,18 @@ for i=1:size(idx,1)
 end
 Ig          = Ig(~elim,:);
 numInst     = size(Ig,1);
-polygon     = delaunay(Ig);
+if numInst>3
+    polygon     = delaunay(Ig);
+else
+    footprint.polyArea = [];
+    footprint.polyDensity = [];
+    footprint.polyElements = 0;
+    footprint.polyGoodElements = 0;
+    footprint.polyPurity = [];
+    footprint.polygon = [];
+    footprint.pieces = 0;
+    return;
+end
 numPolygons = size(polygon,1);
 elim        = false(numPolygons,1);
 for i=1:numPolygons
@@ -28,8 +39,8 @@ cardPoly    = zeros(numPolygons,1);
 cardPolyG   = zeros(numPolygons,1);
 polyArea    = zeros(numPolygons,1);
 for i=1:numPolygons
-    cardPoly(i)  = sum(inpolygon(X(:,1),X(:,2),Ig(polygon(i,:),1),Ig(polygon(i,:),2)));
-    cardPolyG(i) = sum(inpolygon(X(Y,1),X(Y,2),Ig(polygon(i,:),1),Ig(polygon(i,:),2)));
+    cardPoly(i)  = sum(inpolygon(Z(:,1),Z(:,2),Ig(polygon(i,:),1),Ig(polygon(i,:),2)));
+    cardPolyG(i) = sum(inpolygon(Z(Y,1),Z(Y,2),Ig(polygon(i,:),1),Ig(polygon(i,:),2)));
     polyArea(i)  = polyarea(Ig(polygon(i,:),1),Ig(polygon(i,:),2));
 end
 polyDensity = cardPoly./polyArea;

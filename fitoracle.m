@@ -1,8 +1,8 @@
-function out = fitoracle(Z,Y,opts)
+function out = fitoracle(Z,Ybin,opts)
 
 % global params
-Y = double(Y)+1;
-nalgos = size(Y,2);
+Ybin = double(Ybin)+1;
+nalgos = size(Ybin,2);
 out.paramgrid = sortrows(2.^(opts.maxcvgrid.*lhsdesign(opts.cvgrid,2) + ...
                              opts.mincvgrid));  % Cross-validation grid
 out.cvmcr = NaN.*ones(opts.cvgrid,nalgos);
@@ -10,14 +10,29 @@ out.paramidx = NaN.*ones(1,nalgos);
 
 for i=1:nalgos
     for j=1:opts.cvgrid
-        out.cvmcr(j,i) = crossval('mcr', Z, Y(:,i),...
+        out.cvmcr(j,i) = crossval('mcr', Z, Ybin(:,i),...
                                   'Kfold', opts.cvfolds,...
                                   'Options', statset('UseParallel',true),...
                                   'Predfun',@(xtrain,ytrain,xtest) svmwrap(xtrain,...
                                                                            ytrain,...
                                                                            xtest,...
-                                                                           out.paramgrid(j,:)));
+                                                                           out.paramgrid(j,:),...
+                                                                           false));
     end
     [~,out.paramidx(i)] = min(out.cvmcr(:,i));
     disp(['    ' num2str(i) ' out of ' num2str(nalgos) ' models have been fitted.']);
 end
+
+out.Yhat = 0.*Ybin;
+out.probs = 0.*Ybin;
+for i=1:nalgos
+    aux = svmwrap(out.pbldr.Z, ... % xtrain
+                  Ybin(:,i), ...      % ytrain
+                  out.pbldr.Z, ... % xtest
+                  out.algosel.paramgrid(out.algosel.paramidx(i),:),... % params
+                  true);           % Give both result and probabilities
+    out.Yhat(:,i)  = aux(:,1);
+    out.probs(:,i) = aux(:,2);
+end
+out.Yhat = out.Yhat==2; % Make it binary
+[~,out.pfoliosel] = min(out.probs,[],2); % Determine which one to suggest

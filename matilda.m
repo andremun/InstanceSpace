@@ -386,7 +386,7 @@ print(gcf,'-dpng',[rootdir 'sources.png']);
 %     set(findall(gcf,'-property','FontSize'),'FontSize',12);
 %     set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 %     axis square;
-%     print(gcf,'-dpng',['footprint_' algolabels{i} '.png']);
+%     print(gcf,'-dpng',[rootdir 'footprint_' algolabels{i} '.png']);
 % end
 
 % -------------------------------------------------------------------------

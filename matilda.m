@@ -1,4 +1,4 @@
-function [out] = matilda(datafile, optsfile, varargin)
+function [out] = matilda(rootdir)
 % -------------------------------------------------------------------------
 % matilda.m
 % -------------------------------------------------------------------------
@@ -7,20 +7,16 @@ function [out] = matilda(datafile, optsfile, varargin)
 %     School of Mathematics and Statistics
 %     The University of Melbourne
 %     Australia
-%     2018
+%     2019
 %
 % -------------------------------------------------------------------------
 %
 % Input parameters:
 %
-% X:    A cell matrix of features. The first row corresponds to the feature
-%       names.
-% Y:    A cell matrix of algorithm performance. The first row corresponds
-%       to the algorithm names.
-% Ybin: A cell matrix with a binary measure of algorithm performance, where
-%       '1' is good performance and '0' is bad. The first row corresponds
-%       to the algorithm names.
-% opts: An structure with all the options.
+% datafile: Name of a csv file which contains the metadata. Each row should
+%           contain 
+%
+% optsfile: Name of a json file which contains the options.
 %
 % Output paramters:
 % 
@@ -31,6 +27,8 @@ function [out] = matilda(datafile, optsfile, varargin)
 startProcess = tic;
 % -------------------------------------------------------------------------
 % Collect all the data from the files
+datafile = [rootdir 'metadata.csv'];
+optsfile = [rootdir 'options.json'];
 opts = jsondecode(fileread(optsfile));
 Xbar = readtable(datafile);
 varlabels = Xbar.Properties.VariableNames;
@@ -71,65 +69,14 @@ if isfield(opts,'selvars') && isfield(opts.selvars,'algos')
     Y = Y(:,isselalgo);
     algolabels = algolabels(isselalgo);
 end
+nalgos = size(Y,2);
 % -------------------------------------------------------------------------
 % Removing the template data such that it can be used in the labels of
 % graphs and figures.
 featlabels = strrep(featlabels,'feature_','');
 algolabels = strrep(algolabels,'algo_','');
 % -------------------------------------------------------------------------
-% Cleaning up the memory
-clear Xbar isname isfeat isalgo issource varlabels;
-% -------------------------------------------------------------------------
-% X = readtable(featfile);
-% Y = readtable(algofile);
-% featlabels = X.Properties.VariableNames(2:end);
-% algolabels = Y.Properties.VariableNames(2:end);
-% -------------------------------------------------------------------------
-% If we are only meant to take some observations
-flag = false;
-if ~isempty(varargin)
-    subsetIndex = false(size(X,1),1);
-    aux = readtable(varargin{1});
-    subsetIndex(aux.x) = true;
-    flag = true;
-else
-    subsetIndex = true(size(X,1),1);
-end
-% -------------------------------------------------------------------------
-% We don't need this anymore, as there is only one file to process. We
-% assume that all the data is 'complete'
-% [X,idx] = sortrows(table2cell(X),1);
-% if flag
-%     subsetIndex = subsetIndex(idx);
-% end
-% Y = sortrows(table2cell(Y),1);
-% instlabels = X(:,1);
-% algofiles = Y(:,1);
-% X = cell2mat(X(:,2:end));
-% Y = cell2mat(Y(:,2:end));
-% 
-% isvalidY = false(length(algofiles),1);
-% for i=1:length(instlabels)
-%     isvalidY = isvalidY | strcmp(instlabels{i},algofiles);
-% end
-% algofiles = algofiles(isvalidY);
-% Y = Y(isvalidY,:);
-% 
-% isvalidX = false(length(instlabels),1);
-% for i=1:length(algofiles)
-%     isvalidX = isvalidX | strcmp(algofiles{i},instlabels);
-% end
-% X = X(isvalidX,:);
-% if flag
-%     subsetIndex = subsetIndex(isvalidX);
-% end
-% instlabels = instlabels(isvalidX);
-% 
-Xbackup = X;
-Ybackup = Y;
-nalgos = size(Y,2);
-% -------------------------------------------------------------------------
-% Determine whether the performance of an algorithm is a costt measure to
+% Determine whether the performance of an algorithm is a cost measure to
 % be minimized or a profit measure to be maximized. Moreover, determine
 % whether we are using an absolute threshold as good peformance (the
 % algorithm has a performance better than the threshold) or a relative
@@ -154,55 +101,64 @@ else
 end
 beta = sum(Ybin,2)>opts.general.betaThreshold*nalgos;
 % ---------------------------------------------------------------------
-% Eliminate extreme outliers, i.e., any point that exceedes 5 times the
-% inter quantile range, by bounding them to that value.
-disp('-> Removing extreme outliers from the feature values.');
-[X, out.bound] = boundOutliers(X, opts.bound);
-% ---------------------------------------------------------------------
-% Normalize the data using Box-Cox and Z-transformations
-disp('-> Auto-normalizing the data.');
-[X, Y, out.norm] = autoNormalize(X, Y, opts.norm);
-% ---------------------------------------------------------------------
-% 
-if flag
+% Automated pre-processing
+if opts.auto.preproc
+    % Eliminate extreme outliers, i.e., any point that exceedes 5 times the
+    % inter quantile range, by bounding them to that value.
+    disp('-> Removing extreme outliers from the feature values.');
+    [X, out.bound] = boundOutliers(X, opts.bound);
+    % Normalize the data using Box-Cox and Z-transformations
+    disp('-> Auto-normalizing the data.');
+    [X, Y, out.norm] = autoNormalize(X, Y, opts.norm);
+end
+% -------------------------------------------------------------------------
+% If we are only meant to take some observations
+if isfield(opts,'selvars') && isfield(opts.selvars,'instances')
+    subsetIndex = false(size(X,1),1);
+    subsetIndex(table2array(readtable(opts.selvars.instances))) = true;
+    
     X = X(subsetIndex,:);
     Y = Y(subsetIndex,:);
     Ybin = Ybin(subsetIndex,:);
     beta = beta(subsetIndex);
     bestPerformace = bestPerformace(subsetIndex);
     portfolio = portfolio(subsetIndex);
-    Xbackup = Xbackup(subsetIndex,:);
-    Ybackup = Ybackup(subsetIndex,:);
+else
+    subsetIndex = true(size(X,1),1);
 end
-% -------------------------------------------------------------------------
-%
-ninst = size(X,1);
+[ninst,nfeats] = size(X);
 % ---------------------------------------------------------------------
-% Check for diversity, i.e., we want features that have non-repeating
-% values for each instance. Eliminate any that have only DIVTHRESHOLD unique values.
-[X, out.diversity] = checkDiversity(X, opts.diversity);
-featlabels = featlabels(out.diversity.selvars);
-Xbackup = Xbackup(:,out.diversity.selvars);
-% ---------------------------------------------------------------------
-% Detect correlations between features and algorithms. Keep the top CORTHRESHOLD
-% correlated features for each algorithm
-[X, out.corr] = checkCorrelation(X, Y, opts.corr);
-nfeats = size(X, 2);
-featlabels = featlabels(out.corr.selvars);
-Xbackup = Xbackup(:,out.corr.selvars);
-% ---------------------------------------------------------------------
-% Detect similar features, by clustering them according to their
-% correlation. We assume that the lowest value possible is best, as this 
-% will improve the projection into two dimensions. We set a hard limit of
-% 10 features. The selection criteria is an average silhouete value above
-% 0.65
-disp('-> Selecting features based on correlation clustering.');
-[X, out.clust] = clusterFeatureSelection(X, Ybin,...
-                                         opts.clust);
-disp(['-> Keeping ' num2str(size(X, 2)) ' out of ' num2str(nfeats) ' features (clustering).']);
-nfeats = size(X, 2);
-featlabels = featlabels(out.clust.selvars);
-Xbackup = Xbackup(:,out.clust.selvars);
+% Automated feature selection
+if opts.auto.featsel
+    % Keep track of the features that have been removed so we can use them
+    % later
+    out.featsel.idx = 1:nfeats;
+    % Check for diversity, i.e., we want features that have non-repeating
+    % values for each instance. Eliminate any that have only DIVTHRESHOLD
+    % unique values.
+    [X, out.diversity] = checkDiversity(X, opts.diversity);
+    featlabels = featlabels(out.diversity.selvars);
+    out.featsel.idx = out.featsel.idx(out.diversity.selvars);
+    % Detect correlations between features and algorithms. Keep the top
+    % CORTHRESHOLD correlated features for each algorithm
+    [X, out.corr] = checkCorrelation(X, Y, opts.corr);
+    nfeats = size(X, 2);
+    featlabels = featlabels(out.corr.selvars);
+    out.featsel.idx = out.featsel.idx(out.corr.selvars);
+    % Detect similar features, by clustering them according to their
+    % correlation. We assume that the lowest value possible is best, as
+    % this will improve the projection into two dimensions. We set a hard
+    % limit of 10 features. The selection criteria is an average silhouete
+    % value above 0.65
+    disp('-> Selecting features based on correlation clustering.');
+    [X, out.clust] = clusterFeatureSelection(X, Ybin,...
+                                             opts.clust);
+    disp(['-> Keeping ' num2str(size(X, 2)) ' out of ' num2str(nfeats) ...
+          ' features (clustering).']);
+    nfeats = size(X, 2);
+    featlabels = featlabels(out.clust.selvars);
+    out.featsel.idx = out.featsel.idx(out.clust.selvars);
+end
 % ---------------------------------------------------------------------
 % This is the final subset of features. Calculate the two dimensional
 % projection using the PBLDR algorithm (Munoz et al. Mach Learn 2018)
@@ -332,58 +288,83 @@ disp('-> Completed - Footprint analysis results:');
 disp(' ');
 disp(out.footprint.performance);
 % ---------------------------------------------------------------------
-% Storing the output data as a csv file
-writetable(array2table(out.pbldr.Z,'VariableNames',{'z_1','z_2'},'RowNames',instlabels(subsetIndex)),...
-           'coordinates.csv','WriteRowNames',true);
-writetable(array2table(Xbackup,'VariableNames',featlabels,'RowNames',instlabels(subsetIndex)),...
-           'feature_raw.csv','WriteRowNames',true);
+% Storing the output data as a CSV files. This is for easier
+% post-processing. All data will be stored in a matlab file later.
+writetable(array2table(out.pbldr.Z,'VariableNames',{'z_1','z_2'},...
+                       'RowNames',instlabels(subsetIndex)),...
+           [rootdir 'coordinates.csv'],'WriteRowNames',true);
+writetable(array2table(Xraw(:,out.featsel.idx),'VariableNames',featlabels,...
+                       'RowNames',instlabels(subsetIndex)),...
+           [rootdir 'feature_raw.csv'],'WriteRowNames',true);
 writetable(array2table(X,'VariableNames',featlabels,'RowNames',instlabels(subsetIndex)),...
-           'feature_process.csv','WriteRowNames',true);      
-writetable(array2table(Ybackup,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
-           'algorithm_raw.csv','WriteRowNames',true);
+           [rootdir 'feature_process.csv'],'WriteRowNames',true);      
+writetable(array2table(Yraw,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
+           [rootdir 'algorithm_raw.csv'],'WriteRowNames',true);
 writetable(array2table(Y,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
-           'algorithm_process.csv','WriteRowNames',true);
+           [rootdir 'algorithm_process.csv'],'WriteRowNames',true);
 writetable(cell2table(out.footprint.performance(2:end,[3 5 6 8 10 11]),...
                       'VariableNames',out.footprint.performance(1,[3 5 6 8 10 11]),...
                       'RowNames',out.footprint.performance(2:end,1)),...
-           'footprint_performance.csv','WriteRowNames',true);
+           [rootdir 'footprint_performance.csv'],'WriteRowNames',true);
 writetable(cell2table(projectionMatrix(2:end,2:end),...
                       'VariableNames',projectionMatrix(1,2:end),...
                       'RowNames',projectionMatrix(2:end,1)),...
-           'projection_matrix.csv','WriteRowNames',true);
-% This is real data not simulated
-writetable(array2table(Ybin,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
-           'algorithm_svm.csv','WriteRowNames',true);
-writetable(array2table(portfolio,'VariableNames',{'Best_Algorithm'},'RowNames',instlabels(subsetIndex)),...
-           'portfolio.csv','WriteRowNames',true);
+           [rootdir 'projection_matrix.csv'],'WriteRowNames',true);
+writetable(array2table(Ybin,'VariableNames',algolabels,...
+                       'RowNames',instlabels(subsetIndex)),...
+           [rootdir 'algorithm_bin.csv'],'WriteRowNames',true);
+writetable(array2table(portfolio,'VariableNames',{'Best_Algorithm'},...
+                       'RowNames',instlabels(subsetIndex)),...
+           [rootdir 'portfolio.csv'],'WriteRowNames',true);
 % ---------------------------------------------------------------------
 % Making all the plots. First, plotting the features and performance as
 % scatter plots.
 for i=1:nfeats
     clf;
     drawScatter((X(:,i)-min(X(:,i)))./range(X(:,i)), out.pbldr.Z, strrep(featlabels{i},'_',' '));
-    print(gcf,'-dpng',['scatter_' featlabels{i} '.png']);
+    print(gcf,'-dpng',[rootdir 'scatter_' featlabels{i} '.png']);
 end
 
-Ys = log10(Ybackup);
+Ys = log10(Yraw);
 Ys = (Ys-min(Ys(:)))./range(Ys(:));
 for i=1:nalgos
     clf;
     drawScatter(Ys(:,i), out.pbldr.Z, strrep(algolabels{i},'_',' '));
-    print(gcf,'-dpng',['scatter_' algolabels{i} '.png']);
+    print(gcf,'-dpng',[rootdir 'scatter_' algolabels{i} '.png']);
 end
 % Drawing the footprints for good and bad performance acording to the
 % binary measure
-for i=1:nalgos
-    clf;
-    drawGoodBadFootprint(out.pbldr.Z, Ybin(:,i), out.footprint.good{i}, strrep(algolabels{i},'_',' '));
-    print(gcf,'-dpdf',['footprint_' algolabels{i} '.pdf']);
-end
+% for i=1:nalgos
+%     clf;
+%     drawGoodBadFootprint(out.pbldr.Z, Ybin(:,i), out.footprint.good{i}, strrep(algolabels{i},'_',' '));
+%     print(gcf,'-dpdf',[rootdir 'footprint_' algolabels{i} '.pdf']);
+% end
 % Drawing the footprints as portfolio.
 clf;
 aux = drawPortfolioFootprint(out.footprint.best, algolabels);
-print(gcf,'-dpng','footprint_portfolio.png');
+print(gcf,'-dpng',[rootdir 'footprint_portfolio.png']);
 
+if any(issource)
+    nsources = length(sourcelabels);
+    clrs = parula(nsources);
+    clf;
+    for i=1:nsources
+        line(out.pbldr.Z(S==sourcelabels{i},1), ...
+             out.pbldr.Z(S==sourcelabels{i},2), ...
+             'LineStyle', 'none', ...
+             'Marker', '.', ...
+             'Color', clrs(i,:), ...
+             'MarkerFaceColor', clrs(i,:), ...
+             'MarkerSize', 6);
+    end
+    xlabel('z_{1}'); ylabel('z_{2}'); title('Sources');
+    legend(sourcelabels, 'Location', 'NorthEastOutside');
+    set(findall(gcf,'-property','FontSize'),'FontSize',12);
+    set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
+    axis square;
+end
+print(gcf,'-dpng',[rootdir 'sources.png']);
+    
 % for i=1:nalgos
 %     clf;
 %     line(out.pbldr.Z(out.algosel.Yhat(:,i)==1,1), ...
@@ -410,7 +391,8 @@ print(gcf,'-dpng','footprint_portfolio.png');
 
 % -------------------------------------------------------------------------
 % 
-save('results.mat','-struct','out');
+save([rootdir 'results.mat'],'-struct','out'); % Save the main results
+save([rootdir 'workspace.mat']); % Save the full workspace for debugging
 disp(['-> Completed! Elapsed time: ' num2str(toc(startProcess)) 's']);
 disp('EOF');
 end

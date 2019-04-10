@@ -35,4 +35,4 @@ for i=1:nalgos
     out.probs(:,i) = aux(:,2);
 end
 out.Yhat = out.Yhat==2; % Make it binary
-[~,out.pfoliosel] = min(out.probs,[],2); % Determine which one to suggest
+[~,out.psel] = min(out.probs,[],2); % Determine which one to suggest

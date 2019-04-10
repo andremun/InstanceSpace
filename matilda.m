@@ -316,6 +316,12 @@ writetable(array2table(Ybin,'VariableNames',algolabels,...
 writetable(array2table(portfolio,'VariableNames',{'Best_Algorithm'},...
                        'RowNames',instlabels(subsetIndex)),...
            [rootdir 'portfolio.csv'],'WriteRowNames',true);
+writetable(array2table(out.algosel.Yhat,'VariableNames',algolabels,...
+                       'RowNames',instlabels(subsetIndex)),...
+           [rootdir 'algorithm_svm.csv'],'WriteRowNames',true);
+writetable(array2table(out.algosel.psel,'VariableNames',{'Best_Algorithm'},...
+                       'RowNames',instlabels(subsetIndex)),...
+           [rootdir 'portfolio_svm.csv'],'WriteRowNames',true);
 % ---------------------------------------------------------------------
 % Making all the plots. First, plotting the features and performance as
 % scatter plots.
@@ -334,16 +340,16 @@ for i=1:nalgos
 end
 % Drawing the footprints for good and bad performance acording to the
 % binary measure
-% for i=1:nalgos
-%     clf;
-%     drawGoodBadFootprint(out.pbldr.Z, Ybin(:,i), out.footprint.good{i}, strrep(algolabels{i},'_',' '));
-%     print(gcf,'-dpdf',[rootdir 'footprint_' algolabels{i} '.pdf']);
-% end
+for i=1:nalgos
+    clf;
+    drawGoodBadFootprint(out.pbldr.Z, Ybin(:,i), out.footprint.good{i}, strrep(algolabels{i},'_',' '));
+    print(gcf,'-dpng',[rootdir 'footprint_' algolabels{i} '.png']);
+end
 % Drawing the footprints as portfolio.
 clf;
-aux = drawPortfolioFootprint(out.footprint.best, algolabels);
+drawPortfolioFootprint(out.footprint.best, algolabels);
 print(gcf,'-dpng',[rootdir 'footprint_portfolio.png']);
-
+% Drawing the sources of the instances if available
 if any(issource)
     nsources = length(sourcelabels);
     clrs = parula(nsources);
@@ -364,30 +370,67 @@ if any(issource)
     axis square;
 end
 print(gcf,'-dpng',[rootdir 'sources.png']);
-    
-% for i=1:nalgos
-%     clf;
-%     line(out.pbldr.Z(out.algosel.Yhat(:,i)==1,1), ...
-%          out.pbldr.Z(out.algosel.Yhat(:,i)==1,2), ...
-%          'LineStyle', 'none', ...
-%          'Marker', '.', ...
-%          'Color', [0.8 0.8 0.8], ...
-%          'MarkerFaceColor', [0.8 0.8 0.8], ...
-%          'MarkerSize', 6);
-%     line(out.pbldr.Z(out.algosel.Yhat(:,i)==2,1), ...
-%          out.pbldr.Z(out.algosel.Yhat(:,i)==2,2), ...
-%          'LineStyle', 'none', ...
-%          'Marker', '.', ...
-%          'Color', [0.0 0.0 0.0], ...
-%          'MarkerFaceColor', [0.0 0.0 0.0], ...
-%          'MarkerSize', 6);
-%     xlabel('z_{1}'); ylabel('z_{2}'); title(algolabels{i});
-%     legend({'BAD','GOOD'}, 'Location', 'NorthEastOutside');
-%     set(findall(gcf,'-property','FontSize'),'FontSize',12);
-%     set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
-%     axis square;
-%     print(gcf,'-dpng',[rootdir 'footprint_' algolabels{i} '.png']);
-% end
+% Drawing the SVM's predictions of good performance
+h = zeros(1,2);
+cpt = {'BAD','GOOD'};
+for i=1:nalgos
+    clf;
+    if sum(out.algosel.Yhat(:,i)==0)~=0
+        h(1) = line(out.pbldr.Z(out.algosel.Yhat(:,i)==0,1), ...
+                    out.pbldr.Z(out.algosel.Yhat(:,i)==0,2), ...
+                    'LineStyle', 'none', ...
+                    'Marker', 'o', ...
+                    'Color', [0.8 0.8 0.8], ...
+                    'MarkerFaceColor', [0.8 0.8 0.8], ...
+                    'MarkerSize', 6);
+    end
+    if sum(out.algosel.Yhat(:,i)==1)~=0
+        h(2) = line(out.pbldr.Z(out.algosel.Yhat(:,i)==1,1), ...
+                    out.pbldr.Z(out.algosel.Yhat(:,i)==1,2), ...
+                    'LineStyle', 'none', ...
+                    'Marker', 'o', ...
+                    'Color', [0.0 0.0 0.0], ...
+                    'MarkerFaceColor', [0.0 0.0 0.0], ...
+                    'MarkerSize', 6);
+    end
+    xlabel('z_{1}'); ylabel('z_{2}'); title(strrep(algolabels{i},'_',' '));
+    legend(h(h~=0), cpt(h~=0), 'Location', 'NorthEastOutside');
+    set(findall(gcf,'-property','FontSize'),'FontSize',12);
+    set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
+    axis square;
+    print(gcf,'-dpng',['footprint_' algolabels{i} '.png']);
+end
+% Drawing the SVM's recommendations
+isworty = mean(bsxfun(@eq,out.algosel.psel,1:nalgos))~=0;
+clr = parula(nalgos);
+mrkrs = {'o','s','x'};
+cnt = 1;
+clf;
+for i=1:nalgos
+    if ~isworty(i)
+        continue;
+    end
+    line(out.pbldr.Z(out.algosel.psel==i,1), ...
+         out.pbldr.Z(out.algosel.psel==i,2), ...
+         'LineStyle', 'none', ...
+         'Marker', mrkrs{cnt}, ...
+         'Color', clr(i,:), ...
+         'MarkerFaceColor', clr(i,:), ...
+         'MarkerSize', 6);
+    cnt = cnt+1;
+    if cnt>length(mrkrs)
+        cnt = 1;
+    end
+end
+xlabel('z_{1}'); ylabel('z_{2}');
+legend(algolabels(isworty), 'Location', 'NorthEastOutside');
+set(findall(gcf,'-property','FontSize'),'FontSize',12);
+set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
+axis square;
+print(gcf,'-dpng',[rootdir 'svm_pfolio.png']);
+
+
+
 
 % -------------------------------------------------------------------------
 % 

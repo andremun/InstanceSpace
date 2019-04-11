@@ -106,6 +106,7 @@ beta = sum(Ybin,2)>opts.general.betaThreshold*nalgos;
 % ---------------------------------------------------------------------
 % Automated pre-processing
 if opts.auto.preproc
+    disp('-> Auto-pre-processing. Bounding outliers, scaling and normalizing the data.');
     % Eliminate extreme outliers, i.e., any point that exceedes 5 times the
     % inter quantile range, by bounding them to that value.
     disp('-> Removing extreme outliers from the feature values.');
@@ -117,6 +118,7 @@ end
 % -------------------------------------------------------------------------
 % If we are only meant to take some observations
 if isfield(opts,'selvars') && isfield(opts.selvars,'instances') && isfile(opts.selvars.instances)
+    disp('-> Using a subset of the instances.');
     subsetIndex = false(size(X,1),1);
     subsetIndex(table2array(readtable(opts.selvars.instances))) = true;
     
@@ -127,12 +129,14 @@ if isfield(opts,'selvars') && isfield(opts.selvars,'instances') && isfile(opts.s
     bestPerformace = bestPerformace(subsetIndex);
     portfolio = portfolio(subsetIndex);
 else
+    disp('-> Using a the complete set of the instances.');
     subsetIndex = true(size(X,1),1);
 end
 [ninst,nfeats] = size(X);
 % ---------------------------------------------------------------------
 % Automated feature selection
 if opts.auto.featsel
+    disp('-> Auto feature selection.');
     % Keep track of the features that have been removed so we can use them
     % later
     out.featsel.idx = 1:nfeats;

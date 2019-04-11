@@ -26,10 +26,10 @@ end
 out.Yhat = 0.*Ybin;
 out.probs = 0.*Ybin;
 for i=1:nalgos
-    aux = svmwrap(out.pbldr.Z, ... % xtrain
+    aux = svmwrap(Z, ... % xtrain
                   Ybin(:,i), ...      % ytrain
-                  out.pbldr.Z, ... % xtest
-                  out.algosel.paramgrid(out.algosel.paramidx(i),:),... % params
+                  Z, ... % xtest
+                  out.paramgrid(out.paramidx(i),:),... % params
                   true);           % Give both result and probabilities
     out.Yhat(:,i)  = aux(:,1);
     out.probs(:,i) = aux(:,2);

@@ -13,15 +13,14 @@ opts.norm.flag = true;                  % Normalize/Standarize the data. True if
 opts.auto.featsel = true;               % Automatic feature selectio on. Set to false if you don't want any feature selection.
 opts.diversity.flag = true;             % Run feature selection by diversity calculation (Step 1)
 opts.diversity.threshold = 0.3;         % Minimum percentage allowed of repeated values before a feature is considered NOT diverse enough
-opts.corr.flag = true;                  % Run feature selection by correlation between performance and features
+opts.corr.flag = true;                  % Run feature selection by correlation between performance and features (Step 2)
 opts.corr.threshold = 3;                % Top N features (by correlation) per algorithm that are selected
-opts.clust.flag = true;
+opts.clust.flag = true;                 % Run feature selection by clustering (Step 3)
 opts.clust.KDEFAULT = 10;               % Default maximum number of clusters
 opts.clust.SILTHRESHOLD = 0.58;         % Minimum accepted value for the average silhoute value
 opts.clust.NTREES = 50;                 % Number of trees for the Random Forest (to determine highest separability in the 2-d projection)
 opts.clust.MaxIter = 1000;
 opts.clust.Replicates = 100;
-opts.clust.UseParallel = true;
 
 opts.pbldr.analytic = false;            % Calculate the analytical or numerical solution
 opts.pbldr.ntries = 30;                 % Number of attempts carried out by PBLDR

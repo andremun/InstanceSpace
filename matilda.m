@@ -29,6 +29,9 @@ startProcess = tic;
 % Collect all the data from the files
 datafile = [rootdir 'metadata.csv'];
 optsfile = [rootdir 'options.json'];
+if ~isfile(datafile) || ~isfile(optsfile)
+    error('Please place the datafiles in the directory specified');
+end
 opts = jsondecode(fileread(optsfile));
 Xbar = readtable(datafile);
 varlabels = Xbar.Properties.VariableNames;
@@ -113,7 +116,7 @@ if opts.auto.preproc
 end
 % -------------------------------------------------------------------------
 % If we are only meant to take some observations
-if isfield(opts,'selvars') && isfield(opts.selvars,'instances')
+if isfield(opts,'selvars') && isfield(opts.selvars,'instances') && isfile(opts.selvars.instances)
     subsetIndex = false(size(X,1),1);
     subsetIndex(table2array(readtable(opts.selvars.instances))) = true;
     
@@ -289,7 +292,8 @@ disp(' ');
 disp(out.footprint.performance);
 % ---------------------------------------------------------------------
 % Storing the output data as a CSV files. This is for easier
-% post-processing. All data will be stored in a matlab file later.
+% post-processing. All workspace data will be stored in a matlab file
+% later.
 writetable(array2table(out.pbldr.Z,'VariableNames',{'z_1','z_2'},...
                        'RowNames',instlabels(subsetIndex)),...
            [rootdir 'coordinates.csv'],'WriteRowNames',true);
@@ -428,10 +432,6 @@ set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 axis square;
 print(gcf,'-dpng',[rootdir 'svm_pfolio.png']);
-
-
-
-
 % -------------------------------------------------------------------------
 % 
 save([rootdir 'results.mat'],'-struct','out'); % Save the main results

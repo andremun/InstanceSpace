@@ -42,7 +42,7 @@ opts.selvars.smallscale = 0.1;          % Percentage of instances to be kept for
 % should be lower than the number of instances
 opts.selvars.instances = [rootdir 'Indices_3_Methods_Only.csv'];
 
-opts.webproc.flag = true;               % This flag is only useful if the system is being used 'online' through matilda.unimelb.edu.au
+opts.webproc.flag = true;               % NOTE: MAKE THIS FALSE IF YOU ARE USING THIS CODE LOCALY - This flag is only useful if the system is being used 'online' through matilda.unimelb.edu.au
 
 % Saving all the information as a JSON file
 fid = fopen([rootdir 'options.json'],'w+');

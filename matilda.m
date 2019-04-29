@@ -117,20 +117,29 @@ if opts.auto.preproc
 end
 % -------------------------------------------------------------------------
 % If we are only meant to take some observations
-if isfield(opts,'selvars') && isfield(opts.selvars,'instances') && isfile(opts.selvars.instances)
+ninst = size(X,1);
+if opts.selvars.instflag
+    disp('-> Creating a small scale experiment for validation.');
+    aux = cvpartition(ninst,'HoldOut',opts.selvars.smallscale);
+    subsetIndex = aux.test;
+elseif isfield(opts,'selvars') && isfield(opts.selvars,'instances') && isfile(opts.selvars.instances)
     disp('-> Using a subset of the instances.');
     subsetIndex = false(size(X,1),1);
-    subsetIndex(table2array(readtable(opts.selvars.instances))) = true;
-    
+    aux = table2array(readtable(opts.selvars.instances));
+    aux(aux>ninst) = [];
+    subsetIndex(aux) = true;
+else
+    disp('-> Using a the complete set of the instances.');
+    subsetIndex = true(ninst,1);
+end
+
+if (isfield(opts,'selvars') && isfield(opts.selvars,'instances') && isfile(opts.selvars.instances)) || opts.selvars.instflag
     X = X(subsetIndex,:);
     Y = Y(subsetIndex,:);
     Ybin = Ybin(subsetIndex,:);
     beta = beta(subsetIndex);
-    bestPerformace = bestPerformace(subsetIndex);
+    bestPerformace = bestPerformace(subsetIndex); %#ok<NASGU>
     portfolio = portfolio(subsetIndex);
-else
-    disp('-> Using a the complete set of the instances.');
-    subsetIndex = true(size(X,1),1);
 end
 [ninst,nfeats] = size(X);
 % ---------------------------------------------------------------------
@@ -301,12 +310,12 @@ disp(out.footprint.performance);
 writetable(array2table(out.pbldr.Z,'VariableNames',{'z_1','z_2'},...
                        'RowNames',instlabels(subsetIndex)),...
            [rootdir 'coordinates.csv'],'WriteRowNames',true);
-writetable(array2table(Xraw(:,out.featsel.idx),'VariableNames',featlabels,...
+writetable(array2table(Xraw(subsetIndex,out.featsel.idx),'VariableNames',featlabels,...
                        'RowNames',instlabels(subsetIndex)),...
            [rootdir 'feature_raw.csv'],'WriteRowNames',true);
 writetable(array2table(X,'VariableNames',featlabels,'RowNames',instlabels(subsetIndex)),...
            [rootdir 'feature_process.csv'],'WriteRowNames',true);      
-writetable(array2table(Yraw,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
+writetable(array2table(Yraw(subsetIndex,:),'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
            [rootdir 'algorithm_raw.csv'],'WriteRowNames',true);
 writetable(array2table(Y,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
            [rootdir 'algorithm_process.csv'],'WriteRowNames',true);
@@ -330,6 +339,40 @@ writetable(array2table(out.algosel.Yhat,'VariableNames',algolabels,...
 writetable(array2table(out.algosel.psel,'VariableNames',{'Best_Algorithm'},...
                        'RowNames',instlabels(subsetIndex)),...
            [rootdir 'portfolio_svm.csv'],'WriteRowNames',true);
+% Produces files which contain color information only
+if opts.webproc.flag
+    writetable(array2table(parula(256),'VariableNames',{'R','G','B'}),...
+              [rootdir 'color_table.csv'],'WriteRowNames',true);
+    
+    Xaux = Xraw(subsetIndex,out.featsel.idx);
+    Xaux = bsxfun(@rdivide,bsxfun(@minus,Xaux,min(Xaux)),range(Xaux));
+    Xaux = round(256.*Xaux);
+    
+    writetable(array2table(Xaux,'VariableNames',featlabels,...
+                           'RowNames',instlabels(subsetIndex)),...
+               [rootdir 'feature_raw_color.csv'],'WriteRowNames',true);
+    
+    Xaux = X;
+    Xaux = bsxfun(@rdivide,bsxfun(@minus,Xaux,min(Xaux)),range(Xaux));
+    Xaux = round(256.*Xaux);
+           
+    writetable(array2table(Xaux,'VariableNames',featlabels,'RowNames',instlabels(subsetIndex)),...
+               [rootdir 'feature_process_color.csv'],'WriteRowNames',true);
+           
+    Yaux = Yraw(subsetIndex,:);
+    Yaux = bsxfun(@rdivide,bsxfun(@minus,Yaux,min(Yaux(:))),range(Yaux(:)));
+    Yaux = round(256.*Yaux);
+    
+    writetable(array2table(Yaux,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
+               [rootdir 'algorithm_raw_color.csv'],'WriteRowNames',true);
+           
+    Yaux = Y;
+    Yaux = bsxfun(@rdivide,bsxfun(@minus,Yaux,min(Yaux(:))),range(Yaux(:)));
+    Yaux = round(256.*Yaux);
+    
+    writetable(array2table(Yaux,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
+               [rootdir 'algorithm_process_color.csv'],'WriteRowNames',true);
+end
 % ---------------------------------------------------------------------
 % Making all the plots. First, plotting the features and performance as
 % scatter plots.
@@ -339,11 +382,11 @@ for i=1:nfeats
     print(gcf,'-dpng',[rootdir 'scatter_' featlabels{i} '.png']);
 end
 
-Ys = log10(Yraw);
+Ys = log10(Yraw+1);
 Ys = (Ys-min(Ys(:)))./range(Ys(:));
 for i=1:nalgos
     clf;
-    drawScatter(Ys(:,i), out.pbldr.Z, strrep(algolabels{i},'_',' '));
+    drawScatter(Ys(subsetIndex,i), out.pbldr.Z, strrep(algolabels{i},'_',' '));
     print(gcf,'-dpng',[rootdir 'scatter_' algolabels{i} '.png']);
 end
 % Drawing the footprints for good and bad performance acording to the

@@ -1,4 +1,4 @@
-rootdir = 'E:\InstanceSpace_AnomalyDetection\ROC_Subset_Ftrs_Perfs\';
+rootdir = 'E:\InstanceSpace_AnomalyDetection\min_max\';
 
 opts.perf.MaxMin = true;                % True if Y is a performance measure, False if it is a cost measure.
 opts.perf.AbsPerf = true;               % True if an absolute performance measure, False if a relative performance measure
@@ -17,7 +17,7 @@ opts.corr.flag = true;                  % Run feature selection by correlation b
 opts.corr.threshold = 3;                % Top N features (by correlation) per algorithm that are selected
 opts.clust.flag = true;                 % Run feature selection by clustering (Step 3)
 opts.clust.KDEFAULT = 10;               % Default maximum number of clusters
-opts.clust.SILTHRESHOLD = 0.58;         % Minimum accepted value for the average silhoute value
+opts.clust.SILTHRESHOLD = 0.45;         % Minimum accepted value for the average silhoute value
 opts.clust.NTREES = 50;                 % Number of trees for the Random Forest (to determine highest separability in the 2-d projection)
 opts.clust.MaxIter = 1000;
 opts.clust.Replicates = 100;
@@ -35,7 +35,14 @@ opts.footprint.PI = 0.75;               % Purity threshold
 opts.footprint.LOWER_PCTILE = 5;        % Lower distance threshold
 opts.footprint.UPPER_PCTILE = 25;       % Higher distance threshold
 
-opts.selvars.instances = [rootdir 'ROC_Subset_Indices_3_Methods_Only.csv'];  % can leave empty
+opts.selvars.instflag = false;          % True if you want to do a small scale experiment with a percentage of the available instances
+opts.selvars.smallscale = 0.1;          % Percentage of instances to be kept for a small scale experiment
+% You can also provide a file with the indexes of the instances to be used.
+% This should be a csvfile with a single column of integer numbers that
+% should be lower than the number of instances
+opts.selvars.instances = [rootdir 'Indices_3_Methods_Only.csv'];
+
+opts.webproc.flag = true;               % This flag is only useful if the system is being used 'online' through matilda.unimelb.edu.au
 
 % Saving all the information as a JSON file
 fid = fopen([rootdir 'options.json'],'w+');

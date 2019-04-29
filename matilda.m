@@ -346,7 +346,7 @@ if opts.webproc.flag
     
     Xaux = Xraw(subsetIndex,out.featsel.idx);
     Xaux = bsxfun(@rdivide,bsxfun(@minus,Xaux,min(Xaux)),range(Xaux));
-    Xaux = round(256.*Xaux);
+    Xaux = round(255.*Xaux);
     
     writetable(array2table(Xaux,'VariableNames',featlabels,...
                            'RowNames',instlabels(subsetIndex)),...
@@ -354,21 +354,21 @@ if opts.webproc.flag
     
     Xaux = X;
     Xaux = bsxfun(@rdivide,bsxfun(@minus,Xaux,min(Xaux)),range(Xaux));
-    Xaux = round(256.*Xaux);
+    Xaux = round(255.*Xaux);
            
     writetable(array2table(Xaux,'VariableNames',featlabels,'RowNames',instlabels(subsetIndex)),...
                [rootdir 'feature_process_color.csv'],'WriteRowNames',true);
            
     Yaux = Yraw(subsetIndex,:);
     Yaux = bsxfun(@rdivide,bsxfun(@minus,Yaux,min(Yaux(:))),range(Yaux(:)));
-    Yaux = round(256.*Yaux);
+    Yaux = round(255.*Yaux);
     
     writetable(array2table(Yaux,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
                [rootdir 'algorithm_raw_color.csv'],'WriteRowNames',true);
            
     Yaux = Y;
     Yaux = bsxfun(@rdivide,bsxfun(@minus,Yaux,min(Yaux(:))),range(Yaux(:)));
-    Yaux = round(256.*Yaux);
+    Yaux = round(255.*Yaux);
     
     writetable(array2table(Yaux,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
                [rootdir 'algorithm_process_color.csv'],'WriteRowNames',true);

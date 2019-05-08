@@ -341,8 +341,8 @@ writetable(array2table(out.algosel.psel,'VariableNames',{'Best_Algorithm'},...
            [rootdir 'portfolio_svm.csv'],'WriteRowNames',true);
 % Produces files which contain color information only
 if opts.webproc.flag
-    writetable(array2table(parula(256),'VariableNames',{'R','G','B'}),...
-              [rootdir 'color_table.csv'],'WriteRowNames',true);
+%     writetable(array2table(parula(256),'VariableNames',{'R','G','B'}),...
+%               [rootdir 'color_table.csv'],'WriteRowNames',true);
     
     Xaux = Xraw(subsetIndex,out.featsel.idx);
     Xaux = bsxfun(@rdivide,bsxfun(@minus,Xaux,min(Xaux)),range(Xaux));
@@ -422,10 +422,10 @@ if any(issource)
 end
 print(gcf,'-dpng',[rootdir 'sources.png']);
 % Drawing the SVM's predictions of good performance
-h = zeros(1,2);
 cpt = {'BAD','GOOD'};
 for i=1:nalgos
     clf;
+    h = zeros(1,2);
     if sum(out.algosel.Yhat(:,i)==0)~=0
         h(1) = line(out.pbldr.Z(out.algosel.Yhat(:,i)==0,1), ...
                     out.pbldr.Z(out.algosel.Yhat(:,i)==0,2), ...

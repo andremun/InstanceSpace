@@ -8,7 +8,7 @@ else
     rng('default');
     nalgos = size(Ybin,2);
     Kmax = min(opts.KDEFAULT, nfeats);
-    out.eva = evalclusters(X', 'kmeans', 'Silhouette', 'KList', 2:Kmax, ...
+    out.eva = evalclusters(X', 'kmeans', 'Silhouette', 'KList', 3:Kmax, ... % minimum of three features
                                          'Distance', 'correlation');
     K = out.eva.InspectedK(find(out.eva.CriterionValues>opts.SILTHRESHOLD,1)); % If empty make an error that is more meaningfull
     out.clust = bsxfun(@eq, kmeans(X', K, 'Distance', 'correlation', ...

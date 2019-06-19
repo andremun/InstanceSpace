@@ -39,5 +39,5 @@ out.Yhat = out.Yhat==2; % Make it binary
 % [~,out.psel] = max(out.probs,[],2); % Determine which one to suggest
 % - Different strategy to make the SVM recommendation. Use the SVM which
 % has the lowest error.
-[mostaccurate,out.psel] = max(@times,out.Yhat,1-out.modelerr,[],2);
+[mostaccurate,out.psel] = max(bsxfun(@times,out.Yhat,1-out.modelerr),[],2);
 out.psel(mostaccurate<=0) = 0;

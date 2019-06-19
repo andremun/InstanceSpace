@@ -35,7 +35,7 @@ opts.footprint.PI = 0.75;               % Purity threshold
 opts.footprint.LOWER_PCTILE = 5;        % Lower distance threshold
 opts.footprint.UPPER_PCTILE = 25;       % Higher distance threshold
 
-opts.selvars.instflag = false;          % True if you want to do a small scale experiment with a percentage of the available instances
+opts.selvars.instflag = true;          % True if you want to do a small scale experiment with a percentage of the available instances
 opts.selvars.smallscale = 0.1;          % Percentage of instances to be kept for a small scale experiment
 % You can also provide a file with the indexes of the instances to be used.
 % This should be a csvfile with a single column of integer numbers that

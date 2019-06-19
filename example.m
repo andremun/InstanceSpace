@@ -1,4 +1,4 @@
-rootdir = 'E:\InstanceSpace_AnomalyDetection\min_max\';
+rootdir = './';
 
 opts.perf.MaxMin = true;                % True if Y is a performance measure, False if it is a cost measure.
 opts.perf.AbsPerf = true;               % True if an absolute performance measure, False if a relative performance measure
@@ -40,7 +40,7 @@ opts.selvars.smallscale = 0.1;          % Percentage of instances to be kept for
 % You can also provide a file with the indexes of the instances to be used.
 % This should be a csvfile with a single column of integer numbers that
 % should be lower than the number of instances
-opts.selvars.instances = [rootdir 'Indices_3_Methods_Only.csv'];
+opts.selvars.instances = [''];
 
 opts.webproc.flag = true;               % NOTE: MAKE THIS FALSE IF YOU ARE USING THIS CODE LOCALY - This flag is only useful if the system is being used 'online' through matilda.unimelb.edu.au
 

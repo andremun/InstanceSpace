@@ -7,6 +7,7 @@ out.paramgrid = sortrows(2.^(opts.maxcvgrid.*lhsdesign(opts.cvgrid,2) + ...
                              opts.mincvgrid));  % Cross-validation grid
 out.cvmcr = NaN.*ones(opts.cvgrid,nalgos);
 out.paramidx = NaN.*ones(1,nalgos);
+out.modelerr = NaN.*ones(1,nalgos);
 
 for i=1:nalgos
     for j=1:opts.cvgrid
@@ -19,7 +20,7 @@ for i=1:nalgos
                                                                            out.paramgrid(j,:),...
                                                                            false));
     end
-    [~,out.paramidx(i)] = min(out.cvmcr(:,i));
+    [out.modelerr(i),out.paramidx(i)] = min(out.cvmcr(:,i));
     disp(['    ' num2str(i) ' out of ' num2str(nalgos) ' models have been fitted.']);
 end
 
@@ -35,4 +36,8 @@ for i=1:nalgos
     out.probs(:,i) = aux(:,2);
 end
 out.Yhat = out.Yhat==2; % Make it binary
-[~,out.psel] = min(out.probs,[],2); % Determine which one to suggest
+% [~,out.psel] = max(out.probs,[],2); % Determine which one to suggest
+% - Different strategy to make the SVM recommendation. Use the SVM which
+% has the lowest error.
+[mostaccurate,out.psel] = max(@times,out.Yhat,1-out.modelerr,[],2);
+out.psel(mostaccurate<=0) = 0;

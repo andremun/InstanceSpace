@@ -395,8 +395,15 @@ Ys = (Ys-min(Ys(:)))./range(Ys(:));
 for i=1:nalgos
     clf;
     drawScatter(Ys(subsetIndex,i), out.pbldr.Z, strrep(algolabels{i},'_',' '));
+    print(gcf,'-dpng',[rootdir 'scatter_' algolabels{i} '_absolute.png']);
+end
+
+for i=1:nalgos
+    clf;
+    drawScatter((Y(:,i)-min(Y(:,i)))./range(Y(:,i)), out.pbldr.Z, strrep(algolabels{i},'_',' '));
     print(gcf,'-dpng',[rootdir 'scatter_' algolabels{i} '.png']);
 end
+
 % Drawing the footprints for good and bad performance acording to the
 % binary measure
 for i=1:nalgos

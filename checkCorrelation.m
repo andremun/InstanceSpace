@@ -1,7 +1,7 @@
 function [X, out] = checkCorrelation(X,Y,opts)
 
 [~,nfeats] = size(X);
-if opts.flag
+if opts.flag && nfeats>2
     disp('-> Checking for feature correlation with performance.');
     out.rho = corr(X,Y,'rows','pairwise');
     out.rho(isnan(out.rho)) = 0;

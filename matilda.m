@@ -118,11 +118,15 @@ end
 % -------------------------------------------------------------------------
 % If we are only meant to take some observations
 ninst = size(X,1);
-if opts.selvars.instflag
+
+fractional = opts.selvars.smallscaleflag && isfloat(opts.selvars.smallscale);
+fileindexed = opts.selvars.fileidxflag && isfield(opts,'selvars') && isfield(opts.selvars,'instances') && isfile(opts.selvars.fileidx);
+
+if fractional
     disp('-> Creating a small scale experiment for validation.');
     aux = cvpartition(ninst,'HoldOut',opts.selvars.smallscale);
     subsetIndex = aux.test;
-elseif isfield(opts,'selvars') && isfield(opts.selvars,'instances') && isfile(opts.selvars.instances)
+elseif fileindexed
     disp('-> Using a subset of the instances.');
     subsetIndex = false(size(X,1),1);
     aux = table2array(readtable(opts.selvars.instances));
@@ -133,7 +137,7 @@ else
     subsetIndex = true(ninst,1);
 end
 
-if (isfield(opts,'selvars') && isfield(opts.selvars,'instances') && isfile(opts.selvars.instances)) || opts.selvars.instflag
+if fileindexed || fractional
     X = X(subsetIndex,:);
     Y = Y(subsetIndex,:);
     Ybin = Ybin(subsetIndex,:);
@@ -153,6 +157,10 @@ if opts.auto.featsel
     % values for each instance. Eliminate any that have only DIVTHRESHOLD
     % unique values.
     [X, out.diversity] = checkDiversity(X, opts.diversity);
+    nfeats = size(X, 2);
+    if nfeats<2
+        error('Feature selection using diversity is too strict. Please increase the threshold value.')
+    end
     featlabels = featlabels(out.diversity.selvars);
     out.featsel.idx = out.featsel.idx(out.diversity.selvars);
     % Detect correlations between features and algorithms. Keep the top
@@ -184,7 +192,7 @@ disp('-> Completed - Projection calculated. Matrix A:');
 projectionMatrix = cell(3, nfeats+1);
 projectionMatrix(1,2:end) = featlabels;
 projectionMatrix(2:end,1) = {'Z_{1}','Z_{2}'};
-projectionMatrix(2:end,2:end) = num2cell(out.pbldr.A);
+projectionMatrix(2:end,2:end) = num2cell(round(out.pbldr.A,4));
 disp(' ');
 disp(projectionMatrix);
 % -------------------------------------------------------------------------
@@ -287,19 +295,19 @@ performanceTable(end,6:10) = calculateFootprintSummary(out.footprint.hard,...
                                                        out.footprint.spaceArea,...
                                                        out.footprint.spaceDensity);
 out.footprint.performance = cell(nalgos+3,11);
-out.footprint.performance(1,2:end) = {'alpha_a',...
-                                      'alpha_an',...
-                                      'd_a',...
-                                      'd_an',...
-                                      'rho_an',...
-                                      'alpha_p',...
-                                      'alpha_pn',...
-                                      'd_p',...
-                                      'd_pn',...
-                                      'rho_pn'};
+out.footprint.performance(1,2:end) = {'Area_{Good}',...
+                                      'Area_{Good Normalized}',...
+                                      'Density_{Good}',...
+                                      'Density_{Good Normalized}',...
+                                      'Purity_{Good}',...
+                                      'Area_{Best}',...
+                                      'Area_{Best Normalized}',...
+                                      'Density_{Best}',...
+                                      'Density_{Best Normalized}',...
+                                      'Purity_{Best}'};
 out.footprint.performance(2:end-2,1) = algolabels;
 out.footprint.performance(end-1:end,1) = {'beta-easy', 'beta-hard'};
-out.footprint.performance(2:end,2:end) = num2cell(performanceTable);
+out.footprint.performance(2:end,2:end) = num2cell(round(performanceTable,3));
 disp('-> Completed - Footprint analysis results:');
 disp(' ');
 disp(out.footprint.performance);

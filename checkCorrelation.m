@@ -7,7 +7,15 @@ if opts.flag
     out.rho(isnan(out.rho)) = 0;
     [~,row] = sort(abs(out.rho),1,'descend');
     out.selvars = false(1,nfeats);
-    out.selvars(unique(row(1:min(opts.threshold,nfeats),:))) = true;
+    testTreshold = false;
+    while sum(out.selvars)<2
+        if testTreshold
+            warning('Feature selection using correlation was too strict. The threshold value was increased automatically by one.')
+        end
+        out.selvars(unique(row(1:min(opts.threshold,nfeats),:))) = true;
+        opts.threshold = opts.threshold + 1;
+        testTreshold = true;
+    end
     X = X(:,out.selvars);
     disp(['-> Keeping ' num2str(size(X,2)) ' out of ' num2str(nfeats) ' features (correlation).']);
 else

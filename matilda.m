@@ -380,6 +380,13 @@ if opts.webproc.flag
     
     writetable(array2table(Yaux,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
                [rootdir 'algorithm_process_color.csv'],'WriteRowNames',true);
+           
+    Yaux = Y;
+    Yaux = bsxfun(@rdivide,bsxfun(@minus,Yaux,min(Yaux,[],1)),range(Yaux,1));
+    Yaux = round(255.*Yaux);
+    
+    writetable(array2table(Yaux,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
+               [rootdir 'algorithm_process_single_color.csv'],'WriteRowNames',true);
 end
 % ---------------------------------------------------------------------
 % Making all the plots. First, plotting the features and performance as

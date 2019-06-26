@@ -81,7 +81,10 @@ Some auxiliary options are
 Contact
 -------
 
-If you have any suggestions or ideas (e.g. for new features), or if you encounter any problems while running the code, please use the issue tracker or contact us through the MATILDA's [Queries and Feedback](http://matilda.unimelb.edu.au/contact-us) page.
+If you have any suggestions or ideas (e.g. for new features), or if you encounter any problems while running the code, please use the [issue tracker](https://github.com/andremun/InstanceSpace/issues) or contact us through the MATILDA's [Queries and Feedback](http://matilda.unimelb.edu.au/contact-us) page.
 
 
+Acknowledgements
+---
 
+Funding for the development of this code was provided by the Australian Research Council through the Australian Laureate Fellowship FL140100012.

@@ -47,10 +47,6 @@ end
 X = Xbar{:,isfeat};
 Y = Xbar{:,isalgo};
 % -------------------------------------------------------------------------
-% Storing the raw data for further processing, e.g., graphs
-Xraw = X;
-Yraw = Y;
-% -------------------------------------------------------------------------
 % Giving the oportunity to pick and choose which features/algorithms to
 % work with
 featlabels = varlabels(isfeat);
@@ -73,6 +69,10 @@ if isfield(opts,'selvars') && isfield(opts.selvars,'algos')
     algolabels = algolabels(isselalgo);
 end
 nalgos = size(Y,2);
+% -------------------------------------------------------------------------
+% Storing the raw data for further processing, e.g., graphs
+Xraw = X;
+Yraw = Y;
 % -------------------------------------------------------------------------
 % Removing the template data such that it can be used in the labels of
 % graphs and figures.

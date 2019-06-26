@@ -41,20 +41,20 @@ The script ```example.m``` contains code that prepares all the settings used by 
 * ```opts.perf.AbsPerf``` determines whether good performance is defined absolutelly, e.g., missclassification error is lower than a 20%, (set as ```TRUE```), or if it is defined relativelly to the best performing algorithm, e.g., missclassification error is within at least 5% of the best algorithm, (set as ```FALSE```).
 * ```opts.perf.epsilon``` corresponds to the threshold used to calculate good performance. It must be of the type "Double".
 * ```opts.general.betaThreshold``` corresponds to the fraction of algorithms in the portfolio that must have good performance in the instance, for it to be considered an **easy** instance. It should be a value between 0 and 1.
-* ```opts.pbldr.analytic```
-* ```opts.pbldr.ntries```
-* ```opts.oracle.cvgrid```
-* ```opts.oracle.maxcvgrid```
-* ```opts.oracle.mincvgrid```
-* ```opts.oracle.cvfolds```
-* ```opts.footprint.RHO```
+* ```opts.pbldr.analytic``` determines whether the analytic (set as ```TRUE```) or the numerical solution (set as ```FALSE```) solution to the dimensionality reduction problem should be used. Technical details about our custom dimensionality reduction algorithm PBLDR can be found [here](https://doi.org/10.1007/s10994-017-5629-5). We recommend to leave this setting as ```FALSE```, due to the instability of the analyitical solution.
+* ```opts.pbldr.ntries``` number of iterations that the numerical solution of PBLDR is attempted.
+* ```opts.oracle.cvgrid``` number of parameter combinations used to tune the algorithm selection models. These are SVM models with radial basis kernels and two parameters. The parameters are generated using a Latin-hypercube sampling method.
+* ```opts.oracle.maxcvgrid``` maximum value for the SVM parameters. Corresponds to a power of 2.
+* ```opts.oracle.mincvgrid``` minimum value for the SVM parameters. Corresponds to a power of 2.
+* ```opts.oracle.cvfolds``` number of folds of the cross-validation experiment used to tune the parameters of the algorithm selection models.
+* ```opts.footprint.RHO``` minimum density required for a section of a footprint. Footprint analysis constructs a poligon using Delaunay Triangulation. To determine whether each triangle belongs or not to the footprint, 
 * ```opts.footprint.PI```
 * ```opts.footprint.LOWER_PCTILE```
 * ```opts.footprint.UPPER_PCTILE```
-* ```opts.selvars.smallscaleflag```
-* ```opts.selvars.smallscale```
-* ```opts.selvars.fileidxflag```
-* ```opts.selvars.fileidx```
+* ```opts.selvars.smallscaleflag``` by setting this flag as ```TRUE```, you can carry out a small scale experiment using a randomly selected fraction of the original data. This is useful if you have a large dataset with more than 1000 instances, and you want to set up the parameters of the model.
+* ```opts.selvars.smallscale``` fraction taken from the original data on the small scale experiment.
+* ```opts.selvars.fileidxflag``` by setting this flag as ```TRUE```, you can carry out a small scale experiment. This time you must provide a ```.csv``` file that contains in one column the indexes of the instances to be taken. This may be useful if you want to make a more controlled experiment than just randomly selecting instaces.
+* ```opts.selvars.fileidx``` name of the file containing the indexes of the instances.
 
 The software follows a pipeline that attempts to prepare the data for the dimensionality reduction and footprint calculation stages. 
 

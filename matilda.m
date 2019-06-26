@@ -3,7 +3,7 @@ function [out] = matilda(rootdir)
 % matilda.m
 % -------------------------------------------------------------------------
 %
-% By: Mario Andrés Muñoz Acosta
+% By: Mario Andrï¿½s Muï¿½oz Acosta
 %     School of Mathematics and Statistics
 %     The University of Melbourne
 %     Australia
@@ -123,7 +123,8 @@ fractional = opts.selvars.smallscaleflag && isfloat(opts.selvars.smallscale);
 fileindexed = opts.selvars.fileidxflag && isfield(opts,'selvars') && isfield(opts.selvars,'instances') && isfile(opts.selvars.fileidx);
 
 if fractional
-    disp('-> Creating a small scale experiment for validation.');
+    disp('-> Creating a small scale experiment for validation. percentage of subset: ');
+    disp(opts.selvars.smallscale);
     aux = cvpartition(ninst,'HoldOut',opts.selvars.smallscale);
     subsetIndex = aux.test;
 elseif fileindexed
@@ -295,16 +296,16 @@ performanceTable(end,6:10) = calculateFootprintSummary(out.footprint.hard,...
                                                        out.footprint.spaceArea,...
                                                        out.footprint.spaceDensity);
 out.footprint.performance = cell(nalgos+3,11);
-out.footprint.performance(1,2:end) = {'Area_{Good}',...
-                                      'Area_{Good Normalized}',...
-                                      'Density_{Good}',...
-                                      'Density_{Good Normalized}',...
-                                      'Purity_{Good}',...
-                                      'Area_{Best}',...
-                                      'Area_{Best Normalized}',...
-                                      'Density_{Best}',...
-                                      'Density_{Best Normalized}',...
-                                      'Purity_{Best}'};
+out.footprint.performance(1,2:end) = {'Area_Good',...
+                                      'Area_Good_Normalized',...
+                                      'Density_Good',...
+                                      'Density_Good_Normalized',...
+                                      'Purity_Good',...
+                                      'Area_Best',...
+                                      'Area_Best_Normalized',...
+                                      'Density_Best',...
+                                      'Density_Best_Normalized',...
+                                      'Purity_Best'};
 out.footprint.performance(2:end-2,1) = algolabels;
 out.footprint.performance(end-1:end,1) = {'beta-easy', 'beta-hard'};
 out.footprint.performance(2:end,2:end) = num2cell(round(performanceTable,3));
@@ -374,6 +375,13 @@ if opts.webproc.flag
     writetable(array2table(Yaux,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
                [rootdir 'algorithm_raw_color.csv'],'WriteRowNames',true);
            
+   Yaux = Yraw(subsetIndex,:);
+    Yaux = bsxfun(@rdivide,bsxfun(@minus,Yaux,min(Yaux,[],1)),range(Yaux,1));
+    Yaux = round(255.*Yaux);
+    
+    writetable(array2table(Yaux,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
+               [rootdir 'algorithm_raw_single_color.csv'],'WriteRowNames',true);
+           
     Yaux = Y;
     Yaux = bsxfun(@rdivide,bsxfun(@minus,Yaux,min(Yaux(:))),range(Yaux(:)));
     Yaux = round(255.*Yaux);
@@ -388,6 +396,7 @@ if opts.webproc.flag
     writetable(array2table(Yaux,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
                [rootdir 'algorithm_process_single_color.csv'],'WriteRowNames',true);
 end
+if ~opts.webproc.flag
 % ---------------------------------------------------------------------
 % Making all the plots. First, plotting the features and performance as
 % scatter plots.
@@ -503,8 +512,9 @@ axis square;
 print(gcf,'-dpng',[rootdir 'svm_pfolio.png']);
 % -------------------------------------------------------------------------
 % 
+end
 save([rootdir 'results.mat'],'-struct','out'); % Save the main results
 save([rootdir 'workspace.mat']); % Save the full workspace for debugging
 disp(['-> Completed! Elapsed time: ' num2str(toc(startProcess)) 's']);
-disp('EOF');
+disp('EOF:SUCCESS');
 end

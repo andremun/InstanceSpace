@@ -148,12 +148,12 @@ if fileindexed || fractional
 end
 [ninst,nfeats] = size(X);
 % ---------------------------------------------------------------------
-% Automated feature selection
+% Automated feature selection.
+% Keep track of the features that have been removed so we can use them
+% later
+out.featsel.idx = 1:nfeats;
 if opts.auto.featsel
     disp('-> Auto feature selection.');
-    % Keep track of the features that have been removed so we can use them
-    % later
-    out.featsel.idx = 1:nfeats;
     % Check for diversity, i.e., we want features that have non-repeating
     % values for each instance. Eliminate any that have only DIVTHRESHOLD
     % unique values.

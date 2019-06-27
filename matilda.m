@@ -40,6 +40,10 @@ isfeat = strncmpi(varlabels,'feature_',8);
 isalgo = strncmpi(varlabels,'algo_',5);
 issource = strcmpi(varlabels,'source');
 instlabels = Xbar{:,isname};
+if isnumeric(isntlabels)
+    instlabels = num2cell(instlabels);
+    instlabels = cellfun(@(x) num2str(x),instlabels,'UniformOutput',false);
+end
 if any(issource)
     S = categorical(Xbar{:,issource});
     sourcelabels = cellstr(unique(S));

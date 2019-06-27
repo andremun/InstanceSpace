@@ -67,33 +67,33 @@ The toolkit uses SVMs with radial basis kernels as algorithm selection models, t
 
 The toolkit uses Delaunay Triangulation to define the regions in the space where we statistically infer good algorithm performance. The triangulation is then pruned to remove those sections for which the evidence is poor or non-existing. Details of the algorithms employed and these settings can be found [here](https://doi.org/10.1162/evco_a_00194). We suggest not to modify the maximum and minimum sizes.
 
-•	```opts.footprint.RHO``` minimum density required for a section of a footprint.
-•	```opts.footprint.PI``` minimum purity required for a section of a footprint.
-•	```opts.footprint.LOWER_PCTILE``` minimum size for the side of a triangle, as a percent of the largest distance.
-•	```opts.footprint.UPPER_PCTILE``` maximum size for the side of a triangle, as a percent of the largest distance.
+-	```opts.footprint.RHO``` minimum density required for a section of a footprint.
+-	```opts.footprint.PI``` minimum purity required for a section of a footprint.
+-	```opts.footprint.LOWER_PCTILE``` minimum size for the side of a triangle, as a percent of the largest distance.
+-	```opts.footprint.UPPER_PCTILE``` maximum size for the side of a triangle, as a percent of the largest distance.
 
 ### Automatic data bounding and scaling
 
-* ```opts.auto.preproc```
-* ```opts.bound.flag```
-* ```opts.norm.flag```
+- ```opts.auto.preproc```
+- ```opts.bound.flag```
+- ```opts.norm.flag```
 
 
-* ```opts.auto.featsel```
-* ```opts.diversity.flag```
-* ```opts.diversity.threshold```
-* ```opts.corr.flag```
-* ```opts.corr.threshold```
-* ```opts.clust.flag```
-* ```opts.clust.KDEFAULT```
-* ```opts.clust.SILTHRESHOLD```
-* ```opts.clust.NTREES```
-* ```opts.clust.MaxIter```
-* ```opts.clust.Replicates```
+- ```opts.auto.featsel```
+- ```opts.diversity.flag```
+- ```opts.diversity.threshold```
+- ```opts.corr.flag```
+- ```opts.corr.threshold```
+- ```opts.clust.flag```
+- ```opts.clust.KDEFAULT```
+- ```opts.clust.SILTHRESHOLD```
+- ```opts.clust.NTREES```
+- ```opts.clust.MaxIter```
+- ```opts.clust.Replicates```
 
 Some auxiliary options are
 
-* ```opts.webproc.flag```
+- ```opts.webproc.flag```
 
 ## Contact
 

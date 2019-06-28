@@ -15,7 +15,7 @@ This repository provides a set of MATLAB tools to carry out a complete Instance 
 
 ## Installation Instructions
 
-The only requirement for the software to run is to have a current version of MATLAB. It has been tested and known to work properly in version r2018b. Earlier versions may fail to support the processing of ```.json``` files. To make use of all functionalities, the [LIBSVM](https://www.csie.ntu.edu.tw/~cjlin/libsvm/) library must be installed. This repository contains the Windows binaries of LIBSVM, but other platforms require compilation from source code. We suggest adding the software folder to the MATLAB path.
+The only requirement for the software to run is to have a current version of [MATLAB](http://www.mathworks.com). It has been tested and known to work properly in version r2018b. Earlier versions may fail to support the processing of ```.json``` files. To make use of all functionalities, the [LIBSVM](https://www.csie.ntu.edu.tw/~cjlin/libsvm/) library must be installed. This repository contains the Windows binaries of LIBSVM, but other platforms require compilation from source code. We suggest adding the software folder to the MATLAB path.
 
 ## Working with the code
 
@@ -34,14 +34,14 @@ Moreover, empty cells, NaN or null values are not allowed. We expect you to hand
 
 ## Options
 
-The script ```example.m``` contains code that prepares all the settings used by the code. Broadly, there are settings required for the analysis itself, and settings for the pre-processing of the data. For the former these are divided into general, dimensionality reduction, algorithm selection and footprint construction settings. For the latter, the toolkit has routines for bounding outliers, scale the data and select features.
+The script ```example.m``` contains code that prepares all the settings used by the code. Broadly, there are settings required for the analysis itself, settings for the pre-processing of the data, and output settings. For the first these are divided into general, dimensionality reduction, algorithm selection and footprint construction settings. For the second, the toolkit has routines for bounding outliers, scale the data and select features.
 
 ### General settings
 
 -	```opts.perf.MaxMin``` determines whether the algorithm performance values provided are **efficiency** measures that should be maximised (set as ```TRUE```), or **cost** measures that should be minimised (set as ```FALSE```).
 -	```opts.perf.AbsPerf``` determines whether good performance is defined absolutely, e.g., misclassification error is lower than a 20%, (set as ```TRUE```), or if it is defined relatively to the best performing algorithm, e.g., misclassification error is within at least 5% of the best algorithm, (set as ```FALSE```).
 -	```opts.perf.epsilon``` corresponds to the threshold used to calculate good performance. It must be of the type "Double".
--	```opts.general.betaThreshold``` corresponds to the fraction of algorithms in the portfolio that must have good performance in the instance, for it to be considered an **easy** instance. It should be a value between 0 and 1.
+-	```opts.general.betaThreshold``` corresponds to the fraction of algorithms in the portfolio that must have good performance in the instance, for it to be considered an **easy** instance. It must be a value between 0 and 1.
 -	```opts.selvars.smallscaleflag``` by setting this flag as ```TRUE```, you can carry out a small scale experiment using a randomly selected fraction of the original data. This is useful if you have a large dataset with more than 1000 instances, and you want to explore the parameters of the model.
 -	```opts.selvars.smallscale``` fraction taken from the original data on the small scale experiment.
 -	```opts.selvars.fileidxflag``` by setting this flag as ```TRUE```, you can carry out a small scale experiment. This time you must provide a ```.csv``` file that contains in one column the indices of the instances to be taken. This may be useful if you want to make a more controlled experiment than just randomly selecting instances.
@@ -74,26 +74,33 @@ The toolkit uses Delaunay Triangulation to define the regions in the space where
 
 ### Automatic data bounding and scaling
 
-- ```opts.auto.preproc```
-- ```opts.bound.flag```
-- ```opts.norm.flag```
+The toolkit implements simple routines to bound outliers and scale the data. **These routines not perfect by any means, and you should pre-process your data independently if you see this fit**. However, they should give you some idea of the results that you may be able to achieve. In general, we recommend that the **data is close to normaly distributed** due to the linear nature of PBLDR.
 
+- ```opts.auto.preproc``` turns on (set as ```TRUE```) the automatic pre-processing.
+- ```opts.bound.flag``` turns on (set as ```TRUE```) data bounding. This sub-routine calculates the median and the interquartile range ([IQR](https://en.wikipedia.org/wiki/Interquartile_range)) of each feature and performance measure, and bounds the data to the median plus or minus five times the IQR.
+- ```opts.norm.flag``` turns on (set as ```TRUE```) scalling. This sub-routine makes positive each feature and performance measure. Then it calculates a [box-cox transformation](https://en.wikipedia.org/wiki/Power_transform#Box%E2%80%93Cox_transformation) to stabilise the variance, and a [Z-transformation](https://en.wikipedia.org/wiki/Standard_score) to standarise the data. The result are features and performance measures that are close to normal.
 
-- ```opts.auto.featsel```
-- ```opts.diversity.flag```
-- ```opts.diversity.threshold```
-- ```opts.corr.flag```
-- ```opts.corr.threshold```
-- ```opts.clust.flag```
-- ```opts.clust.KDEFAULT```
-- ```opts.clust.SILTHRESHOLD```
-- ```opts.clust.NTREES```
-- ```opts.clust.MaxIter```
-- ```opts.clust.Replicates```
+### Automatic feature selection
 
-Some auxiliary options are
+The toolkit implements simple routines to select features, given their cross-correlation and correlation to performance. Ideally, we want the smallest number of ortogonal and predictive features. **These routines not perfect by any means, and you should pre-process your data independently if you see this fit**. However, they should give you some idea of the results that you may be able to achieve. In general, we recommend **not using more than 10 features** for PBLDR, due to the numerical nature of its solution and issues in identifiying meaningful linear trends.
 
-- ```opts.webproc.flag```
+- ```opts.auto.featsel``` turns on (set as ```TRUE```) the automatic feature selection.
+- ```opts.diversity.flag``` turns on (set as ```TRUE```) the selection by diversity. This sub-routine identifies the unique values for each feature. If the fraction of unique values is below a threshold, the feature is discarded. This sub-routine works well for features that are expected to be **real numbers that do not repeat between instances**. An integer/binary feature is likely to be discarded by this routine, so it should be used with caution.
+- ```opts.diversity.threshold``` diversity threshold. It must be a value between 0 and 1.
+- ```opts.corr.flag``` turns on (set as ```TRUE```) the selection by correlation between features and performance measures. This sub-routine calculates the [Pearson correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) between the features and the performance. Then it takes its absolute value, and sorts them from largest to lowest. Then, for each algorithm, it takes the top features as defined by the threshold. It automatically bounds itself to a minimum of 3 features. We recommend using this routine, particularly if the number of features is higher than 20.
+- ```opts.corr.threshold``` correlation threshold. It should be a value higher than 1.
+- ```opts.clust.flag```  turns on (set as ```TRUE```) the selection by clustering. It works by defining the [Pearson correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) as a dissimilarity metric between features. Then, [k-means clustering](https://en.wikipedia.org/wiki/K-means_clustering) is used to identify groups of similar features. To select one feature per group, the algorithm first projects the data into two dimensions using Principal Components Analysis ((PCA)[https://en.wikipedia.org/wiki/Principal_component_analysis]) and then [Random Forests](https://en.wikipedia.org/wiki/Random_forest) to predict whether an instance is easy or not for a given algorithm. Then, the subset of features that gives the most accurate models is selected. This routine is **potentially very computationally expensive** due to the multiple layer training process. However, it is our recommended approach to select the most relevant features. At the moment, this routine tests all possible combinations, so it should not be used if there are more than 20 features available.
+- ```opts.clust.KDEFAULT``` number of default clusters. The routine assumes at least 3 clusters and no more than the number of features. Ideally it **should not** be a value larger than 10.
+- ```opts.clust.SILTHRESHOLD``` the routine uses [Silohuette analysis](https://en.wikipedia.org/wiki/Silhouette_(clustering)) to automatically infer the existing number of clusters. It must be a value between 0 and 1, preferably between 0.4 and 0.8.
+- ```opts.clust.NTREES``` number of threes used by the Random Forest models.
+- ```opts.clust.MaxIter``` number of iterations used to converge the k-means algorithm.
+- ```opts.clust.Replicates``` number of repeats carried out of the k-means algorithm.
+
+### Output settings
+
+These settings result in more information being stored in files or presented in the console output.
+
+- ```opts.webproc.flag``` This flag produces the output files employed to draw the figures in MATILDA's web tools (click [here](https://matilda.unimelb.edu.au/newuser) to open an account). It should be kept as false.
 
 ## Contact
 

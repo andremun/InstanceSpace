@@ -8,7 +8,7 @@ if opts.flag && nfeats>2
     [~,row] = sort(abs(out.rho),1,'descend');
     out.selvars = false(1,nfeats);
     testTreshold = false;
-    while sum(out.selvars)<2
+    while sum(out.selvars)<3
         if testTreshold
             warning('Feature selection using correlation was too strict. The threshold value was increased automatically by one.')
         end

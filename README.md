@@ -11,7 +11,7 @@ Instance Space Analysis is a methodology for the assessment of the strengths and
 
 The unique advantage of visualizing algorithm performance in the instance space, rather than as a small set of summary statistics averaged across a selected collection of instances, is the nuanced analysis that becomes possible to explain strengths and weaknesses and examine interesting variations in performance that may be hidden by tables of summary statistics.
 
-This repository provides a set of MATLAB tools to carry out a complete Instance Space Analysis in an automated pipeline. It is also the computational engine that powers the Melbourne Algorithm Test Instance Library with Data Analytics ([MATILDA](http://matilda.unimelb.edu.au/)) web tools for online analysis. For further information on the Instance Space Analysis methodology can be found [here](http://matilda.unimelb.edu.au/our-methodology).
+This repository provides a set of MATLAB tools to carry out a complete Instance Space Analysis in an automated pipeline. It is also the computational engine that powers the Melbourne Algorithm Test Instance Library with Data Analytics ([MATILDA](http://matilda.unimelb.edu.au/matilda/)) web tools for online analysis. For further information on the Instance Space Analysis methodology can be found [here](http://matilda.unimelb.edu.au/matilda/our-methodology).
 
 ## Installation Instructions
 
@@ -30,7 +30,7 @@ The ```metadata.csv``` file should contain a table where each row corresponds to
 -	**feature_name** The keyword "feature_" concatenated with feature name. For instance, if feature name is "density", header name should be mentioned as "feature_density". If name consists of more than one word, each word should be separated by "_" (spaces are not allowed). There must be more than two features for the software to work. We expect the features to be of the type "Double".
 -	**algo_name** The keyword "algo_" concatenated with algorithm name. For instance, if algorithm name is "Greedy", column header should be "algo_greedy". If name consists of more than one word, each word should be separated by "_" (spaces are not allowed). You can add the performance of more than one algorithm in the same ```.csv```. We expect the algorithm performance to be of the type "Double".
 
-Moreover, empty cells, NaN or null values are not allowed. We expect you to handle missing values in your data before processing. You may use [this file](https://matilda.unimelb.edu.au/matildadata/graph_coloring_problem/metadata.csv) as reference.
+Moreover, empty cells, NaN or null values are not allowed. We expect you to handle missing values in your data before processing. You may use [this file](https://matilda.unimelb.edu.au/matilda/matildadata/graph_coloring_problem/metadata.csv) as reference.
 
 ## Options
 
@@ -100,11 +100,11 @@ The toolkit implements simple routines to select features, given their cross-cor
 
 These settings result in more information being stored in files or presented in the console output.
 
-- ```opts.webproc.flag``` This flag produces the output files employed to draw the figures in MATILDA's web tools (click [here](https://matilda.unimelb.edu.au/newuser) to open an account). It is recommended to leave this setting as false.
+- ```opts.webproc.flag``` This flag produces the output files employed to draw the figures in MATILDA's web tools (click [here](https://matilda.unimelb.edu.au/matilda/newuser) to open an account). It is recommended to leave this setting as false.
 
 ## Contact
 
-If you have any suggestions or ideas (e.g. for new features), or if you encounter any problems while running the code, please use the [issue tracker](https://github.com/andremun/InstanceSpace/issues) or contact us through the MATILDA's [Queries and Feedback](http://matilda.unimelb.edu.au/contact-us) page.
+If you have any suggestions or ideas (e.g. for new features), or if you encounter any problems while running the code, please use the [issue tracker](https://github.com/andremun/InstanceSpace/issues) or contact us through the MATILDA's [Queries and Feedback](http://matilda.unimelb.edu.au/matilda/contact-us) page.
 
 ## Acknowledgements
 

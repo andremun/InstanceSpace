@@ -1,0 +1,1 @@
+mex -v -largeArrayDims -cxx getCollisionIdx.cpp -output getCollisionIdx 

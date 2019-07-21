@@ -1,6 +1,6 @@
-function [out] = matilda(rootdir)
+function [model] = trainIS(rootdir)
 % -------------------------------------------------------------------------
-% matilda.m
+% trainIS.m
 % -------------------------------------------------------------------------
 %
 % By: Mario Andres Munoz Acosta
@@ -110,10 +110,10 @@ if opts.auto.preproc
     % Eliminate extreme outliers, i.e., any point that exceedes 5 times the
     % inter quantile range, by bounding them to that value.
     disp('-> Removing extreme outliers from the feature values.');
-    [X, out.bound] = boundOutliers(X, opts.bound);
+    [X, model.bound] = boundOutliers(X, opts.bound);
     % Normalize the data using Box-Cox and Z-transformations
     disp('-> Auto-normalizing the data.');
-    [X, Y, out.norm] = autoNormalize(X, Y, opts.norm);
+    [X, Y, model.norm] = autoNormalize(X, Y, opts.norm);
 end
 % -------------------------------------------------------------------------
 % If we are only meant to take some observations
@@ -152,47 +152,47 @@ end
 % Automated feature selection.
 % Keep track of the features that have been removed so we can use them
 % later
-out.featsel.idx = 1:nfeats;
+model.featsel.idx = 1:nfeats;
 if opts.auto.featsel
     disp('-------------------------------------------------------------------------');
     disp('-> Auto feature selection.');
     % Check for diversity, i.e., we want features that have non-repeating
     % values for each instance. Eliminate any that have only DIVTHRESHOLD
     % unique values.
-    [X, out.diversity] = checkDiversity(X, opts.diversity);
-    featlabels = featlabels(out.diversity.selvars);
-    out.featsel.idx = out.featsel.idx(out.diversity.selvars);
+    [X, model.diversity] = checkDiversity(X, opts.diversity);
+    featlabels = featlabels(model.diversity.selvars);
+    model.featsel.idx = model.featsel.idx(model.diversity.selvars);
     % Detect correlations between features and algorithms. Keep the top
     % CORTHRESHOLD correlated features for each algorithm
-    [X, out.corr] = checkCorrelation(X, Y, opts.corr);
+    [X, model.corr] = checkCorrelation(X, Y, opts.corr);
     nfeats = size(X, 2);
-    featlabels = featlabels(out.corr.selvars);
-    out.featsel.idx = out.featsel.idx(out.corr.selvars);
+    featlabels = featlabels(model.corr.selvars);
+    model.featsel.idx = model.featsel.idx(model.corr.selvars);
     % Detect similar features, by clustering them according to their
     % correlation. We assume that the lowest value possible is best, as
     % this will improve the projection into two dimensions. We set a hard
     % limit of 10 features. The selection criteria is an average silhouete
     % value above 0.65
     disp('-> Selecting features based on correlation clustering.');
-    [X, out.clust] = clusterFeatureSelection(X, Ybin,...
+    [X, model.clust] = clusterFeatureSelection(X, Ybin,...
                                              opts.clust);
     disp(['-> Keeping ' num2str(size(X, 2)) ' out of ' num2str(nfeats) ...
           ' features (clustering).']);
     nfeats = size(X, 2);
-    featlabels = featlabels(out.clust.selvars);
-    out.featsel.idx = out.featsel.idx(out.clust.selvars);
+    featlabels = featlabels(model.clust.selvars);
+    model.featsel.idx = model.featsel.idx(model.clust.selvars);
 end
 % ---------------------------------------------------------------------
 % This is the final subset of features. Calculate the two dimensional
 % projection using the PBLDR algorithm (Munoz et al. Mach Learn 2018)
 disp('-------------------------------------------------------------------------');
 disp('-> Finding optimum projection.');
-out.pbldr = PBLDR(X, Y, opts.pbldr);
+model.pbldr = PBLDR(X, Y, opts.pbldr);
 disp('-> Completed - Projection calculated. Matrix A:');
 projectionMatrix = cell(3, nfeats+1);
 projectionMatrix(1,2:end) = featlabels;
 projectionMatrix(2:end,1) = {'Z_{1}','Z_{2}'};
-projectionMatrix(2:end,2:end) = num2cell(round(out.pbldr.A,4));
+projectionMatrix(2:end,2:end) = num2cell(round(model.pbldr.A,4));
 disp(' ');
 disp(projectionMatrix);
 % ---------------------------------------------------------------------
@@ -200,17 +200,17 @@ disp(projectionMatrix);
 % correlations of the different edges.
 disp('-------------------------------------------------------------------------');
 disp('-> Finding empirical bounds.');
-out.sbound = findSpaceBounds(X,out.pbldr.A);
+model.sbound = findSpaceBounds(X,model.pbldr.A);
 % -------------------------------------------------------------------------
 % Algorithm selection. Fit a model that would separate the space into
 % classes of good and bad performance. 
 disp('-------------------------------------------------------------------------');
 disp('-> Fitting SVM prediction models. This may take a while...');
-out.algosel = fitoracle(out.pbldr.Z, Ybin, opts.oracle);
+model.algosel = fitoracle(model.pbldr.Z, Ybin, opts.oracle);
 disp('-> Cross-validation model error:')
 cvModelAccuracy = cell(2,nalgos);
 cvModelAccuracy(1,:) = algolabels;
-cvModelAccuracy(2,:) = num2cell(round(100.*out.algosel.modelerr,1));
+cvModelAccuracy(2,:) = num2cell(round(100.*model.algosel.modelerr,1));
 disp(' ');
 disp(cvModelAccuracy);
 % ---------------------------------------------------------------------
@@ -219,40 +219,40 @@ disp(cvModelAccuracy);
 % This is also the maximum area possible for a footprint.
 disp('-------------------------------------------------------------------------');
 disp('-> Calculating the space area and density.');
-spaceFootprint = findPureFootprint(out.pbldr.Z, true(ninst,1), opts.footprint);
-spaceFootprint = calculateFootprintPerformance(spaceFootprint, out.pbldr.Z, true(ninst,1));
-out.footprint.spaceArea = spaceFootprint.area;
-out.footprint.spaceDensity = spaceFootprint.density;
-disp(['    Area: ' num2str(out.footprint.spaceArea) ' | Density: ' num2str(out.footprint.spaceDensity)]);
+spaceFootprint = findPureFootprint(model.pbldr.Z, true(ninst,1), opts.footprint);
+spaceFootprint = calculateFootprintPerformance(spaceFootprint, model.pbldr.Z, true(ninst,1));
+model.footprint.spaceArea = spaceFootprint.area;
+model.footprint.spaceDensity = spaceFootprint.density;
+disp(['    Area: ' num2str(model.footprint.spaceArea) ' | Density: ' num2str(model.footprint.spaceDensity)]);
 % ---------------------------------------------------------------------
 % This loop will calculate the footprints for good/bad instances and the
 % best algorithm.
 disp('-------------------------------------------------------------------------');
 disp('-> Calculating the algorithm footprints.');
-out.footprint.good = cell(1,nalgos);
-out.footprint.bad = cell(1,nalgos);
-out.footprint.best = cell(1,nalgos);
+model.footprint.good = cell(1,nalgos);
+model.footprint.bad = cell(1,nalgos);
+model.footprint.best = cell(1,nalgos);
 if opts.footprint.usesim
     % Use the SVM prediction data to calculate the footprints
-    Yfoot = out.algosel.Yhat;
-    Pfoot = out.algosel.psel;
-    Bfoot = sum(out.algosel.Yhat,2)>opts.general.betaThreshold*nalgos;
+    Yfoot = model.algosel.Yhat;
+    Pfoot = model.algosel.psel;
+    Bfoot = sum(model.algosel.Yhat,2)>opts.general.betaThreshold*nalgos;
 else
     % Use the actual data to calculate the footprints
     Yfoot = Ybin;
-    Pfoot = portfolilo;
+    Pfoot = portfolio;
     Bfoot = beta;
 end
 
 for i=1:nalgos
     tic;
-    out.footprint.good{i} = findPureFootprint(out.pbldr.Z,...
+    model.footprint.good{i} = findPureFootprint(model.pbldr.Z,...
                                               Yfoot(:,i),...
                                               opts.footprint);
-    out.footprint.bad{i} = findPureFootprint( out.pbldr.Z,...
+    model.footprint.bad{i} = findPureFootprint( model.pbldr.Z,...
                                              ~Yfoot(:,i),...
                                               opts.footprint);
-    out.footprint.best{i} = findPureFootprint(out.pbldr.Z,...
+    model.footprint.best{i} = findPureFootprint(model.pbldr.Z,...
                                               Pfoot==i,...
                                               opts.footprint);
     disp(['    -> Algorithm No. ' num2str(i) ' - Elapsed time: ' num2str(toc,'%.2f\n') 's']);
@@ -266,15 +266,18 @@ for i=1:nalgos
     for j=1:nalgos
         if i~=j
             startTest = tic;
-            out.footprint.best{i} = calculateFootprintCollisions(out.footprint.best{i}, ...
-                                                                 out.footprint.best{j});
+            model.footprint.best{i} = calculateFootprintCollisions_old(model.footprint.best{i}, ...
+                                                                     model.footprint.best{j}, ...
+                                                                     opts.footprint);
             disp(['    -> Test algorithm No. ' num2str(j) ' - Elapsed time: ' num2str(toc(startTest),'%.2f\n') 's']);
         end
     end
-    out.footprint.good{i} = calculateFootprintCollisions(out.footprint.good{i},...
-                                                         out.footprint.bad{i});
-    out.footprint.bad{i} = calculateFootprintCollisions(out.footprint.bad{i},...
-                                                        out.footprint.good{i});
+    model.footprint.good{i} = calculateFootprintCollisions_old(model.footprint.good{i},...
+                                                         model.footprint.bad{i},...
+                                                         opts.footprint);
+    model.footprint.bad{i} = calculateFootprintCollisions_old(model.footprint.bad{i},...
+                                                        model.footprint.good{i},...
+                                                         opts.footprint);
     disp(['-> Base algorithm No. ' num2str(i) ' - Elapsed time: ' num2str(toc(startBase),'%.2f\n') 's']);
 end
 % -------------------------------------------------------------------------
@@ -283,50 +286,52 @@ disp('-------------------------------------------------------------------------'
 disp('-> Calculating the footprint''s area and density.');
 performanceTable = zeros(nalgos+2,10);
 for i=1:nalgos
-    out.footprint.best{i} = calculateFootprintPerformance(out.footprint.best{i},...
-                                                          out.pbldr.Z,...
-                                                          Pfolio==i);
-    out.footprint.good{i} = calculateFootprintPerformance(out.footprint.good{i},...
-                                                   out.pbldr.Z,...
+    model.footprint.best{i} = calculateFootprintPerformance(model.footprint.best{i},...
+                                                          model.pbldr.Z,...
+                                                          Pfoot==i);
+    model.footprint.good{i} = calculateFootprintPerformance(model.footprint.good{i},...
+                                                   model.pbldr.Z,...
                                                    Yfoot(:,i));
-    out.footprint.bad{i} = calculateFootprintPerformance( out.footprint.bad{i},...
-                                                   out.pbldr.Z,...
+    model.footprint.bad{i} = calculateFootprintPerformance( model.footprint.bad{i},...
+                                                   model.pbldr.Z,...
                                                   ~Yfoot(:,i));
-    performanceTable(i,:) = [calculateFootprintSummary(out.footprint.good{i},...
-                                                       out.footprint.spaceArea,...
-                                                       out.footprint.spaceDensity), ...
-                             calculateFootprintSummary(out.footprint.best{i},...
-                                                       out.footprint.spaceArea,...
-                                                       out.footprint.spaceDensity)];
+    performanceTable(i,:) = [calculateFootprintSummary(model.footprint.good{i},...
+                                                       model.footprint.spaceArea,...
+                                                       model.footprint.spaceDensity), ...
+                             calculateFootprintSummary(model.footprint.best{i},...
+                                                       model.footprint.spaceArea,...
+                                                       model.footprint.spaceDensity)];
 end
 % -------------------------------------------------------------------------
 % Beta hard footprints. First step is to calculate them.
 disp('-------------------------------------------------------------------------');
 disp('-> Calculating beta-footprints.');
-out.footprint.easy = findPureFootprint(out.pbldr.Z,  Bfoot, opts.footprint);
-out.footprint.hard = findPureFootprint(out.pbldr.Z, ~Bfoot, opts.footprint);
+model.footprint.easy = findPureFootprint(model.pbldr.Z,  Bfoot, opts.footprint);
+model.footprint.hard = findPureFootprint(model.pbldr.Z, ~Bfoot, opts.footprint);
 % Remove the collisions
-out.footprint.easy = calculateFootprintCollisions(out.footprint.easy,...
-                                                  out.footprint.hard);
-out.footprint.hard = calculateFootprintCollisions(out.footprint.hard,...
-                                                  out.footprint.easy);
+model.footprint.easy = calculateFootprintCollisions_old(model.footprint.easy,...
+                                                  model.footprint.hard,...
+                                                         opts.footprint);
+model.footprint.hard = calculateFootprintCollisions_old(model.footprint.hard,...
+                                                  model.footprint.easy,...
+                                                         opts.footprint);
 % Calculating performance
 disp('-> Calculating the beta-footprint''s area and density.');
-out.footprint.easy = calculateFootprintPerformance(out.footprint.easy,...
-                                                   out.pbldr.Z,...
+model.footprint.easy = calculateFootprintPerformance(model.footprint.easy,...
+                                                   model.pbldr.Z,...
                                                    Bfoot);
-out.footprint.hard = calculateFootprintPerformance(out.footprint.hard,...
-                                                   out.pbldr.Z,...
+model.footprint.hard = calculateFootprintPerformance(model.footprint.hard,...
+                                                   model.pbldr.Z,...
                                                    ~Bfoot);
-performanceTable(end-1,6:10) = calculateFootprintSummary(out.footprint.easy,...
-                                                         out.footprint.spaceArea,...
-                                                         out.footprint.spaceDensity);
-performanceTable(end,6:10) = calculateFootprintSummary(out.footprint.hard,...
-                                                       out.footprint.spaceArea,...
-                                                       out.footprint.spaceDensity);
-out.footprint.performance = cell(nalgos+3,11);
+performanceTable(end-1,6:10) = calculateFootprintSummary(model.footprint.easy,...
+                                                         model.footprint.spaceArea,...
+                                                         model.footprint.spaceDensity);
+performanceTable(end,6:10) = calculateFootprintSummary(model.footprint.hard,...
+                                                       model.footprint.spaceArea,...
+                                                       model.footprint.spaceDensity);
+model.footprint.performance = cell(nalgos+3,11);
 disp('-------------------------------------------------------------------------');
-out.footprint.performance(1,2:end) = {'Area_Good',...
+model.footprint.performance(1,2:end) = {'Area_Good',...
                                       'Area_Good_Normalized',...
                                       'Density_Good',...
                                       'Density_Good_Normalized',...
@@ -336,20 +341,20 @@ out.footprint.performance(1,2:end) = {'Area_Good',...
                                       'Density_Best',...
                                       'Density_Best_Normalized',...
                                       'Purity_Best'};
-out.footprint.performance(2:end-2,1) = algolabels;
-out.footprint.performance(end-1:end,1) = {'beta-easy', 'beta-hard'};
-out.footprint.performance(2:end,2:end) = num2cell(round(performanceTable,3));
+model.footprint.performance(2:end-2,1) = algolabels;
+model.footprint.performance(end-1:end,1) = {'beta-easy', 'beta-hard'};
+model.footprint.performance(2:end,2:end) = num2cell(round(performanceTable,3));
 disp('-> Completed - Footprint analysis results:');
 disp(' ');
-disp(out.footprint.performance);
+disp(model.footprint.performance);
 % ---------------------------------------------------------------------
 % Storing the output data as a CSV files. This is for easier
 % post-processing. All workspace data will be stored in a matlab file
 % later.
-writetable(array2table(out.pbldr.Z,'VariableNames',{'z_1','z_2'},...
+writetable(array2table(model.pbldr.Z,'VariableNames',{'z_1','z_2'},...
                        'RowNames',instlabels(subsetIndex)),...
            [rootdir 'coordinates.csv'],'WriteRowNames',true);
-writetable(array2table(Xraw(subsetIndex,out.featsel.idx),'VariableNames',featlabels,...
+writetable(array2table(Xraw(subsetIndex,model.featsel.idx),'VariableNames',featlabels,...
                        'RowNames',instlabels(subsetIndex)),...
            [rootdir 'feature_raw.csv'],'WriteRowNames',true);
 writetable(array2table(X,'VariableNames',featlabels,'RowNames',instlabels(subsetIndex)),...
@@ -358,9 +363,9 @@ writetable(array2table(Yraw(subsetIndex,:),'VariableNames',algolabels,'RowNames'
            [rootdir 'algorithm_raw.csv'],'WriteRowNames',true);
 writetable(array2table(Y,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
            [rootdir 'algorithm_process.csv'],'WriteRowNames',true);
-writetable(cell2table(out.footprint.performance(2:end,[3 5 6 8 10 11]),...
-                      'VariableNames',out.footprint.performance(1,[3 5 6 8 10 11]),...
-                      'RowNames',out.footprint.performance(2:end,1)),...
+writetable(cell2table(model.footprint.performance(2:end,[3 5 6 8 10 11]),...
+                      'VariableNames',model.footprint.performance(1,[3 5 6 8 10 11]),...
+                      'RowNames',model.footprint.performance(2:end,1)),...
            [rootdir 'footprint_performance.csv'],'WriteRowNames',true);
 writetable(cell2table(projectionMatrix(2:end,2:end),...
                       'VariableNames',projectionMatrix(1,2:end),...
@@ -372,10 +377,10 @@ writetable(array2table(Ybin,'VariableNames',algolabels,...
 writetable(array2table(portfolio,'VariableNames',{'Best_Algorithm'},...
                        'RowNames',instlabels(subsetIndex)),...
            [rootdir 'portfolio.csv'],'WriteRowNames',true);
-writetable(array2table(out.algosel.Yhat,'VariableNames',algolabels,...
+writetable(array2table(model.algosel.Yhat,'VariableNames',algolabels,...
                        'RowNames',instlabels(subsetIndex)),...
            [rootdir 'algorithm_svm.csv'],'WriteRowNames',true);
-writetable(array2table(out.algosel.psel,'VariableNames',{'Best_Algorithm'},...
+writetable(array2table(model.algosel.psel,'VariableNames',{'Best_Algorithm'},...
                        'RowNames',instlabels(subsetIndex)),...
            [rootdir 'portfolio_svm.csv'],'WriteRowNames',true);
 % Produces files which contain color information only
@@ -383,7 +388,7 @@ if opts.webproc.flag
 %     writetable(array2table(parula(256),'VariableNames',{'R','G','B'}),...
 %               [rootdir 'color_table.csv'],'WriteRowNames',true);
     
-    Xaux = Xraw(subsetIndex,out.featsel.idx);
+    Xaux = Xraw(subsetIndex,model.featsel.idx);
     Xaux = bsxfun(@rdivide,bsxfun(@minus,Xaux,min(Xaux)),range(Xaux));
     Xaux = round(255.*Xaux);
     
@@ -433,7 +438,7 @@ end
 % scatter plots.
 for i=1:nfeats
     clf;
-    drawScatter((X(:,i)-min(X(:,i)))./range(X(:,i)), out.pbldr.Z, strrep(featlabels{i},'_',' '));
+    drawScatter((X(:,i)-min(X(:,i)))./range(X(:,i)), model.pbldr.Z, strrep(featlabels{i},'_',' '));
     print(gcf,'-dpng',[rootdir 'scatter_' featlabels{i} '.png']);
 end
 
@@ -441,13 +446,13 @@ Ys = log10(Yraw+1);
 Ys = (Ys-min(Ys(:)))./range(Ys(:));
 for i=1:nalgos
     clf;
-    drawScatter(Ys(subsetIndex,i), out.pbldr.Z, strrep(algolabels{i},'_',' '));
+    drawScatter(Ys(subsetIndex,i), model.pbldr.Z, strrep(algolabels{i},'_',' '));
     print(gcf,'-dpng',[rootdir 'scatter_' algolabels{i} '_absolute.png']);
 end
 
 for i=1:nalgos
     clf;
-    drawScatter((Y(:,i)-min(Y(:,i)))./range(Y(:,i)), out.pbldr.Z, strrep(algolabels{i},'_',' '));
+    drawScatter((Y(:,i)-min(Y(:,i)))./range(Y(:,i)), model.pbldr.Z, strrep(algolabels{i},'_',' '));
     print(gcf,'-dpng',[rootdir 'scatter_' algolabels{i} '.png']);
 end
 
@@ -455,13 +460,13 @@ end
 % binary measure
 for i=1:nalgos
     clf;
-    drawGoodBadFootprint(out.pbldr.Z, Yfoot(:,i), out.footprint.good{i}, strrep(algolabels{i},'_',' '));
+    drawGoodBadFootprint(model.pbldr.Z, Yfoot(:,i), model.footprint.good{i}, strrep(algolabels{i},'_',' '));
     print(gcf,'-dpng',[rootdir 'footprint_' algolabels{i} '.png']);
 end
 
 % Drawing the footprints as portfolio.
 clf;
-drawPortfolioFootprint(out.footprint.best, algolabels);
+drawPortfolioFootprint(model.footprint.best, algolabels);
 print(gcf,'-dpng',[rootdir 'footprint_portfolio.png']);
 
 % Drawing the sources of the instances if available
@@ -470,8 +475,8 @@ if any(issource)
     clrs = parula(nsources);
     clf;
     for i=1:nsources
-        line(out.pbldr.Z(S(subsetIndex)==sourcelabels{i},1), ...
-             out.pbldr.Z(S(subsetIndex)==sourcelabels{i},2), ...
+        line(model.pbldr.Z(S(subsetIndex)==sourcelabels{i},1), ...
+             model.pbldr.Z(S(subsetIndex)==sourcelabels{i},2), ...
              'LineStyle', 'none', ...
              'Marker', '.', ...
              'Color', clrs(i,:), ...
@@ -490,18 +495,18 @@ cpt = {'BAD','GOOD'};
 for i=1:nalgos
     clf;
     h = zeros(1,2);
-    if sum(out.algosel.Yhat(:,i)==0)~=0
-        h(1) = line(out.pbldr.Z(out.algosel.Yhat(:,i)==0,1), ...
-                    out.pbldr.Z(out.algosel.Yhat(:,i)==0,2), ...
+    if sum(model.algosel.Yhat(:,i)==0)~=0
+        h(1) = line(model.pbldr.Z(model.algosel.Yhat(:,i)==0,1), ...
+                    model.pbldr.Z(model.algosel.Yhat(:,i)==0,2), ...
                     'LineStyle', 'none', ...
                     'Marker', 'o', ...
                     'Color', [0.8 0.8 0.8], ...
                     'MarkerFaceColor', [0.8 0.8 0.8], ...
                     'MarkerSize', 6);
     end
-    if sum(out.algosel.Yhat(:,i)==1)~=0
-        h(2) = line(out.pbldr.Z(out.algosel.Yhat(:,i)==1,1), ...
-                    out.pbldr.Z(out.algosel.Yhat(:,i)==1,2), ...
+    if sum(model.algosel.Yhat(:,i)==1)~=0
+        h(2) = line(model.pbldr.Z(model.algosel.Yhat(:,i)==1,1), ...
+                    model.pbldr.Z(model.algosel.Yhat(:,i)==1,2), ...
                     'LineStyle', 'none', ...
                     'Marker', 'o', ...
                     'Color', [0.0 0.0 0.0], ...
@@ -513,10 +518,10 @@ for i=1:nalgos
     set(findall(gcf,'-property','FontSize'),'FontSize',12);
     set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
     axis square;
-    print(gcf,'-dpng',['footprint_' algolabels{i} '.png']);
+    print(gcf,'-dpng',['svm_' algolabels{i} '.png']);
 end
 % Drawing the SVM's recommendations
-isworty = mean(bsxfun(@eq,out.algosel.psel,1:nalgos))~=0;
+isworty = mean(bsxfun(@eq,model.algosel.psel,1:nalgos))~=0;
 clr = parula(nalgos);
 mrkrs = {'o','s','x'};
 cnt = 1;
@@ -525,8 +530,8 @@ for i=1:nalgos
     if ~isworty(i)
         continue;
     end
-    line(out.pbldr.Z(out.algosel.psel==i,1), ...
-         out.pbldr.Z(out.algosel.psel==i,2), ...
+    line(model.pbldr.Z(model.algosel.psel==i,1), ...
+         model.pbldr.Z(model.algosel.psel==i,2), ...
          'LineStyle', 'none', ...
          'Marker', mrkrs{cnt}, ...
          'Color', clr(i,:), ...
@@ -542,11 +547,12 @@ legend(algolabels(isworty), 'Location', 'NorthEastOutside');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 axis square;
-print(gcf,'-dpng',[rootdir 'svm_pfolio.png']);
+print(gcf,'-dpng',[rootdir 'svm_portfolio.png']);
 % -------------------------------------------------------------------------
 % 
 % end
-save([rootdir 'results.mat'],'-struct','out'); % Save the main results
+model.opts = opts;
+save([rootdir 'results.mat'],'-struct','model'); % Save the main results
 save([rootdir 'workspace.mat']); % Save the full workspace for debugging
 disp(['-> Completed! Elapsed time: ' num2str(toc(startProcess)) 's']);
 disp('EOF:SUCCESS');

@@ -12,6 +12,9 @@ if opts.flag
         end
     end
     out.selvars = out.pctage>opts.threshold;
+    if sum(out.selvars)<2
+        error('Feature selection using diversity is too strict. Please increase the threshold value.')
+    end
     X = X(:,out.selvars);
     disp(['-> Keeping ' num2str(size(X,2)) ' out of ' num2str(nfeats) ' features (diversity).']);
 else

@@ -13,6 +13,8 @@ The unique advantage of visualizing algorithm performance in the instance space,
 
 This repository provides a set of MATLAB tools to carry out a complete Instance Space Analysis in an automated pipeline. It is also the computational engine that powers the Melbourne Algorithm Test Instance Library with Data Analytics ([MATILDA](http://matilda.unimelb.edu.au/matilda/)) web tools for online analysis. For further information on the Instance Space Analysis methodology can be found [here](http://matilda.unimelb.edu.au/matilda/our-methodology).
 
+DISCLAIMER: This repository contains research code. In occassions new features will be added that may crash. If you find issues, let us know ASAP through the contact methods described at the end of this document.
+
 ## Installation Instructions
 
 The only requirement for the software to run is to have a current version of [MATLAB](http://www.mathworks.com). It has been tested and known to work properly in version r2018b. Earlier versions may fail to support the processing of ```.json``` files. To make use of all functionalities, the [LIBSVM](https://www.csie.ntu.edu.tw/~cjlin/libsvm/) library must be installed. This repository contains the Windows binaries of LIBSVM, but other platforms require compilation from source code. We suggest adding the software folder to the MATLAB path.

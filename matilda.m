@@ -240,7 +240,7 @@ if opts.footprint.usesim
 else
     % Use the actual data to calculate the footprints
     Yfoot = Ybin;
-    Pfoot = portfolilo;
+    Pfoot = portfolio;
     Bfoot = beta;
 end
 

@@ -13,7 +13,7 @@ The unique advantage of visualizing algorithm performance in the instance space,
 
 This repository provides a set of MATLAB tools to carry out a complete Instance Space Analysis in an automated pipeline. It is also the computational engine that powers the Melbourne Algorithm Test Instance Library with Data Analytics ([MATILDA](http://matilda.unimelb.edu.au/matilda/)) web tools for online analysis. For further information on the Instance Space Analysis methodology can be found [here](http://matilda.unimelb.edu.au/matilda/our-methodology).
 
-DISCLAIMER: This repository contains research code. In occassions new features will be added that may crash. If you find issues, let us know ASAP through the contact methods described at the end of this document.
+**DISCLAIMER: This repository contains research code. In occassions new features will be added that may result in crashes. If you find issues, let us know ASAP through the contact methods described at the end of this document.**
 
 ## Installation Instructions
 

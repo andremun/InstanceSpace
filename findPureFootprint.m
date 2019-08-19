@@ -1,18 +1,19 @@
 function footprint = findPureFootprint(Z, Y, opts)
 % If there is no Y to work with, then there is not point on this one
-Ig = unique(Z(Y,:),'rows');   % There might be points overlapped, so eliminate them to avoid problems
-numInst = size(Ig,1);
-% ---------
-% We are trying here a different approach
-elim = true(numInst,1);
-aux = cvpartition(numInst,'HoldOut',opts.PCTILE);
-elim(convhull(Ig(:,1),Ig(:,2))) = false; % Keep the ones in the convex hull
-elim(aux.test) = false;
-Ig = Ig(~elim,:);
-numInst = size(Ig,1);
-if numInst>3
-    polygon     = delaunay(Ig);
-else
+try
+    Ig = unique(Z(Y,:),'rows');   % There might be points overlapped, so eliminate them to avoid problems
+    numInst = size(Ig,1);
+    % ---------
+    % We are trying here a different approach
+    elim = true(numInst,1);
+    aux = cvpartition(numInst,'HoldOut',opts.PCTILE);
+    elim(convhull(Ig(:,1),Ig(:,2))) = false; % Keep the ones in the convex hull
+    elim(aux.test) = false;
+    Ig = Ig(~elim,:);
+    polygon = delaunay(Ig);
+catch ME
+    disp('   -> There is not enough instances to calculate the footprint.');
+    disp(['ID: ' ME.identifier]);
     footprint.polyArea = [];
     footprint.polyDensity = [];
     footprint.polyElements = 0;

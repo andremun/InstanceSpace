@@ -21,13 +21,14 @@ if ~isfile(datafile) || ~isfile(optsfile)
 end
 opts = jsondecode(fileread(optsfile));
 disp('-------------------------------------------------------------------------');
-disp('Listing options used:');
+disp('-> Listing options used:');
 optfields = fieldnames(opts);
 for i = 1:length(optfields)
     disp(optfields{i});
     disp(opts.(optfields{i}));
 end
-
+disp('-------------------------------------------------------------------------');
+disp('-> Loading the data');
 Xbar = readtable(datafile);
 varlabels = Xbar.Properties.VariableNames;
 isname = strcmpi(varlabels,'instances');
@@ -50,20 +51,28 @@ Y = Xbar{:,isalgo};
 % work with
 featlabels = varlabels(isfeat);
 if isfield(opts,'selvars') && isfield(opts.selvars,'feats')
+    disp('-------------------------------------------------------------------------');
+    msg = '-> Using the following features: ';
     isselfeat = false(1,length(featlabels));
     for i=1:length(opts.selvars.feats)
         isselfeat = isselfeat | strcmp(featlabels,opts.selvars.feats{i});
+        msg = [msg opts.selvars.feats{i} ' ']; %#ok<AGROW>
     end
+    disp(msg);
     X = X(:,isselfeat);
     featlabels = featlabels(isselfeat);
 end
 
 algolabels = varlabels(isalgo);
 if isfield(opts,'selvars') && isfield(opts.selvars,'algos')
+    disp('-------------------------------------------------------------------------');
+    msg = '-> Using the following algorithms: ';
     isselalgo = false(1,length(algolabels));
     for i=1:length(opts.selvars.algos)
         isselalgo = isselalgo | strcmp(algolabels,opts.selvars.algos{i});
+        msg = [msg opts.selvars.algos{i} ' ']; %#ok<AGROW>
     end
+    disp(msg);
     Y = Y(:,isselalgo);
     algolabels = algolabels(isselalgo);
 end
@@ -84,23 +93,31 @@ algolabels = strrep(algolabels,'algo_','');
 % algorithm has a performance better than the threshold) or a relative
 % performance (the algorithm has a performance that is similar that the
 % best algorithm minus a percentage).
+disp('-------------------------------------------------------------------------');
+disp('-> Calculating the binary measure of performance');
+msg = '-> An algorithm is good if its performace is ';
 if opts.perf.MaxMin
     Y(isnan(Y)) = -Inf;
     [bestPerformace,portfolio] = max(Y,[],2);
     if opts.perf.AbsPerf
         Ybin = Y>=opts.perf.epsilon;
+        msg = [msg 'higher than ' num2str(opts.perf.epsilon)];
     else
         Ybin = bsxfun(@ge,Y,(1-opts.perf.epsilon).*bestPerformace); % One is good, zero is bad
+        msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 else
     Y(isnan(Y)) = Inf;
     [bestPerformace,portfolio] = min(Y,[],2);
     if opts.perf.AbsPerf
         Ybin = Y<=opts.perf.epsilon;
+        msg = [msg 'less than ' num2str(opts.perf.epsilon)];
     else
-        Ybin = bsxfun(@le,Y,(1+opts.perf.epsilon).*bestPerformace); 
+        Ybin = bsxfun(@le,Y,(1+opts.perf.epsilon).*bestPerformace);
+        msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 end
+disp(msg);
 beta = sum(Ybin,2)>opts.general.betaThreshold*nalgos;
 % ---------------------------------------------------------------------
 % Automated pre-processing
@@ -117,12 +134,10 @@ if opts.auto.preproc
 end
 % -------------------------------------------------------------------------
 % If we are only meant to take some observations
+disp('-------------------------------------------------------------------------');
 ninst = size(X,1);
-
 fractional = opts.selvars.smallscaleflag && isfloat(opts.selvars.smallscale);
 fileindexed = opts.selvars.fileidxflag && isfield(opts,'selvars') && isfield(opts.selvars,'instances') && isfile(opts.selvars.fileidx);
-
-disp('-------------------------------------------------------------------------');
 if fractional
     disp(['-> Creating a small scale experiment for validation. percentage of subset: ' ...
         num2str(round(100.*opts.selvars.smallscale,2)) '%']);
@@ -247,11 +262,11 @@ end
 for i=1:nalgos
     tic;
     model.footprint.good{i} = findPureFootprint(model.pbldr.Z,...
-                                              Yfoot(:,i),...
-                                              opts.footprint);
+                                                Yfoot(:,i),...
+                                                opts.footprint);
     model.footprint.bad{i} = findPureFootprint( model.pbldr.Z,...
-                                             ~Yfoot(:,i),...
-                                              opts.footprint);
+                                               ~Yfoot(:,i),...
+                                               opts.footprint);
     model.footprint.best{i} = findPureFootprint(model.pbldr.Z,...
                                               Pfoot==i,...
                                               opts.footprint);
@@ -260,24 +275,22 @@ end
 % ---------------------------------------------------------------------
 % Detecting collisions and removing them.
 disp('-------------------------------------------------------------------------');
-disp('-> Removing collisions.');
+disp('-> Detecting and removing contradictions.');
 for i=1:nalgos
     startBase = tic;
-    for j=1:nalgos
-        if i~=j
-            startTest = tic;
-            model.footprint.best{i} = calculateFootprintCollisions_old(model.footprint.best{i}, ...
+    for j=i+1:nalgos
+        startTest = tic;
+        [model.footprint.best{i},...
+         model.footprint.best{j}] = calculateFootprintCollisionsDual(model.footprint.best{i}, ...
                                                                      model.footprint.best{j}, ...
                                                                      opts.footprint);
-            disp(['    -> Test algorithm No. ' num2str(j) ' - Elapsed time: ' num2str(toc(startTest),'%.2f\n') 's']);
-        end
+        
+        disp(['    -> Test algorithm No. ' num2str(j) ' - Elapsed time: ' num2str(toc(startTest),'%.2f\n') 's']);
     end
-    model.footprint.good{i} = calculateFootprintCollisions_old(model.footprint.good{i},...
-                                                         model.footprint.bad{i},...
-                                                         opts.footprint);
-    model.footprint.bad{i} = calculateFootprintCollisions_old(model.footprint.bad{i},...
-                                                        model.footprint.good{i},...
-                                                         opts.footprint);
+    [model.footprint.good{i},...
+     model.footprint.bad{i}] = calculateFootprintCollisionsDual(model.footprint.good{i},...
+                                                                model.footprint.bad{i},...
+                                                                opts.footprint);
     disp(['-> Base algorithm No. ' num2str(i) ' - Elapsed time: ' num2str(toc(startBase),'%.2f\n') 's']);
 end
 % -------------------------------------------------------------------------
@@ -309,20 +322,21 @@ disp('-> Calculating beta-footprints.');
 model.footprint.easy = findPureFootprint(model.pbldr.Z,  Bfoot, opts.footprint);
 model.footprint.hard = findPureFootprint(model.pbldr.Z, ~Bfoot, opts.footprint);
 % Remove the collisions
-model.footprint.easy = calculateFootprintCollisions_old(model.footprint.easy,...
-                                                  model.footprint.hard,...
-                                                         opts.footprint);
-model.footprint.hard = calculateFootprintCollisions_old(model.footprint.hard,...
-                                                  model.footprint.easy,...
-                                                         opts.footprint);
+[model.footprint.easy,...
+ model.footprint.hard] = calculateFootprintCollisionsDual(model.footprint.easy,...
+                                                          model.footprint.hard,...
+                                                          opts.footprint);
+% model.footprint.hard = calculateFootprintCollisions(model.footprint.hard,...
+%                                                     model.footprint.easy,...
+%                                                     opts.footprint);
 % Calculating performance
 disp('-> Calculating the beta-footprint''s area and density.');
 model.footprint.easy = calculateFootprintPerformance(model.footprint.easy,...
-                                                   model.pbldr.Z,...
-                                                   Bfoot);
+                                                     model.pbldr.Z,...
+                                                     Bfoot);
 model.footprint.hard = calculateFootprintPerformance(model.footprint.hard,...
-                                                   model.pbldr.Z,...
-                                                   ~Bfoot);
+                                                     model.pbldr.Z,...
+                                                     ~Bfoot);
 performanceTable(end-1,6:10) = calculateFootprintSummary(model.footprint.easy,...
                                                          model.footprint.spaceArea,...
                                                          model.footprint.spaceDensity);
@@ -431,8 +445,6 @@ if opts.webproc.flag
     writetable(array2table(Yaux,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
                [rootdir 'algorithm_process_single_color.csv'],'WriteRowNames',true);
 end
-% if ~opts.webproc.flag
-    
 % ---------------------------------------------------------------------
 % Making all the plots. First, plotting the features and performance as
 % scatter plots.
@@ -518,7 +530,7 @@ for i=1:nalgos
     set(findall(gcf,'-property','FontSize'),'FontSize',12);
     set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
     axis square;
-    print(gcf,'-dpng',['svm_' algolabels{i} '.png']);
+    print(gcf,'-dpng',[rootdir 'svm_' algolabels{i} '.png']);
 end
 % Drawing the SVM's recommendations
 isworty = mean(bsxfun(@eq,model.algosel.psel,1:nalgos))~=0;

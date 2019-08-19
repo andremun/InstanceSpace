@@ -513,7 +513,7 @@ for i=1:nalgos
     set(findall(gcf,'-property','FontSize'),'FontSize',12);
     set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
     axis square;
-    print(gcf,'-dpng',['footprint_' algolabels{i} '.png']);
+    print(gcf,'-dpng',[rootdir 'footprint_' algolabels{i} '.png']);
 end
 % Drawing the SVM's recommendations
 isworty = mean(bsxfun(@eq,out.algosel.psel,1:nalgos))~=0;

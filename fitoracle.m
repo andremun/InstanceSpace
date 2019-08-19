@@ -21,17 +21,14 @@ for i=1:nalgos
                                                                            false));
     end
     [out.modelerr(i),out.paramidx(i)] = min(out.cvmcr(:,i));
-    disp(['    ' num2str(i) ' out of ' num2str(nalgos) ' models have been fitted.']);
+    disp(['    ->  ' num2str(i) ' out of ' num2str(nalgos) ' models have been fitted.']);
 end
 
 out.Yhat = 0.*Ybin;
 out.probs = 0.*Ybin;
+out.svm = cell(1,nalgos);
 for i=1:nalgos
-    aux = svmwrap(Z, ... % xtrain
-                  Ybin(:,i), ...      % ytrain
-                  Z, ... % xtest
-                  out.paramgrid(out.paramidx(i),:),... % params
-                  true);           % Give both result and probabilities
+    [aux, out.svm{i}] = svmwrap(Z, Ybin(:,i), Z, out.paramgrid(out.paramidx(i),:), true);
     out.Yhat(:,i)  = aux(:,1);
     out.probs(:,i) = aux(:,2);
 end

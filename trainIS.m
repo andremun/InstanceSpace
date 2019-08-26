@@ -117,6 +117,7 @@ else
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 end
+portfolio(sum(bsxfun(@eq,Y,bestPerformace),2)>1) = 0;
 disp(msg);
 beta = sum(Ybin,2)>opts.general.betaThreshold*nalgos;
 % ---------------------------------------------------------------------
@@ -139,7 +140,7 @@ ninst = size(X,1);
 fractional = opts.selvars.smallscaleflag && isfloat(opts.selvars.smallscale);
 fileindexed = opts.selvars.fileidxflag && isfield(opts,'selvars') && isfield(opts.selvars,'instances') && isfile(opts.selvars.fileidx);
 if fractional
-    disp(['-> Creating a small scale experiment for validation. percentage of subset: ' ...
+    disp(['-> Creating a small scale experiment for validation. Percentage of subset: ' ...
         num2str(round(100.*opts.selvars.smallscale,2)) '%']);
     aux = cvpartition(ninst,'HoldOut',opts.selvars.smallscale);
     subsetIndex = aux.test;
@@ -190,7 +191,7 @@ if opts.auto.featsel
     % value above 0.65
     disp('-> Selecting features based on correlation clustering.');
     [X, model.clust] = clusterFeatureSelection(X, Ybin,...
-                                             opts.clust);
+                                               opts.clust);
     disp(['-> Keeping ' num2str(size(X, 2)) ' out of ' num2str(nfeats) ...
           ' features (clustering).']);
     nfeats = size(X, 2);
@@ -215,19 +216,40 @@ disp(projectionMatrix);
 % correlations of the different edges.
 disp('-------------------------------------------------------------------------');
 disp('-> Finding empirical bounds.');
-model.sbound = findSpaceBounds(X,model.pbldr.A);
+model.sbound = findSpaceBounds(X,model.pbldr.A,opts.sbound);
 % -------------------------------------------------------------------------
 % Algorithm selection. Fit a model that would separate the space into
 % classes of good and bad performance. 
 disp('-------------------------------------------------------------------------');
 disp('-> Fitting SVM prediction models. This may take a while...');
 model.algosel = fitoracle(model.pbldr.Z, Ybin, opts.oracle);
-disp('-> Cross-validation model error:')
-cvModelAccuracy = cell(2,nalgos);
-cvModelAccuracy(1,:) = algolabels;
-cvModelAccuracy(2,:) = num2cell(round(100.*model.algosel.modelerr,1));
-disp(' ');
-disp(cvModelAccuracy);
+
+svmselections = bsxfun(@eq,model.algosel.psel,unique(model.algosel.psel)');
+Yaux = Yraw(subsetIndex,:);
+Yaux(~svmselections) = NaN;
+
+svmTable = cell(8,nalgos+3);
+svmTable{1,1} = ' ';
+svmTable(1,2:end-2) = algolabels;
+svmTable(1,end-1:end) = {'Oracle','Selector'};
+
+svmTable(2:8,1) = {'Avg. Perf. all instances';
+                   'Std. Perf. all instances';
+                   'Avg. Perf. selected instances';
+                   'Std. Perf. selected instances';
+                   'CV model error';
+                   'C';
+                   'Gamma'};
+
+svmTable(2,2:end) = num2cell([mean(Yraw(subsetIndex,:)) mean(bestPerformace) nanmean(Yaux(:))]);
+svmTable(3,2:end) = num2cell([std(Yraw(subsetIndex,:)) std(bestPerformace) nanstd(Yaux(:))]);
+svmTable(4,2:end-2) = num2cell(nanmean(Yaux));
+svmTable(5,2:end-2) = num2cell(nanstd(Yaux));
+svmTable(6,2:end-2) = num2cell(round(100.*model.algosel.modelerr,1));
+svmTable(7,2:end-2) = num2cell(model.algosel.svmparams(:,1));
+svmTable(8,2:end-2) = num2cell(model.algosel.svmparams(:,2));
+
+disp(svmTable);
 % ---------------------------------------------------------------------
 % Calculating the algorithm footprints. First step is to transform the
 % data to the footprint space, and to calculate the 'space' exafootprint.
@@ -268,8 +290,8 @@ for i=1:nalgos
                                                ~Yfoot(:,i),...
                                                opts.footprint);
     model.footprint.best{i} = findPureFootprint(model.pbldr.Z,...
-                                              Pfoot==i,...
-                                              opts.footprint);
+                                                Pfoot==i,...
+                                                opts.footprint);
     disp(['    -> Algorithm No. ' num2str(i) ' - Elapsed time: ' num2str(toc,'%.2f\n') 's']);
 end
 % ---------------------------------------------------------------------
@@ -368,6 +390,12 @@ disp(model.footprint.performance);
 writetable(array2table(model.pbldr.Z,'VariableNames',{'z_1','z_2'},...
                        'RowNames',instlabels(subsetIndex)),...
            [rootdir 'coordinates.csv'],'WriteRowNames',true);
+writetable(array2table(model.sbound.Zedge,'VariableNames',{'z_1','z_2'},...
+                       'RowNames',instlabels(subsetIndex)),...
+           [rootdir 'bounds.csv'],'WriteRowNames',true);
+writetable(array2table(model.sbound.Zecorr,'VariableNames',{'z_1','z_2'},...
+                       'RowNames',instlabels(subsetIndex)),...
+           [rootdir 'bounds_prunned.csv'],'WriteRowNames',true);
 writetable(array2table(Xraw(subsetIndex,model.featsel.idx),'VariableNames',featlabels,...
                        'RowNames',instlabels(subsetIndex)),...
            [rootdir 'feature_raw.csv'],'WriteRowNames',true);
@@ -397,11 +425,14 @@ writetable(array2table(model.algosel.Yhat,'VariableNames',algolabels,...
 writetable(array2table(model.algosel.psel,'VariableNames',{'Best_Algorithm'},...
                        'RowNames',instlabels(subsetIndex)),...
            [rootdir 'portfolio_svm.csv'],'WriteRowNames',true);
+writetable(cell2table(svmTable(2:end,2:end),...
+                      'VariableNames',svmTable(1,2:end),...
+                      'RowNames',svmTable(2:end,1)),...
+           [rootdir 'svm_table.csv'],'WriteRowNames',true);
 % Produces files which contain color information only
 if opts.webproc.flag
 %     writetable(array2table(parula(256),'VariableNames',{'R','G','B'}),...
 %               [rootdir 'color_table.csv'],'WriteRowNames',true);
-    
     Xaux = Xraw(subsetIndex,model.featsel.idx);
     Xaux = bsxfun(@rdivide,bsxfun(@minus,Xaux,min(Xaux)),range(Xaux));
     Xaux = round(255.*Xaux);

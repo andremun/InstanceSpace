@@ -10,19 +10,29 @@ else
     Kmax = min(opts.KDEFAULT, nfeats);
     out.eva = evalclusters(X', 'kmeans', 'Silhouette', 'KList', 3:Kmax, ... % minimum of three features
                                          'Distance', 'correlation');
-    K = out.eva.InspectedK(find(out.eva.CriterionValues>opts.SILTHRESHOLD,1)); % If empty make an error that is more meaningfull
+    disp('-> Average silhouette values for each number of clusters.')
+    disp([3:Kmax; out.eva.CriterionValues]);
+    if all(out.eva.CriterionValues<opts.SILTHRESHOLD)
+        disp('-> Silhouette threshold is too high. Using the maximum number of clusters possible.');
+        K = Kmax;
+    elseif all(out.eva.CriterionValues>opts.SILTHRESHOLD)
+        disp('-> Silhouette threshold is too low. Consider using a higher value.');
+        K = 3;
+    else
+        K = out.eva.InspectedK(find(out.eva.CriterionValues>opts.SILTHRESHOLD,1)); % If empty make an error that is more meaningfull
+    end
     out.clust = bsxfun(@eq, kmeans(X', K, 'Distance', 'correlation', ...
                                           'MaxIter', opts.MaxIter, ...
                                           'Replicates', opts.Replicates, ...
                                           'Options', statset('UseParallel', true), ...
                                           'OnlinePhase', 'on'), 1:K);
-    disp(['-> ' num2str(K) ' clusters of features detected.']);
+    disp(['-> Constructing ' num2str(K) ' clusters of features.']);
     % ---------------------------------------------------------------------
     % Using these out.clusters, determine all possible combinations that take one
     % feature from each out.cluster.
     strcmd = '[';
     for i=1:K
-        strcmd = [strcmd 'X' num2str(i) ];
+        strcmd = [strcmd 'X' num2str(i) ]; %#ok<*AGROW>
         if i<K
             strcmd = [strcmd ','];
         else
@@ -48,19 +58,8 @@ else
         end
     end
     eval(strcmd);
-%     comb = de2bi(1:2^nfeats-1);
-%     comb = comb(sum(comb,2)==K,:);
-%     novalid = false(size(comb,1),1);
-%     for i=1:K
-%         idx = find(out.clust(:,i));
-%         for j=1:length(idx)
-%             for k=j+1:length(idx)
-%                 novalid(comb(:,idx(j)) & comb(:,idx(k))) = true;
-%             end
-%         end
-%     end
-%     comb = comb(~novalid,:)==1;
-    ncomb = size(comb,1);
+
+    ncomb = size(comb,1); %#ok<*NODEF>
     disp(['-> ' num2str(ncomb) ' valid feature combinations.']);
     % ---------------------------------------------------------------------
     % Determine which combination produces the best separation while using a
@@ -69,7 +68,7 @@ else
     out.ooberr = zeros(ncomb,nalgos);
     for i=1:ncomb
         tic;
-        [~, score] = pca(X(:,comb(i,:)), 'NumComponents', 2); % Reduce using PCA
+        [~, score] = pca(X(:,comb(i,:)), 'NumComponents', 2); %#ok<*IDISVAR> % Reduce using PCA
         for j = 1:nalgos
             rng('default');
             tree = TreeBagger(opts.NTREES, score, Ybin(:,j), 'OOBPrediction', 'on');

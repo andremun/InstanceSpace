@@ -27,8 +27,10 @@ end
 out.Yhat = 0.*Ybin;
 out.probs = 0.*Ybin;
 out.svm = cell(1,nalgos);
+out.svmparams = zeros(nalgos,2);
 for i=1:nalgos
-    [aux, out.svm{i}] = svmwrap(Z, Ybin(:,i), Z, out.paramgrid(out.paramidx(i),:), true);
+    out.svmparams(i,:) = out.paramgrid(out.paramidx(i),:);
+    [aux, out.svm{i}] = svmwrap(Z, Ybin(:,i), Z, out.svmparams(i,:), true);
     out.Yhat(:,i)  = aux(:,1);
     out.probs(:,i) = aux(:,2);
 end

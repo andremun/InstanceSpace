@@ -1,8 +1,8 @@
-function out = findSpaceBounds(X,A)
+function out = findSpaceBounds(X,A,opts)
 
 nfeats = size(X,2);
 [rho,pval] = corr(X);
-rho = rho.*(pval<0.05);
+rho = rho.*(pval<opts.pval);
 
 Xbnds = [min(X); max(X)];
 idx = de2bi(0:2^nfeats-1)+1;
@@ -14,9 +14,9 @@ for i=1:size(idx,1)
    for j=1:nfeats
        for k=j+1:nfeats
            % Check for valid points give the correlation trend
-           if rho(j,k)>0.7 && sign(Xedge(i,j))~=sign(Xedge(i,k))
+           if rho(j,k)>opts.cthres && sign(Xedge(i,j))~=sign(Xedge(i,k))
                flags(i) = true;
-           elseif rho(j,k)<-0.7 && sign(Xedge(i,j))==sign(Xedge(i,k))
+           elseif rho(j,k)<-opts.cthres && sign(Xedge(i,j))==sign(Xedge(i,k))
                flags(i) = true;
            end
        end

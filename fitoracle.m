@@ -21,8 +21,10 @@ for i=1:nalgos
                                                                            false));
     end
     [out.modelerr(i),out.paramidx(i)] = min(out.cvmcr(:,i));
-    disp(['    ->  ' num2str(i) ' out of ' num2str(nalgos) ' models have been fitted.']);
+    disp(['    -> ' num2str(i) ' out of ' num2str(nalgos) ' models have been fitted.']);
 end
+disp(['    -> Completed - Average cross validation error is: ' ...
+      num2str(round(100.*mean(out.modelerr),1)) '%']);
 
 out.Yhat = 0.*Ybin;
 out.probs = 0.*Ybin;
@@ -35,8 +37,9 @@ for i=1:nalgos
     out.probs(:,i) = aux(:,2);
 end
 out.Yhat = out.Yhat==2; % Make it binary
-% [~,out.psel] = max(out.probs,[],2); % Determine which one to suggest
-% - Different strategy to make the SVM recommendation. Use the SVM which
-% has the lowest error.
+% We assume that the most accurate SVM (as per CV-Error) is the most
+% reliable.
 [mostaccurate,out.psel] = max(bsxfun(@times,out.Yhat,1-out.modelerr),[],2);
 out.psel(mostaccurate<=0) = 0;
+
+end

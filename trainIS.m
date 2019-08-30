@@ -12,6 +12,7 @@ function [model] = trainIS(rootdir)
 % -------------------------------------------------------------------------
 
 startProcess = tic;
+printdisclaim('trainIS.m');
 % -------------------------------------------------------------------------
 % Collect all the data from the files
 datafile = [rootdir 'metadata.csv'];
@@ -21,14 +22,14 @@ if ~isfile(datafile) || ~isfile(optsfile)
 end
 opts = jsondecode(fileread(optsfile));
 disp('-------------------------------------------------------------------------');
-disp('-> Listing options used:');
+disp('-> Listing options to be used:');
 optfields = fieldnames(opts);
 for i = 1:length(optfields)
     disp(optfields{i});
     disp(opts.(optfields{i}));
 end
 disp('-------------------------------------------------------------------------');
-disp('-> Loading the data');
+disp('-> Loading the data.');
 Xbar = readtable(datafile);
 varlabels = Xbar.Properties.VariableNames;
 isname = strcmpi(varlabels,'instances');
@@ -42,7 +43,6 @@ if isnumeric(instlabels)
 end
 if any(issource)
     S = categorical(Xbar{:,issource});
-    sourcelabels = cellstr(unique(S));
 end
 X = Xbar{:,isfeat};
 Y = Xbar{:,isalgo};
@@ -124,13 +124,11 @@ beta = sum(Ybin,2)>opts.general.betaThreshold*nalgos;
 % Automated pre-processing
 if opts.auto.preproc
     disp('-------------------------------------------------------------------------');
-    disp('-> Auto-pre-processing. Bounding outliers, scaling and normalizing the data.');
+    disp('-> Auto-pre-processing.');
     % Eliminate extreme outliers, i.e., any point that exceedes 5 times the
     % inter quantile range, by bounding them to that value.
-    disp('-> Removing extreme outliers from the feature values.');
     [X, model.bound] = boundOutliers(X, opts.bound);
     % Normalize the data using Box-Cox and Z-transformations
-    disp('-> Auto-normalizing the data.');
     [X, Y, model.norm] = autoNormalize(X, Y, opts.norm);
 end
 % -------------------------------------------------------------------------
@@ -160,7 +158,7 @@ if fileindexed || fractional
     Y = Y(subsetIndex,:);
     Ybin = Ybin(subsetIndex,:);
     beta = beta(subsetIndex);
-    bestPerformace = bestPerformace(subsetIndex); %#ok<NASGU>
+    bestPerformace = bestPerformace(subsetIndex); 
     portfolio = portfolio(subsetIndex);
 end
 [ninst,nfeats] = size(X);
@@ -171,7 +169,7 @@ end
 model.featsel.idx = 1:nfeats;
 if opts.auto.featsel
     disp('-------------------------------------------------------------------------');
-    disp('-> Auto feature selection.');
+    disp('-> Auto-feature selection.');
     % Check for diversity, i.e., we want features that have non-repeating
     % values for each instance. Eliminate any that have only DIVTHRESHOLD
     % unique values.
@@ -181,7 +179,6 @@ if opts.auto.featsel
     % Detect correlations between features and algorithms. Keep the top
     % CORTHRESHOLD correlated features for each algorithm
     [X, model.corr] = checkCorrelation(X, Y, opts.corr);
-    nfeats = size(X, 2);
     featlabels = featlabels(model.corr.selvars);
     model.featsel.idx = model.featsel.idx(model.corr.selvars);
     % Detect similar features, by clustering them according to their
@@ -189,11 +186,7 @@ if opts.auto.featsel
     % this will improve the projection into two dimensions. We set a hard
     % limit of 10 features. The selection criteria is an average silhouete
     % value above 0.65
-    disp('-> Selecting features based on correlation clustering.');
-    [X, model.clust] = clusterFeatureSelection(X, Ybin,...
-                                               opts.clust);
-    disp(['-> Keeping ' num2str(size(X, 2)) ' out of ' num2str(nfeats) ...
-          ' features (clustering).']);
+    [X, model.clust] = clusterFeatureSelection(X, Ybin, opts.clust);
     nfeats = size(X, 2);
     featlabels = featlabels(model.clust.selvars);
     model.featsel.idx = model.featsel.idx(model.clust.selvars);
@@ -223,16 +216,14 @@ model.sbound = findSpaceBounds(X,model.pbldr.A,opts.sbound);
 disp('-------------------------------------------------------------------------');
 disp('-> Fitting SVM prediction models. This may take a while...');
 model.algosel = fitoracle(model.pbldr.Z, Ybin, opts.oracle);
-
-svmselections = bsxfun(@eq,model.algosel.psel,unique(model.algosel.psel)');
+% svmselections = bsxfun(@eq,model.algosel.psel,unique(model.algosel.psel)');
+svmselections = bsxfun(@eq,model.algosel.psel,1:nalgos);
 Yaux = Yraw(subsetIndex,:);
 Yaux(~svmselections) = NaN;
-
 svmTable = cell(8,nalgos+3);
 svmTable{1,1} = ' ';
 svmTable(1,2:end-2) = algolabels;
 svmTable(1,end-1:end) = {'Oracle','Selector'};
-
 svmTable(2:8,1) = {'Avg. Perf. all instances';
                    'Std. Perf. all instances';
                    'Avg. Perf. selected instances';
@@ -240,7 +231,6 @@ svmTable(2:8,1) = {'Avg. Perf. all instances';
                    'CV model error';
                    'C';
                    'Gamma'};
-
 svmTable(2,2:end) = num2cell([mean(Yraw(subsetIndex,:)) mean(bestPerformace) nanmean(Yaux(:))]);
 svmTable(3,2:end) = num2cell([std(Yraw(subsetIndex,:)) std(bestPerformace) nanstd(Yaux(:))]);
 svmTable(4,2:end-2) = num2cell(nanmean(Yaux));
@@ -248,7 +238,8 @@ svmTable(5,2:end-2) = num2cell(nanstd(Yaux));
 svmTable(6,2:end-2) = num2cell(round(100.*model.algosel.modelerr,1));
 svmTable(7,2:end-2) = num2cell(model.algosel.svmparams(:,1));
 svmTable(8,2:end-2) = num2cell(model.algosel.svmparams(:,2));
-
+disp('-> Completed! Performance of the models:');
+disp(' ');
 disp(svmTable);
 % ---------------------------------------------------------------------
 % Calculating the algorithm footprints. First step is to transform the
@@ -260,7 +251,7 @@ spaceFootprint = findPureFootprint(model.pbldr.Z, true(ninst,1), opts.footprint)
 spaceFootprint = calculateFootprintPerformance(spaceFootprint, model.pbldr.Z, true(ninst,1));
 model.footprint.spaceArea = spaceFootprint.area;
 model.footprint.spaceDensity = spaceFootprint.density;
-disp(['    Area: ' num2str(model.footprint.spaceArea) ' | Density: ' num2str(model.footprint.spaceDensity)]);
+disp(['    Space area: ' num2str(model.footprint.spaceArea) ' | Space density: ' num2str(model.footprint.spaceDensity)]);
 % ---------------------------------------------------------------------
 % This loop will calculate the footprints for good/bad instances and the
 % best algorithm.
@@ -271,11 +262,13 @@ model.footprint.bad = cell(1,nalgos);
 model.footprint.best = cell(1,nalgos);
 if opts.footprint.usesim
     % Use the SVM prediction data to calculate the footprints
+    disp('-> Using prediction data.');
     Yfoot = model.algosel.Yhat;
     Pfoot = model.algosel.psel;
     Bfoot = sum(model.algosel.Yhat,2)>opts.general.betaThreshold*nalgos;
 else
     % Use the actual data to calculate the footprints
+    disp('-> Using experimental data.');
     Yfoot = Ybin;
     Pfoot = portfolio;
     Bfoot = beta;
@@ -283,37 +276,45 @@ end
 
 for i=1:nalgos
     tic;
+    disp(['    -> Good performance footprint for ''' algolabels{i} '''']);
     model.footprint.good{i} = findPureFootprint(model.pbldr.Z,...
                                                 Yfoot(:,i),...
                                                 opts.footprint);
+    disp(['    -> Bad performance footprint for ''' algolabels{i} '''']);
     model.footprint.bad{i} = findPureFootprint( model.pbldr.Z,...
                                                ~Yfoot(:,i),...
                                                opts.footprint);
+    disp(['    -> Best performance footprint for ''' algolabels{i} '''']);
     model.footprint.best{i} = findPureFootprint(model.pbldr.Z,...
                                                 Pfoot==i,...
                                                 opts.footprint);
-    disp(['    -> Algorithm No. ' num2str(i) ' - Elapsed time: ' num2str(toc,'%.2f\n') 's']);
+    disp(['    -> Algorithm ''' algolabels{i} ''' completed - Elapsed time: ' num2str(toc,'%.2f\n') 's']);
 end
 % ---------------------------------------------------------------------
 % Detecting collisions and removing them.
 disp('-------------------------------------------------------------------------');
-disp('-> Detecting and removing contradictions.');
+disp('-> Detecting and removing contradicting sections of the footprints.');
 for i=1:nalgos
+    disp(['  -> Base algorithm ''' algolabels{i} '''']);
     startBase = tic;
     for j=i+1:nalgos
+        disp(['    -> Comparing ''' algolabels{i} ''' with ''' algolabels{j} '''']);
         startTest = tic;
         [model.footprint.best{i},...
          model.footprint.best{j}] = calculateFootprintCollisionsDual(model.footprint.best{i}, ...
                                                                      model.footprint.best{j}, ...
                                                                      opts.footprint);
         
-        disp(['    -> Test algorithm No. ' num2str(j) ' - Elapsed time: ' num2str(toc(startTest),'%.2f\n') 's']);
+        disp(['    -> Test algorithm ''' algolabels{j} ...
+              ''' completed - Elapsed time: ' num2str(toc(startTest),'%.2f\n') 's']);
     end
+    disp(['   -> Comparing good and bad performance areas for ''' algolabels{i} '''']);
     [model.footprint.good{i},...
      model.footprint.bad{i}] = calculateFootprintCollisionsDual(model.footprint.good{i},...
                                                                 model.footprint.bad{i},...
                                                                 opts.footprint);
-    disp(['-> Base algorithm No. ' num2str(i) ' - Elapsed time: ' num2str(toc(startBase),'%.2f\n') 's']);
+    disp(['  -> Base algorithm ''' algolabels{i} ...
+          ''' completed - Elapsed time: ' num2str(toc(startBase),'%.2f\n') 's']);
 end
 % -------------------------------------------------------------------------
 % Calculating performance
@@ -322,20 +323,21 @@ disp('-> Calculating the footprint''s area and density.');
 performanceTable = zeros(nalgos+2,10);
 for i=1:nalgos
     model.footprint.best{i} = calculateFootprintPerformance(model.footprint.best{i},...
-                                                          model.pbldr.Z,...
-                                                          Pfoot==i);
+                                                            model.pbldr.Z,...
+                                                            Pfoot==i);
     model.footprint.good{i} = calculateFootprintPerformance(model.footprint.good{i},...
-                                                   model.pbldr.Z,...
-                                                   Yfoot(:,i));
+                                                            model.pbldr.Z,...
+                                                            Yfoot(:,i));
     model.footprint.bad{i} = calculateFootprintPerformance( model.footprint.bad{i},...
-                                                   model.pbldr.Z,...
-                                                  ~Yfoot(:,i));
+                                                            model.pbldr.Z,...
+                                                           ~Yfoot(:,i));
     performanceTable(i,:) = [calculateFootprintSummary(model.footprint.good{i},...
                                                        model.footprint.spaceArea,...
                                                        model.footprint.spaceDensity), ...
                              calculateFootprintSummary(model.footprint.best{i},...
                                                        model.footprint.spaceArea,...
                                                        model.footprint.spaceDensity)];
+    disp(['    -> Algorithm ' algolabels{i} ' completed - Elapsed time: ' num2str(toc,'%.2f\n') 's']);
 end
 % -------------------------------------------------------------------------
 % Beta hard footprints. First step is to calculate them.
@@ -348,16 +350,13 @@ model.footprint.hard = findPureFootprint(model.pbldr.Z, ~Bfoot, opts.footprint);
  model.footprint.hard] = calculateFootprintCollisionsDual(model.footprint.easy,...
                                                           model.footprint.hard,...
                                                           opts.footprint);
-% model.footprint.hard = calculateFootprintCollisions(model.footprint.hard,...
-%                                                     model.footprint.easy,...
-%                                                     opts.footprint);
 % Calculating performance
 disp('-> Calculating the beta-footprint''s area and density.');
 model.footprint.easy = calculateFootprintPerformance(model.footprint.easy,...
                                                      model.pbldr.Z,...
                                                      Bfoot);
-model.footprint.hard = calculateFootprintPerformance(model.footprint.hard,...
-                                                     model.pbldr.Z,...
+model.footprint.hard = calculateFootprintPerformance( model.footprint.hard,...
+                                                      model.pbldr.Z,...
                                                      ~Bfoot);
 performanceTable(end-1,6:10) = calculateFootprintSummary(model.footprint.easy,...
                                                          model.footprint.spaceArea,...
@@ -368,15 +367,15 @@ performanceTable(end,6:10) = calculateFootprintSummary(model.footprint.hard,...
 model.footprint.performance = cell(nalgos+3,11);
 disp('-------------------------------------------------------------------------');
 model.footprint.performance(1,2:end) = {'Area_Good',...
-                                      'Area_Good_Normalized',...
-                                      'Density_Good',...
-                                      'Density_Good_Normalized',...
-                                      'Purity_Good',...
-                                      'Area_Best',...
-                                      'Area_Best_Normalized',...
-                                      'Density_Best',...
-                                      'Density_Best_Normalized',...
-                                      'Purity_Best'};
+                                        'Area_Good_Normalized',...
+                                        'Density_Good',...
+                                        'Density_Good_Normalized',...
+                                        'Purity_Good',...
+                                        'Area_Best',...
+                                        'Area_Best_Normalized',...
+                                        'Density_Best',...
+                                        'Density_Best_Normalized',...
+                                        'Purity_Best'};
 model.footprint.performance(2:end-2,1) = algolabels;
 model.footprint.performance(end-1:end,1) = {'beta-easy', 'beta-hard'};
 model.footprint.performance(2:end,2:end) = num2cell(round(performanceTable,3));
@@ -387,215 +386,117 @@ disp(model.footprint.performance);
 % Storing the output data as a CSV files. This is for easier
 % post-processing. All workspace data will be stored in a matlab file
 % later.
-writetable(array2table(model.pbldr.Z,'VariableNames',{'z_1','z_2'},...
-                       'RowNames',instlabels(subsetIndex)),...
-           [rootdir 'coordinates.csv'],'WriteRowNames',true);
-writetable(array2table(model.sbound.Zedge,'VariableNames',{'z_1','z_2'},...
-                       'RowNames',instlabels(subsetIndex)),...
-           [rootdir 'bounds.csv'],'WriteRowNames',true);
-writetable(array2table(model.sbound.Zecorr,'VariableNames',{'z_1','z_2'},...
-                       'RowNames',instlabels(subsetIndex)),...
-           [rootdir 'bounds_prunned.csv'],'WriteRowNames',true);
-writetable(array2table(Xraw(subsetIndex,model.featsel.idx),'VariableNames',featlabels,...
-                       'RowNames',instlabels(subsetIndex)),...
-           [rootdir 'feature_raw.csv'],'WriteRowNames',true);
-writetable(array2table(X,'VariableNames',featlabels,'RowNames',instlabels(subsetIndex)),...
-           [rootdir 'feature_process.csv'],'WriteRowNames',true);      
-writetable(array2table(Yraw(subsetIndex,:),'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
-           [rootdir 'algorithm_raw.csv'],'WriteRowNames',true);
-writetable(array2table(Y,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
-           [rootdir 'algorithm_process.csv'],'WriteRowNames',true);
-writetable(cell2table(model.footprint.performance(2:end,[3 5 6 8 10 11]),...
-                      'VariableNames',model.footprint.performance(1,[3 5 6 8 10 11]),...
-                      'RowNames',model.footprint.performance(2:end,1)),...
-           [rootdir 'footprint_performance.csv'],'WriteRowNames',true);
-writetable(cell2table(projectionMatrix(2:end,2:end),...
-                      'VariableNames',projectionMatrix(1,2:end),...
-                      'RowNames',projectionMatrix(2:end,1)),...
-           [rootdir 'projection_matrix.csv'],'WriteRowNames',true);
-writetable(array2table(Ybin,'VariableNames',algolabels,...
-                       'RowNames',instlabels(subsetIndex)),...
-           [rootdir 'algorithm_bin.csv'],'WriteRowNames',true);
-writetable(array2table(portfolio,'VariableNames',{'Best_Algorithm'},...
-                       'RowNames',instlabels(subsetIndex)),...
-           [rootdir 'portfolio.csv'],'WriteRowNames',true);
-writetable(array2table(model.algosel.Yhat,'VariableNames',algolabels,...
-                       'RowNames',instlabels(subsetIndex)),...
-           [rootdir 'algorithm_svm.csv'],'WriteRowNames',true);
-writetable(array2table(model.algosel.psel,'VariableNames',{'Best_Algorithm'},...
-                       'RowNames',instlabels(subsetIndex)),...
-           [rootdir 'portfolio_svm.csv'],'WriteRowNames',true);
-writetable(cell2table(svmTable(2:end,2:end),...
-                      'VariableNames',svmTable(1,2:end),...
-                      'RowNames',svmTable(2:end,1)),...
-           [rootdir 'svm_table.csv'],'WriteRowNames',true);
-% Produces files which contain color information only
-if opts.webproc.flag
-%     writetable(array2table(parula(256),'VariableNames',{'R','G','B'}),...
-%               [rootdir 'color_table.csv'],'WriteRowNames',true);
-    Xaux = Xraw(subsetIndex,model.featsel.idx);
-    Xaux = bsxfun(@rdivide,bsxfun(@minus,Xaux,min(Xaux)),range(Xaux));
-    Xaux = round(255.*Xaux);
-    
-    writetable(array2table(Xaux,'VariableNames',featlabels,...
-                           'RowNames',instlabels(subsetIndex)),...
-               [rootdir 'feature_raw_color.csv'],'WriteRowNames',true);
-    
-    Xaux = X;
-    Xaux = bsxfun(@rdivide,bsxfun(@minus,Xaux,min(Xaux)),range(Xaux));
-    Xaux = round(255.*Xaux);
-           
-    writetable(array2table(Xaux,'VariableNames',featlabels,'RowNames',instlabels(subsetIndex)),...
-               [rootdir 'feature_process_color.csv'],'WriteRowNames',true);
-           
-    Yaux = Yraw(subsetIndex,:);
-    Yaux = bsxfun(@rdivide,bsxfun(@minus,Yaux,min(Yaux(:))),range(Yaux(:)));
-    Yaux = round(255.*Yaux);
-    
-    writetable(array2table(Yaux,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
-               [rootdir 'algorithm_raw_color.csv'],'WriteRowNames',true);
-           
-    Yaux = Yraw(subsetIndex,:);
-    Yaux = bsxfun(@rdivide,bsxfun(@minus,Yaux,min(Yaux,[],1)),range(Yaux,1));
-    Yaux = round(255.*Yaux);
-    
-    writetable(array2table(Yaux,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
-               [rootdir 'algorithm_raw_single_color.csv'],'WriteRowNames',true);
-           
-    Yaux = Y;
-    Yaux = bsxfun(@rdivide,bsxfun(@minus,Yaux,min(Yaux(:))),range(Yaux(:)));
-    Yaux = round(255.*Yaux);
-    
-    writetable(array2table(Yaux,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
-               [rootdir 'algorithm_process_color.csv'],'WriteRowNames',true);
-           
-    Yaux = Y;
-    Yaux = bsxfun(@rdivide,bsxfun(@minus,Yaux,min(Yaux,[],1)),range(Yaux,1));
-    Yaux = round(255.*Yaux);
-    
-    writetable(array2table(Yaux,'VariableNames',algolabels,'RowNames',instlabels(subsetIndex)),...
-               [rootdir 'algorithm_process_single_color.csv'],'WriteRowNames',true);
+writeArray2CSV = @(data,colnames,rownames,filename) writetable(array2table(data,'VariableNames',colnames,...
+                                                                                'RowNames',rownames),...
+                                                               filename,'WriteRowNames',true);
+writeCell2CSV = @(data,colnames,rownames,filename) writetable(cell2table(data,'VariableNames',colnames,...
+                                                                              'RowNames',rownames),...
+                                                              filename,'WriteRowNames',true);
+makeBndLabels = @(data) arrayfun(@(x) strcat('bnd_pnt_',num2str(x)),1:size(data,1),'UniformOutput',false);
+colorscale  = @(data) round(255.*bsxfun(@rdivide, bsxfun(@minus, data, min(data,[],1)), range(data)));
+colorscaleg = @(data) round(255.*bsxfun(@rdivide, bsxfun(@minus, data, min(data(:))), range(data(:))));
+
+if opts.outputs.csv
+    disp('-------------------------------------------------------------------------');
+    disp('-> Writing the data on CSV files for post-processing.');
+    % ---------------------------------------------------------------------
+    writeArray2CSV(model.pbldr.Z, {'z_1','z_2'}, instlabels(subsetIndex), [rootdir 'coordinates.csv']);
+    writeArray2CSV(model.sbound.Zedge, {'z_1','z_2'}, ...
+                   makeBndLabels(model.sbound.Zedge), [rootdir 'bounds.csv']);
+    writeArray2CSV(model.sbound.Zecorr, {'z_1','z_2'}, ...
+                   makeBndLabels(model.sbound.Zecorr), [rootdir 'bounds_prunned.csv']);
+    writeArray2CSV(Xraw(subsetIndex, model.featsel.idx), featlabels, instlabels(subsetIndex), [rootdir 'feature_raw.csv']);
+    writeArray2CSV(X, featlabels, instlabels(subsetIndex), [rootdir 'feature_process.csv']);  
+    writeArray2CSV(Yraw(subsetIndex,:), algolabels, instlabels(subsetIndex), [rootdir 'algorithm_raw.csv']);
+    writeArray2CSV(Y, algolabels, instlabels(subsetIndex), [rootdir 'algorithm_process.csv']);
+    writeArray2CSV(Ybin, algolabels, instlabels(subsetIndex), [rootdir 'algorithm_bin.csv']);
+    writeArray2CSV(portfolio, {'Best_Algorithm'}, instlabels(subsetIndex), [rootdir 'portfolio.csv']);
+    writeArray2CSV(model.algosel.Yhat, algolabels, instlabels(subsetIndex), [rootdir 'algorithm_svm.csv']);
+    writeArray2CSV(model.algosel.psel, {'Best_Algorithm'}, instlabels(subsetIndex), [rootdir 'portfolio_svm.csv']);
+    writeCell2CSV(model.footprint.performance(2:end,[3 5 6 8 10 11]), ...
+                  model.footprint.performance(1,[3 5 6 8 10 11]),...
+                  model.footprint.performance(2:end,1),...
+                  [rootdir 'footprint_performance.csv']);
+    writeCell2CSV(projectionMatrix(2:end,2:end), projectionMatrix(1,2:end),...
+                  projectionMatrix(2:end,1), [rootdir 'projection_matrix.csv']);
+    writeCell2CSV(svmTable(2:end,2:end), svmTable(1,2:end), svmTable(2:end,1), [rootdir 'svm_table.csv']);
+    if opts.outputs.web
+    %   writetable(array2table(parula(256), 'VariableNames', {'R','G','B'}), [rootdir 'color_table.csv']);
+        writeArray2CSV(colorscale(Xraw(subsetIndex,model.featsel.idx)), featlabels, instlabels(subsetIndex), [rootdir 'feature_raw_color.csv']);
+        writeArray2CSV(colorscale(Yraw(subsetIndex,:)), algolabels, instlabels(subsetIndex), [rootdir 'algorithm_raw_single_color.csv']);
+        writeArray2CSV(colorscale(X), featlabels, instlabels(subsetIndex), [rootdir 'feature_process_color.csv']);
+        writeArray2CSV(colorscale(Y), algolabels, instlabels(subsetIndex), [rootdir 'algorithm_process_single_color.csv']);
+        writeArray2CSV(colorscaleg(Yraw(subsetIndex,:)), algolabels, instlabels(subsetIndex), [rootdir 'algorithm_raw_color.csv']);
+        writeArray2CSV(colorscaleg(Y), algolabels, instlabels(subsetIndex), [rootdir 'algorithm_process_color.csv']);
+    end
 end
 % ---------------------------------------------------------------------
 % Making all the plots. First, plotting the features and performance as
 % scatter plots.
-for i=1:nfeats
-    clf;
-    drawScatter((X(:,i)-min(X(:,i)))./range(X(:,i)), model.pbldr.Z, strrep(featlabels{i},'_',' '));
-    print(gcf,'-dpng',[rootdir 'scatter_' featlabels{i} '.png']);
-end
-
-Ys = log10(Yraw+1);
-Ys = (Ys-min(Ys(:)))./range(Ys(:));
-for i=1:nalgos
-    clf;
-    drawScatter(Ys(subsetIndex,i), model.pbldr.Z, strrep(algolabels{i},'_',' '));
-    print(gcf,'-dpng',[rootdir 'scatter_' algolabels{i} '_absolute.png']);
-end
-
-for i=1:nalgos
-    clf;
-    drawScatter((Y(:,i)-min(Y(:,i)))./range(Y(:,i)), model.pbldr.Z, strrep(algolabels{i},'_',' '));
-    print(gcf,'-dpng',[rootdir 'scatter_' algolabels{i} '.png']);
-end
-
-% Drawing the footprints for good and bad performance acording to the
-% binary measure
-for i=1:nalgos
-    clf;
-    drawGoodBadFootprint(model.pbldr.Z, Yfoot(:,i), model.footprint.good{i}, strrep(algolabels{i},'_',' '));
-    print(gcf,'-dpng',[rootdir 'footprint_' algolabels{i} '.png']);
-end
-
-% Drawing the footprints as portfolio.
-clf;
-drawPortfolioFootprint(model.footprint.best, algolabels);
-print(gcf,'-dpng',[rootdir 'footprint_portfolio.png']);
-
-% Drawing the sources of the instances if available
-if any(issource)
-    nsources = length(sourcelabels);
-    clrs = parula(nsources);
-    clf;
-    for i=1:nsources
-        line(model.pbldr.Z(S(subsetIndex)==sourcelabels{i},1), ...
-             model.pbldr.Z(S(subsetIndex)==sourcelabels{i},2), ...
-             'LineStyle', 'none', ...
-             'Marker', '.', ...
-             'Color', clrs(i,:), ...
-             'MarkerFaceColor', clrs(i,:), ...
-             'MarkerSize', 6);
+if opts.outputs.png
+    disp('-------------------------------------------------------------------------');
+    disp('-> Producing the plots.');
+    % ---------------------------------------------------------------------
+    for i=1:nfeats
+        clf;
+        drawScatter((X(:,i)-min(X(:,i)))./range(X(:,i)), model.pbldr.Z, strrep(featlabels{i},'_',' '));
+        line(model.sbound.Zedge(:,1),model.sbound.Zedge(:,2),...
+                 'LineStyle', '-', ...
+                 'Color', 'r');
+        print(gcf,'-dpng',[rootdir 'scatter_' featlabels{i} '.png']);
     end
-    xlabel('z_{1}'); ylabel('z_{2}'); title('Sources');
-    legend(sourcelabels, 'Location', 'NorthEastOutside');
-    set(findall(gcf,'-property','FontSize'),'FontSize',12);
-    set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
-    axis square;
-end
-print(gcf,'-dpng',[rootdir 'sources.png']);
-% Drawing the SVM's predictions of good performance
-cpt = {'BAD','GOOD'};
-for i=1:nalgos
+    % ---------------------------------------------------------------------
+    Ys = log10(Yraw+1);
+    Ys = (Ys-min(Ys(:)))./range(Ys(:));
+    for i=1:nalgos
+        clf;
+        drawScatter(Ys(subsetIndex,i), model.pbldr.Z, strrep(algolabels{i},'_',' '));
+        print(gcf,'-dpng',[rootdir 'scatter_' algolabels{i} '_absolute.png']);
+    end
+    % ---------------------------------------------------------------------
+    for i=1:nalgos
+        clf;
+        drawScatter((Y(:,i)-min(Y(:,i)))./range(Y(:,i)), model.pbldr.Z, strrep(algolabels{i},'_',' '));
+        print(gcf,'-dpng',[rootdir 'scatter_' algolabels{i} '.png']);
+    end
+    % ---------------------------------------------------------------------
+    % Drawing the footprints for good and bad performance acording to the
+    % binary measure
+    for i=1:nalgos
+        clf;
+        drawGoodBadFootprint(model.pbldr.Z, Yfoot(:,i), model.footprint.good{i}, strrep(algolabels{i},'_',' '));
+        print(gcf,'-dpng',[rootdir 'footprint_' algolabels{i} '.png']);
+    end
+    % ---------------------------------------------------------------------
+    % Drawing the footprints as portfolio.
     clf;
-    h = zeros(1,2);
-    if sum(model.algosel.Yhat(:,i)==0)~=0
-        h(1) = line(model.pbldr.Z(model.algosel.Yhat(:,i)==0,1), ...
-                    model.pbldr.Z(model.algosel.Yhat(:,i)==0,2), ...
-                    'LineStyle', 'none', ...
-                    'Marker', 'o', ...
-                    'Color', [0.8 0.8 0.8], ...
-                    'MarkerFaceColor', [0.8 0.8 0.8], ...
-                    'MarkerSize', 6);
+    drawPortfolioFootprint(model.footprint.best, algolabels);
+    print(gcf,'-dpng',[rootdir 'footprint_portfolio.png']);
+    % ---------------------------------------------------------------------
+    % Drawing the sources of the instances if available
+    if any(issource)
+        clf;
+        drawSources(model.pbldr.Z, S(subsetIndex));
+        print(gcf,'-dpng',[rootdir 'sources.png']);
     end
-    if sum(model.algosel.Yhat(:,i)==1)~=0
-        h(2) = line(model.pbldr.Z(model.algosel.Yhat(:,i)==1,1), ...
-                    model.pbldr.Z(model.algosel.Yhat(:,i)==1,2), ...
-                    'LineStyle', 'none', ...
-                    'Marker', 'o', ...
-                    'Color', [0.0 0.0 0.0], ...
-                    'MarkerFaceColor', [0.0 0.0 0.0], ...
-                    'MarkerSize', 6);
+    % ---------------------------------------------------------------------
+    % Drawing the SVM's predictions of good performance
+    for i=1:nalgos
+        clf;
+        drawSVMPredictions(model.pbldr.Z, model.algosel.Yhat(:,i), strrep(algolabels{i},'_',' '));
+        print(gcf,'-dpng',[rootdir 'svm_' algolabels{i} '.png']);
     end
-    xlabel('z_{1}'); ylabel('z_{2}'); title(strrep(algolabels{i},'_',' '));
-    legend(h(h~=0), cpt(h~=0), 'Location', 'NorthEastOutside');
-    set(findall(gcf,'-property','FontSize'),'FontSize',12);
-    set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
-    axis square;
-    print(gcf,'-dpng',[rootdir 'svm_' algolabels{i} '.png']);
+    % ---------------------------------------------------------------------
+    % Drawing the SVM's recommendations
+    clf;
+    drawSVMPortfolioSelections(model.pbldr.Z, model.algosel.psel, algolabels);
+    print(gcf,'-dpng',[rootdir 'svm_portfolio.png']);
 end
-% Drawing the SVM's recommendations
-isworty = mean(bsxfun(@eq,model.algosel.psel,1:nalgos))~=0;
-clr = parula(nalgos);
-mrkrs = {'o','s','x'};
-cnt = 1;
-clf;
-for i=1:nalgos
-    if ~isworty(i)
-        continue;
-    end
-    line(model.pbldr.Z(model.algosel.psel==i,1), ...
-         model.pbldr.Z(model.algosel.psel==i,2), ...
-         'LineStyle', 'none', ...
-         'Marker', mrkrs{cnt}, ...
-         'Color', clr(i,:), ...
-         'MarkerFaceColor', clr(i,:), ...
-         'MarkerSize', 6);
-    cnt = cnt+1;
-    if cnt>length(mrkrs)
-        cnt = 1;
-    end
-end
-xlabel('z_{1}'); ylabel('z_{2}');
-legend(algolabels(isworty), 'Location', 'NorthEastOutside');
-set(findall(gcf,'-property','FontSize'),'FontSize',12);
-set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
-axis square;
-print(gcf,'-dpng',[rootdir 'svm_portfolio.png']);
 % -------------------------------------------------------------------------
-% 
-% end
 model.opts = opts;
-save([rootdir 'results.mat'],'-struct','model'); % Save the main results
+disp('-------------------------------------------------------------------------');
+disp('-> Storing the raw MATLAB results for post-processing and/or debugging.');
+save([rootdir 'model.mat'],'-struct','model'); % Save the main results
 save([rootdir 'workspace.mat']); % Save the full workspace for debugging
 disp(['-> Completed! Elapsed time: ' num2str(toc(startProcess)) 's']);
 disp('EOF:SUCCESS');

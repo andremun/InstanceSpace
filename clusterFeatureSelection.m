@@ -4,7 +4,7 @@ nfeats = size(X,2);
 if ~opts.flag
     out.selvars = true(1,nfeats);
 else
-
+    disp('-> Selecting features based on correlation clustering.');
     rng('default');
     nalgos = size(Ybin,2);
     Kmax = min(opts.KDEFAULT, nfeats);
@@ -61,6 +61,12 @@ else
 
     ncomb = size(comb,1); %#ok<*NODEF>
     disp(['-> ' num2str(ncomb) ' valid feature combinations.']);
+    
+    if ncomb>100
+        disp('-> There are too many valid combinations. We will try 100 of them at random.')
+        comb = comb(randperm(ncomb,100));
+        ncomb = 100;
+    end
     % ---------------------------------------------------------------------
     % Determine which combination produces the best separation while using a
     % two dimensional PCA projection. The separation is defined by a Tree
@@ -75,12 +81,13 @@ else
             out.ooberr(i,j) = mean(Ybin(:,j)~=str2double(oobPredict(tree)));
         end
         etime = toc;
-        disp(['    Combination No. ' num2str(i) ' | Elapsed Time: ' num2str(etime,'%.2f\n') ...
+        disp(['    -> Combination No. ' num2str(i) ' | Elapsed Time: ' num2str(etime,'%.2f\n') ...
               's | Average error : ' num2str(mean(out.ooberr(i,:)))]);
     end
     [~,best] = min(sum(out.ooberr,2));
     out.selvars = comb(best,:);
     X = X(:,out.selvars);
+    disp(['-> Keeping ' num2str(size(X, 2)) ' out of ' num2str(nfeats) ' features (clustering).']);
 end
     
 end

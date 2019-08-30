@@ -48,6 +48,9 @@ for i=1:numBasePoly
     end
 end
 
+disp(['      -> ' num2str(round(100.*sum(idxBase)/numBasePoly,1)) '%' ...
+      ' of the base footprint fullfils the density and purity requirements.']);
+
 base.polyArea = base.polyArea(idxBase);
 base.polyDensity = base.polyDensity(idxBase);
 base.polyElements = base.polyElements(idxBase);
@@ -68,6 +71,9 @@ for j=1:numTestPoly
         end
     end
 end
+
+disp(['      -> ' num2str(round(sum(idxTest)/numTestPoly,1)) '%' ...
+      ' of the test footprint fullfils the density and purity requirements.']);
 
 test.polyArea = test.polyArea(idxTest);
 test.polyDensity = test.polyDensity(idxTest);

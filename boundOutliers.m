@@ -3,6 +3,7 @@ function [X, out] = boundOutliers(X, opts)
 out.medval = median(X, 1);
 out.iqrange = iqr(X, 1);
 if opts.flag
+    disp('-> Removing extreme outliers from the feature values.');
     out.hibound = out.medval + 5.*out.iqrange;
     out.lobound = out.medval - 5.*out.iqrange;
     himask = bsxfun(@gt,X,out.hibound);

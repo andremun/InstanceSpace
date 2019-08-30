@@ -12,6 +12,7 @@ function [out] = testIS(rootdir)
 % -------------------------------------------------------------------------
 
 startProcess = tic;
+printdisclaim('testIS.m');
 % -------------------------------------------------------------------------
 % Collect all the data from the files
 modelfile = [rootdir 'results.mat'];

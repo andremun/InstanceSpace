@@ -3,16 +3,22 @@ function footprint = findPureFootprint(Z, Y, opts)
 try
     Ig = unique(Z(Y,:),'rows');   % There might be points overlapped, so eliminate them to avoid problems
     numInst = size(Ig,1);
-    % ---------
-    % We are trying here a different approach
+    % We use a random subset of instances to estimate the footprints. Once
+    % we do that, we calculate a delaunay triangulation.
+    disp(['      -> Using ' num2str(round(100.*opts.PCTILE,1)) ...
+         '% of the instances to calculate the footprint.']);
     elim = true(numInst,1);
     aux = cvpartition(numInst,'HoldOut',opts.PCTILE);
     elim(convhull(Ig(:,1),Ig(:,2))) = false; % Keep the ones in the convex hull
     elim(aux.test) = false;
     Ig = Ig(~elim,:);
+    disp(['      -> ' num2str(sum(~elim)) ...
+         ' instances are going to be used.']);
+    disp('      -> Calculating a Delaunay triangulation.');
     polygon = delaunay(Ig);
 catch ME
-    disp('   -> There is not enough instances to calculate the footprint.');
+    disp('      -> There is not enough instances to calculate a footprint.');
+    disp('      -> Either the algorithm is very weak or the subset of instances used is too small.');
     disp(['ID: ' ME.identifier]);
     footprint.polyArea = [];
     footprint.polyDensity = [];
@@ -24,46 +30,6 @@ catch ME
     return;
 end
 numPolygons = size(polygon,1);
-% % ------
-% % Eliminate those candidates that are too small or too big
-% D         = pdist(Ig)';               % Calculate the distance among all points
-% Bounds    = prctile(D,[opts.LOWER_PCTILE opts.UPPER_PCTILE]);
-% idx       = D<Bounds(1);
-% [row,col] = meshgrid(1:numInst);
-% row       = row(tril(true(numInst),-1));
-% col       = col(tril(true(numInst),-1));
-% idx       = [row(idx) col(idx)];
-% elim      = false(numInst,1);
-% for i=1:size(idx,1)
-%     if ~elim(idx(i,1))
-%         elim(idx(i,2)) = true;
-%     else
-%         elim(idx(i,2)) = false;
-%     end
-% end
-% Ig          = Ig(~elim,:);
-% numInst     = size(Ig,1);
-% if numInst>3
-%     polygon     = delaunay(Ig);
-% else
-%     footprint.polyArea = [];
-%     footprint.polyDensity = [];
-%     footprint.polyElements = 0;
-%     footprint.polyGoodElements = 0;
-%     footprint.polyPurity = [];
-%     footprint.polygon = [];
-%     footprint.pieces = 0;
-%     return;
-% end
-% numPolygons = size(polygon,1);
-% % ------
-% elim        = false(numPolygons,1);
-% for i=1:numPolygons
-%     elim(i) =  any(pdist(Ig(polygon(i,:),:))>Bounds(2));
-% end
-% polygon     = polygon(~elim,:);
-% numPolygons = size(polygon,1);
-% % ------
 % Calculating cardinality, cardinality of good elements, and area of each
 % polygon.
 cardPoly = zeros(numPolygons,1);
@@ -91,6 +57,8 @@ for i=1:numPolygons
         end
     end
 end
+disp(['      -> ' num2str(round(100.*sum(idx)/numPolygons,1)) '%' ...
+      ' of the footprint fullfils the density and purity requirements.']);
 polygon     = polygon(idx,:);
 numPolygons = size(polygon,1);
 % Setting the footprint data

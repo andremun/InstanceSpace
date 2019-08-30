@@ -46,7 +46,9 @@ opts.selvars.smallscale = 0.30;          % Percentage of instances to be kept fo
 opts.selvars.fileidxflag = false;
 opts.selvars.fileidx = '';
 
-opts.webproc.flag = true;               % NOTE: MAKE THIS FALSE IF YOU ARE USING THIS CODE LOCALY - This flag is only useful if the system is being used 'online' through matilda.unimelb.edu.au
+opts.outputs.csv = true;               %
+opts.outputs.web = false;              % NOTE: MAKE THIS FALSE IF YOU ARE USING THIS CODE LOCALY - This flag is only useful if the system is being used 'online' through matilda.unimelb.edu.au
+opts.outputs.png = true;               %
 
 % Saving all the information as a JSON file
 fid = fopen([rootdir 'options.json'],'w+');

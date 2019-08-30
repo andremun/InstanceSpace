@@ -3,6 +3,7 @@ function [X,Y,out] = autoNormalize(X, Y, opts)
 nfeats = size(X,2);
 nalgos = size(Y,2);
 if opts.flag
+    disp('-> Auto-normalizing the data using Box-Cox and Z transformations.');
     out.minX = min(X,[],1);
     X = bsxfun(@minus,X,out.minX)+1;
     out.lambdaX = zeros(1,nfeats);

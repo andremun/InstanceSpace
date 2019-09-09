@@ -15,7 +15,7 @@ startProcess = tic;
 printdisclaim('testIS.m');
 % -------------------------------------------------------------------------
 % Collect all the data from the files
-modelfile = [rootdir 'results.mat'];
+modelfile = [rootdir 'model.mat'];
 datafile = [rootdir 'metadata.csv'];
 optsfile = [rootdir 'options.json'];
 if ~isfile(modelfile) || ~isfile(datafile) || ~isfile(optsfile)
@@ -46,12 +46,15 @@ if isnumeric(instlabels)
 end
 if any(issource)
     S = categorical(Xbar{:,issource});
-    sourcelabels = cellstr(unique(S));
 end
 X = Xbar{:,isfeat};
 Y = Xbar{:,isalgo};
 nalgos = size(Y,2);
 ninst = size(X,1);
+% -------------------------------------------------------------------------
+% Storing the raw data for further processing, e.g., graphs
+Xraw = X;
+Yraw = Y;
 % -------------------------------------------------------------------------
 % Determine whether the performance of an algorithm is a cost measure to
 % be minimized or a profit measure to be maximized. Moreover, determine
@@ -114,6 +117,7 @@ end
 % ---------------------------------------------------------------------
 % This is the final subset of features.
 X = X(:,model.featsel.idx);
+nfeats = size(X,2);
 featlabels = strrep(varlabels(isfeat),'feature_','');
 featlabels = featlabels(model.featsel.idx);
 algolabels = strrep(varlabels(isalgo),'algo_','');
@@ -130,5 +134,90 @@ for i=1:nalgos
     [Yhat(:,i),~,probs(:,i)] = svmpredict(randi([1 2], ninst,1), Z, model.algosel.svm{i}, '-q');
 end
 Yhat = Yhat==2; % Make it binary
+[mostaccurate,psel] = max(bsxfun(@times,Yhat,1-model.algosel.modelerr),[],2);
+psel(mostaccurate<=0) = 0;
+
+writeArray2CSV = @(data,colnames,rownames,filename) writetable(array2table(data,'VariableNames',colnames,...
+                                                                                'RowNames',rownames),...
+                                                               filename,'WriteRowNames',true);
+colorscale  = @(data) round(255.*bsxfun(@rdivide, bsxfun(@minus, data, min(data,[],1)), range(data)));
+colorscaleg = @(data) round(255.*bsxfun(@rdivide, bsxfun(@minus, data, min(data(:))), range(data(:))));
+
+if opts.outputs.csv
+    disp('-------------------------------------------------------------------------');
+    disp('-> Writing the data on CSV files for post-processing.');
+    % ---------------------------------------------------------------------
+    writeArray2CSV(Z, {'z_1','z_2'}, instlabels, [rootdir 'coordinates.csv']);
+    writeArray2CSV(Xraw(:, model.featsel.idx), featlabels, instlabels, [rootdir 'feature_raw.csv']);
+    writeArray2CSV(X, featlabels, instlabels, [rootdir 'feature_process.csv']);  
+    writeArray2CSV(Yraw, algolabels, instlabels, [rootdir 'algorithm_raw.csv']);
+    writeArray2CSV(Y, algolabels, instlabels, [rootdir 'algorithm_process.csv']);
+    writeArray2CSV(Ybin, algolabels, instlabels, [rootdir 'algorithm_bin.csv']);
+    writeArray2CSV(portfolio, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio.csv']);
+    writeArray2CSV(Yhat, algolabels, instlabels, [rootdir 'algorithm_svm.csv']);
+    writeArray2CSV(psel, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio_svm.csv']);
+    if opts.outputs.web
+    %   writetable(array2table(parula(256), 'VariableNames', {'R','G','B'}), [rootdir 'color_table.csv']);
+        writeArray2CSV(colorscale(Xraw(:,model.featsel.idx)), featlabels, instlabels, [rootdir 'feature_raw_color.csv']);
+        writeArray2CSV(colorscale(Yraw), algolabels, instlabels, [rootdir 'algorithm_raw_single_color.csv']);
+        writeArray2CSV(colorscale(X), featlabels, instlabels, [rootdir 'feature_process_color.csv']);
+        writeArray2CSV(colorscale(Y), algolabels, instlabels, [rootdir 'algorithm_process_single_color.csv']);
+        writeArray2CSV(colorscaleg(Yraw), algolabels, instlabels, [rootdir 'algorithm_raw_color.csv']);
+        writeArray2CSV(colorscaleg(Y), algolabels, instlabels, [rootdir 'algorithm_process_color.csv']);
+    end
+end
+
+if opts.outputs.png
+    disp('-------------------------------------------------------------------------');
+    disp('-> Producing the plots.');
+    % ---------------------------------------------------------------------
+    for i=1:nfeats
+        clf;
+        drawScatter((X(:,i)-min(X(:,i)))./range(X(:,i)), Z, strrep(featlabels{i},'_',' '));
+        line(model.sbound.Zedge(:,1),model.sbound.Zedge(:,2),...
+                 'LineStyle', '-', ...
+                 'Color', 'r');
+        print(gcf,'-dpng',[rootdir 'scatter_' featlabels{i} '.png']);
+    end
+    % ---------------------------------------------------------------------
+    Ys = log10(Yraw+1);
+    Ys = (Ys-min(Ys(:)))./range(Ys(:));
+    for i=1:nalgos
+        clf;
+        drawScatter(Ys(:,i), Z, strrep(algolabels{i},'_',' '));
+        print(gcf,'-dpng',[rootdir 'scatter_' algolabels{i} '_absolute.png']);
+    end
+    % ---------------------------------------------------------------------
+    for i=1:nalgos
+        clf;
+        drawScatter((Y(:,i)-min(Y(:,i)))./range(Y(:,i)), Z, strrep(algolabels{i},'_',' '));
+        print(gcf,'-dpng',[rootdir 'scatter_' algolabels{i} '.png']);
+    end
+    % ---------------------------------------------------------------------
+    % Drawing the sources of the instances if available
+    if any(issource)
+        clf;
+        drawSources(Z, S);
+        print(gcf,'-dpng',[rootdir 'sources.png']);
+    end
+    % ---------------------------------------------------------------------
+    % Drawing the SVM's predictions of good performance
+    for i=1:nalgos
+        clf;
+        drawSVMPredictions(Z, Yhat(:,i), strrep(algolabels{i},'_',' '));
+        print(gcf,'-dpng',[rootdir 'svm_' algolabels{i} '.png']);
+    end
+    % ---------------------------------------------------------------------
+    % Drawing the SVM's recommendations
+    clf;
+    drawSVMPortfolioSelections(Z, psel, algolabels);
+    print(gcf,'-dpng',[rootdir 'svm_portfolio.png']);
+end
+
+disp('-------------------------------------------------------------------------');
+disp('-> Storing the raw MATLAB results for post-processing and/or debugging.');
+save([rootdir 'workspace_test.mat']); % Save the full workspace for debugging
+disp(['-> Completed! Elapsed time: ' num2str(toc(startProcess)) 's']);
+disp('EOF:SUCCESS');
 
 end

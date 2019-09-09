@@ -1,4 +1,4 @@
-function out = fitoracle(Z,Ybin,opts)
+function out = fitoracle(Z,Ybin,weight,opts)
 
 % global params
 Ybin = double(Ybin)+1;
@@ -18,6 +18,7 @@ for i=1:nalgos
                                                                            ytrain,...
                                                                            xtest,...
                                                                            out.paramgrid(j,:),...
+                                                                           weight(i),...
                                                                            false));
     end
     [out.modelerr(i),out.paramidx(i)] = min(out.cvmcr(:,i));
@@ -32,7 +33,7 @@ out.svm = cell(1,nalgos);
 out.svmparams = zeros(nalgos,2);
 for i=1:nalgos
     out.svmparams(i,:) = out.paramgrid(out.paramidx(i),:);
-    [aux, out.svm{i}] = svmwrap(Z, Ybin(:,i), Z, out.svmparams(i,:), true);
+    [aux, out.svm{i}] = svmwrap(Z, Ybin(:,i), Z, out.svmparams(i,:), weight(i), true);
     out.Yhat(:,i)  = aux(:,1);
     out.probs(:,i) = aux(:,2);
 end

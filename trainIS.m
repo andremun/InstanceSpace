@@ -210,37 +210,37 @@ disp(projectionMatrix);
 disp('-------------------------------------------------------------------------');
 disp('-> Finding empirical bounds.');
 model.sbound = findSpaceBounds(X,model.pbldr.A,opts.sbound);
-% -------------------------------------------------------------------------
-% Algorithm selection. Fit a model that would separate the space into
-% classes of good and bad performance. 
-disp('-------------------------------------------------------------------------');
-disp('-> Fitting SVM prediction models. This may take a while...');
-model.algosel = fitoracle(model.pbldr.Z, Ybin, opts.oracle);
-% svmselections = bsxfun(@eq,model.algosel.psel,unique(model.algosel.psel)');
-svmselections = bsxfun(@eq,model.algosel.psel,1:nalgos);
-Yaux = Yraw(subsetIndex,:);
-Yaux(~svmselections) = NaN;
-svmTable = cell(8,nalgos+3);
-svmTable{1,1} = ' ';
-svmTable(1,2:end-2) = algolabels;
-svmTable(1,end-1:end) = {'Oracle','Selector'};
-svmTable(2:8,1) = {'Avg. Perf. all instances';
-                   'Std. Perf. all instances';
-                   'Avg. Perf. selected instances';
-                   'Std. Perf. selected instances';
-                   'CV model error';
-                   'C';
-                   'Gamma'};
-svmTable(2,2:end) = num2cell([mean(Yraw(subsetIndex,:)) mean(bestPerformace) nanmean(Yaux(:))]);
-svmTable(3,2:end) = num2cell([std(Yraw(subsetIndex,:)) std(bestPerformace) nanstd(Yaux(:))]);
-svmTable(4,2:end-2) = num2cell(nanmean(Yaux));
-svmTable(5,2:end-2) = num2cell(nanstd(Yaux));
-svmTable(6,2:end-2) = num2cell(round(100.*model.algosel.modelerr,1));
-svmTable(7,2:end-2) = num2cell(model.algosel.svmparams(:,1));
-svmTable(8,2:end-2) = num2cell(model.algosel.svmparams(:,2));
-disp('-> Completed! Performance of the models:');
-disp(' ');
-disp(svmTable);
+% % -------------------------------------------------------------------------
+% % Algorithm selection. Fit a model that would separate the space into
+% % classes of good and bad performance. 
+% disp('-------------------------------------------------------------------------');
+% disp('-> Fitting SVM prediction models. This may take a while...');
+% model.algosel = fitoracle(model.pbldr.Z, Ybin, opts.oracle);
+% % svmselections = bsxfun(@eq,model.algosel.psel,unique(model.algosel.psel)');
+% svmselections = bsxfun(@eq,model.algosel.psel,1:nalgos);
+% Yaux = Yraw(subsetIndex,:);
+% Yaux(~svmselections) = NaN;
+% svmTable = cell(8,nalgos+3);
+% svmTable{1,1} = ' ';
+% svmTable(1,2:end-2) = algolabels;
+% svmTable(1,end-1:end) = {'Oracle','Selector'};
+% svmTable(2:8,1) = {'Avg. Perf. all instances';
+%                    'Std. Perf. all instances';
+%                    'Avg. Perf. selected instances';
+%                    'Std. Perf. selected instances';
+%                    'CV model error';
+%                    'C';
+%                    'Gamma'};
+% svmTable(2,2:end) = num2cell([mean(Yraw(subsetIndex,:)) mean(bestPerformace) nanmean(Yaux(:))]);
+% svmTable(3,2:end) = num2cell([std(Yraw(subsetIndex,:)) std(bestPerformace) nanstd(Yaux(:))]);
+% svmTable(4,2:end-2) = num2cell(nanmean(Yaux));
+% svmTable(5,2:end-2) = num2cell(nanstd(Yaux));
+% svmTable(6,2:end-2) = num2cell(round(100.*model.algosel.modelerr,1));
+% svmTable(7,2:end-2) = num2cell(model.algosel.svmparams(:,1));
+% svmTable(8,2:end-2) = num2cell(model.algosel.svmparams(:,2));
+% disp('-> Completed! Performance of the models:');
+% disp(' ');
+% disp(svmTable);
 % ---------------------------------------------------------------------
 % Calculating the algorithm footprints. First step is to transform the
 % data to the footprint space, and to calculate the 'space' exafootprint.
@@ -260,19 +260,19 @@ disp('-> Calculating the algorithm footprints.');
 model.footprint.good = cell(1,nalgos);
 model.footprint.bad = cell(1,nalgos);
 model.footprint.best = cell(1,nalgos);
-if opts.footprint.usesim
-    % Use the SVM prediction data to calculate the footprints
-    disp('-> Using prediction data.');
-    Yfoot = model.algosel.Yhat;
-    Pfoot = model.algosel.psel;
-    Bfoot = sum(model.algosel.Yhat,2)>opts.general.betaThreshold*nalgos;
-else
+% if opts.footprint.usesim
+%     % Use the SVM prediction data to calculate the footprints
+%     disp('-> Using prediction data.');
+%     Yfoot = model.algosel.Yhat;
+%     Pfoot = model.algosel.psel;
+%     Bfoot = sum(model.algosel.Yhat,2)>opts.general.betaThreshold*nalgos;
+% else
     % Use the actual data to calculate the footprints
     disp('-> Using experimental data.');
     Yfoot = Ybin;
     Pfoot = portfolio;
     Bfoot = beta;
-end
+% end
 
 for i=1:nalgos
     tic;
@@ -302,8 +302,7 @@ for i=1:nalgos
         startTest = tic;
         [model.footprint.best{i},...
          model.footprint.best{j}] = calculateFootprintCollisionsDual(model.footprint.best{i}, ...
-                                                                     model.footprint.best{j}, ...
-                                                                     opts.footprint);
+                                                                     model.footprint.best{j});
         
         disp(['    -> Test algorithm ''' algolabels{j} ...
               ''' completed - Elapsed time: ' num2str(toc(startTest),'%.2f\n') 's']);
@@ -311,8 +310,7 @@ for i=1:nalgos
     disp(['   -> Comparing good and bad performance areas for ''' algolabels{i} '''']);
     [model.footprint.good{i},...
      model.footprint.bad{i}] = calculateFootprintCollisionsDual(model.footprint.good{i},...
-                                                                model.footprint.bad{i},...
-                                                                opts.footprint);
+                                                                model.footprint.bad{i});
     disp(['  -> Base algorithm ''' algolabels{i} ...
           ''' completed - Elapsed time: ' num2str(toc(startBase),'%.2f\n') 's']);
 end
@@ -348,8 +346,7 @@ model.footprint.hard = findPureFootprint(model.pbldr.Z, ~Bfoot, opts.footprint);
 % Remove the collisions
 [model.footprint.easy,...
  model.footprint.hard] = calculateFootprintCollisionsDual(model.footprint.easy,...
-                                                          model.footprint.hard,...
-                                                          opts.footprint);
+                                                          model.footprint.hard);
 % Calculating performance
 disp('-> Calculating the beta-footprint''s area and density.');
 model.footprint.easy = calculateFootprintPerformance(model.footprint.easy,...
@@ -382,6 +379,40 @@ model.footprint.performance(2:end,2:end) = num2cell(round(performanceTable,3));
 disp('-> Completed - Footprint analysis results:');
 disp(' ');
 disp(model.footprint.performance);
+% -------------------------------------------------------------------------
+% Algorithm selection. Fit a model that would separate the space into
+% classes of good and bad performance. 
+disp('-------------------------------------------------------------------------');
+disp('-> Fitting SVM prediction models. This may take a while...');
+model.algosel = fitoracle(model.pbldr.Z, Ybin, ...
+                          cell2mat(model.footprint.performance(2:nalgos+1,3)), ...
+                          opts.oracle);
+% svmselections = bsxfun(@eq,model.algosel.psel,unique(model.algosel.psel)');
+svmselections = bsxfun(@eq,model.algosel.psel,1:nalgos);
+Yaux = Yraw(subsetIndex,:);
+Yaux(~svmselections) = NaN;
+svmTable = cell(8,nalgos+3);
+svmTable{1,1} = ' ';
+svmTable(1,2:end-2) = algolabels;
+svmTable(1,end-1:end) = {'Oracle','Selector'};
+svmTable(2:8,1) = {'Avg. Perf. all instances';
+                   'Std. Perf. all instances';
+                   'Avg. Perf. selected instances';
+                   'Std. Perf. selected instances';
+                   'CV model error';
+                   'C';
+                   'Gamma'};
+svmTable(2,2:end) = num2cell([mean(Yraw(subsetIndex,:)) mean(bestPerformace) nanmean(Yaux(:))]);
+svmTable(3,2:end) = num2cell([std(Yraw(subsetIndex,:)) std(bestPerformace) nanstd(Yaux(:))]);
+svmTable(4,2:end-2) = num2cell(nanmean(Yaux));
+svmTable(5,2:end-2) = num2cell(nanstd(Yaux));
+svmTable(6,2:end-2) = num2cell(round(100.*model.algosel.modelerr,1));
+svmTable(7,2:end-2) = num2cell(model.algosel.svmparams(:,1));
+svmTable(8,2:end-2) = num2cell(model.algosel.svmparams(:,2));
+disp('-> Completed! Performance of the models:');
+disp(' ');
+disp(svmTable);
+
 % ---------------------------------------------------------------------
 % Storing the output data as a CSV files. This is for easier
 % post-processing. All workspace data will be stored in a matlab file

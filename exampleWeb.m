@@ -1,7 +1,8 @@
 function exampleWeb(rootdir)
 
 try
-    matilda(rootdir);
+    model = trainIS(rootdir);
+    testIS(rootdir);
 catch ME
     disp('EOF:ERROR');
     rethrow(ME)

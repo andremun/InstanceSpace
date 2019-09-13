@@ -99,7 +99,7 @@ msg = '-> An algorithm is good if its performace is ';
 if opts.perf.MaxMin
     Y(isnan(Y)) = -Inf;
     [bestPerformace,portfolio] = max(Y,[],2);
-    if opts.perf.AbsPerf
+the com    if opts.perf.AbsPerf
         Ybin = Y>=opts.perf.epsilon;
         msg = [msg 'higher than ' num2str(opts.perf.epsilon)];
     else
@@ -149,7 +149,7 @@ elseif fileindexed
     aux(aux>ninst) = [];
     subsetIndex(aux) = true;
 else
-    disp('-> Using a the complete set of the instances.');
+    disp('-> Using the complete set of the instances.');
     subsetIndex = true(ninst,1);
 end
 
@@ -391,27 +391,26 @@ model.algosel = fitoracle(model.pbldr.Z, Ybin, ...
 svmselections = bsxfun(@eq,model.algosel.psel,1:nalgos);
 Yaux = Yraw(subsetIndex,:);
 Yaux(~svmselections) = NaN;
-svmTable = cell(8,nalgos+3);
+svmTable = cell(nalgos+3, 8);
 svmTable{1,1} = ' ';
-svmTable(1,2:end-2) = algolabels;
-svmTable(1,end-1:end) = {'Oracle','Selector'};
-svmTable(2:8,1) = {'Avg. Perf. all instances';
-                   'Std. Perf. all instances';
-                   'Avg. Perf. selected instances';
-                   'Std. Perf. selected instances';
-                   'CV model error';
+svmTable(2:end-2, 1)= algolabels;
+svmTable(end-1:end, 1)={'Oracle','Selector'};
+svmTable(1, 2:8)= {'Average_Performance_all_instances';
+                   'Standard_Deviation_Performance_all_instances';
+                   'Average_Performance_selected_instances';
+                   'Standard_Deviation_Performance_selected_instances';
+                   'CV_model_accuracy';
                    'C';
                    'Gamma'};
-svmTable(2,2:end) = num2cell([mean(Yraw(subsetIndex,:)) mean(bestPerformace) nanmean(Yaux(:))]);
-svmTable(3,2:end) = num2cell([std(Yraw(subsetIndex,:)) std(bestPerformace) nanstd(Yaux(:))]);
-svmTable(4,2:end-2) = num2cell(nanmean(Yaux));
-svmTable(5,2:end-2) = num2cell(nanstd(Yaux));
-svmTable(6,2:end-2) = num2cell(round(100.*model.algosel.modelerr,1));
-svmTable(7,2:end-2) = num2cell(model.algosel.svmparams(:,1));
-svmTable(8,2:end-2) = num2cell(model.algosel.svmparams(:,2));
-disp('-> Completed! Performance of the models:');
-disp(' ');
+svmTable(2:end,2) = num2cell([mean(Yraw(subsetIndex,:)) mean(bestPerformace) nanmean(Yaux(:))]);
+svmTable(2:end,3) = num2cell([std(Yraw(subsetIndex,:)) std(bestPerformace) nanstd(Yaux(:))]);
+svmTable(2:end-2,4) = num2cell(nanmean(Yaux));
+svmTable(2:end-2,5) = num2cell(nanstd(Yaux));
+svmTable(2:end-2,6) = num2cell(round((100 - 100.*model.algosel.modelerr),1));
+svmTable(2:end-2,7) = num2cell(model.algosel.svmparams(:,1));
+svmTable(2:end-2,8) = num2cell(model.algosel.svmparams(:,2));              
 disp(svmTable);
+
 
 % ---------------------------------------------------------------------
 % Storing the output data as a CSV files. This is for easier

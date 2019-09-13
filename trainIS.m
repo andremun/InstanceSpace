@@ -99,7 +99,7 @@ msg = '-> An algorithm is good if its performace is ';
 if opts.perf.MaxMin
     Y(isnan(Y)) = -Inf;
     [bestPerformace,portfolio] = max(Y,[],2);
-the com    if opts.perf.AbsPerf
+    if opts.perf.AbsPerf
         Ybin = Y>=opts.perf.epsilon;
         msg = [msg 'higher than ' num2str(opts.perf.epsilon)];
     else

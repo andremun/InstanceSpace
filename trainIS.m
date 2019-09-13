@@ -402,13 +402,13 @@ svmTable(1, 2:8)= {'Average_Performance_all_instances';
                    'CV_model_accuracy';
                    'C';
                    'Gamma'};
-svmTable(2:end,2) = num2cell([mean(Yraw(subsetIndex,:)) mean(bestPerformace) nanmean(Yaux(:))]);
-svmTable(2:end,3) = num2cell([std(Yraw(subsetIndex,:)) std(bestPerformace) nanstd(Yaux(:))]);
-svmTable(2:end-2,4) = num2cell(nanmean(Yaux));
-svmTable(2:end-2,5) = num2cell(nanstd(Yaux));
-svmTable(2:end-2,6) = num2cell(round((100 - 100.*model.algosel.modelerr),1));
-svmTable(2:end-2,7) = num2cell(model.algosel.svmparams(:,1));
-svmTable(2:end-2,8) = num2cell(model.algosel.svmparams(:,2));              
+svmTable(2:end,2) = num2cell(round([mean(Yraw(subsetIndex,:)) mean(bestPerformace) nanmean(Yaux(:))], 3));
+svmTable(2:end,3) = num2cell(round([std(Yraw(subsetIndex,:)) std(bestPerformace) nanstd(Yaux(:))], 3));
+svmTable(2:end-2,4) = num2cell(round(nanmean(Yaux), 3));
+svmTable(2:end-2,5) = num2cell(round(nanstd(Yaux), 3));
+svmTable(2:end-2,6) = num2cell(round((100 - 100.*model.algosel.modelerr),3));
+svmTable(2:end-2,7) = num2cell(round(model.algosel.svmparams(:,1), 3));
+svmTable(2:end-2,8) = num2cell(round(model.algosel.svmparams(:,2), 3));              
 disp(svmTable);
 
 

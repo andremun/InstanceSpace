@@ -9,7 +9,7 @@ out.cvcmat = NaN.*ones(opts.cvgrid,4,nalgos);
 out.paramidx = NaN.*ones(1,nalgos);
 out.precision = NaN.*ones(1,nalgos);
 out.recall = NaN.*ones(1,nalgos);
-out.mse = NaN.*ones(1,nalgos);
+out.accuracy = NaN.*ones(1,nalgos);
 
 for i=1:nalgos
     cp = cvpartition(Ybin(:,i),'Kfold',opts.cvfolds);
@@ -25,7 +25,7 @@ for i=1:nalgos
     tp = out.cvcmat(:,4,i);
     [out.precision(i),out.paramidx(i)] = max(tp./(tp+fp));
     out.recall(i) = tp(out.paramidx(i))./(tp(out.paramidx(i))+fn(out.paramidx(i)));
-    out.mse(i) = (tp(out.paramidx(i))+tn(out.paramidx(i)))./sum(out.cvcmat(j,:,i));
+    out.accuracy(i) = (tp(out.paramidx(i))+tn(out.paramidx(i)))./sum(out.cvcmat(j,:,i));
     disp(['    -> ' num2str(i) ' out of ' num2str(nalgos) ' models have been fitted.']);
 end
 disp(['    -> Completed - Average cross validation precision is: ' ...

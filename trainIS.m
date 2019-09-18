@@ -149,7 +149,7 @@ elseif fileindexed
     aux(aux>ninst) = [];
     subsetIndex(aux) = true;
 else
-    disp('-> Using a the complete set of the instances.');
+    disp('-> Using the complete set of the instances.');
     subsetIndex = true(ninst,1);
 end
 
@@ -395,20 +395,24 @@ svmTable = cell(8,nalgos+3);
 svmTable{1,1} = ' ';
 svmTable(1,2:end-2) = algolabels;
 svmTable(1,end-1:end) = {'Oracle','Selector'};
-svmTable(2:8,1) = {'Avg. Perf. all instances';
-                   'Std. Perf. all instances';
-                   'Avg. Perf. selected instances';
-                   'Std. Perf. selected instances';
-                   'CV model error';
-                   'C';
-                   'Gamma'};
+svmTable(2:10,1) = {'Avg. Perf. all instances';
+                    'Std. Perf. all instances';
+                    'Avg. Perf. selected instances';
+                    'Std. Perf. selected instances';
+                    'CV model accuracy';
+                    'CV model precision';
+                    'CV model recall';
+                    'C';
+                    'Gamma'};
 svmTable(2,2:end) = num2cell([mean(Yraw(subsetIndex,:)) mean(bestPerformace) nanmean(Yaux(:))]);
 svmTable(3,2:end) = num2cell([std(Yraw(subsetIndex,:)) std(bestPerformace) nanstd(Yaux(:))]);
 svmTable(4,2:end-2) = num2cell(nanmean(Yaux));
 svmTable(5,2:end-2) = num2cell(nanstd(Yaux));
-svmTable(6,2:end-2) = num2cell(round(100.*model.algosel.modelerr,1));
-svmTable(7,2:end-2) = num2cell(model.algosel.svmparams(:,1));
-svmTable(8,2:end-2) = num2cell(model.algosel.svmparams(:,2));
+svmTable(6,2:end-2) = num2cell(round(100.*(1-model.algosel.mse),1));
+svmTable(7,2:end-2) = num2cell(round(100.*model.algosel.precision,1));
+svmTable(8,2:end-2) = num2cell(round(100.*model.algosel.recall,1));
+svmTable(9,2:end-2) = num2cell(model.algosel.svmparams(:,1));
+svmTable(10,2:end-2) = num2cell(model.algosel.svmparams(:,2));
 disp('-> Completed! Performance of the models:');
 disp(' ');
 disp(svmTable);

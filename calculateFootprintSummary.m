@@ -6,4 +6,6 @@ out(2) = footprint.area/spaceArea;
 out(3) = sum(footprint.elements)./footprint.area;
 out(4) = out(3)/spaceDensity;
 out(5) = sum(footprint.goodElements)./sum(footprint.elements);
+
+out(isnan(out)) = 0;
 end

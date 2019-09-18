@@ -134,7 +134,7 @@ for i=1:nalgos
     [Yhat(:,i),~,probs(:,i)] = svmpredict(randi([1 2], ninst,1), Z, model.algosel.svm{i}, '-q');
 end
 Yhat = Yhat==2; % Make it binary
-[mostaccurate,psel] = max(bsxfun(@times,Yhat,1-model.algosel.modelerr),[],2);
+[mostaccurate,psel] = max(bsxfun(@times,Yhat,model.algosel.precision),[],2);
 psel(mostaccurate<=0) = 0;
 
 writeArray2CSV = @(data,colnames,rownames,filename) writetable(array2table(data,'VariableNames',colnames,...

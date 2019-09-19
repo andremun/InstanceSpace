@@ -28,5 +28,11 @@ out.Zedge = Zedge(Kedge,:);
 
 Xecorr = Xedge(~flags,:);
 Zecorr = Xecorr*A';
-Kecorr = convhull(Zecorr(:,1),Zecorr(:,2));
+try
+    Kecorr = convhull(Zecorr(:,1),Zecorr(:,2));
+catch
+    disp('  -> The correlation threshold is too strict (your features are highly correlated).')
+    disp('  -> Please consider increasing it.');
+    Kecorr = Kedge;
+end
 out.Zecorr = Zecorr(Kecorr,:);

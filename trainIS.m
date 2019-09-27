@@ -117,7 +117,7 @@ else
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 end
-portfolio(sum(bsxfun(@eq,Y,bestPerformace),2)>1) = 0;
+portfolio(sum(bsxfun(@eq,Y,bestPerformace),2)>1) = 0; % Here I'm trying to solve the ties issue
 disp(msg);
 beta = sum(Ybin,2)>opts.general.betaThreshold*nalgos;
 % ---------------------------------------------------------------------

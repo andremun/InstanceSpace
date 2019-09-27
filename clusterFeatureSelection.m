@@ -64,7 +64,7 @@ else
     
     if ncomb>100
         disp('-> There are too many valid combinations. We will try 100 of them at random.')
-        comb = comb(randperm(ncomb,100));
+        comb = comb(randperm(ncomb,100),:);
         ncomb = 100;
     end
     % ---------------------------------------------------------------------

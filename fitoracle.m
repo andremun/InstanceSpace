@@ -20,12 +20,12 @@ for i=1:nalgos
                                   % 'Options', statset('UseParallel',true),...
     end
     tn = out.cvcmat(:,1,i);
-    fp = out.cvcmat(:,2,i);
-    fn = out.cvcmat(:,3,i);
+    fp = out.cvcmat(:,3,i);
+    fn = out.cvcmat(:,2,i);
     tp = out.cvcmat(:,4,i);
     [out.precision(i),out.paramidx(i)] = max(tp./(tp+fp));
     out.recall(i) = tp(out.paramidx(i))./(tp(out.paramidx(i))+fn(out.paramidx(i)));
-    out.accuracy(i) = (tp(out.paramidx(i))+tn(out.paramidx(i)))./sum(out.cvcmat(j,:,i));
+    out.accuracy(i) = (tp(out.paramidx(i))+tn(out.paramidx(i)))./sum(out.cvcmat(out.paramidx(i),:,i));
     disp(['    -> ' num2str(i) ' out of ' num2str(nalgos) ' models have been fitted.']);
 end
 disp(['    -> Completed - Average cross validation precision is: ' ...

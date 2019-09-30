@@ -96,7 +96,7 @@ algolabels = strrep(algolabels,'algo_','');
 disp('-------------------------------------------------------------------------');
 disp('-> Calculating the binary measure of performance');
 msg = '-> An algorithm is good if its performace is ';
-if opts.perf.MaxMin
+if opts.perf.MaxPerf
     Y(isnan(Y)) = -Inf;
     [bestPerformace,portfolio] = max(Y,[],2);
     if opts.perf.AbsPerf
@@ -318,7 +318,7 @@ end
 % Calculating performance
 disp('-------------------------------------------------------------------------');
 disp('-> Calculating the footprint''s area and density.');
-performanceTable = zeros(nalgos+2,10);
+performanceTable = zeros(nalgos,10);
 for i=1:nalgos
     model.footprint.best{i} = calculateFootprintPerformance(model.footprint.best{i},...
                                                             model.pbldr.Z,...
@@ -355,13 +355,13 @@ model.footprint.easy = calculateFootprintPerformance(model.footprint.easy,...
 model.footprint.hard = calculateFootprintPerformance( model.footprint.hard,...
                                                       model.pbldr.Z,...
                                                      ~Bfoot);
-performanceTable(end-1,6:10) = calculateFootprintSummary(model.footprint.easy,...
-                                                         model.footprint.spaceArea,...
-                                                         model.footprint.spaceDensity);
-performanceTable(end,6:10) = calculateFootprintSummary(model.footprint.hard,...
-                                                       model.footprint.spaceArea,...
-                                                       model.footprint.spaceDensity);
-model.footprint.performance = cell(nalgos+3,11);
+% performanceTable(end-1,6:10) = calculateFootprintSummary(model.footprint.easy,...
+%                                                          model.footprint.spaceArea,...
+%                                                          model.footprint.spaceDensity);
+% performanceTable(end,6:10) = calculateFootprintSummary(model.footprint.hard,...
+%                                                        model.footprint.spaceArea,...
+%                                                        model.footprint.spaceDensity);
+model.footprint.performance = cell(nalgos+1,11);
 disp('-------------------------------------------------------------------------');
 model.footprint.performance(1,2:end) = {'Area_Good',...
                                         'Area_Good_Normalized',...
@@ -373,8 +373,9 @@ model.footprint.performance(1,2:end) = {'Area_Good',...
                                         'Density_Best',...
                                         'Density_Best_Normalized',...
                                         'Purity_Best'};
-model.footprint.performance(2:end-2,1) = algolabels;
-model.footprint.performance(end-1:end,1) = {'beta-easy', 'beta-hard'};
+% model.footprint.performance(2:end-2,1) = algolabels;
+model.footprint.performance(2:end,1) = algolabels;
+% model.footprint.performance(end-1:end,1) = {'beta-easy', 'beta-hard'};
 model.footprint.performance(2:end,2:end) = num2cell(round(performanceTable,3));
 disp('-> Completed - Footprint analysis results:');
 disp(' ');
@@ -389,8 +390,17 @@ model.algosel = fitoracle(model.pbldr.Z, Ybin, ...
                           opts.oracle);
 % svmselections = bsxfun(@eq,model.algosel.psel,unique(model.algosel.psel)');
 svmselections = bsxfun(@eq,model.algosel.psel,1:nalgos);
-Yaux = Yraw(subsetIndex,:);
-Yaux(~svmselections) = NaN;
+Yselector = Yraw(subsetIndex,:);
+avgperf = mean(Yselector);
+stdperf = std(Yselector);
+Ysvms = Yselector;
+Yselector(~svmselections) = NaN;
+Ysvms(~model.algosel.Yhat) = NaN;
+Psvms = 1-bsxfun(@rdivide,Ysvms,avgperf);
+if opts.perf.MaxPerf
+    Psvms = -Psvms;
+end
+
 svmTable = cell(10,nalgos+3);
 svmTable{1,1} = ' ';
 svmTable(1,2:end-2) = algolabels;
@@ -404,10 +414,10 @@ svmTable(2:10,1) = {'Avg. Perf. all instances';
                     'CV model recall';
                     'C';
                     'Gamma'};
-svmTable(2,2:end) = num2cell([mean(Yraw(subsetIndex,:)) mean(bestPerformace) nanmean(Yaux(:))]);
-svmTable(3,2:end) = num2cell([std(Yraw(subsetIndex,:)) std(bestPerformace) nanstd(Yaux(:))]);
-svmTable(4,2:end-2) = num2cell(nanmean(Yaux));
-svmTable(5,2:end-2) = num2cell(nanstd(Yaux));
+svmTable(2,2:end) = num2cell([avgperf mean(bestPerformace) nanmean(Yselector(:))]);
+svmTable(3,2:end) = num2cell([stdperf std(bestPerformace) nanstd(Yselector(:))]);
+svmTable(4,2:end-2) = num2cell(round(100.*nanmean(Psvms),1));
+svmTable(5,2:end-2) = num2cell(round(100.*nanstd(Psvms),1));
 svmTable(6,2:end-2) = num2cell(round(100.*model.algosel.accuracy,1));
 svmTable(7,2:end-2) = num2cell(round(100.*model.algosel.precision,1));
 svmTable(8,2:end-2) = num2cell(round(100.*model.algosel.recall,1));

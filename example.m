@@ -1,6 +1,6 @@
 rootdir = './';
 
-opts.perf.MaxMin = false;               % True if Y is a performance measure, False if it is a cost measure.
+opts.perf.MaxPerf = false;             % True if Y is a performance measure to maximize, False if it is a cost measure to minimise.
 opts.perf.AbsPerf = false;              % True if an absolute performance measure, False if a relative performance measure
 opts.perf.epsilon = 0.05;               % Threshold of good performance
 

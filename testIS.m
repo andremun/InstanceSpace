@@ -65,7 +65,7 @@ Yraw = Y;
 disp('-------------------------------------------------------------------------');
 disp('-> Calculating the binary measure of performance');
 msg = '-> An algorithm is good if its performace is ';
-if model.opts.perf.MaxMin
+if model.opts.perf.MaxPerf
     Y(isnan(Y)) = -Inf;
     [bestPerformace,portfolio] = max(Y,[],2);
     if model.opts.perf.AbsPerf

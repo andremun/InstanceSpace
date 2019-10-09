@@ -14,18 +14,17 @@ out.accuracy = NaN.*ones(1,nalgos);
 for i=1:nalgos
     cp = cvpartition(Ybin(:,i),'Kfold',opts.cvfolds);
     for j=1:opts.cvgrid
-        f = @(xtr,ytr,xte,yte) confusionmat(yte,svmwrap(xtr,ytr,xte,out.paramgrid(j,:),...
-                                                        weight(i),false));
-        out.cvcmat(j,:,i) = sum(crossval(f, Z, Ybin(:,i),'partition', cp));%,...
-                                  % 'Options', statset('UseParallel',true),...
+        f = @(xtr,ytr,xte,yte) lossfun(xtr,ytr,xte,yte,out.paramgrid(j,:),weight(i),false);
+        out.cvcmat(j,:,i) = sum(crossval(f, Z, Ybin(:,i),'partition', cp));
     end
     tn = out.cvcmat(:,1,i);
     fp = out.cvcmat(:,3,i);
     fn = out.cvcmat(:,2,i);
     tp = out.cvcmat(:,4,i);
-    [out.precision(i),out.paramidx(i)] = max(tp./(tp+fp));
-    out.recall(i) = tp(out.paramidx(i))./(tp(out.paramidx(i))+fn(out.paramidx(i)));
-    out.accuracy(i) = (tp(out.paramidx(i))+tn(out.paramidx(i)))./sum(out.cvcmat(out.paramidx(i),:,i));
+    [out.precision(i),best] = max(tp./(tp+fp));
+    out.paramidx(i) = best;
+    out.recall(i) = tp(best)./(tp(best)+fn(best));
+    out.accuracy(i) = (tp(best)+tn(best))./sum(out.cvcmat(best,:,i));
     disp(['    -> ' num2str(i) ' out of ' num2str(nalgos) ' models have been fitted.']);
 end
 disp(['    -> Completed - Average cross validation precision is: ' ...

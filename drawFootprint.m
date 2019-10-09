@@ -1,4 +1,4 @@
-function handle = drawFootprint(footprint, color)
+function handle = drawFootprint(footprint, color, alpha)
 % 
 hold on;
 if isempty(footprint.polygon)
@@ -12,7 +12,8 @@ for i=1:size(footprint.polygon,3)
     aux = patch(footprint.polygon(:,1,i), ...
                 footprint.polygon(:,2,i), ...
                 color, ...
-                'EdgeColor','none');
+                'EdgeColor','none',...
+                'FaceAlpha', alpha);
     if i==1, handle = aux; end
 end
 hold off;

@@ -1,7 +1,6 @@
-function handle = drawScatter(X, Z, titlelabel)
+function handle = drawScatter(Z, X, titlelabel)
 
-clf;
-handle = scatter(Z(:,1),Z(:,2), 14, X, 'filled');
+handle = scatter(Z(:,1), Z(:,2), 12, X, 'filled');
 caxis([0,1])
 xlabel('z_{1}'); ylabel('z_{2}'); title(titlelabel);
 set(findall(gcf,'-property','FontSize'),'FontSize',12);

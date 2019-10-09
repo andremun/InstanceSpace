@@ -119,7 +119,8 @@ else
 end
 portfolio(sum(bsxfun(@eq,Y,bestPerformace),2)>1) = 0; % Here I'm trying to solve the ties issue
 disp(msg);
-beta = sum(Ybin,2)>opts.general.betaThreshold*nalgos;
+numGoodAlgos = sum(Ybin,2);
+beta = numGoodAlgos>opts.general.betaThreshold*nalgos;
 % ---------------------------------------------------------------------
 % Automated pre-processing
 if opts.auto.preproc
@@ -401,11 +402,11 @@ if opts.perf.MaxPerf
     Psvms = -Psvms;
 end
 
-svmTable = cell(10,nalgos+3);
+svmTable = cell(12,nalgos+3);
 svmTable{1,1} = ' ';
 svmTable(1,2:end-2) = algolabels;
 svmTable(1,end-1:end) = {'Oracle','Selector'};
-svmTable(2:10,1) = {'Avg. Perf. all instances';
+svmTable(2:12,1) = {'Avg. Perf. all instances';
                     'Std. Perf. all instances';
                     'Avg. Perf. selected instances';
                     'Std. Perf. selected instances';
@@ -459,6 +460,8 @@ if opts.outputs.csv
     writeArray2CSV(Yraw(subsetIndex,:), algolabels, instlabels(subsetIndex), [rootdir 'algorithm_raw.csv']);
     writeArray2CSV(Y, algolabels, instlabels(subsetIndex), [rootdir 'algorithm_process.csv']);
     writeArray2CSV(Ybin, algolabels, instlabels(subsetIndex), [rootdir 'algorithm_bin.csv']);
+    writeArray2CSV(numGoodAlgos, {'NumGoodAlgos'}, instlabels(subsetIndex), [rootdir 'good_algos.csv']);
+    writeArray2CSV(beta, {'IsBetaEasy'}, instlabels(subsetIndex), [rootdir 'beta_easy.csv']);
     writeArray2CSV(portfolio, {'Best_Algorithm'}, instlabels(subsetIndex), [rootdir 'portfolio.csv']);
     writeArray2CSV(model.algosel.Yhat, algolabels, instlabels(subsetIndex), [rootdir 'algorithm_svm.csv']);
     writeArray2CSV(model.algosel.psel, {'Best_Algorithm'}, instlabels(subsetIndex), [rootdir 'portfolio_svm.csv']);
@@ -488,52 +491,69 @@ if opts.outputs.png
     % ---------------------------------------------------------------------
     for i=1:nfeats
         clf;
-        drawScatter((X(:,i)-min(X(:,i)))./range(X(:,i)), model.pbldr.Z, strrep(featlabels{i},'_',' '));
+        drawScatter(model.pbldr.Z, (X(:,i)-min(X(:,i)))./range(X(:,i)), strrep(featlabels{i},'_',' '));
         line(model.sbound.Zedge(:,1),model.sbound.Zedge(:,2),...
-                 'LineStyle', '-', ...
-                 'Color', 'r');
-        print(gcf,'-dpng',[rootdir 'scatter_' featlabels{i} '.png']);
+             'LineStyle', '-', 'Color', 'r');
+        print(gcf,'-dpng',[rootdir 'distribution_feature_' featlabels{i} '.png']);
     end
     % ---------------------------------------------------------------------
     Ys = log10(Yraw+1);
     Ys = (Ys-min(Ys(:)))./range(Ys(:));
     for i=1:nalgos
         clf;
-        drawScatter(Ys(subsetIndex,i), model.pbldr.Z, strrep(algolabels{i},'_',' '));
-        print(gcf,'-dpng',[rootdir 'scatter_' algolabels{i} '_absolute.png']);
+        drawScatter(model.pbldr.Z, Ys(subsetIndex,i), strrep(algolabels{i},'_',' '));
+        print(gcf,'-dpng',[rootdir 'distribution_performance_global_normalized_' algolabels{i} '.png']);
     end
     % ---------------------------------------------------------------------
+    %
     for i=1:nalgos
         clf;
-        drawScatter((Y(:,i)-min(Y(:,i)))./range(Y(:,i)), model.pbldr.Z, strrep(algolabels{i},'_',' '));
-        print(gcf,'-dpng',[rootdir 'scatter_' algolabels{i} '.png']);
+        drawScatter(model.pbldr.Z, (Y(:,i)-min(Y(:,i)))./range(Y(:,i)), strrep(algolabels{i},'_',' '));
+        print(gcf,'-dpng',[rootdir 'distribution_performance_individual_normalized_' algolabels{i} '.png']);
     end
+    % ---------------------------------------------------------------------
+    %
+    for i=1:nalgos
+        clf;
+        drawBinaryPerformance(model.pbldr.Z, Ybin(:,i), strrep(algolabels{i},'_',' '));
+        print(gcf,'-dpng',[rootdir 'binary_performance_' algolabels{i} '.png']);
+    end
+    % ---------------------------------------------------------------------
+    % Plotting the number of good algos
+    clf;
+    drawScatter(model.pbldr.Z, numGoodAlgos./nalgos, 'Percentage of good algorithms');
+    print(gcf,'-dpng',[rootdir 'distribution_number_good_algos.png']);
+    % ---------------------------------------------------------------------
+    % Plotting the beta score
+    clf;
+    drawBinaryPerformance(model.pbldr.Z, beta, '\beta score');
+    print(gcf,'-dpng',[rootdir 'distribution_beta_score.png']);
     % ---------------------------------------------------------------------
     % Drawing the footprints for good and bad performance acording to the
     % binary measure
     for i=1:nalgos
         clf;
-        drawGoodBadFootprint(model.pbldr.Z, Yfoot(:,i), model.footprint.good{i}, strrep(algolabels{i},'_',' '));
+        drawGoodBadFootprint(model.pbldr.Z, model.footprint.good{i}, model.footprint.bad{i}, Yfoot(:,i), strrep(algolabels{i},'_',' '));
         print(gcf,'-dpng',[rootdir 'footprint_' algolabels{i} '.png']);
     end
     % ---------------------------------------------------------------------
     % Drawing the footprints as portfolio.
     clf;
-    drawPortfolioFootprint(model.footprint.best, algolabels);
+    drawPortfolioFootprint(model.pbldr.Z, model.footprint.best, portfolio, algolabels);
     print(gcf,'-dpng',[rootdir 'footprint_portfolio.png']);
     % ---------------------------------------------------------------------
     % Drawing the sources of the instances if available
     if any(issource)
         clf;
         drawSources(model.pbldr.Z, S(subsetIndex));
-        print(gcf,'-dpng',[rootdir 'sources.png']);
+        print(gcf,'-dpng',[rootdir 'distribution_sources.png']);
     end
     % ---------------------------------------------------------------------
     % Drawing the SVM's predictions of good performance
     for i=1:nalgos
         clf;
-        drawSVMPredictions(model.pbldr.Z, model.algosel.Yhat(:,i), strrep(algolabels{i},'_',' '));
-        print(gcf,'-dpng',[rootdir 'svm_' algolabels{i} '.png']);
+        drawBinaryPerformance(model.pbldr.Z, model.algosel.Yhat(:,i), strrep(algolabels{i},'_',' '));
+        print(gcf,'-dpng',[rootdir 'binary_svm_' algolabels{i} '.png']);
     end
     % ---------------------------------------------------------------------
     % Drawing the SVM's recommendations

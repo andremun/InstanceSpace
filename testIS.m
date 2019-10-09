@@ -173,7 +173,7 @@ if opts.outputs.png
     % ---------------------------------------------------------------------
     for i=1:nfeats
         clf;
-        drawScatter((X(:,i)-min(X(:,i)))./range(X(:,i)), Z, strrep(featlabels{i},'_',' '));
+        drawScatter(Z, (X(:,i)-min(X(:,i)))./range(X(:,i)), strrep(featlabels{i},'_',' '));
         line(model.sbound.Zedge(:,1),model.sbound.Zedge(:,2),...
                  'LineStyle', '-', ...
                  'Color', 'r');
@@ -184,13 +184,13 @@ if opts.outputs.png
     Ys = (Ys-min(Ys(:)))./range(Ys(:));
     for i=1:nalgos
         clf;
-        drawScatter(Ys(:,i), Z, strrep(algolabels{i},'_',' '));
+        drawScatter(Z, Ys(:,i), strrep(algolabels{i},'_',' '));
         print(gcf,'-dpng',[rootdir 'scatter_' algolabels{i} '_absolute.png']);
     end
     % ---------------------------------------------------------------------
     for i=1:nalgos
         clf;
-        drawScatter((Y(:,i)-min(Y(:,i)))./range(Y(:,i)), Z, strrep(algolabels{i},'_',' '));
+        drawScatter(Z, (Y(:,i)-min(Y(:,i)))./range(Y(:,i)), strrep(algolabels{i},'_',' '));
         print(gcf,'-dpng',[rootdir 'scatter_' algolabels{i} '.png']);
     end
     % ---------------------------------------------------------------------
@@ -204,7 +204,7 @@ if opts.outputs.png
     % Drawing the SVM's predictions of good performance
     for i=1:nalgos
         clf;
-        drawSVMPredictions(Z, Yhat(:,i), strrep(algolabels{i},'_',' '));
+        drawBinaryPerformance(Z, Yhat(:,i), strrep(algolabels{i},'_',' '));
         print(gcf,'-dpng',[rootdir 'svm_' algolabels{i} '.png']);
     end
     % ---------------------------------------------------------------------

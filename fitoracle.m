@@ -45,6 +45,9 @@ out.Yhat = out.Yhat==2; % Make it binary
 % reliable.
 % [mostaccurate,out.psel] = max(bsxfun(@times,out.Yhat,1-out.modelerr),[],2);
 [mostprecise,out.psel] = max(bsxfun(@times,out.Yhat,out.precision),[],2);
+out.pselfull = out.psel;
 out.psel(mostprecise<=0) = 0;
+[~,betterdefault] = max(mean(Ybin));
+out.pselfull(mostprecise<=0) = betterdefault;
 
 end

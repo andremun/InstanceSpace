@@ -391,43 +391,47 @@ model.algosel = fitoracle(model.pbldr.Z, Ybin, ...
                           opts.oracle);
 % svmselections = bsxfun(@eq,model.algosel.psel,unique(model.algosel.psel)');
 svmselections = bsxfun(@eq,model.algosel.psel,1:nalgos);
+selselections = bsxfun(@eq,model.algosel.pselfull,1:nalgos);
 Yselector = Yraw(subsetIndex,:);
 avgperf = mean(Yselector);
 stdperf = std(Yselector);
 Ysvms = Yselector;
+Yfull = Yselector;
 Yselector(~svmselections) = NaN;
+Yfull(~selselections) = NaN;
 Ysvms(~model.algosel.Yhat) = NaN;
-Psvms = 1-bsxfun(@rdivide,Ysvms,avgperf);
-if opts.perf.MaxPerf
-    Psvms = -Psvms;
-end
+% Psvms = 1-bsxfun(@rdivide,Ysvms,avgperf);
+% if opts.perf.MaxPerf
+%     Psvms = -Psvms;
+% end
 
-svmTable = cell(12,nalgos+3);
+svmTable = cell(11,nalgos+3);
 svmTable{1,1} = ' ';
 svmTable(1,2:end-2) = algolabels;
 svmTable(1,end-1:end) = {'Oracle','Selector'};
-svmTable(2:12,1) = {'Avg. Perf. all instances';
+svmTable(2:11,1) = {'Avg. Perf. all instances';
                     'Std. Perf. all instances';
+                    'Probability of good';
                     'Avg. Perf. selected instances';
                     'Std. Perf. selected instances';
-                    'Avg. Perf. gain';
-                    'Std. Perf. gain';
                     'CV model accuracy';
                     'CV model precision';
                     'CV model recall';
                     'C';
                     'Gamma'};
-svmTable(2,2:end) = num2cell([avgperf mean(bestPerformace) nanmean(Yselector(:))]);
-svmTable(3,2:end) = num2cell([stdperf std(bestPerformace) nanstd(Yselector(:))]);
-svmTable(4,2:end-2) = num2cell(round(100.*nanmean(Ysvms),1));
-svmTable(5,2:end-2) = num2cell(round(100.*nanstd(Ysvms),1));
-svmTable(6,2:end-2) = num2cell(round(100.*nanmean(Psvms),1));
-svmTable(7,2:end-2) = num2cell(round(100.*nanstd(Psvms),1));
-svmTable(8,2:end-2) = num2cell(round(100.*model.algosel.accuracy,1));
-svmTable(9,2:end-2) = num2cell(round(100.*model.algosel.precision,1));
-svmTable(10,2:end-2) = num2cell(round(100.*model.algosel.recall,1));
-svmTable(11,2:end-2) = num2cell(model.algosel.svmparams(:,1));
-svmTable(12,2:end-2) = num2cell(model.algosel.svmparams(:,2));
+svmTable(2,2:end) = num2cell([avgperf mean(bestPerformace) nanmean(Yfull(:))]);
+svmTable(3,2:end) = num2cell([stdperf std(bestPerformace) nanmean(Yfull(:))]);
+svmTable(4,2:end) = num2cell(round(100.*[mean(Ybin) 1 NaN]));
+svmTable(5,2:end) = num2cell([nanmean(Ysvms) NaN nanmean(Yselector(:))]);
+svmTable(6,2:end) = num2cell([nanstd(Ysvms) NaN nanstd(Yselector(:))]);
+% svmTable(6,2:end-2) = num2cell(round(100.*nanmean(Psvms),1));
+% svmTable(7,2:end-2) = num2cell(round(100.*nanstd(Psvms),1));
+svmTable(7,2:end) = num2cell(round(100.*[model.algosel.accuracy NaN mean(any(svmselections & Ybin,2))],1));
+svmTable(8,2:end-2) = num2cell(round(100.*model.algosel.precision,1));
+svmTable(9,2:end-2) = num2cell(round(100.*model.algosel.recall,1));
+svmTable(10,2:end-2) = num2cell(model.algosel.svmparams(:,1));
+svmTable(11,2:end-2) = num2cell(model.algosel.svmparams(:,2));
+svmTable(cellfun(@(x) all(isnan(x)),svmTable)) = {[]}; % Clean up. Not really needed
 disp('-> Completed! Performance of the models:');
 disp(' ');
 disp(svmTable);
@@ -460,7 +464,7 @@ if opts.outputs.csv
     writeArray2CSV(Yraw(subsetIndex,:), algolabels, instlabels(subsetIndex), [rootdir 'algorithm_raw.csv']);
     writeArray2CSV(Y, algolabels, instlabels(subsetIndex), [rootdir 'algorithm_process.csv']);
     writeArray2CSV(Ybin, algolabels, instlabels(subsetIndex), [rootdir 'algorithm_bin.csv']);
-    writeArray2CSV(numGoodAlgos, {'NumGoodAlgos'}, instlabels(subsetIndex), [rootdir 'good_algos.csv']);
+    writeArray2CSV(numGoodAlgos(subsetIndex), {'NumGoodAlgos'}, instlabels(subsetIndex), [rootdir 'good_algos.csv']);
     writeArray2CSV(beta, {'IsBetaEasy'}, instlabels(subsetIndex), [rootdir 'beta_easy.csv']);
     writeArray2CSV(portfolio, {'Best_Algorithm'}, instlabels(subsetIndex), [rootdir 'portfolio.csv']);
     writeArray2CSV(model.algosel.Yhat, algolabels, instlabels(subsetIndex), [rootdir 'algorithm_svm.csv']);
@@ -492,8 +496,7 @@ if opts.outputs.png
     for i=1:nfeats
         clf;
         drawScatter(model.pbldr.Z, (X(:,i)-min(X(:,i)))./range(X(:,i)), strrep(featlabels{i},'_',' '));
-        line(model.sbound.Zedge(:,1),model.sbound.Zedge(:,2),...
-             'LineStyle', '-', 'Color', 'r');
+        % line(model.sbound.Zedge(:,1), model.sbound.Zedge(:,2), 'LineStyle', '-', 'Color', 'r');
         print(gcf,'-dpng',[rootdir 'distribution_feature_' featlabels{i} '.png']);
     end
     % ---------------------------------------------------------------------
@@ -521,7 +524,7 @@ if opts.outputs.png
     % ---------------------------------------------------------------------
     % Plotting the number of good algos
     clf;
-    drawScatter(model.pbldr.Z, numGoodAlgos./nalgos, 'Percentage of good algorithms');
+    drawScatter(model.pbldr.Z, numGoodAlgos(subsetIndex)./nalgos, 'Percentage of good algorithms');
     print(gcf,'-dpng',[rootdir 'distribution_number_good_algos.png']);
     % ---------------------------------------------------------------------
     % Plotting the beta score

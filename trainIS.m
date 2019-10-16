@@ -400,10 +400,13 @@ Yfull = Yselector;
 Yselector(~svmselections) = NaN;
 Yfull(~selselections) = NaN;
 Ysvms(~model.algosel.Yhat) = NaN;
-% Psvms = 1-bsxfun(@rdivide,Ysvms,avgperf);
-% if opts.perf.MaxPerf
-%     Psvms = -Psvms;
-% end
+
+tb = sum(any(~Ybin & ~svmselections,2));
+fb = sum(any( Ybin & ~svmselections,2));
+fg = sum(any(~Ybin &  svmselections,2));
+tg = sum(any( Ybin &  svmselections,2));
+precisionsel = tg./(tg+fg);
+recallsel = tg./(tg+fb);
 
 svmTable = cell(nalgos+3, 11);
 svmTable{1,1} = 'Algorithms ';
@@ -421,14 +424,14 @@ svmTable(1, 2:11) = {'Avg_Perf_all_instances';
                     'Gamma'};
 svmTable(2:end, 2) = num2cell(round([avgperf mean(bestPerformace) nanmean(Yfull(:))],3));
 svmTable(2:end, 3) = num2cell(round([stdperf std(bestPerformace) nanstd(Yfull(:))],3));
-svmTable(2:end, 4) = num2cell(round([mean(Ybin) 1 mean(any(svmselections & Ybin,2))],3));
+svmTable(2:end, 4) = num2cell(round([mean(Ybin) 1 tg./size(Ybin,1)],3));
 svmTable(2:end, 5) = num2cell(round([nanmean(Ysvms) NaN nanmean(Yselector(:))],3));
 svmTable(2:end, 6) = num2cell(round([nanstd(Ysvms) NaN nanstd(Yselector(:))],3));
 % svmTable(6,2:end-2) = num2cell(round(100.*nanmean(Psvms),1));
 % svmTable(7,2:end-2) = num2cell(round(100.*nanstd(Psvms),1));
 svmTable(2:end, 7) = num2cell(round(100.*[model.algosel.accuracy NaN NaN],1));
-svmTable(2:end-2, 8) = num2cell(round(100.*model.algosel.precision,1));
-svmTable(2:end-2, 9) = num2cell(round(100.*model.algosel.recall,1));
+svmTable(2:end, 8) = num2cell(round(100.*[model.algosel.precision NaN precisionsel],1));
+svmTable(2:end, 9) = num2cell(round(100.*[model.algosel.recall NaN recallsel],1));
 svmTable(2:end-2, 10) = num2cell(round(model.algosel.svmparams(:,1),3));
 svmTable(2:end-2, 11) = num2cell(round(model.algosel.svmparams(:,2),3));
 svmTable(cellfun(@(x) all(isnan(x)),svmTable)) = {[]}; % Clean up. Not really needed

@@ -117,8 +117,20 @@ else
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 end
-portfolio(sum(bsxfun(@eq,Y,bestPerformace),2)>1) = 0; % Here I'm trying to solve the ties issue
 disp(msg);
+% Testing for ties. If there is a tie in performance, we pick an algorithm
+% at random.
+bestAlgos = bsxfun(@eq,Y,bestPerformace);
+multipleBestAlgos = sum(bestAlgos,2)>1;
+aidx = 1:nalgos;
+for i=1:size(Y,1)
+    if multipleBestAlgos(i)
+        aux = aidx(bestAlgos(i,:));
+        portfolio(i) = aux(randi(length(aux),1)); % Pick one at random
+    end
+end
+disp(['-> For ' num2str(round(100.*mean(multipleBestAlgos))) '% of the instances there is ' ...
+      'more than one best algorithm. Random selection is used to break ties.']);
 numGoodAlgos = sum(Ybin,2);
 beta = numGoodAlgos>opts.general.betaThreshold*nalgos;
 % ---------------------------------------------------------------------
@@ -401,7 +413,7 @@ Yselector(~svmselections) = NaN;
 Yfull(~selselections) = NaN;
 Ysvms(~model.algosel.Yhat) = NaN;
 
-tb = sum(any(~Ybin & ~svmselections,2));
+pgood = mean(any( Ybin & selselections,2));
 fb = sum(any( Ybin & ~svmselections,2));
 fg = sum(any(~Ybin &  svmselections,2));
 tg = sum(any( Ybin &  svmselections,2));
@@ -424,7 +436,7 @@ svmTable(1, 2:11) = {'Avg_Perf_all_instances';
                     'Gamma'};
 svmTable(2:end, 2) = num2cell(round([avgperf mean(bestPerformace) nanmean(Yfull(:))],3));
 svmTable(2:end, 3) = num2cell(round([stdperf std(bestPerformace) nanstd(Yfull(:))],3));
-svmTable(2:end, 4) = num2cell(round([mean(Ybin) 1 tg./size(Ybin,1)],3));
+svmTable(2:end, 4) = num2cell(round([mean(Ybin) 1 pgood],3));
 svmTable(2:end, 5) = num2cell(round([nanmean(Ysvms) NaN nanmean(Yselector(:))],3));
 svmTable(2:end, 6) = num2cell(round([nanstd(Ysvms) NaN nanstd(Yselector(:))],3));
 % svmTable(6,2:end-2) = num2cell(round(100.*nanmean(Psvms),1));
@@ -438,6 +450,8 @@ svmTable(cellfun(@(x) all(isnan(x)),svmTable)) = {[]}; % Clean up. Not really ne
 disp('-> Completed! Performance of the models:');
 disp(' ');
 disp(svmTable);
+% ---------------------------------------------------------------------
+
 
 % ---------------------------------------------------------------------
 % Storing the output data as a CSV files. This is for easier
@@ -457,6 +471,24 @@ if opts.outputs.csv
     disp('-------------------------------------------------------------------------');
     disp('-> Writing the data on CSV files for post-processing.');
     % ---------------------------------------------------------------------
+    for i=1:nalgos
+        if isfield(model.footprint.best{i},'polyshape')
+            writeArray2CSV(model.footprint.best{i}.polyshape.Vertices, {'z_1','z_2'},...
+                           makeBndLabels(model.footprint.best{i}.polyshape.Vertices),...
+                           ['footprint_' algolabels{i} '_best.csv']);
+        end
+        if isfield(model.footprint.good{i},'polyshape')
+            writeArray2CSV(model.footprint.good{i}.polyshape.Vertices, {'z_1','z_2'},...
+                           makeBndLabels(model.footprint.good{i}.polyshape.Vertices),...
+                           ['footprint_' algolabels{i} '_good.csv']);
+        end
+        if isfield(model.footprint.bad{i},'polyshape')
+            writeArray2CSV(model.footprint.bad{i}.polyshape.Vertices, {'z_1','z_2'},...
+                           makeBndLabels(model.footprint.bad{i}.polyshape.Vertices),...
+                           ['footprint_' algolabels{i} '_bad.csv']);
+        end
+    end
+    
     writeArray2CSV(model.pbldr.Z, {'z_1','z_2'}, instlabels(subsetIndex), [rootdir 'coordinates.csv']);
     writeArray2CSV(model.sbound.Zedge, {'z_1','z_2'}, ...
                    makeBndLabels(model.sbound.Zedge), [rootdir 'bounds.csv']);

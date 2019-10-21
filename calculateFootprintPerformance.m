@@ -12,6 +12,14 @@ end
 elements     = false(size(Z,1),1);
 goodElements = false(size(Z,1),1);
 for i=1:size(footprint.polygon,3)
+    if i==1
+        footprint.polyshape = polyshape(footprint.polygon(:,1,i), footprint.polygon(:,2,i), ...
+                                        'KeepCollinearPoints', true);
+    else
+        footprint.polyshape = union(footprint.polyshape, ...
+                                    polyshape(footprint.polygon(:,1,i), ...
+                                    footprint.polygon(:,2,i)));
+    end
     elements     = elements     |  inpolygon(Z(:,1),Z(:,2),footprint.polygon(:,1,i),footprint.polygon(:,2,i));
     goodElements = goodElements | (inpolygon(Z(:,1),Z(:,2),footprint.polygon(:,1,i),footprint.polygon(:,2,i)) & Y);
 end

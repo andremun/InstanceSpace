@@ -128,18 +128,80 @@ Z = X*model.pbldr.A';
 % -------------------------------------------------------------------------
 % Algorithm selection. Fit a model that would separate the space into
 % classes of good and bad performance. 
-Yhat = 0.*Ybin;
+Yhat = false(size(Ybin));
 probs = 0.*Ybin;
+cvcmat = zeros(nalgos,4);
 for i=1:nalgos
-    [Yhat(:,i),~,probs(:,i)] = svmpredict(randi([1 2], ninst,1), Z, model.algosel.svm{i}, '-q');
+    [yhat,~,probs(:,i)] = svmpredict(randi([1 2], ninst,1), Z, model.algosel.svm{i}, '-q');
+    Yhat(:,i) = yhat==2;  % Make it binary
+    aux = confusionmat(Ybin(:,i),Yhat(:,i));
+    cvcmat(i,:) = aux(:);
 end
-Yhat = Yhat==2; % Make it binary
-[mostaccurate,psel] = max(bsxfun(@times,Yhat,model.algosel.precision),[],2);
-psel(mostaccurate<=0) = 0;
+tn = cvcmat(:,1);
+fp = cvcmat(:,3);
+fn = cvcmat(:,2);
+tp = cvcmat(:,4);
+precision = tp./(tp+fp);
+recall = tp./(tp+fn);
+accuracy = (tp+tn)./sum(cvcmat(1,:));
 
+[mostprecise,psel] = max(bsxfun(@times,Yhat,model.algosel.precision),[],2);
+pselfull = psel;
+psel(mostprecise<=0) = 0;
+[~,betterdefault] = max(mean(Ybin));
+pselfull(mostprecise<=0) = betterdefault;
+
+svmselections = bsxfun(@eq,psel,1:nalgos);
+selselections = bsxfun(@eq,pselfull,1:nalgos);
+avgperf = mean(Yraw);
+stdperf = std(Yraw);
+Yselector = Yraw;
+Yfull = Yraw;
+Ysvms = Yraw;
+Yselector(~svmselections) = NaN;
+Yfull(~selselections) = NaN;
+Ysvms(~Yhat) = NaN;
+
+pgood = mean(any( Ybin & selselections,2));
+fb = sum(any( Ybin & ~svmselections,2));
+fg = sum(any(~Ybin &  svmselections,2));
+tg = sum(any( Ybin &  svmselections,2));
+precisionsel = tg./(tg+fg);
+recallsel = tg./(tg+fb);
+
+svmTable = cell(nalgos+3, 9);
+svmTable{1,1} = 'Algorithms ';
+svmTable(2:end-2, 1) = algolabels;
+svmTable(end-1:end, 1) = {'Oracle','Selector'};
+svmTable(1, 2:9) = {'Avg_Perf_all_instances';
+                    'Std_Perf_all_instances';
+                    'Probability_of_good';
+                    'Avg_Perf_selected_instances';
+                    'Std_Perf_selected_instances';
+                    'model_accuracy';
+                    'model_precision';
+                    'model_recall'};
+svmTable(2:end, 2) = num2cell(round([avgperf mean(bestPerformace) nanmean(Yfull(:))],3));
+svmTable(2:end, 3) = num2cell(round([stdperf std(bestPerformace) nanstd(Yfull(:))],3));
+svmTable(2:end, 4) = num2cell(round([mean(Ybin) 1 pgood],3));
+svmTable(2:end, 5) = num2cell(round([nanmean(Ysvms) NaN nanmean(Yselector(:))],3));
+svmTable(2:end, 6) = num2cell(round([nanstd(Ysvms) NaN nanstd(Yselector(:))],3));
+svmTable(2:end, 7) = num2cell(round(100.*[accuracy' NaN NaN],1));
+svmTable(2:end, 8) = num2cell(round(100.*[precision' NaN precisionsel],1));
+svmTable(2:end, 9) = num2cell(round(100.*[recall' NaN recallsel],1));
+svmTable(cellfun(@(x) all(isnan(x)),svmTable)) = {[]}; % Clean up. Not really needed
+disp('-> Completed! Performance of the models:');
+disp(' ');
+disp(svmTable);
+
+% -------------------------------------------------------------------------
+% Writing the results
 writeArray2CSV = @(data,colnames,rownames,filename) writetable(array2table(data,'VariableNames',colnames,...
                                                                                 'RowNames',rownames),...
                                                                filename,'WriteRowNames',true);
+writeCell2CSV = @(data,colnames,rownames,filename) writetable(cell2table(data,'VariableNames',colnames,...
+                                                                              'RowNames',rownames),...
+                                                              filename,'WriteRowNames',true);
 colorscale  = @(data) round(255.*bsxfun(@rdivide, bsxfun(@minus, data, min(data,[],1)), range(data)));
 colorscaleg = @(data) round(255.*bsxfun(@rdivide, bsxfun(@minus, data, min(data(:))), range(data(:))));
 
@@ -156,6 +218,7 @@ if opts.outputs.csv
     writeArray2CSV(portfolio, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio.csv']);
     writeArray2CSV(Yhat, algolabels, instlabels, [rootdir 'algorithm_svm.csv']);
     writeArray2CSV(psel, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio_svm.csv']);
+    writeCell2CSV(svmTable(2:end,2:end), svmTable(1,2:end), svmTable(2:end,1), [rootdir 'svm_table.csv']);
     if opts.outputs.web
     %   writetable(array2table(parula(256), 'VariableNames', {'R','G','B'}), [rootdir 'color_table.csv']);
         writeArray2CSV(colorscale(Xraw(:,model.featsel.idx)), featlabels, instlabels, [rootdir 'feature_raw_color.csv']);

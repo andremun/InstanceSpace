@@ -15,11 +15,13 @@ startProcess = tic;
 printdisclaim('testIS.m');
 % -------------------------------------------------------------------------
 % Collect all the data from the files
+disp('Root Directory:');
+disp(rootdir);
 modelfile = [rootdir 'model.mat'];
-datafile = [rootdir 'metadata.csv'];
+datafile = [rootdir 'metadata_test.csv'];
 optsfile = [rootdir 'options.json'];
 if ~isfile(modelfile) || ~isfile(datafile) || ~isfile(optsfile)
-    error('Please place the datafiles in the directory specified.');
+    error('Please place the datafiles in the directory specified %s', rootdir);
 end
 opts = jsondecode(fileread(optsfile));
 disp('-------------------------------------------------------------------------');
@@ -65,7 +67,15 @@ Yraw = Y;
 disp('-------------------------------------------------------------------------');
 disp('-> Calculating the binary measure of performance');
 msg = '-> An algorithm is good if its performace is ';
-if model.opts.perf.MaxPerf
+MaxPerf = false;
+if isfield(model.opts.perf, 'MaxPerf')
+    MaxPerf = model.opts.perf.MaxPerf;
+elseif  isfield(model.opts.perf, 'MaxMin')
+    MaxPerf = model.opts.perf.MaxMin;
+else
+    warning('Can not find parameter "MaxPerf" in the trained model. We are assuming that performance metric is needed to be minimized.');
+end
+if MaxPerf
     Y(isnan(Y)) = -Inf;
     [bestPerformace,portfolio] = max(Y,[],2);
     if model.opts.perf.AbsPerf
@@ -219,5 +229,4 @@ disp('-> Storing the raw MATLAB results for post-processing and/or debugging.');
 save([rootdir 'workspace_test.mat']); % Save the full workspace for debugging
 disp(['-> Completed! Elapsed time: ' num2str(toc(startProcess)) 's']);
 disp('EOF:SUCCESS');
-
 end

@@ -97,7 +97,7 @@ disp('-------------------------------------------------------------------------'
 disp('-> Calculating the binary measure of performance');
 msg = '-> An algorithm is good if its performace is ';
 if opts.perf.MaxPerf
-    Y(isnan(Y)) = -Inf;
+    % Y(isnan(Y)) = -Inf;
     [bestPerformace,portfolio] = max(Y,[],2);
     if opts.perf.AbsPerf
         Ybin = Y>=opts.perf.epsilon;
@@ -107,7 +107,7 @@ if opts.perf.MaxPerf
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 else
-    Y(isnan(Y)) = Inf;
+    % Y(isnan(Y)) = Inf;
     [bestPerformace,portfolio] = min(Y,[],2);
     if opts.perf.AbsPerf
         Ybin = Y<=opts.perf.epsilon;

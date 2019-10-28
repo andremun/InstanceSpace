@@ -14,10 +14,15 @@ if opts.flag
     
     Y(Y==0) = eps;
     out.lambdaY = zeros(1,nalgos);
+    out.muY = zeros(1,nalgos);
+    out.sigmaY = zeros(1,nalgos);
     for i=1:nalgos
-        [Y(:,i), out.lambdaY(i)] = boxcox(Y(:,i));
+        aux = Y(:,i);
+        idx = isnan(aux);
+        [aux, out.lambdaY(i)] = boxcox(aux(~idx));
+        [aux, out.muY(i), out.sigmaY(i)] = zscore(aux);
+        Y(~idx,i) = aux;
     end
-    [Y, out.muY, out.sigmaY] = zscore(Y);
 else
     out.lambdaX = ones(1,nfeats);
     out.muX = zeros(1,nfeats);

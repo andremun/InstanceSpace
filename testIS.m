@@ -101,7 +101,7 @@ beta = sum(Ybin,2)>model.opts.general.betaThreshold*nalgos;
 
 % ---------------------------------------------------------------------
 % Automated pre-processing
-if model.opts.bound.flag
+if model.opts.auto.preproc && model.opts.bound.flag
     disp('-------------------------------------------------------------------------');
     disp('-> Auto-pre-processing. Bounding outliers, scaling and normalizing the data.');
     % Eliminate extreme outliers, i.e., any point that exceedes 5 times the
@@ -113,7 +113,7 @@ if model.opts.bound.flag
                                 bsxfun(@times,lomask,model.bound.lobound);
 end
 
-if model.opts.norm.flag
+if model.opts.auto.preproc && model.opts.norm.flag
     % Normalize the data using Box-Cox and Z-transformations
     disp('-> Auto-normalizing the data.');
     X = bsxfun(@minus,X,model.norm.minX)+1;

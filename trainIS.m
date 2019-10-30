@@ -97,7 +97,7 @@ disp('-------------------------------------------------------------------------'
 disp('-> Calculating the binary measure of performance');
 msg = '-> An algorithm is good if its performace is ';
 if opts.perf.MaxPerf
-    Y(isnan(Y)) = -Inf;
+    % Y(isnan(Y)) = -Inf;
     [bestPerformace,portfolio] = max(Y,[],2);
     if opts.perf.AbsPerf
         Ybin = Y>=opts.perf.epsilon;
@@ -107,7 +107,7 @@ if opts.perf.MaxPerf
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 else
-    Y(isnan(Y)) = Inf;
+    % Y(isnan(Y)) = Inf;
     [bestPerformace,portfolio] = min(Y,[],2);
     if opts.perf.AbsPerf
         Ybin = Y<=opts.perf.epsilon;
@@ -148,8 +148,16 @@ end
 % If we are only meant to take some observations
 disp('-------------------------------------------------------------------------');
 ninst = size(X,1);
-fractional = opts.selvars.smallscaleflag && isfloat(opts.selvars.smallscale);
-fileindexed = opts.selvars.fileidxflag && isfield(opts,'selvars') && isfield(opts.selvars,'instances') && isfile(opts.selvars.fileidx);
+fractional = isfield(opts,'selvars') && ...
+             isfield(opts.selvars,'smallscaleflag') && ...
+             opts.selvars.smallscaleflag && ...
+             isfield(opts.selvars,'smallscale') && ...
+             isfloat(opts.selvars.smallscale);
+fileindexed = isfield(opts,'selvars') && ...
+              isfield(opts.selvars,'fileidxflag') && ...
+              opts.selvars.fileidxflag && ...
+              isfield(opts.selvars,'fileidx') && ...
+              isfile(opts.selvars.fileidx);
 if fractional
     disp(['-> Creating a small scale experiment for validation. Percentage of subset: ' ...
         num2str(round(100.*opts.selvars.smallscale,2)) '%']);
@@ -158,7 +166,7 @@ if fractional
 elseif fileindexed
     disp('-> Using a subset of the instances.');
     subsetIndex = false(size(X,1),1);
-    aux = table2array(readtable(opts.selvars.instances));
+    aux = table2array(readtable(opts.selvars.fileidx));
     aux(aux>ninst) = [];
     subsetIndex(aux) = true;
 else

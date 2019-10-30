@@ -247,9 +247,7 @@ if opts.outputs.png
     for i=1:nfeats
         clf;
         drawScatter(Z, (X(:,i)-min(X(:,i)))./range(X(:,i)), strrep(featlabels{i},'_',' '));
-        line(model.sbound.Zedge(:,1),model.sbound.Zedge(:,2),...
-                 'LineStyle', '-', ...
-                 'Color', 'r');
+        % line(model.sbound.Zedge(:,1),model.sbound.Zedge(:,2),'LineStyle', '-', 'Color', 'r');
         print(gcf,'-dpng',[rootdir 'scatter_' featlabels{i} '.png']);
     end
     % ---------------------------------------------------------------------

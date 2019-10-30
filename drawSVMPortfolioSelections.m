@@ -18,6 +18,7 @@ for i=1:nalgos
     if cnt>length(mrkrs)
         cnt = 1;
     end
+    algolabels{i} = strrep(algolabels{i},'_',' ');
 end
 xlabel('z_{1}'); ylabel('z_{2}');
 legend(algolabels(isworty), 'Location', 'NorthEastOutside');

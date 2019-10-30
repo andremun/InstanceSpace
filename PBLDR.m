@@ -1,9 +1,11 @@
 function out = PBLDR(X, Y, opts)
 
-errorfcn = @(alpha,X,n,m) mean(mean((X-(reshape(alpha((2*n)+1:end),m,2)*... % B,C
-                                        reshape(alpha(1:2*n),2,n)...        % A
-                                        *X(:,1:n)')').^2,1),2);
+errorfcn = @(alpha,X,n,m) nanmean(nanmean((X-(reshape(alpha((2*n)+1:end),m,2)*... % B,C
+                                              reshape(alpha(1:2*n),2,n)...        % A
+                                              *X(:,1:n)')').^2,1),2);
 
+% Here there is a problem with Inf values. It won't be able to calculate
+% the projection. You need to do something different.
 n = size(X, 2); % Number of features
 Xbar = [X Y];
 m = size(Xbar, 2);

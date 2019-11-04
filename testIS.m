@@ -219,16 +219,16 @@ if opts.outputs.csv
     disp('-------------------------------------------------------------------------');
     disp('-> Writing the data on CSV files for post-processing.');
     % ---------------------------------------------------------------------
-    writeArray2CSV(Z, {'z_1','z_2'}, instlabels, [rootdir 'coordinates.csv']);
+    writeArray2CSV(Z, {'z_1','z_2'}, instlabels, [rootdir 'coordinates_test.csv']);
     writeArray2CSV(Xraw(:, model.featsel.idx), featlabels, instlabels, [rootdir 'feature_raw.csv']);
-    writeArray2CSV(X, featlabels, instlabels, [rootdir 'feature_process.csv']);  
-    writeArray2CSV(Yraw, algolabels, instlabels, [rootdir 'algorithm_raw.csv']);
-    writeArray2CSV(Y, algolabels, instlabels, [rootdir 'algorithm_process.csv']);
-    writeArray2CSV(Ybin, algolabels, instlabels, [rootdir 'algorithm_bin.csv']);
-    writeArray2CSV(portfolio, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio.csv']);
-    writeArray2CSV(Yhat, algolabels, instlabels, [rootdir 'algorithm_svm.csv']);
-    writeArray2CSV(psel, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio_svm.csv']);
-    writeCell2CSV(svmTable(2:end,2:end), svmTable(1,2:end), svmTable(2:end,1), [rootdir 'svm_table.csv']);
+    writeArray2CSV(X, featlabels, instlabels, [rootdir 'feature_test_process.csv']);  
+    writeArray2CSV(Yraw, algolabels, instlabels, [rootdir 'algorithm_test_raw.csv']);
+    writeArray2CSV(Y, algolabels, instlabels, [rootdir 'algorithm_test_process.csv']);
+    writeArray2CSV(Ybin, algolabels, instlabels, [rootdir 'algorithm_test_bin.csv']);
+    writeArray2CSV(portfolio, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio_test.csv']);
+    writeArray2CSV(Yhat, algolabels, instlabels, [rootdir 'algorithm_test_svm.csv']);
+    writeArray2CSV(psel, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio_test_svm.csv']);
+    writeCell2CSV(svmTable(2:end,2:end), svmTable(1,2:end), svmTable(2:end,1), [rootdir 'svm_test_table.csv']);
     if opts.outputs.web
     %   writetable(array2table(parula(256), 'VariableNames', {'R','G','B'}), [rootdir 'color_table.csv']);
         writeArray2CSV(colorscale(Xraw(:,model.featsel.idx)), featlabels, instlabels, [rootdir 'feature_raw_color.csv']);
@@ -248,7 +248,7 @@ if opts.outputs.png
         clf;
         drawScatter(Z, (X(:,i)-min(X(:,i)))./range(X(:,i)), strrep(featlabels{i},'_',' '));
         % line(model.sbound.Zedge(:,1),model.sbound.Zedge(:,2),'LineStyle', '-', 'Color', 'r');
-        print(gcf,'-dpng',[rootdir 'scatter_' featlabels{i} '.png']);
+        print(gcf,'-dpng',[rootdir 'distribution_test_feature_' featlabels{i} '.png']);
     end
     % ---------------------------------------------------------------------
     Ys = log10(Yraw+1);
@@ -256,33 +256,33 @@ if opts.outputs.png
     for i=1:nalgos
         clf;
         drawScatter(Z, Ys(:,i), strrep(algolabels{i},'_',' '));
-        print(gcf,'-dpng',[rootdir 'scatter_' algolabels{i} '_absolute.png']);
+        print(gcf,'-dpng',[rootdir 'distribution_test_performance_global_normalized_' algolabels{i} '.png']);
     end
     % ---------------------------------------------------------------------
     for i=1:nalgos
         clf;
         drawScatter(Z, (Y(:,i)-min(Y(:,i)))./range(Y(:,i)), strrep(algolabels{i},'_',' '));
-        print(gcf,'-dpng',[rootdir 'scatter_' algolabels{i} '.png']);
+        print(gcf,'-dpng',[rootdir 'distribution_test_performance_individual_normalized_' algolabels{i} '.png']);
     end
     % ---------------------------------------------------------------------
     % Drawing the sources of the instances if available
     if any(issource)
         clf;
         drawSources(Z, S);
-        print(gcf,'-dpng',[rootdir 'sources.png']);
+        print(gcf,'-dpng',[rootdir 'distribution_test_sources.png']);
     end
     % ---------------------------------------------------------------------
     % Drawing the SVM's predictions of good performance
     for i=1:nalgos
         clf;
         drawBinaryPerformance(Z, Yhat(:,i), strrep(algolabels{i},'_',' '));
-        print(gcf,'-dpng',[rootdir 'svm_' algolabels{i} '.png']);
+        print(gcf,'-dpng',[rootdir 'binary_test_svm_' algolabels{i} '.png']);
     end
     % ---------------------------------------------------------------------
     % Drawing the SVM's recommendations
     clf;
     drawSVMPortfolioSelections(Z, psel, algolabels);
-    print(gcf,'-dpng',[rootdir 'svm_portfolio.png']);
+    print(gcf,'-dpng',[rootdir 'distribution_test_svm_portfolio.png']);
 end
 
 disp('-------------------------------------------------------------------------');

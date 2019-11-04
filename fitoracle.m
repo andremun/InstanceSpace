@@ -44,7 +44,7 @@ out.Yhat = out.Yhat==2; % Make it binary
 % We assume that the most precise SVM (as per CV-Error) is the most
 % reliable.
 % [mostaccurate,out.psel] = max(bsxfun(@times,out.Yhat,1-out.modelerr),[],2);
-[mostprecise,out.psel] = max(bsxfun(@times,out.Yhat,out.precision),[],2);
+[mostprecise,out.psel] = max(bsxfun(@times,out.Yhat,out.precision .*(out.precision>0.3)),[],2);
 out.pselfull = out.psel;
 out.psel(mostprecise<=0) = 0;
 [~,betterdefault] = max(mean(Ybin));

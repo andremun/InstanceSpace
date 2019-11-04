@@ -62,11 +62,11 @@ else
     ncomb = size(comb,1); %#ok<*NODEF>
     disp(['-> ' num2str(ncomb) ' valid feature combinations.']);
     
-    if ncomb>100
-        disp('-> There are too many valid combinations. We will try 100 of them at random.')
-        comb = comb(randperm(ncomb,100),:);
-        ncomb = 100;
-    end
+%     if ncomb>100
+%         disp('-> There are too many valid combinations. We will try 100 of them at random.')
+%         comb = comb(randperm(ncomb,100),:);
+%         ncomb = 100;
+%     end
     % ---------------------------------------------------------------------
     % Determine which combination produces the best separation while using a
     % two dimensional PCA projection. The separation is defined by a Tree

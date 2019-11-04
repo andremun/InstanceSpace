@@ -1,6 +1,6 @@
 function [X, out] = boundOutliers(X, opts)
 
-out.medval = median(X, 1);
+out.medval = nanmedian(X, 1);
 out.iqrange = iqr(X, 1);
 if opts.flag
     disp('-> Removing extreme outliers from the feature values.');

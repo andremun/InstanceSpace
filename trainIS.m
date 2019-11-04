@@ -483,17 +483,17 @@ if opts.outputs.csv
         if isfield(model.footprint.best{i},'polyshape')
             writeArray2CSV(model.footprint.best{i}.polyshape.Vertices, {'z_1','z_2'},...
                            makeBndLabels(model.footprint.best{i}.polyshape.Vertices),...
-                           ['footprint_' algolabels{i} '_best.csv']);
+                           [rootdir 'footprint_' algolabels{i} '_best.csv']);
         end
         if isfield(model.footprint.good{i},'polyshape')
             writeArray2CSV(model.footprint.good{i}.polyshape.Vertices, {'z_1','z_2'},...
                            makeBndLabels(model.footprint.good{i}.polyshape.Vertices),...
-                           ['footprint_' algolabels{i} '_good.csv']);
+                           [rootdir 'footprint_' algolabels{i} '_good.csv']);
         end
         if isfield(model.footprint.bad{i},'polyshape')
             writeArray2CSV(model.footprint.bad{i}.polyshape.Vertices, {'z_1','z_2'},...
                            makeBndLabels(model.footprint.bad{i}.polyshape.Vertices),...
-                           ['footprint_' algolabels{i} '_bad.csv']);
+                           [rootdir 'footprint_' algolabels{i} '_bad.csv']);
         end
     end
     
@@ -605,7 +605,7 @@ if opts.outputs.png
     % Drawing the SVM's recommendations
     clf;
     drawSVMPortfolioSelections(model.pbldr.Z, model.algosel.psel, algolabels);
-    print(gcf,'-dpng',[rootdir 'svm_portfolio.png']);
+    print(gcf,'-dpng',[rootdir 'distribution_svm_portfolio.png']);
 end
 % -------------------------------------------------------------------------
 model.opts = opts;

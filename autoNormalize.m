@@ -7,10 +7,15 @@ if opts.flag
     out.minX = min(X,[],1);
     X = bsxfun(@minus,X,out.minX)+1;
     out.lambdaX = zeros(1,nfeats);
+    out.muX = zeros(1,nfeats);
+    out.sigmaX = zeros(1,nfeats);
     for i=1:nfeats
-        [X(:,i), out.lambdaX(i)] = boxcox(X(:,i));
+        aux = X(:,i);
+        idx = isnan(aux);
+        [aux, out.lambdaX(i)] = boxcox(aux(~idx));
+        [aux, out.muX(i), out.sigmaX(i)] = zscore(aux);
+        X(~idx,i) = aux;
     end
-    [X, out.muX, out.sigmaX] = zscore(X);
     
     Y(Y==0) = eps;
     out.lambdaY = zeros(1,nalgos);

@@ -3,8 +3,8 @@ function drawSVMPortfolioSelections(Z, psel, algolabels)
 nalgos = length(algolabels);
 algolbls = cell(1,nalgos+1);
 isworty = sum(bsxfun(@eq, psel, 0:nalgos))~=0;
-clr = parula(nalgos+1);
-mrkrs = {'.','+','x'};
+clr = flipud(jet(nalgos+1));
+mrkrs = {'.','.','.'};
 cnt = 1;
 for i=0:nalgos
     if ~isworty(i+1)

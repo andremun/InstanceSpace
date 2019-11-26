@@ -3,7 +3,7 @@ function out = fitoracle(Z,Ybin,weight,opts)
 % global params
 Ybin = double(Ybin)+1;
 nalgos = size(Ybin,2);
-out.paramgrid = sortrows(2.^(opts.maxcvgrid.*lhsdesign(opts.cvgrid,2) + ...
+out.paramgrid = sortrows(2.^((opts.maxcvgrid-opts.mincvgrid).*lhsdesign(opts.cvgrid,2) + ...
                              opts.mincvgrid));  % Cross-validation grid
 out.cvcmat = NaN.*ones(opts.cvgrid,4,nalgos);
 out.paramidx = NaN.*ones(1,nalgos);

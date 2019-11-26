@@ -2,7 +2,7 @@ function h = drawSources(Z, S)
 
 sourcelabels = cellstr(unique(S));
 nsources = length(sourcelabels);
-clrs = gray(nsources+1);
+clrs = flipud(jet(nsources+1));
 h = zeros(nsources,1);
 for i=nsources:-1:1
     h(i) = line(Z(S==sourcelabels{i},1), ...

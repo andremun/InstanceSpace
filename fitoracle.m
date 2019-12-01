@@ -3,7 +3,7 @@ function out = fitoracle(Z,Ybin,weight,opts)
 % global params
 Ybin = double(Ybin)+1;
 nalgos = size(Ybin,2);
-out.paramgrid = sortrows(2.^(opts.maxcvgrid.*lhsdesign(opts.cvgrid,2) + ...
+out.paramgrid = sortrows(2.^((opts.maxcvgrid-opts.mincvgrid).*lhsdesign(opts.cvgrid,2) + ...
                              opts.mincvgrid));  % Cross-validation grid
 out.cvcmat = NaN.*ones(opts.cvgrid,4,nalgos);
 out.paramidx = NaN.*ones(1,nalgos);
@@ -44,7 +44,7 @@ out.Yhat = out.Yhat==2; % Make it binary
 % We assume that the most precise SVM (as per CV-Error) is the most
 % reliable.
 % [mostaccurate,out.psel] = max(bsxfun(@times,out.Yhat,1-out.modelerr),[],2);
-[mostprecise,out.psel] = max(bsxfun(@times,out.Yhat,out.precision),[],2);
+[mostprecise,out.psel] = max(bsxfun(@times,out.Yhat,out.precision .*(out.precision>0.3)),[],2);
 out.pselfull = out.psel;
 out.psel(mostprecise<=0) = 0;
 [~,betterdefault] = max(mean(Ybin));

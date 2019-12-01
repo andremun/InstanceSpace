@@ -508,7 +508,6 @@ if opts.outputs.csv
     writeArray2CSV(Y, algolabels, instlabels(subsetIndex), [rootdir 'algorithm_process.csv']);
     writeArray2CSV(Ybin, algolabels, instlabels(subsetIndex), [rootdir 'algorithm_bin.csv']);
     writeArray2CSV(numGoodAlgos(subsetIndex), {'NumGoodAlgos'}, instlabels(subsetIndex), [rootdir 'good_algos.csv']);
-    writeArray2CSV(colorscale(numGoodAlgos(subsetIndex)), {'NumGoodAlgos'}, instlabels(subsetIndex), [rootdir 'good_algos_color.csv']);
     writeArray2CSV(beta, {'IsBetaEasy'}, instlabels(subsetIndex), [rootdir 'beta_easy.csv']);
     writeArray2CSV(portfolio, {'Best_Algorithm'}, instlabels(subsetIndex), [rootdir 'portfolio.csv']);
     writeArray2CSV(model.algosel.Yhat, algolabels, instlabels(subsetIndex), [rootdir 'algorithm_svm.csv']);
@@ -522,6 +521,7 @@ if opts.outputs.csv
     writeCell2CSV(svmTable(2:end,2:end), svmTable(1,2:end), svmTable(2:end,1), [rootdir 'svm_table.csv']);
     if opts.outputs.web
     %   writetable(array2table(parula(256), 'VariableNames', {'R','G','B'}), [rootdir 'color_table.csv']);
+        writeArray2CSV(colorscale(numGoodAlgos(subsetIndex)), {'NumGoodAlgos'}, instlabels(subsetIndex), [rootdir 'good_algos_color.csv']);
         writeArray2CSV(colorscale(Xraw(subsetIndex,model.featsel.idx)), featlabels, instlabels(subsetIndex), [rootdir 'feature_raw_color.csv']);
         writeArray2CSV(colorscale(Yraw(subsetIndex,:)), algolabels, instlabels(subsetIndex), [rootdir 'algorithm_raw_single_color.csv']);
         writeArray2CSV(colorscale(X), featlabels, instlabels(subsetIndex), [rootdir 'feature_process_color.csv']);

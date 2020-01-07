@@ -57,7 +57,8 @@ fclose(fid);
 
 try
     model = trainIS(rootdir);
-    testIS(rootdir);
+    testDir = strcat(rootdir, 'test/');
+    testIS(testDir);
 catch ME
     disp('EOF:ERROR');
     rethrow(ME)

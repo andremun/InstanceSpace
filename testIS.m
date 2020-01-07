@@ -219,16 +219,16 @@ if opts.outputs.csv
     disp('-------------------------------------------------------------------------');
     disp('-> Writing the data on CSV files for post-processing.');
     % ---------------------------------------------------------------------
-    writeArray2CSV(Z, {'z_1','z_2'}, instlabels, [rootdir 'coordinates_test.csv']);
+    writeArray2CSV(Z, {'z_1','z_2'}, instlabels, [rootdir 'coordinates.csv']);
     writeArray2CSV(Xraw(:, model.featsel.idx), featlabels, instlabels, [rootdir 'feature_raw.csv']);
-    writeArray2CSV(X, featlabels, instlabels, [rootdir 'feature_test_process.csv']);  
-    writeArray2CSV(Yraw, algolabels, instlabels, [rootdir 'algorithm_test_raw.csv']);
-    writeArray2CSV(Y, algolabels, instlabels, [rootdir 'algorithm_test_process.csv']);
-    writeArray2CSV(Ybin, algolabels, instlabels, [rootdir 'algorithm_test_bin.csv']);
-    writeArray2CSV(portfolio, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio_test.csv']);
-    writeArray2CSV(Yhat, algolabels, instlabels, [rootdir 'algorithm_test_svm.csv']);
-    writeArray2CSV(psel, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio_test_svm.csv']);
-    writeCell2CSV(svmTable(2:end,2:end), svmTable(1,2:end), svmTable(2:end,1), [rootdir 'svm_test_table.csv']);
+    writeArray2CSV(X, featlabels, instlabels, [rootdir 'feature_process.csv']);  
+    writeArray2CSV(Yraw, algolabels, instlabels, [rootdir 'algorithm_raw.csv']);
+    writeArray2CSV(Y, algolabels, instlabels, [rootdir 'algorithm_process.csv']);
+    writeArray2CSV(Ybin, algolabels, instlabels, [rootdir 'algorithm_bin.csv']);
+    writeArray2CSV(portfolio, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio.csv']);
+    writeArray2CSV(Yhat, algolabels, instlabels, [rootdir 'algorithm_svm.csv']);
+    writeArray2CSV(psel, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio_svm.csv']);
+    writeCell2CSV(svmTable(2:end,2:end), svmTable(1,2:end), svmTable(2:end,1), [rootdir 'svm_table.csv']);
     if opts.outputs.web
     %   writetable(array2table(parula(256), 'VariableNames', {'R','G','B'}), [rootdir 'color_table.csv']);
         writeArray2CSV(colorscale(Xraw(:,model.featsel.idx)), featlabels, instlabels, [rootdir 'feature_raw_color.csv']);

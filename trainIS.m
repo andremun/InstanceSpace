@@ -527,6 +527,7 @@ if opts.outputs.csv
         writeArray2CSV(colorscale(Y), algolabels, instlabels(subsetIndex), [rootdir 'algorithm_process_single_color.csv']);
         writeArray2CSV(colorscaleg(Yraw(subsetIndex,:)), algolabels, instlabels(subsetIndex), [rootdir 'algorithm_raw_color.csv']);
         writeArray2CSV(colorscaleg(Y), algolabels, instlabels(subsetIndex), [rootdir 'algorithm_process_color.csv']);
+        writeArray2CSV(colorscaleg(numGoodAlgos(subsetIndex)),  {'NumGoodAlgos'}, instlabels(subsetIndex), [rootdir 'good_algos_color.csv']);
     end
 end
 % ---------------------------------------------------------------------

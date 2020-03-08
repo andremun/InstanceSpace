@@ -6,3 +6,4 @@
 *.db
 *.csv
 old_versions/*.*
+old_versions

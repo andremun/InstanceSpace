@@ -1,10 +1,21 @@
-function printdisclaim(filename)
+function scriptdisc(filename)
+% -------------------------------------------------------------------------
+% scriptdisc.m
+% -------------------------------------------------------------------------
+%
+% By: Mario Andres Munoz Acosta
+%     School of Mathematics and Statistics
+%     The University of Melbourne
+%     Australia
+%     2020
+%
+% -------------------------------------------------------------------------
 
 disp('-------------------------------------------------------------------------');
 disp(' ');
 disp([' ''' filename ''' ']);
 disp(' ');
-disp(' Code by: Mario Andres Munoz Acosta');
+disp(' Code by: Mario Andres Muñoz Acosta');
 disp('          School of Mathematics and Statistics');
 disp('          The University of Melbourne');
 disp('          Australia');
@@ -16,7 +27,7 @@ disp('-------------------------------------------------------------------------'
 disp(' ');
 disp(' If using this software, please cite as: ');
 disp(' ');
-disp(' Smith-Miles, K. et al. ''Instance Space Analysis'' doi:');
+disp(' Smith-Miles, K.; Muñoz, M.A. et al. ''Instance Space Analysis'' doi:');
 disp(' ');
 disp('-------------------------------------------------------------------------');
 disp(' ');

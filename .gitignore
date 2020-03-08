@@ -5,3 +5,4 @@
 *.mat
 *.db
 *.csv
+old_versions/*.*

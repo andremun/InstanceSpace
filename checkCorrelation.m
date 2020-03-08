@@ -1,11 +1,12 @@
 function [X, out] = checkCorrelation(X,Y,opts)
 
 [~,nfeats] = size(X);
-if opts.flag && nfeats>2
+if nfeats>2
     disp('-> Checking for feature correlation with performance.');
-    out.rho = corr(X,Y,'rows','pairwise');
-    out.rho(isnan(out.rho)) = 0;
-    [~,row] = sort(abs(out.rho),1,'descend');
+    [out.rho,out.p] = corr(X,Y,'rows','pairwise');
+    rho = out.rho;
+    rho(isnan(rho) | (out.p>0.05)) = 0;
+    [~,row] = sort(abs(rho),1,'descend');
     out.selvars = false(1,nfeats);
     testTreshold = false;
     while sum(out.selvars)<3
@@ -19,7 +20,9 @@ if opts.flag && nfeats>2
     X = X(:,out.selvars);
     disp(['-> Keeping ' num2str(size(X,2)) ' out of ' num2str(nfeats) ' features (correlation).']);
 else
-    out.rho = NaN.*ones(nfeats,size(Y,2));
+    disp('-> There are less than 3 features to do selection (correlation). Skipping.')
+    out.p = ones(nfeats,size(Y,2));
+    out.rho = NaN.*out.p;
     out.selvars = true(1,nfeats);
 end
 

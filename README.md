@@ -36,7 +36,7 @@ Moreover, empty cells, NaN or null values are allowed but **not recommended**. W
 
 ## Options
 
-The script ```example.m``` contains code that prepares all the settings used by the code. Broadly, there are settings required for the analysis itself, settings for the pre-processing of the data, and output settings. For the first these are divided into general, dimensionality reduction, bound estimation, algorithm selection and footprint construction settings. For the second, the toolkit has routines for bounding outliers, scale the data and select features.
+The script ```example.m``` constructs a structure that contains all the settings used by the code. Broadly, there are settings required for the analysis itself, settings for the pre-processing of the data, and output settings. For the first these are divided into general, dimensionality reduction, bound estimation, algorithm selection and footprint construction settings. For the second, the toolkit has routines for bounding outliers, scale the data and select features.
 
 ### General settings
 

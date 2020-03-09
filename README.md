@@ -105,7 +105,7 @@ The toolkit implements simple routines to select features, given their cross-cor
 These settings result in more information being stored in files or presented in the console output.
 
 - ```opts.outputs.csv``` This flag produces the output CSV files for post-processing and analysis. It is recommended to leave this setting as ```TRUE```.
-- ```opts.outputs.PNG``` This flag produces the output figures files for post-processing and analysis. It is recommended to leave this setting as ```TRUE```.
+- ```opts.outputs.png``` This flag produces the output figures files for post-processing and analysis. It is recommended to leave this setting as ```TRUE```.
 - ```opts.outputs.web``` This flag produces the output files employed to draw the figures in MATILDA's web tools (click [here](https://matilda.unimelb.edu.au/matilda/newuser) to open an account). It is recommended to leave this setting as ```FALSE```.
 
 ## Contact

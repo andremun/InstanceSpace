@@ -20,19 +20,18 @@ opts.clust.NTREES = 50;                 % Number of trees for the Random Forest 
 opts.clust.MaxIter = 1000;
 opts.clust.Replicates = 100;
 
-opts.pbldr.analytic = false;            % Calculate the analytical or numerical solution
-opts.pbldr.ntries = 5;                 % Number of attempts carried out by PBLDR
+opts.pilot.analytic = false;            % Calculate the analytical or numerical solution
+opts.pilot.ntries = 5;                 % Number of attempts carried out by PBLDR
 
-opts.sbound.pval = 0.05;
-opts.sbound.cthres = 0.7;
+opts.cloister.pval = 0.05;
+opts.cloister.cthres = 0.7;
 
-opts.oracle.cvfolds = 5;
-opts.oracle.useweights = false;
+opts.pythia.cvfolds = 5;
+opts.pythia.useweights = false;
 
-opts.footprint.usesim = true;          % Use the actual or simulated data to calculate the footprints
-opts.footprint.RHO = 5;                 % Density threshold
-opts.footprint.PI = 0.70;               % Purity threshold
-opts.footprint.PCTILE = 0.20;
+opts.trace.usesim = true;          % Use the actual or simulated data to calculate the footprints
+opts.trace.RHO = 5;                 % Density threshold
+opts.trace.PI = 0.70;               % Purity threshold
 
 opts.selvars.smallscaleflag = false;     % True if you want to do a small scale experiment with a percentage of the available instances
 opts.selvars.smallscale = 0.30;          % Percentage of instances to be kept for a small scale experiment

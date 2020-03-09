@@ -253,32 +253,32 @@ end
 disp('=========================================================================');
 disp('-> Calling PILOT to find the optimal projection.');
 disp('=========================================================================');
-model.pilot = PILOT(X, Y, featlabels, opts.pbldr);
+model.pilot = PILOT(X, Y, featlabels, opts.pilot);
 % -------------------------------------------------------------------------
 % Finding the empirical bounds based on the ranges of the features and the
 % correlations of the different edges.
 disp('=========================================================================');
 disp('-> Finding empirical bounds using CLOISTER.');
 disp('=========================================================================');
-model.cloist = CLOISTER(X, model.pilot.A, opts.sbound);
+model.cloist = CLOISTER(X, model.pilot.A, opts.cloister);
 % -------------------------------------------------------------------------
 % Algorithm selection. Fit a model that would separate the space into
 % classes of good and bad performance. 
 disp('=========================================================================');
 disp('-> Summoning PYTHIA to train the prediction models.');
 disp('=========================================================================');
-model.pythia = PYTHIA(model.pilot.Z, Yraw(subsetIndex,:), Ybin, W, bestPerformace, algolabels, opts.oracle);
+model.pythia = PYTHIA(model.pilot.Z, Yraw(subsetIndex,:), Ybin, W, bestPerformace, algolabels, opts.pythia);
 % -------------------------------------------------------------------------
 % Calculating the algorithm footprints.
 disp('=========================================================================');
 disp('-> Calling TRACE to perform the footprint analysis.');
 disp('=========================================================================');
-if opts.footprint.usesim
+if opts.trace.usesim
     disp('  -> TRACE will use PYTHIA''s results to calculate the footprints.');
-    model.trace = TRACE(model.pilot.Z, model.pythia.Yhat, model.pythia.selection0, beta, algolabels, opts.footprint);
+    model.trace = TRACE(model.pilot.Z, model.pythia.Yhat, model.pythia.selection0, beta, algolabels, opts.trace);
 else
     disp('  -> TRACE will use experimental data to calculate the footprints.');
-    model.trace = TRACE(model.pilot.Z, Ybin, P, beta, algolabels, opts.footprint);
+    model.trace = TRACE(model.pilot.Z, Ybin, P, beta, algolabels, opts.trace);
 end
 % -------------------------------------------------------------------------
 % Preparing the outputs for further analysis

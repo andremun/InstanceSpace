@@ -25,7 +25,7 @@ end
 % Drawing algorithm performance/footprint plots
 Ys = log10(Yraw+1);
 Ys = (Ys-min(Ys(:)))./range(Ys(:));
-if opts.footprint.usesim
+if opts.trace.usesim
     Yfoot = model.pythia.Yhat;
     Pfoot = model.pythia.selection0;
 else

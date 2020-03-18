@@ -1,5 +1,5 @@
 try
-    rootdir = '/servers/matilda-users/neelofar/new_code_matlab_test/';
+    rootdir = 'E:/InstanceSpace_Classification/MATILDA_trial/';
     testingDir = strcat(rootdir, 'test/');
     status = mkdir(testingDir);
     if status == 0

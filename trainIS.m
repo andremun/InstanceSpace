@@ -40,7 +40,7 @@ issource = strcmpi(varlabels,'source');
 instlabels = Xbar{:,isname};
 if isnumeric(instlabels)
     instlabels = num2cell(instlabels);
-    instlabels = cellfun(@(x) num2str(x),instlabels,'UniformOutput',false); %#ok<NASGU>
+    instlabels = cellfun(@(x) num2str(x),instlabels,'UniformOutput',false);
 end
 if any(issource)
     S = categorical(Xbar{:,issource}); %#ok<NASGU>
@@ -95,7 +95,7 @@ end
 nalgos = size(Y,2);
 % -------------------------------------------------------------------------
 % Storing the raw data for further processing, e.g., graphs
-Xraw = X; %#ok<NASGU>
+Xraw = X;
 Yraw = Y;
 % -------------------------------------------------------------------------
 % Removing the template data such that it can be used in the labels of
@@ -113,30 +113,35 @@ disp('-------------------------------------------------------------------------'
 disp('-> Calculating the binary measure of performance');
 msg = '-> An algorithm is good if its performace is ';
 if opts.perf.MaxPerf
-    [rankPerf,rankAlgo] = sort(Y,2,'descend');
+    Yaux = Y;
+    Yaux(isnan(Yaux)) = -Inf;
+    [rankPerf,rankAlgo] = sort(Yaux,2,'descend');
     bestPerformace = rankPerf(:,1);
     P = rankAlgo(:,1);
     if opts.perf.AbsPerf
-        Ybin = Y>=opts.perf.epsilon;
+        Ybin = Yaux>=opts.perf.epsilon;
         msg = [msg 'higher than ' num2str(opts.perf.epsilon)];
     else
-        Ybin = bsxfun(@ge,Y,(1-opts.perf.epsilon).*bestPerformace); % One is good, zero is bad
+        Ybin = bsxfun(@ge,Yaux,(1-opts.perf.epsilon).*bestPerformace); % One is good, zero is bad
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 else
-    [rankPerf,rankAlgo] = sort(Y,2,'ascend');
+    Yaux = Y;
+    Yaux(isnan(Yaux)) = Inf;
+    [rankPerf,rankAlgo] = sort(Yaux,2,'ascend');
     bestPerformace = rankPerf(:,1);
     P = rankAlgo(:,1);
     if opts.perf.AbsPerf
-        Ybin = Y<=opts.perf.epsilon;
+        Ybin = Yaux<=opts.perf.epsilon;
         msg = [msg 'less than ' num2str(opts.perf.epsilon)];
     else
-        Ybin = bsxfun(@le,Y,(1+opts.perf.epsilon).*bestPerformace);
+        Ybin = bsxfun(@le,Yaux,(1+opts.perf.epsilon).*bestPerformace);
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 end
 W = abs(Y-bestPerformace);
 W(W==0) = min(W(W~=0));
+W(isnan(W)) = max(W(~isnan(W)));
 disp(msg);
 
 idx = all(Ybin==0,1);
@@ -197,7 +202,10 @@ fileindexed = isfield(opts,'selvars') && ...
 if fractional
     disp(['-> Creating a small scale experiment for validation. Percentage of subset: ' ...
         num2str(round(100.*opts.selvars.smallscale,2)) '%']);
+    state = rng;
+    rng('default');
     aux = cvpartition(ninst,'HoldOut',opts.selvars.smallscale);
+    rng(state);
     subsetIndex = aux.test;
 elseif fileindexed
     disp('-> Using a subset of the instances.');
@@ -213,11 +221,15 @@ end
 if fileindexed || fractional
     X = X(subsetIndex,:);
     Y = Y(subsetIndex,:);
+    Xraw = Xraw(subsetIndex,:); %#ok<NASGU>
+    Yraw = Yraw(subsetIndex,:);
     Ybin = Ybin(subsetIndex,:);
     beta = beta(subsetIndex);
+    numGoodAlgos = numGoodAlgos(subsetIndex); %#ok<NASGU>
     bestPerformace = bestPerformace(subsetIndex); 
     P = P(subsetIndex);
     W = W(subsetIndex,:);
+    instlabels = instlabels(subsetIndex); %#ok<NASGU>
 end
 nfeats = size(X,2);
 % -------------------------------------------------------------------------
@@ -267,7 +279,7 @@ model.cloist = CLOISTER(X, model.pilot.A, opts.cloister);
 disp('=========================================================================');
 disp('-> Summoning PYTHIA to train the prediction models.');
 disp('=========================================================================');
-model.pythia = PYTHIA(model.pilot.Z, Yraw(subsetIndex,:), Ybin, W, bestPerformace, algolabels, opts.pythia);
+model.pythia = PYTHIA(model.pilot.Z, Yraw, Ybin, W, bestPerformace, algolabels, opts.pythia);
 % -------------------------------------------------------------------------
 % Calculating the algorithm footprints.
 disp('=========================================================================');

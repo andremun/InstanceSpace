@@ -31,19 +31,19 @@ for i=1:nalgos
     end
 end
 
-writeArray2CSV(model.pilot.Z, {'z_1','z_2'}, instlabels(subsetIndex), [rootdir 'coordinates.csv']);
+writeArray2CSV(model.pilot.Z, {'z_1','z_2'}, instlabels, [rootdir 'coordinates.csv']);
 writeArray2CSV(model.cloist.Zedge, {'z_1','z_2'}, makeBndLabels(model.cloist.Zedge), [rootdir 'bounds.csv']);
 writeArray2CSV(model.cloist.Zecorr, {'z_1','z_2'}, makeBndLabels(model.cloist.Zecorr), [rootdir 'bounds_prunned.csv']);
-writeArray2CSV(Xraw(subsetIndex, model.featsel.idx), featlabels, instlabels(subsetIndex), [rootdir 'feature_raw.csv']);
-writeArray2CSV(X, featlabels, instlabels(subsetIndex), [rootdir 'feature_process.csv']);
-writeArray2CSV(Yraw(subsetIndex,:), algolabels, instlabels(subsetIndex), [rootdir 'algorithm_raw.csv']);
-writeArray2CSV(Y, algolabels, instlabels(subsetIndex), [rootdir 'algorithm_process.csv']);
-writeArray2CSV(Ybin, algolabels, instlabels(subsetIndex), [rootdir 'algorithm_bin.csv']);
-writeArray2CSV(numGoodAlgos(subsetIndex), {'NumGoodAlgos'}, instlabels(subsetIndex), [rootdir 'good_algos.csv']);
-writeArray2CSV(beta, {'IsBetaEasy'}, instlabels(subsetIndex), [rootdir 'beta_easy.csv']);
-writeArray2CSV(P, {'Best_Algorithm'}, instlabels(subsetIndex), [rootdir 'portfolio.csv']);
-writeArray2CSV(model.pythia.Yhat, algolabels, instlabels(subsetIndex), [rootdir 'algorithm_svm.csv']);
-writeArray2CSV(model.pythia.selection0, {'Best_Algorithm'}, instlabels(subsetIndex), [rootdir 'portfolio_svm.csv']);
+writeArray2CSV(Xraw(:, model.featsel.idx), featlabels, instlabels, [rootdir 'feature_raw.csv']);
+writeArray2CSV(X, featlabels, instlabels, [rootdir 'feature_process.csv']);
+writeArray2CSV(Yraw, algolabels, instlabels, [rootdir 'algorithm_raw.csv']);
+writeArray2CSV(Y, algolabels, instlabels, [rootdir 'algorithm_process.csv']);
+writeArray2CSV(Ybin, algolabels, instlabels, [rootdir 'algorithm_bin.csv']);
+writeArray2CSV(numGoodAlgos, {'NumGoodAlgos'}, instlabels, [rootdir 'good_algos.csv']);
+writeArray2CSV(beta, {'IsBetaEasy'}, instlabels, [rootdir 'beta_easy.csv']);
+writeArray2CSV(P, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio.csv']);
+writeArray2CSV(model.pythia.Yhat, algolabels, instlabels, [rootdir 'algorithm_svm.csv']);
+writeArray2CSV(model.pythia.selection0, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio_svm.csv']);
 writeCell2CSV(model.trace.summary(2:end,[3 5 6 8 10 11]), ...
               model.trace.summary(1,[3 5 6 8 10 11]),...
               model.trace.summary(2:end,1),...

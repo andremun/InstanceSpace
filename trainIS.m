@@ -40,7 +40,7 @@ issource = strcmpi(varlabels,'source');
 instlabels = Xbar{:,isname};
 if isnumeric(instlabels)
     instlabels = num2cell(instlabels);
-    instlabels = cellfun(@(x) num2str(x),instlabels,'UniformOutput',false); %#ok<NASGU>
+    instlabels = cellfun(@(x) num2str(x),instlabels,'UniformOutput',false);
 end
 if any(issource)
     S = categorical(Xbar{:,issource}); %#ok<NASGU>
@@ -95,7 +95,7 @@ end
 nalgos = size(Y,2);
 % -------------------------------------------------------------------------
 % Storing the raw data for further processing, e.g., graphs
-Xraw = X; %#ok<NASGU>
+Xraw = X;
 Yraw = Y;
 % -------------------------------------------------------------------------
 % Removing the template data such that it can be used in the labels of
@@ -202,7 +202,10 @@ fileindexed = isfield(opts,'selvars') && ...
 if fractional
     disp(['-> Creating a small scale experiment for validation. Percentage of subset: ' ...
         num2str(round(100.*opts.selvars.smallscale,2)) '%']);
+    state = rng;
+    rng('default');
     aux = cvpartition(ninst,'HoldOut',opts.selvars.smallscale);
+    rng(state);
     subsetIndex = aux.test;
 elseif fileindexed
     disp('-> Using a subset of the instances.');
@@ -218,11 +221,15 @@ end
 if fileindexed || fractional
     X = X(subsetIndex,:);
     Y = Y(subsetIndex,:);
+    Xraw = Xraw(subsetIndex,:); %#ok<NASGU>
+    Yraw = Yraw(subsetIndex,:);
     Ybin = Ybin(subsetIndex,:);
     beta = beta(subsetIndex);
+    numGoodAlgos = numGoodAlgos(subsetIndex); %#ok<NASGU>
     bestPerformace = bestPerformace(subsetIndex); 
     P = P(subsetIndex);
     W = W(subsetIndex,:);
+    instlabels = instlabels(subsetIndex); %#ok<NASGU>
 end
 nfeats = size(X,2);
 % -------------------------------------------------------------------------
@@ -272,7 +279,7 @@ model.cloist = CLOISTER(X, model.pilot.A, opts.cloister);
 disp('=========================================================================');
 disp('-> Summoning PYTHIA to train the prediction models.');
 disp('=========================================================================');
-model.pythia = PYTHIA(model.pilot.Z, Yraw(subsetIndex,:), Ybin, W, bestPerformace, algolabels, opts.pythia);
+model.pythia = PYTHIA(model.pilot.Z, Yraw, Ybin, W, bestPerformace, algolabels, opts.pythia);
 % -------------------------------------------------------------------------
 % Calculating the algorithm footprints.
 disp('=========================================================================');

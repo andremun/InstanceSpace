@@ -17,7 +17,7 @@ This repository provides a set of MATLAB tools to carry out a complete Instance 
 
 ## Installation Instructions
 
-The only requirement for the software to run is to have a current version of [MATLAB](http://www.mathworks.com), with the [Statistics and Machine Learning](https://au.mathworks.com/help/stats/index.html) and the [Global Optimization](https://au.mathworks.com/help/gads/index.html) toolboxes installed. It has been tested and known to work properly in version r2018b. Earlier versions may fail to support the processing of ```.json``` files.
+The only requirement for the software to run is to have a current version of [MATLAB](http://www.mathworks.com), with the [Communications](https://au.mathworks.com/products/communications.html), [Financial](https://au.mathworks.com/products/finance.html), [Global Optimization](https://au.mathworks.com/help/gads/index.html), [Optimization](https://au.mathworks.com/products/optimization.html), and [Statistics and Machine Learning](https://au.mathworks.com/help/stats/index.html) toolboxes installed. It has been tested and known to work properly in version r2018b. Earlier versions may fail to support several functions being used.
 
 ## Working with the code
 

@@ -35,7 +35,7 @@ end
 for i=1:nalgos
     % Actual performance, normalized globaly
     clf;
-    drawScatter(model.pilot.Z, Ys(subsetIndex,i), strrep(algolabels{i},'_',' '));
+    drawScatter(model.pilot.Z, Ys(:,i), strrep(algolabels{i},'_',' '));
     print(gcf,'-dpng',[rootdir 'distribution_performance_global_normalized_' algolabels{i} '.png']);
     % Actual performance, normalized individualy
     clf;
@@ -58,7 +58,7 @@ end
 % ---------------------------------------------------------------------
 % Plotting the number of good algos
 clf;
-drawScatter(model.pilot.Z, numGoodAlgos(subsetIndex)./nalgos, 'Percentage of good algorithms');
+drawScatter(model.pilot.Z, numGoodAlgos./nalgos, 'Percentage of good algorithms');
 print(gcf,'-dpng',[rootdir 'distribution_number_good_algos.png']);
 % ---------------------------------------------------------------------
 % Drawing the algorithm performance
@@ -84,6 +84,6 @@ print(gcf,'-dpng',[rootdir 'distribution_beta_score.png']);
 % Drawing the sources of the instances if available
 if any(issource)
     clf;
-    drawSources(model.pilot.Z, S(subsetIndex));
+    drawSources(model.pilot.Z, S);
     print(gcf,'-dpng',[rootdir 'distribution_sources.png']);
 end

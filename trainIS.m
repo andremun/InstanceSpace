@@ -230,6 +230,7 @@ if fileindexed || fractional
     P = P(subsetIndex);
     W = W(subsetIndex,:);
     instlabels = instlabels(subsetIndex); %#ok<NASGU>
+    S = S(subsetIndex);
 end
 nfeats = size(X,2);
 % -------------------------------------------------------------------------

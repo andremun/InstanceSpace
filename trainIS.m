@@ -113,30 +113,35 @@ disp('-------------------------------------------------------------------------'
 disp('-> Calculating the binary measure of performance');
 msg = '-> An algorithm is good if its performace is ';
 if opts.perf.MaxPerf
-    [rankPerf,rankAlgo] = sort(Y,2,'descend');
+    Yaux = Y;
+    Yaux(isnan(Yaux)) = -Inf;
+    [rankPerf,rankAlgo] = sort(Yaux,2,'descend');
     bestPerformace = rankPerf(:,1);
     P = rankAlgo(:,1);
     if opts.perf.AbsPerf
-        Ybin = Y>=opts.perf.epsilon;
+        Ybin = Yaux>=opts.perf.epsilon;
         msg = [msg 'higher than ' num2str(opts.perf.epsilon)];
     else
-        Ybin = bsxfun(@ge,Y,(1-opts.perf.epsilon).*bestPerformace); % One is good, zero is bad
+        Ybin = bsxfun(@ge,Yaux,(1-opts.perf.epsilon).*bestPerformace); % One is good, zero is bad
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 else
-    [rankPerf,rankAlgo] = sort(Y,2,'ascend');
+    Yaux = Y;
+    Yaux(isnan(Yaux)) = Inf;
+    [rankPerf,rankAlgo] = sort(Yaux,2,'ascend');
     bestPerformace = rankPerf(:,1);
     P = rankAlgo(:,1);
     if opts.perf.AbsPerf
-        Ybin = Y<=opts.perf.epsilon;
+        Ybin = Yaux<=opts.perf.epsilon;
         msg = [msg 'less than ' num2str(opts.perf.epsilon)];
     else
-        Ybin = bsxfun(@le,Y,(1+opts.perf.epsilon).*bestPerformace);
+        Ybin = bsxfun(@le,Yaux,(1+opts.perf.epsilon).*bestPerformace);
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 end
 W = abs(Y-bestPerformace);
 W(W==0) = min(W(W~=0));
+W(isnan(W)) = max(W(~isnan(W)));
 disp(msg);
 
 idx = all(Ybin==0,1);

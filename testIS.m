@@ -74,8 +74,11 @@ else
     warning('Can not find parameter "MaxPerf" in the trained model. We are assuming that performance metric is needed to be minimized.');
 end
 if MaxPerf
-    Y(isnan(Y)) = -Inf;
-    [bestPerformace,portfolio] = max(Y,[],2);
+    Yaux = Y;
+    Yaux(isnan(Yaux)) = -Inf;
+    [rankPerf,rankAlgo] = sort(Yaux,2,'descend');
+    bestPerformace = rankPerf(:,1);
+    P = rankAlgo(:,1);
     if model.opts.perf.AbsPerf
         Ybin = Y>=model.opts.perf.epsilon;
         msg = [msg 'higher than ' num2str(model.opts.perf.epsilon)];
@@ -84,8 +87,11 @@ if MaxPerf
         msg = [msg 'within ' num2str(round(100.*model.opts.perf.epsilon)) '% of the best.'];
     end
 else
-    Y(isnan(Y)) = Inf;
-    [bestPerformace,portfolio] = min(Y,[],2);
+    Yaux = Y;
+    Yaux(isnan(Yaux)) = Inf;
+    [rankPerf,rankAlgo] = sort(Yaux,2,'ascend');
+    bestPerformace = rankPerf(:,1);
+    P = rankAlgo(:,1);
     if model.opts.perf.AbsPerf
         Ybin = Y<=model.opts.perf.epsilon;
         msg = [msg 'less than ' num2str(model.opts.perf.epsilon)];
@@ -95,7 +101,8 @@ else
     end
 end
 disp(msg);
-beta = sum(Ybin,2)>model.opts.general.betaThreshold*nalgos;
+numGoodAlgos = sum(Ybin,2);
+beta = numGoodAlgos>model.opts.general.betaThreshold*nalgos;
 
 % ---------------------------------------------------------------------
 % Automated pre-processing
@@ -216,7 +223,9 @@ if opts.outputs.csv
     writeArray2CSV(Yraw, algolabels, instlabels, [rootdir 'algorithm_test_raw.csv']);
     writeArray2CSV(Y, algolabels, instlabels, [rootdir 'algorithm_test_process.csv']);
     writeArray2CSV(Ybin, algolabels, instlabels, [rootdir 'algorithm_test_bin.csv']);
-    writeArray2CSV(portfolio, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio_test.csv']);
+    writeArray2CSV(numGoodAlgos, {'NumGoodAlgos'}, instlabels, [rootdir 'good_algos_test.csv']);
+    writeArray2CSV(beta, {'IsBetaEasy'}, instlabels, [rootdir 'beta_easy_test.csv']);
+    writeArray2CSV(P, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio_test.csv']);
     writeArray2CSV(out.pythia.Yhat, algolabels, instlabels, [rootdir 'algorithm_test_svm.csv']);
     writeArray2CSV(psel, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio_test_svm.csv']);
     writeCell2CSV(out.pythia.summary(2:end,2:end), out.pythia.summary(1,2:end), out.pythia.summary(2:end,1), [rootdir 'svm_test_table.csv']);
@@ -228,6 +237,7 @@ if opts.outputs.csv
         writeArray2CSV(colorscale(Y), algolabels, instlabels, [rootdir 'algorithm_test_process_single_color.csv']);
         writeArray2CSV(colorscaleg(Yraw), algolabels, instlabels, [rootdir 'algorithm_test_raw_color.csv']);
         writeArray2CSV(colorscaleg(Y), algolabels, instlabels, [rootdir 'algorithm_test_process_color.csv']);
+        writeArray2CSV(colorscael(numGoodAlgos), {'NumGoodAlgos'}, instlabels, [rootdir 'good_algos_test_color.csv']);
     end
 end
 

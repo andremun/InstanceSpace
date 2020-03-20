@@ -296,25 +296,23 @@ else
 end
 % -------------------------------------------------------------------------
 % Preparing the outputs for further analysis
-scriptfcn; % Loading all the subfunctions into memory
-
+model.opts = opts;
 if opts.outputs.csv
     % Storing the output data as a CSV files. This is for easier
     % post-processing. All workspace data will be stored in a matlab file
     % later.
-    scriptcsv;
+    scriptcsv(model,rootdir);
     if opts.outputs.web
-        scriptweb;
+        scriptweb(model,rootdir);
     end
 end
 % -------------------------------------------------------------------------
 % Making all the plots. First, plotting the features and performance as
 % scatter plots.
 if opts.outputs.png
-    scriptpng;
+    scriptpng(model,rootdir);
 end
 % -------------------------------------------------------------------------
-model.opts = opts;
 disp('-------------------------------------------------------------------------');
 disp('-> Storing the raw MATLAB results for post-processing and/or debugging.');
 save([rootdir 'model.mat'],'-struct','model'); % Save the main results

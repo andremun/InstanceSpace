@@ -37,71 +37,72 @@ isname = strcmpi(varlabels,'instances');
 isfeat = strncmpi(varlabels,'feature_',8);
 isalgo = strncmpi(varlabels,'algo_',5);
 issource = strcmpi(varlabels,'source');
-instlabels = Xbar{:,isname};
-if isnumeric(instlabels)
-    instlabels = num2cell(instlabels);
-    instlabels = cellfun(@(x) num2str(x),instlabels,'UniformOutput',false);
+model.data.instlabels = Xbar{:,isname};
+if isnumeric(model.data.instlabels)
+    model.data.instlabels = num2cell(model.data.instlabels);
+    model.data.instlabels = cellfun(@(x) num2str(x),model.data.instlabels,'UniformOutput',false);
 end
 if any(issource)
-    S = categorical(Xbar{:,issource}); %#ok<NASGU>
+    model.data.S = categorical(Xbar{:,issource});
 end
-X = Xbar{:,isfeat};
-Y = Xbar{:,isalgo};
+model.data.X = Xbar{:,isfeat};
+model.data.Y = Xbar{:,isalgo};
+% -------------------------------------------------------------------------
+% Giving the oportunity to pick and choose which features/algorithms to
+% work with
+model.data.featlabels = varlabels(isfeat);
+if isfield(opts,'selvars') && isfield(opts.selvars,'feats')
+    disp('-------------------------------------------------------------------------');
+    msg = '-> Using the following features: ';
+    isselfeat = false(1,length(model.data.featlabels));
+    for i=1:length(opts.selvars.feats)
+        isselfeat = isselfeat | strcmp(model.data.featlabels,opts.selvars.feats{i});
+        msg = [msg opts.selvars.feats{i} ' ']; %#ok<AGROW>
+    end
+    disp(msg);
+    model.data.X = model.data.X(:,isselfeat);
+    model.data.featlabels = model.data.featlabels(isselfeat);
+end
+
+model.data.algolabels = varlabels(isalgo);
+if isfield(opts,'selvars') && isfield(opts.selvars,'algos')
+    disp('-------------------------------------------------------------------------');
+    msg = '-> Using the following algorithms: ';
+    isselalgo = false(1,length(model.data.algolabels));
+    for i=1:length(opts.selvars.algos)
+        isselalgo = isselalgo | strcmp(model.data.algolabels,opts.selvars.algos{i});
+        msg = [msg opts.selvars.algos{i} ' ']; %#ok<AGROW>
+    end
+    disp(msg);
+    model.data.Y = model.data.Y(:,isselalgo);
+    model.data.algolabels = model.data.algolabels(isselalgo);
+end
+nalgos = size(model.data.Y,2);
 % -------------------------------------------------------------------------
 % PROBABLY HERE SHOULD DO A SANITY CHECK, I.E., IS THERE TOO MANY NANS?
-idx = all(isnan(X),2) | all(isnan(Y),2);
-X = X(~idx,:);
-Y = Y(~idx,:);
-idx = mean(isnan(X),1)>=0.20; % These features are very weak.
+idx = all(isnan(model.data.X),2) | all(isnan(model.data.Y),2);
+model.data.X = model.data.X(~idx,:);
+model.data.Y = model.data.Y(~idx,:);
+idx = mean(isnan(model.data.X),1)>=0.20; % These features are very weak.
 if any(idx)
     warning('-> There are features with too many missing values. They are being removed to increase speed.');
-    X = X(:,~idx);
+    model.data.X = model.data.X(:,~idx);
+    model.data.featlabels = model.data.featlabels(~idx);
 end
-ninst = size(X,1);
-nuinst = size(unique(X,'rows'),1);
+ninst = size(model.data.X,1);
+nuinst = size(unique(model.data.X,'rows'),1);
 if nuinst/ninst<0.5
     warning('-> There are too many repeated instances. It is unlikely that this run will produce good results.');
 end
 % -------------------------------------------------------------------------
-% Giving the oportunity to pick and choose which features/algorithms to
-% work with
-featlabels = varlabels(isfeat);
-if isfield(opts,'selvars') && isfield(opts.selvars,'feats')
-    disp('-------------------------------------------------------------------------');
-    msg = '-> Using the following features: ';
-    isselfeat = false(1,length(featlabels));
-    for i=1:length(opts.selvars.feats)
-        isselfeat = isselfeat | strcmp(featlabels,opts.selvars.feats{i});
-        msg = [msg opts.selvars.feats{i} ' ']; %#ok<AGROW>
-    end
-    disp(msg);
-    X = X(:,isselfeat);
-    featlabels = featlabels(isselfeat);
-end
-
-algolabels = varlabels(isalgo);
-if isfield(opts,'selvars') && isfield(opts.selvars,'algos')
-    disp('-------------------------------------------------------------------------');
-    msg = '-> Using the following algorithms: ';
-    isselalgo = false(1,length(algolabels));
-    for i=1:length(opts.selvars.algos)
-        isselalgo = isselalgo | strcmp(algolabels,opts.selvars.algos{i});
-        msg = [msg opts.selvars.algos{i} ' ']; %#ok<AGROW>
-    end
-    disp(msg);
-    Y = Y(:,isselalgo);
-    algolabels = algolabels(isselalgo);
-end
-nalgos = size(Y,2);
-% -------------------------------------------------------------------------
 % Storing the raw data for further processing, e.g., graphs
-Xraw = X;
-Yraw = Y;
+model.data.Xraw = model.data.X;
+model.data.Yraw = model.data.Y;
 % -------------------------------------------------------------------------
 % Removing the template data such that it can be used in the labels of
 % graphs and figures.
-featlabels = strrep(featlabels,'feature_','');
-algolabels = strrep(algolabels,'algo_','');
+model.data.featlabels = strrep(model.data.featlabels,'feature_','');
+model.data.algolabels = strrep(model.data.algolabels,'algo_','');
 % -------------------------------------------------------------------------
 % Determine whether the performance of an algorithm is a cost measure to
 % be minimized or a profit measure to be maximized. Moreover, determine
@@ -113,62 +114,62 @@ disp('-------------------------------------------------------------------------'
 disp('-> Calculating the binary measure of performance');
 msg = '-> An algorithm is good if its performace is ';
 if opts.perf.MaxPerf
-    Yaux = Y;
+    Yaux = model.data.Y;
     Yaux(isnan(Yaux)) = -Inf;
     [rankPerf,rankAlgo] = sort(Yaux,2,'descend');
-    bestPerformace = rankPerf(:,1);
-    P = rankAlgo(:,1);
+    model.data.bestPerformace = rankPerf(:,1);
+    model.data.P = rankAlgo(:,1);
     if opts.perf.AbsPerf
-        Ybin = Yaux>=opts.perf.epsilon;
+        model.data.Ybin = Yaux>=opts.perf.epsilon;
         msg = [msg 'higher than ' num2str(opts.perf.epsilon)];
     else
-        Ybin = bsxfun(@ge,Yaux,(1-opts.perf.epsilon).*bestPerformace); % One is good, zero is bad
+        model.data.Ybin = bsxfun(@ge,Yaux,(1-opts.perf.epsilon).*model.data.bestPerformace); % One is good, zero is bad
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 else
-    Yaux = Y;
+    Yaux = model.data.Y;
     Yaux(isnan(Yaux)) = Inf;
     [rankPerf,rankAlgo] = sort(Yaux,2,'ascend');
-    bestPerformace = rankPerf(:,1);
-    P = rankAlgo(:,1);
+    model.data.bestPerformace = rankPerf(:,1);
+    model.data.P = rankAlgo(:,1);
     if opts.perf.AbsPerf
-        Ybin = Yaux<=opts.perf.epsilon;
+        model.data.Ybin = Yaux<=opts.perf.epsilon;
         msg = [msg 'less than ' num2str(opts.perf.epsilon)];
     else
-        Ybin = bsxfun(@le,Yaux,(1+opts.perf.epsilon).*bestPerformace);
+        model.data.Ybin = bsxfun(@le,Yaux,(1+opts.perf.epsilon).*model.data.bestPerformace);
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 end
-W = abs(Y-bestPerformace);
-W(W==0) = min(W(W~=0));
-W(isnan(W)) = max(W(~isnan(W)));
+model.data.W = abs(model.data.Y-model.data.bestPerformace);
+model.data.W(model.data.W==0) = min(model.data.W(model.data.W~=0));
+model.data.W(isnan(model.data.W)) = max(model.data.W(~isnan(model.data.W)));
 disp(msg);
 
-idx = all(Ybin==0,1);
+idx = all(model.data.Ybin==0,1);
 if any(idx)
     warning('-> There are algorithms with no ''good'' instances. They are being removed to increase speed.');
-    Yraw = Yraw(:,~idx);
-    Y = Y(:,~idx);
-    Ybin = Ybin(:,~idx);
-    algolabels = algolabels(~idx);
-    nalgos = size(Y,2);
+    model.data.Yraw = model.data.Yraw(:,~idx);
+    model.data.Y = model.data.Y(:,~idx);
+    model.data.Ybin = model.data.Ybin(:,~idx);
+    model.data.algolabels = model.data.algolabels(~idx);
+    nalgos = size(model.data.Y,2);
 end
 % -------------------------------------------------------------------------
 % Testing for ties. If there is a tie in performance, we pick an algorithm
 % at random.
-bestAlgos = bsxfun(@eq,Y,bestPerformace);
+bestAlgos = bsxfun(@eq,model.data.Y,model.data.bestPerformace);
 multipleBestAlgos = sum(bestAlgos,2)>1;
 aidx = 1:nalgos;
-for i=1:size(Y,1)
+for i=1:size(model.data.Y,1)
     if multipleBestAlgos(i)
         aux = aidx(bestAlgos(i,:));
-        P(i) = aux(randi(length(aux),1)); % Pick one at random
+        model.data.P(i) = aux(randi(length(aux),1)); % Pick one at random
     end
 end
 disp(['-> For ' num2str(round(100.*mean(multipleBestAlgos))) '% of the instances there is ' ...
       'more than one best algorithm. Random selection is used to break ties.']);
-numGoodAlgos = sum(Ybin,2);
-beta = numGoodAlgos>opts.general.betaThreshold*nalgos;
+model.data.numGoodAlgos = sum(model.data.Ybin,2);
+model.data.beta = model.data.numGoodAlgos>opts.general.betaThreshold*nalgos;
 % -------------------------------------------------------------------------
 % Automated pre-processing
 if opts.auto.preproc
@@ -178,17 +179,17 @@ if opts.auto.preproc
     % Eliminate extreme outliers, i.e., any point that exceedes 5 times the
     % inter quantile range, by bounding them to that value.
     if opts.bound.flag
-        [X, model.bound] = boundOutliers(X);
+        [model.data.X, model.bound] = boundOutliers(model.data.X);
     end
     % Normalize the data using Box-Cox and Z-transformations
     if opts.norm.flag
-        [X, Y, model.norm] = autoNormalize(X, Y);
+        [model.data.X, model.data.Y, model.norm] = autoNormalize(model.data.X, model.data.Y);
     end
 end
 % -------------------------------------------------------------------------
 % If we are only meant to take some observations
 disp('-------------------------------------------------------------------------');
-ninst = size(X,1);
+ninst = size(model.data.X,1);
 fractional = isfield(opts,'selvars') && ...
              isfield(opts.selvars,'smallscaleflag') && ...
              opts.selvars.smallscaleflag && ...
@@ -209,7 +210,7 @@ if fractional
     subsetIndex = aux.test;
 elseif fileindexed
     disp('-> Using a subset of the instances.');
-    subsetIndex = false(size(X,1),1);
+    subsetIndex = false(size(model.data.X,1),1);
     aux = table2array(readtable(opts.selvars.fileidx));
     aux(aux>ninst) = [];
     subsetIndex(aux) = true;
@@ -219,20 +220,20 @@ else
 end
 
 if fileindexed || fractional
-    X = X(subsetIndex,:);
-    Y = Y(subsetIndex,:);
-    Xraw = Xraw(subsetIndex,:); %#ok<NASGU>
-    Yraw = Yraw(subsetIndex,:);
-    Ybin = Ybin(subsetIndex,:);
-    beta = beta(subsetIndex);
-    numGoodAlgos = numGoodAlgos(subsetIndex); %#ok<NASGU>
-    bestPerformace = bestPerformace(subsetIndex); 
-    P = P(subsetIndex);
-    W = W(subsetIndex,:);
-    instlabels = instlabels(subsetIndex); %#ok<NASGU>
-    S = S(subsetIndex);
+    model.data.X = model.data.X(subsetIndex,:);
+    model.data.Y = model.data.Y(subsetIndex,:);
+    model.data.Xraw = model.data.Xraw(subsetIndex,:);
+    model.data.Yraw = model.data.Yraw(subsetIndex,:);
+    model.data.Ybin = model.data.Ybin(subsetIndex,:);
+    model.data.beta = model.data.beta(subsetIndex);
+    model.data.numGoodAlgos = model.data.numGoodAlgos(subsetIndex);
+    model.data.bestPerformace = model.data.bestPerformace(subsetIndex); 
+    model.data.P = model.data.P(subsetIndex);
+    model.data.W = model.data.W(subsetIndex,:);
+    model.data.instlabels = model.data.instlabels(subsetIndex);
+    model.data.S = model.data.S(subsetIndex);
 end
-nfeats = size(X,2);
+nfeats = size(model.data.X,2);
 % -------------------------------------------------------------------------
 % Automated feature selection.
 % Keep track of the features that have been removed so we can use them
@@ -245,8 +246,8 @@ if opts.auto.featsel
     % Detect correlations between features and algorithms. Keep the top
     % CORTHRESHOLD correlated features for each algorithm
     if opts.corr.flag
-        [X, model.corr] = checkCorrelation(X, Y, opts.corr);
-        featlabels = featlabels(model.corr.selvars);
+        [model.data.X, model.corr] = checkCorrelation(model.data.X, model.data.Y, opts.corr);
+        model.data.featlabels = model.data.featlabels(model.corr.selvars);
         model.featsel.idx = model.featsel.idx(model.corr.selvars);
     end
     % Detect similar features, by clustering them according to their
@@ -255,8 +256,8 @@ if opts.auto.featsel
     % limit of 10 features. The selection criteria is an average silhouete
     % value above 0.65
     if opts.clust.flag
-        [X, model.clust] = clusterFeatureSelection(X, Ybin, opts.clust);
-        featlabels = featlabels(model.clust.selvars);
+        [model.data.X, model.clust] = clusterFeatureSelection(model.data.X, model.data.Ybin, opts.clust);
+        model.data.featlabels = model.data.featlabels(model.clust.selvars);
         model.featsel.idx = model.featsel.idx(model.clust.selvars);
     end
 end
@@ -266,21 +267,21 @@ end
 disp('=========================================================================');
 disp('-> Calling PILOT to find the optimal projection.');
 disp('=========================================================================');
-model.pilot = PILOT(X, Y, featlabels, opts.pilot);
+model.pilot = PILOT(model.data.X, model.data.Y, model.data.featlabels, opts.pilot);
 % -------------------------------------------------------------------------
 % Finding the empirical bounds based on the ranges of the features and the
 % correlations of the different edges.
 disp('=========================================================================');
 disp('-> Finding empirical bounds using CLOISTER.');
 disp('=========================================================================');
-model.cloist = CLOISTER(X, model.pilot.A, opts.cloister);
+model.cloist = CLOISTER(model.data.X, model.pilot.A, opts.cloister);
 % -------------------------------------------------------------------------
 % Algorithm selection. Fit a model that would separate the space into
 % classes of good and bad performance. 
 disp('=========================================================================');
 disp('-> Summoning PYTHIA to train the prediction models.');
 disp('=========================================================================');
-model.pythia = PYTHIA(model.pilot.Z, Yraw, Ybin, W, bestPerformace, algolabels, opts.pythia);
+model.pythia = PYTHIA(model.pilot.Z, model.data.Yraw, model.data.Ybin, model.data.W, model.data.bestPerformace, model.data.algolabels, opts.pythia);
 % -------------------------------------------------------------------------
 % Calculating the algorithm footprints.
 disp('=========================================================================');
@@ -288,10 +289,10 @@ disp('-> Calling TRACE to perform the footprint analysis.');
 disp('=========================================================================');
 if opts.trace.usesim
     disp('  -> TRACE will use PYTHIA''s results to calculate the footprints.');
-    model.trace = TRACE(model.pilot.Z, model.pythia.Yhat, model.pythia.selection0, beta, algolabels, opts.trace);
+    model.trace = TRACE(model.pilot.Z, model.pythia.Yhat, model.pythia.selection0, model.data.beta, model.data.algolabels, opts.trace);
 else
     disp('  -> TRACE will use experimental data to calculate the footprints.');
-    model.trace = TRACE(model.pilot.Z, Ybin, P, beta, algolabels, opts.trace);
+    model.trace = TRACE(model.pilot.Z, model.data.Ybin, model.data.P, model.data.beta, model.data.algolabels, opts.trace);
 end
 % -------------------------------------------------------------------------
 % Preparing the outputs for further analysis

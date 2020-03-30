@@ -52,7 +52,10 @@ fclose(fid);
 
 try
     model = trainIS(rootdir);
-    testIS(rootdir);
+    %The trained model can be tested using testing routine
+    %"testInterface.m". Make sure to place test data "metadata_test.csv"
+    %inside root directory specified at the top (rootdir).
+    
 catch ME
     disp('EOF:ERROR');
     rethrow(ME)

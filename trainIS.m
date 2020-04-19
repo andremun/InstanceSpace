@@ -1,4 +1,4 @@
-function [model] = trainIS(rootdir)
+function model = trainIS(rootdir)
 % -------------------------------------------------------------------------
 % trainIS.m
 % -------------------------------------------------------------------------
@@ -231,7 +231,9 @@ if fileindexed || fractional
     model.data.P = model.data.P(subsetIndex);
     model.data.W = model.data.W(subsetIndex,:);
     model.data.instlabels = model.data.instlabels(subsetIndex);
-    model.data.S = model.data.S(subsetIndex);
+    if isfield(model.data,'S')
+        model.data.S = model.data.S(subsetIndex);
+    end
 end
 nfeats = size(model.data.X,2);
 % -------------------------------------------------------------------------

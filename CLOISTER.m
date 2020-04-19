@@ -16,6 +16,9 @@ nfeats = size(X,2);
 rho = rho.*(pval<opts.pval);
 
 Xbnds = [min(X); max(X)];
+% if no feature selection. then make a note in the boundary construction
+% that it won't work, because nfeats is soo large that de2bi wont be able
+% to make a matrix.
 idx = de2bi(0:2^nfeats-1)+1;
 ncomb = size(idx,1);
 Xedge = zeros(ncomb,nfeats);

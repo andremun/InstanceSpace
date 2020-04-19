@@ -39,22 +39,21 @@ isname = strcmpi(varlabels,'instances');
 isfeat = strncmpi(varlabels,'feature_',8);
 isalgo = strncmpi(varlabels,'algo_',5);
 issource = strcmpi(varlabels,'source');
-instlabels = Xbar{:,isname};
-if isnumeric(instlabels)
-    instlabels = num2cell(instlabels);
-    instlabels = cellfun(@(x) num2str(x),instlabels,'UniformOutput',false);
+out.data.instlabels = Xbar{:,isname};
+if isnumeric(out.data.instlabels)
+    out.data.instlabels = num2cell(out.data.instlabels);
+    out.data.instlabels = cellfun(@(x) num2str(x),out.data.instlabels,'UniformOutput',false);
 end
 if any(issource)
-    S = categorical(Xbar{:,issource});
+    out.data.S = categorical(Xbar{:,issource});
 end
-X = Xbar{:,isfeat};
-Y = Xbar{:,isalgo};
-nalgos = size(Y,2);
-ninst = size(X,1);
+out.data.X = Xbar{:,isfeat};
+out.data.Y = Xbar{:,isalgo};
+nalgos = size(out.data.Y,2);
 % -------------------------------------------------------------------------
 % Storing the raw data for further processing, e.g., graphs
-Xraw = X;
-Yraw = Y;
+out.data.Xraw = out.data.X;
+out.data.Yraw = out.data.Y;
 % -------------------------------------------------------------------------
 % Determine whether the performance of an algorithm is a cost measure to
 % be minimized or a profit measure to be maximized. Moreover, determine
@@ -74,35 +73,35 @@ else
     warning('Can not find parameter "MaxPerf" in the trained model. We are assuming that performance metric is needed to be minimized.');
 end
 if MaxPerf
-    Yaux = Y;
+    Yaux = out.data.Y;
     Yaux(isnan(Yaux)) = -Inf;
     [rankPerf,rankAlgo] = sort(Yaux,2,'descend');
-    bestPerformace = rankPerf(:,1);
-    P = rankAlgo(:,1);
+    out.data.bestPerformace = rankPerf(:,1);
+    out.data.P = rankAlgo(:,1);
     if model.opts.perf.AbsPerf
-        Ybin = Y>=model.opts.perf.epsilon;
+        out.data.Ybin = out.data.Y>=model.opts.perf.epsilon;
         msg = [msg 'higher than ' num2str(model.opts.perf.epsilon)];
     else
-        Ybin = bsxfun(@ge,Y,(1-model.opts.perf.epsilon).*bestPerformace); % One is good, zero is bad
+        out.data.Ybin = bsxfun(@ge,out.data.Y,(1-model.opts.perf.epsilon).*out.data.bestPerformace); % One is good, zero is bad
         msg = [msg 'within ' num2str(round(100.*model.opts.perf.epsilon)) '% of the best.'];
     end
 else
-    Yaux = Y;
+    Yaux = out.data.Y;
     Yaux(isnan(Yaux)) = Inf;
     [rankPerf,rankAlgo] = sort(Yaux,2,'ascend');
-    bestPerformace = rankPerf(:,1);
-    P = rankAlgo(:,1);
+    out.data.bestPerformace = rankPerf(:,1);
+    out.data.P = rankAlgo(:,1);
     if model.opts.perf.AbsPerf
-        Ybin = Y<=model.opts.perf.epsilon;
+        out.data.Ybin = out.data.Y<=model.opts.perf.epsilon;
         msg = [msg 'less than ' num2str(model.opts.perf.epsilon)];
     else
-        Ybin = bsxfun(@le,Y,(1+model.opts.perf.epsilon).*bestPerformace);
+        out.data.Ybin = bsxfun(@le,out.data.Y,(1+model.opts.perf.epsilon).*out.data.bestPerformace);
         msg = [msg 'within ' num2str(round(100.*model.opts.perf.epsilon)) '% of the best.'];
     end
 end
 disp(msg);
-numGoodAlgos = sum(Ybin,2);
-beta = numGoodAlgos>model.opts.general.betaThreshold*nalgos;
+out.data.numGoodAlgos = sum(out.data.Ybin,2);
+out.data.beta = out.data.numGoodAlgos>model.opts.general.betaThreshold*nalgos;
 
 % ---------------------------------------------------------------------
 % Automated pre-processing
@@ -112,178 +111,64 @@ if model.opts.auto.preproc && model.opts.bound.flag
     % Eliminate extreme outliers, i.e., any point that exceedes 5 times the
     % inter quantile range, by bounding them to that value.
     disp('-> Removing extreme outliers from the feature values.');
-    himask = bsxfun(@gt,X,model.bound.hibound);
-    lomask = bsxfun(@lt,X,model.bound.lobound);
-    X = X.*~(himask | lomask) + bsxfun(@times,himask,model.bound.hibound) + ...
-                                bsxfun(@times,lomask,model.bound.lobound);
+    himask = bsxfun(@gt,out.data.X,model.bound.hibound);
+    lomask = bsxfun(@lt,out.data.X,model.bound.lobound);
+    out.data.X = out.data.X.*~(himask | lomask) + bsxfun(@times,himask,model.bound.hibound) + ...
+                                                  bsxfun(@times,lomask,model.bound.lobound);
 end
 
 if model.opts.auto.preproc && model.opts.norm.flag
     % Normalize the data using Box-Cox and out.pilot.Z-transformations
     disp('-> Auto-normalizing the data.');
-    X = bsxfun(@minus,X,model.norm.minX)+1;
-    X = bsxfun(@rdivide,bsxfun(@power,X,model.norm.lambdaX)-1,model.norm.lambdaX);
-    X = bsxfun(@rdivide,bsxfun(@minus,X,model.norm.muX),model.norm.sigmaX);
+    out.data.X = bsxfun(@minus,out.data.X,model.norm.minX)+1;
+    out.data.X = bsxfun(@rdivide,bsxfun(@power,out.data.X,model.norm.lambdaX)-1,model.norm.lambdaX);
+    out.data.X = bsxfun(@rdivide,bsxfun(@minus,out.data.X,model.norm.muX),model.norm.sigmaX);
     
-    Y(Y==0) = eps; % Assumes that Y is always positive and higher than 1e-16
-    Y = bsxfun(@rdivide,bsxfun(@power,Y,model.norm.lambdaY)-1,model.norm.lambdaY);
-    Y = bsxfun(@rdivide,bsxfun(@minus,Y,model.norm.muY),model.norm.sigmaY);
+    out.data.Y(out.data.Y==0) = eps; % Assumes that out.data.Y is always positive and higher than 1e-16
+    out.data.Y = bsxfun(@rdivide,bsxfun(@power,out.data.Y,model.norm.lambdaY)-1,model.norm.lambdaY);
+    out.data.Y = bsxfun(@rdivide,bsxfun(@minus,out.data.Y,model.norm.muY),model.norm.sigmaY);
 end
 % ---------------------------------------------------------------------
 % This is the final subset of features.
-X = X(:,model.featsel.idx);
-nfeats = size(X,2);
-featlabels = strrep(varlabels(isfeat),'feature_','');
-featlabels = featlabels(model.featsel.idx);
-algolabels = strrep(varlabels(isalgo),'algo_','');
+out.featsel.idx = model.featsel.idx;
+out.data.X = out.data.X(:,out.featsel.idx);
+out.data.featlabels = strrep(varlabels(isfeat),'feature_','');
+out.data.featlabels = out.data.featlabels(model.featsel.idx);
+out.data.algolabels = strrep(varlabels(isalgo),'algo_','');
 % ---------------------------------------------------------------------
 %  Calculate the two dimensional projection using the PBLDR algorithm
 %  (Munoz et al. Mach Learn 2018)
-out.pilot.Z = X*model.pilot.A';
+out.pilot.Z = out.data.X*model.pilot.A';
 % -------------------------------------------------------------------------
 % Algorithm selection. Fit a model that would separate the space into
 % classes of good and bad performance. 
-out.pythia.Yhat = false(size(Ybin));
-out.pythia.Pr0hat = 0.*Ybin;
-cvcmat = zeros(nalgos,4);
-for i=1:nalgos
-    [out.pythia.Yhat(:,i),aux] = model.pythia.svm{i}.predict(out.pilot.Z);
-    out.pythia.Pr0hat(:,i) = aux(:,1);
-    aux = confusionmat(Ybin(:,i),out.pythia.Yhat(:,i));
-    cvcmat(i,:) = aux(:);
+out.pythia = PYTHIAtest(model.pythia, out.pilot.Z, out.data.Yraw, ...
+                        out.data.Ybin, out.data.bestPerformace, ...
+                        out.data.algolabels);
+% -------------------------------------------------------------------------
+% Validating the footprints
+if opts.trace.usesim
+    out.trace = TRACEtest(model.trace, out.pilot.Z, out.data.Ybin, ...
+                          out.pythia.selection0, out.data.beta, ...
+                          out.data.algolabels);
+else
+    out.trace = TRACEtest(model.trace, out.pilot.Z, out.data.Ybin, ...
+                          out.data.P, out.data.beta, ...
+                          out.data.algolabels);
 end
-tn = cvcmat(:,1);
-fp = cvcmat(:,3);
-fn = cvcmat(:,2);
-tp = cvcmat(:,4);
-precision = tp./(tp+fp);
-recall = tp./(tp+fn);
-accuracy = (tp+tn)./sum(cvcmat(1,:));
 
-[mostprecise,psel] = max(bsxfun(@times,out.pythia.Yhat,model.pythia.precision'),[],2);
-pselfull = psel;
-psel(mostprecise<=0) = 0;
-[~,betterdefault] = max(mean(Ybin));
-pselfull(mostprecise<=0) = betterdefault;
-
-svmselections = bsxfun(@eq,psel,1:nalgos);
-selselections = bsxfun(@eq,pselfull,1:nalgos);
-avgperf = mean(Yraw);
-stdperf = std(Yraw);
-Yselector = Yraw;
-Yfull = Yraw;
-Ysvms = Yraw;
-Yselector(~svmselections) = NaN;
-Yfull(~selselections) = NaN;
-Ysvms(~out.pythia.Yhat) = NaN;
-
-pgood = mean(any( Ybin & selselections,2));
-fb = sum(any( Ybin & ~svmselections,2));
-fg = sum(any(~Ybin &  svmselections,2));
-tg = sum(any( Ybin &  svmselections,2));
-precisionsel = tg./(tg+fg);
-recallsel = tg./(tg+fb);
-
-out.pythia.summary = cell(nalgos+3, 9);
-out.pythia.summary{1,1} = 'Algorithms ';
-out.pythia.summary(2:end-2, 1) = algolabels;
-out.pythia.summary(end-1:end, 1) = {'Oracle','Selector'};
-out.pythia.summary(1, 2:9) = {'Avg_Perf_all_instances';
-                              'Std_Perf_all_instances';
-                              'Probability_of_good';
-                              'Avg_Perf_selected_instances';
-                              'Std_Perf_selected_instances';
-                              'model_accuracy';
-                              'model_precision';
-                              'model_recall'};
-out.pythia.summary(2:end, 2) = num2cell(round([avgperf nanmean(bestPerformace) nanmean(Yfull(:))],3));
-out.pythia.summary(2:end, 3) = num2cell(round([stdperf nanstd(bestPerformace) nanstd(Yfull(:))],3));
-out.pythia.summary(2:end, 4) = num2cell(round([mean(Ybin) 1 pgood],3));
-out.pythia.summary(2:end, 5) = num2cell(round([nanmean(Ysvms) NaN nanmean(Yselector(:))],3));
-out.pythia.summary(2:end, 6) = num2cell(round([nanstd(Ysvms) NaN nanstd(Yselector(:))],3));
-out.pythia.summary(2:end, 7) = num2cell(round(100.*[accuracy' NaN NaN],1));
-out.pythia.summary(2:end, 8) = num2cell(round(100.*[precision' NaN precisionsel],1));
-out.pythia.summary(2:end, 9) = num2cell(round(100.*[recall' NaN recallsel],1));
-out.pythia.summary(cellfun(@(x) all(isnan(x)),out.pythia.summary)) = {[]}; % Clean up. Not really needed
-disp('-> Completed! Performance of the models:');
-disp(' ');
-disp(out.pythia.summary);
-
+out.opts = opts;
 % -------------------------------------------------------------------------
 % Writing the results
-scriptfcn;
-
 if opts.outputs.csv
-    disp('-------------------------------------------------------------------------');
-    disp('-> Writing the data on CSV files for post-processing.');
-    % ---------------------------------------------------------------------
-    writeArray2CSV(out.pilot.Z, {'z_1','z_2'}, instlabels, [rootdir 'coordinates_test.csv']);
-    writeArray2CSV(Xraw(:, model.featsel.idx), featlabels, instlabels, [rootdir 'feature_test_raw.csv']);
-    writeArray2CSV(X, featlabels, instlabels, [rootdir 'feature_test_process.csv']);  
-    writeArray2CSV(Yraw, algolabels, instlabels, [rootdir 'algorithm_test_raw.csv']);
-    writeArray2CSV(Y, algolabels, instlabels, [rootdir 'algorithm_test_process.csv']);
-    writeArray2CSV(Ybin, algolabels, instlabels, [rootdir 'algorithm_test_bin.csv']);
-    writeArray2CSV(numGoodAlgos, {'NumGoodAlgos'}, instlabels, [rootdir 'good_algos_test.csv']);
-    writeArray2CSV(beta, {'IsBetaEasy'}, instlabels, [rootdir 'beta_easy_test.csv']);
-    writeArray2CSV(P, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio_test.csv']);
-    writeArray2CSV(out.pythia.Yhat, algolabels, instlabels, [rootdir 'algorithm_test_svm.csv']);
-    writeArray2CSV(psel, {'Best_Algorithm'}, instlabels, [rootdir 'portfolio_test_svm.csv']);
-    writeCell2CSV(out.pythia.summary(2:end,2:end), out.pythia.summary(1,2:end), out.pythia.summary(2:end,1), [rootdir 'svm_test_table.csv']);
+    scriptcsv(out,rootdir);
     if opts.outputs.web
-    %   writetable(array2table(parula(256), 'VariableNames', {'R','G','B'}), [rootdir 'color_table.csv']);
-        writeArray2CSV(colorscale(Xraw(:,model.featsel.idx)), featlabels, instlabels, [rootdir 'feature_test_raw_color.csv']);
-        writeArray2CSV(colorscale(Yraw), algolabels, instlabels, [rootdir 'algorithm_test_raw_single_color.csv']);
-        writeArray2CSV(colorscale(X), featlabels, instlabels, [rootdir 'feature_test_process_color.csv']);
-        writeArray2CSV(colorscale(Y), algolabels, instlabels, [rootdir 'algorithm_test_process_single_color.csv']);
-        writeArray2CSV(colorscaleg(Yraw), algolabels, instlabels, [rootdir 'algorithm_test_raw_color.csv']);
-        writeArray2CSV(colorscaleg(Y), algolabels, instlabels, [rootdir 'algorithm_test_process_color.csv']);
-        writeArray2CSV(colorscaleg(numGoodAlgos), {'NumGoodAlgos'}, instlabels, [rootdir 'good_algos_test_color.csv']);
+        scriptweb(out,rootdir);
     end
 end
 
 if opts.outputs.png
-    disp('-------------------------------------------------------------------------');
-    disp('-> Producing the plots.');
-    % ---------------------------------------------------------------------
-    for i=1:nfeats
-        clf;
-        drawScatter(out.pilot.Z, (X(:,i)-min(X(:,i)))./range(X(:,i)), strrep(featlabels{i},'_',' '));
-        % line(model.sbound.out.pilot.Zedge(:,1),model.sbound.out.pilot.Zedge(:,2),'LineStyle', '-', 'Color', 'r');
-        print(gcf,'-dpng',[rootdir 'distribution_test_feature_' featlabels{i} '.png']);
-    end
-    % ---------------------------------------------------------------------
-    Ys = log10(Yraw+1);
-    Ys = (Ys-min(Ys(:)))./range(Ys(:));
-    for i=1:nalgos
-        clf;
-        drawScatter(out.pilot.Z, Ys(:,i), strrep(algolabels{i},'_',' '));
-        print(gcf,'-dpng',[rootdir 'distribution_test_performance_global_normalized_' algolabels{i} '.png']);
-    end
-    % ---------------------------------------------------------------------
-    for i=1:nalgos
-        clf;
-        drawScatter(out.pilot.Z, (Y(:,i)-min(Y(:,i)))./range(Y(:,i)), strrep(algolabels{i},'_',' '));
-        print(gcf,'-dpng',[rootdir 'distribution_test_performance_individual_normalized_' algolabels{i} '.png']);
-    end
-    % ---------------------------------------------------------------------
-    % Drawing the sources of the instances if available
-    if any(issource)
-        clf;
-        drawSources(out.pilot.Z, S);
-        print(gcf,'-dpng',[rootdir 'distribution_test_sources.png']);
-    end
-    % ---------------------------------------------------------------------
-    % Drawing the SVM's predictions of good performance
-    for i=1:nalgos
-        clf;
-        drawBinaryPerformance(out.pilot.Z, out.pythia.Yhat(:,i), strrep(algolabels{i},'_',' '));
-        print(gcf,'-dpng',[rootdir 'binary_test_svm_' algolabels{i} '.png']);
-    end
-    % ---------------------------------------------------------------------
-    % Drawing the SVM's recommendations
-    clf;
-    drawPortfolioSelections(out.pilot.Z, psel, algolabels, 'Predicted best algorithm');
-    print(gcf,'-dpng',[rootdir 'distribution_test_svm_portfolio.png']);
+    scriptpng(out,rootdir);
 end
 
 disp('-------------------------------------------------------------------------');
@@ -292,3 +177,141 @@ save([rootdir 'workspace_test.mat']); % Save the full workspace for debugging
 disp(['-> Completed! Elapsed time: ' num2str(toc(startProcess)) 's']);
 disp('EOF:SUCCESS');
 end
+% =========================================================================
+% SUBFUNCTIONS
+% =========================================================================
+function out = PYTHIAtest(model, Z, Y, Ybin, Ybest, algolabels)
+
+nalgos = size(Ybin,2);
+out.Yhat = false(size(Ybin));
+out.Pr0hat = 0.*Ybin;
+out.cvcmat = zeros(nalgos,4);
+for i=1:nalgos
+    [out.Yhat(:,i),aux] = model.svm{i}.predict(Z);
+    out.Pr0hat(:,i) = aux(:,1);
+    aux = confusionmat(Ybin(:,i),out.Yhat(:,i));
+    out.cvcmat(i,:) = aux(:);
+end
+tn = out.cvcmat(:,1);
+fp = out.cvcmat(:,3);
+fn = out.cvcmat(:,2);
+tp = out.cvcmat(:,4);
+out.precision = tp./(tp+fp);
+out.recall = tp./(tp+fn);
+out.accuracy = (tp+tn)./sum(out.cvcmat(1,:));
+
+[best,out.selection0] = max(bsxfun(@times,out.Yhat,model.precision'),[],2);
+[~,default] = max(mean(Ybin));
+out.selection1 = out.selection0;
+out.selection0(best<=0) = 0;
+out.selection1(best<=0) = default;
+
+sel0 = bsxfun(@eq,out.selection0,1:nalgos);
+sel1 = bsxfun(@eq,out.selection1,1:nalgos);
+avgperf = nanmean(Y);
+stdperf = nanstd(Y);
+Yfull = Y;
+Ysvms = Y;
+Y(~sel0) = NaN;
+Yfull(~sel1) = NaN;
+Ysvms(~out.Yhat) = NaN;
+
+pgood = mean(any( Ybin & sel1,2));
+fb = sum(any( Ybin & ~sel0,2));
+fg = sum(any(~Ybin &  sel0,2));
+tg = sum(any( Ybin &  sel0,2));
+precisionsel = tg./(tg+fg);
+recallsel = tg./(tg+fb);
+
+disp('  -> PYTHIA is preparing the summary table.');
+out.summary = cell(nalgos+3, 9);
+out.summary{1,1} = 'Algorithms ';
+out.summary(2:end-2, 1) = algolabels;
+out.summary(end-1:end, 1) = {'Oracle','Selector'};
+out.summary(1, 2:9) = {'Avg_Perf_all_instances';
+                       'Std_Perf_all_instances';
+                       'Probability_of_good';
+                       'Avg_Perf_selected_instances';
+                       'Std_Perf_selected_instances';
+                       'CV_model_accuracy';
+                       'CV_model_precision';
+                       'CV_model_recall'};
+out.summary(2:end, 2) = num2cell(round([avgperf nanmean(Ybest) nanmean(Yfull(:))],3));
+out.summary(2:end, 3) = num2cell(round([stdperf nanstd(Ybest) nanstd(Yfull(:))],3));
+out.summary(2:end, 4) = num2cell(round([mean(Ybin) 1 pgood],3));
+out.summary(2:end, 5) = num2cell(round([nanmean(Ysvms) NaN nanmean(Y(:))],3));
+out.summary(2:end, 6) = num2cell(round([nanstd(Ysvms) NaN nanstd(Y(:))],3));
+out.summary(2:end, 7) = num2cell(round(100.*[out.accuracy' NaN NaN],1));
+out.summary(2:end, 8) = num2cell(round(100.*[out.precision' NaN precisionsel],1));
+out.summary(2:end, 9) = num2cell(round(100.*[out.recall' NaN recallsel],1));
+out.summary(cellfun(@(x) all(isnan(x)),out.summary)) = {[]}; % Clean up. Not really needed
+disp('  -> PYTHIA has completed! Performance of the models:');
+disp(' ');
+disp(out.summary);
+
+end
+% =========================================================================
+function model = TRACEtest(model, Z, Ybin, P, beta, algolabels)
+
+nalgos = size(Ybin,2);
+disp('-------------------------------------------------------------------------');
+disp('  -> TRACE is calculating the algorithm footprints.');
+model.test.best = zeros(nalgos,5);
+model.test.good = zeros(nalgos,5);
+model.test.bad = zeros(nalgos,5);
+% Use the actual data to calculate the footprints
+for i=1:nalgos
+    model.test.best(i,:) = TRACEtestsummary(model.best{i}, Z,  P==i, model.space.area, model.space.density);
+    model.test.good(i,:) = TRACEtestsummary(model.good{i}, Z,  Ybin(:,i), model.space.area, model.space.density);
+    model.test.bad(i,:)  = TRACEtestsummary(model.bad{i},  Z, ~Ybin(:,i), model.space.area, model.space.density);
+end
+
+% -------------------------------------------------------------------------
+% Beta hard footprints. First step is to calculate them.
+disp('-------------------------------------------------------------------------');
+disp('  -> TRACE is calculating the beta-footprints.');
+model.test.easy = TRACEtestsummary(model.easy, Z,  beta, model.space.area, model.space.density);
+model.test.hard = TRACEtestsummary(model.hard, Z, ~beta, model.space.area, model.space.density);
+% -------------------------------------------------------------------------
+% Calculating performance
+disp('-------------------------------------------------------------------------');
+disp('  -> TRACE is preparing the summary table.');
+model.summary = cell(nalgos+1,11);
+model.summary(1,2:end) = {'Area_Good',...
+                          'Area_Good_Normalized',...
+                          'Density_Good',...
+                          'Density_Good_Normalized',...
+                          'Purity_Good',...
+                          'Area_Best',...
+                          'Area_Best_Normalized',...
+                          'Density_Best',...
+                          'Density_Best_Normalized',...
+                          'Purity_Best'};
+model.summary(2:end,1) = algolabels;
+model.summary(2:end,2:end) = num2cell([model.test.good model.test.best]);
+
+disp('  -> TRACE has completed. Footprint analysis results:');
+disp(' ');
+disp(model.summary);
+
+end
+% =========================================================================
+function out = TRACEtestsummary(footprint, Z, Ybin, spaceArea, spaceDensity)
+% 
+if isempty(footprint.polygon)
+    out = zeros(5,1);
+else
+    elements = sum(isinterior(footprint.polygon, Z));
+    goodElements = sum(isinterior(footprint.polygon, Z(Ybin,:)));
+    density = elements./footprint.area;
+    purity = goodElements./elements;
+    
+    out = [footprint.area,...
+           footprint.area/spaceArea,...
+           density,...
+           density/spaceDensity,...
+           purity];
+end
+out(isnan(out)) = 0;
+end
+% =========================================================================

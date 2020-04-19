@@ -17,7 +17,7 @@ scriptdisc('testIS.m');
 % Collect all the data from the files
 disp(['Root Directory: ' rootdir]);
 modelfile = [rootdir 'model.mat'];
-datafile = [rootdir 'metadata.csv'];
+datafile = [rootdir 'metadata_test.csv'];
 optsfile = [rootdir 'options.json'];
 if ~isfile(modelfile) || ~isfile(datafile) || ~isfile(optsfile)
     error(['Please place the datafiles in the directory ''' rootdir '''']);

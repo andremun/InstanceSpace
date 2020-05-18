@@ -36,38 +36,44 @@ if opts.analytic
     out.error = sum(sum((Xbar-Xhat).^2,2));
     out.R2 = diag(corr(Xbar',Xhat')).^2;
 else
-    disp('  -> PILOT is solving numerically the projection problem.');
-    disp('  -> This may take a while.');
-    out.alpha = zeros(2*m+2*n, opts.ntries);
-    out.eoptim = zeros(1, opts.ntries);
-    out.perf = zeros(1, opts.ntries);
-    state = rng;
-    rng('default');
-    out.X0 = 2*rand(2*m+2*n, opts.ntries)-1;
-    rng(state);
-    disp('-------------------------------------------------------------------------');
-    for i=1:opts.ntries
-        [out.alpha(:,i),out.eoptim(i)] = fminunc(errorfcn, out.X0(:,i), ...
-                                                 optimoptions('fminunc','Algorithm','quasi-newton',...
-                                                                        'Display','off',...
-                                                                        'UseParallel',false),...
-                                                 Xbar, n, m);
-        A = reshape(out.alpha(1:2*n,i),2,n);
-        Z = X*A';
-        out.perf(i) = corr(Hd,pdist(Z)');
-        if i==opts.ntries
-            disp(['    -> PILOT has completed trial ' num2str(i) ...
-                  '. There are no trials left.']);
-        elseif i==opts.ntries-1
-            disp(['    -> PILOT has completed trial ' num2str(i) ...
-                  '. There is 1 trial left.']);
-        else
-            disp(['    -> PILOT has completed trial ' num2str(i) ...
-                  '. There are ' num2str(opts.ntries-i) ' trials left.']);
+    if ~isfield(opts,'alpha')
+        disp('  -> PILOT is solving numerically the projection problem.');
+        disp('  -> This may take a while.');
+        out.alpha = zeros(2*m+2*n, opts.ntries);
+        out.eoptim = zeros(1, opts.ntries);
+        out.perf = zeros(1, opts.ntries);
+        state = rng;
+        rng('default');
+        out.X0 = 2*rand(2*m+2*n, opts.ntries)-1;
+        rng(state);
+        disp('-------------------------------------------------------------------------');
+        for i=1:opts.ntries
+            [out.alpha(:,i),out.eoptim(i)] = fminunc(errorfcn, out.X0(:,i), ...
+                                                     optimoptions('fminunc','Algorithm','quasi-newton',...
+                                                                            'Display','off',...
+                                                                            'UseParallel',false),...
+                                                     Xbar, n, m);
+            A = reshape(out.alpha(1:2*n,i),2,n);
+            Z = X*A';
+            out.perf(i) = corr(Hd,pdist(Z)');
+            if i==opts.ntries
+                disp(['    -> PILOT has completed trial ' num2str(i) ...
+                      '. There are no trials left.']);
+            elseif i==opts.ntries-1
+                disp(['    -> PILOT has completed trial ' num2str(i) ...
+                      '. There is 1 trial left.']);
+            else
+                disp(['    -> PILOT has completed trial ' num2str(i) ...
+                      '. There are ' num2str(opts.ntries-i) ' trials left.']);
+            end
         end
-    end
 
-    [~,idx] = max(out.perf);
+        [~,idx] = max(out.perf);
+    else
+        disp('  -> PILOT is using a pre-calculated solution.');
+        idx = 1;
+        out.alpha = opts.alpha;
+    end
     out.A = reshape(out.alpha(1:2*n,idx),2,n);
     out.Z = X*out.A';
     B = reshape(out.alpha((2*n)+1:end,idx),m,2);

@@ -1,4 +1,4 @@
-rootdir = 'E:/InstanceSpace_Classification/MATILDA_trial/';
+rootdir = './';
 
 opts.perf.MaxPerf = false;              % True if Y is a performance measure to maximize, False if it is a cost measure to minimise.
 opts.perf.AbsPerf = true;               % True if an absolute performance measure, False if a relative performance measure
@@ -31,7 +31,7 @@ opts.pythia.useweights = false;
 
 opts.trace.usesim = true;          % Use the actual or simulated data to calculate the footprints
 opts.trace.RHO = 5;                 % Density threshold
-opts.trace.PI = 0.70;               % Purity threshold
+opts.trace.PI = 0.55;               % Purity threshold
 
 opts.selvars.smallscaleflag = true;     % True if you want to do a small scale experiment with a percentage of the available instances
 opts.selvars.smallscale = 0.50;          % Percentage of instances to be kept for a small scale experiment

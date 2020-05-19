@@ -178,7 +178,11 @@ while contradiction.NumRegions~=0
         base.polygon = subtract(base.polygon,contradiction);
         test.polygon = subtract(test.polygon,contradiction);
     end
-    contradiction = intersect(base.polygon,test.polygon);
+    if isempty(base.polygon) || isempty(test.polygon)
+        break;
+    else
+        contradiction = intersect(base.polygon,test.polygon);
+    end
     numtries = numtries+1;
 end
 
@@ -242,12 +246,12 @@ end
 
 polygon = polyshape(polydata,'Simplify',true);
 polygon = rmslivers(polygon,5e-2);
-a = area(polygon);
-elements = sum(isinterior(polygon,Z));
-goodElements = sum(isinterior(polygon,Z(Ybin,:)));
-if ~all(Ybin) && (opts.RHO>(elements/a) || opts.PI>(goodElements/elements))
-    polygon = [];
-end
+% a = area(polygon);
+% elements = sum(isinterior(polygon,Z));
+% goodElements = sum(isinterior(polygon,Z(Ybin,:)));
+% if ~all(Ybin) % && (opts.RHO>(elements/a) || opts.PI>(goodElements/elements))
+%     polygon = [];
+% end
 
 warning('on','MATLAB:polyshape:repairedBySimplify')
 

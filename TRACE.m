@@ -19,7 +19,7 @@ function out = TRACE(Z, Ybin, P, beta, algolabels, opts)
 disp('  -> TRACE is calculating the space area and density.');
 ninst = size(Z,1);
 nalgos = size(Ybin,2);
-out.space = TRACEbuild(Z, true(ninst,1), opts);
+out.space = TRACEbuild(Z, true(ninst,1));
 disp(['    -> Space area: ' num2str(out.space.area) ...
       ' | Space density: ' num2str(out.space.density)]);
 % -------------------------------------------------------------------------
@@ -34,11 +34,11 @@ out.best = cell(1,nalgos);
 for i=1:nalgos
     tic;
     disp(['    -> Good performance footprint for ''' algolabels{i} '''']);
-    out.good{i} = TRACEbuild(Z, Ybin(:,i), opts);
+    out.good{i} = TRACEbuild(Z, Ybin(:,i));
     disp(['    -> Bad performance footprint for ''' algolabels{i} '''']);
-    out.bad{i} = TRACEbuild(Z, ~Ybin(:,i), opts);
+    out.bad{i} = TRACEbuild(Z, ~Ybin(:,i));
     disp(['    -> Best performance footprint for ''' algolabels{i} '''']);
-    out.best{i} = TRACEbuild(Z, P==i, opts);
+    out.best{i} = TRACEbuild(Z, P==i);
     disp(['    -> Algorithm ''' algolabels{i} ''' completed. Elapsed time: ' num2str(toc,'%.2f\n') 's']);
 end
 % -------------------------------------------------------------------------
@@ -52,7 +52,7 @@ for i=1:nalgos
         disp(['      -> TRACE is comparing ''' algolabels{i} ''' with ''' algolabels{j} '''']);
         startTest = tic;
         [out.best{i}, out.best{j}] = TRACEcontra(out.best{i}, out.best{j}, ...
-                                                 Z, P==i, P==j, opts);
+                                                 Z, P==i, P==j, false);
         
         disp(['      -> Test algorithm ''' algolabels{j} ...
               ''' completed. Elapsed time: ' num2str(toc(startTest),'%.2f\n') 's']);
@@ -60,7 +60,7 @@ for i=1:nalgos
     disp(['   -> TRACE is comparing good and bad performance areas for ''' algolabels{i} '''']);
     [out.good{i}, out.bad{i}] = TRACEcontra(out.good{i}, out.bad{i},...
                                             Z, Ybin(:,i), ~Ybin(:,i),...
-                                            opts);
+                                            true);
     disp(['  -> Base algorithm ''' algolabels{i} ...
           ''' completed. Elapsed time: ' num2str(toc(startBase),'%.2f\n') 's']);
 end
@@ -68,10 +68,10 @@ end
 % Beta hard footprints. First step is to calculate them.
 disp('-------------------------------------------------------------------------');
 disp('  -> TRACE is calculating the beta-footprints.');
-out.easy = TRACEbuild(Z,  beta, opts);
-out.hard = TRACEbuild(Z, ~beta, opts);
+out.easy = TRACEbuild(Z,  beta);
+out.hard = TRACEbuild(Z, ~beta);
 % Remove the collisions
-[out.easy, out.hard] = TRACEcontra(out.easy, out.hard, Z, beta, ~beta, opts);
+[out.easy, out.hard] = TRACEcontra(out.easy, out.hard, Z, beta, ~beta, false);
 % -------------------------------------------------------------------------
 % Calculating performance
 disp('-------------------------------------------------------------------------');
@@ -102,7 +102,7 @@ end
 % =========================================================================
 % SUBFUNCTIONS
 % =========================================================================
-function footprint = TRACEbuild(Z, Ybin, opts)
+function footprint = TRACEbuild(Z, Ybin)
 
 % If there is no Y to work with, then there is not point on this one
 Ig = unique(Z(Ybin,:),'rows');   % There might be points overlapped, so eliminate them to avoid problems
@@ -112,13 +112,13 @@ else
     footprint = struct;
 end
     
-nn = max(min(ceil(sum(Ybin)/20),100),3);
+nn = max(min(ceil(sum(Ybin)/20),50),3);
 class = dbscan(Ig,nn); % Use DBSCAN to identify dense regions
 flag = false;
 for i=1:max(class) %Ignore -1/0
     polydata = Ig(class==i,:);
     polydata = polydata(boundary(polydata,1),:);
-    aux = TRACEfitpoly(polydata,Z,Ybin,opts);
+    aux = TRACEfitpoly(polydata);
     if ~isempty(aux)
         if ~flag
             footprint.polygon = aux;
@@ -141,7 +141,7 @@ end
 
 end
 % =========================================================================
-function [base,test] = TRACEcontra(base,test,Z,Ybase,Ytest,opts)
+function [base,test] = TRACEcontra(base,test,Z,Ybase,Ytest,isbin)
 % 
 if isempty(base.polygon) || isempty(test.polygon)
     return;
@@ -150,33 +150,32 @@ end
 maxtries = 3; % Tries once to tighten the bounds.
 numtries = 1;
 contradiction = intersect(base.polygon,test.polygon);
-while contradiction.NumRegions~=0
+while contradiction.NumRegions~=0 && numtries<=maxtries
     numElements = sum(isinterior(contradiction,Z));
     numGoodElementsBase = sum(isinterior(contradiction,Z(Ybase,:)));
     numGoodElementsTest = sum(isinterior(contradiction,Z(Ytest,:)));
     purityBase = numGoodElementsBase/numElements;
     purityTest = numGoodElementsTest/numElements;
-    if purityBase>purityTest
+    if purityBase>purityTest && (~isbin || (purityBase>0.55 && isbin))
         carea = area(contradiction)./area(test.polygon);
         disp(['        -> ' num2str(round(100.*carea,1)) '%' ...
               ' of the test footprint is contradictory.']);
         test.polygon = subtract(test.polygon,contradiction);
         if numtries<maxtries
-            test.polygon = TRACEtight(test.polygon,Z,Ytest,opts);
+            test.polygon = TRACEtight(test.polygon,Z,Ytest);
         end
-    elseif purityTest>purityBase
+    elseif purityTest>purityBase && (~isbin || (purityTest>0.55 && isbin))
         carea = area(contradiction)./area(base.polygon);
         disp(['        -> ' num2str(round(100.*carea,1)) '%' ...
               ' of the base footprint is contradictory.']);
         base.polygon = subtract(base.polygon,contradiction);
         if numtries<maxtries
-            base.polygon = TRACEtight(base.polygon,Z,Ybase,opts);
+            base.polygon = TRACEtight(base.polygon,Z,Ybase);
         end
     else
-        disp('        -> Purity of the contradicting areas is 0.50 for both footprints.');
-        disp('        -> Removing the contradicting area completely.');
-        base.polygon = subtract(base.polygon,contradiction);
-        test.polygon = subtract(test.polygon,contradiction);
+        disp('        -> Purity of the contradicting areas is equal for both footprints.');
+        disp('        -> Ignoring the contradicting area.');
+        break;
     end
     if isempty(base.polygon) || isempty(test.polygon)
         break;
@@ -207,7 +206,7 @@ end
 
 end
 % =========================================================================
-function polygon = TRACEtight(polygon,Z,Ybin,opts)
+function polygon = TRACEtight(polygon,Z,Ybin)
 
 splits = regions(polygon);
 nregions = length(splits);
@@ -220,7 +219,7 @@ for i=1:nregions
         flags(i) = false;
         continue
     end
-    aux = TRACEfitpoly(polydata(boundary(polydata,1),:), Z, Ybin, opts);
+    aux = TRACEfitpoly(polydata(boundary(polydata,1),:));
     if isempty(aux)
         flags(i) = false;
         continue
@@ -235,7 +234,7 @@ end
 
 end
 % =========================================================================
-function polygon = TRACEfitpoly(polydata, Z, Ybin, opts)
+function polygon = TRACEfitpoly(polydata)
 
 warning('off','MATLAB:polyshape:repairedBySimplify');
 

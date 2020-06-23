@@ -11,6 +11,8 @@ function out = CLOISTER(X, A, opts)
 %
 % -------------------------------------------------------------------------
 
+disp('  -> CLOISTER is using correlation to estimate a boundary for the space.');
+
 nfeats = size(X,2);
 [rho,pval] = corr(X);
 rho = rho.*(pval<opts.pval);
@@ -52,4 +54,6 @@ catch
     disp('  -> Please consider increasing it.');
     out.Zecorr = out.Zedge;
 end
+disp('-------------------------------------------------------------------------');
+disp('  -> CLOISTER has completed.');
 

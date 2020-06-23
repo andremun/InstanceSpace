@@ -26,11 +26,9 @@ out.kscale = out.boxcosnt;
 disp('-------------------------------------------------------------------------');
 if opts.useweights
     disp('  -> PYTHIA will use different weights for each observation.');
-    disp('  -> This will account for differences in performance between algorithms.');
     Waux = W;
 else
     disp('  -> PYTHIA will use equal weights for each observation.');
-    disp('  -> This will not account for differences in performance between algorithms.');
     Waux = ones(ninst,nalgos);
 end
 disp('-------------------------------------------------------------------------');

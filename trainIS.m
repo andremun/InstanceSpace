@@ -140,7 +140,7 @@ else
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 end
-model.data.W = abs(model.data.Y-model.data.bestPerformace);
+model.data.W = abs(model.data.Y-nanmean(model.data.Y(:)));
 model.data.W(model.data.W==0) = min(model.data.W(model.data.W~=0));
 model.data.W(isnan(model.data.W)) = max(model.data.W(~isnan(model.data.W)));
 disp(msg);

@@ -18,21 +18,19 @@ scriptdisc('testIS.m');
 disp(['Root Directory: ' rootdir]);
 modelfile = [rootdir 'model.mat'];
 datafile = [rootdir 'metadata_test.csv'];
-optsfile = [rootdir 'options.json'];
-if ~isfile(modelfile) || ~isfile(datafile) || ~isfile(optsfile)
+if ~isfile(modelfile) || ~isfile(datafile)
     error(['Please place the datafiles in the directory ''' rootdir '''']);
 end
-opts = jsondecode(fileread(optsfile));
+model = load(modelfile);
 disp('-------------------------------------------------------------------------');
 disp('Listing options used:');
-optfields = fieldnames(opts);
+optfields = fieldnames(model.opts);
 for i = 1:length(optfields)
     disp(optfields{i});
-    disp(opts.(optfields{i}));
+    disp(model.opts.(optfields{i}));
 end
 disp('-------------------------------------------------------------------------');
 disp('-> Loading the data');
-model = load(modelfile);
 Xbar = readtable(datafile);
 varlabels = Xbar.Properties.VariableNames;
 isname = strcmpi(varlabels,'instances');
@@ -147,7 +145,7 @@ out.pythia = PYTHIAtest(model.pythia, out.pilot.Z, out.data.Yraw, ...
                         out.data.algolabels);
 % -------------------------------------------------------------------------
 % Validating the footprints
-if opts.trace.usesim
+if model.opts.trace.usesim
     out.trace = TRACEtest(model.trace, out.pilot.Z, out.data.Ybin, ...
                           out.pythia.selection0, out.data.beta, ...
                           out.data.algolabels);
@@ -157,17 +155,17 @@ else
                           out.data.algolabels);
 end
 
-out.opts = opts;
+out.opts = model.opts;
 % -------------------------------------------------------------------------
 % Writing the results
-if opts.outputs.csv
+if model.opts.outputs.csv
     scriptcsv(out,rootdir);
-    if opts.outputs.web
+    if model.opts.outputs.web
         scriptweb(out,rootdir);
     end
 end
 
-if opts.outputs.png
+if model.opts.outputs.png
     scriptpng(out,rootdir);
 end
 

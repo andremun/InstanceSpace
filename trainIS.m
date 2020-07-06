@@ -153,6 +153,9 @@ if any(idx)
     model.data.Ybin = model.data.Ybin(:,~idx);
     model.data.algolabels = model.data.algolabels(~idx);
     nalgos = size(model.data.Y,2);
+    if nalgos==0
+        error('-> There are no ''good'' algorithms. Please verify the binary performance measure. STOPPING!')
+    end
 end
 % -------------------------------------------------------------------------
 % Testing for ties. If there is a tie in performance, we pick an algorithm

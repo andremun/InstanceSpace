@@ -41,6 +41,9 @@ opts.selvars.smallscale = 0.50;          % Percentage of instances to be kept fo
 opts.selvars.fileidxflag = false;
 opts.selvars.fileidx = '';
 
+opts.selvars.densityflag = false;
+opts.selvars.mindistance = 0.1;
+
 opts.outputs.csv = true;               %
 opts.outputs.web = true;              % NOTE: MAKE THIS FALSE IF YOU ARE USING THIS CODE LOCALY - This flag is only useful if the system is being used 'online' through matilda.unimelb.edu.au
 opts.outputs.png = true;               %

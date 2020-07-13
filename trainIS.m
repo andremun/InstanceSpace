@@ -203,6 +203,11 @@ fileindexed = isfield(opts,'selvars') && ...
               opts.selvars.fileidxflag && ...
               isfield(opts.selvars,'fileidx') && ...
               isfile(opts.selvars.fileidx);
+density = isfield(opts,'selvars') && ...
+          isfield(opts.selvars,'densityflag') && ...
+          opts.selvars.densityflag && ...
+          isfield(opts.selvars,'mindistance') && ...
+          isfloat(opts.selvars.mindistance);
 if fractional
     disp(['-> Creating a small scale experiment for validation. Percentage of subset: ' ...
         num2str(round(100.*opts.selvars.smallscale,2)) '%']);
@@ -217,12 +222,25 @@ elseif fileindexed
     aux = table2array(readtable(opts.selvars.fileidx));
     aux(aux>ninst) = [];
     subsetIndex(aux) = true;
+elseif density
+    subsetIndex = false(size(model.data.X,1),1);
+    for ii=1:ninst
+        if ~subsetIndex(ii)
+            for jj=ii+1:ninst
+                if ~subsetIndex(jj)
+                    subsetIndex(jj) = pdist2(model.data.X(ii,:),...
+                                             model.data.X(jj,:)) <= opts.selvars.mindistance;
+                end
+            end
+        end
+    end
+    subsetIndex = ~subsetIndex;
 else
     disp('-> Using the complete set of the instances.');
     subsetIndex = true(ninst,1);
 end
 
-if fileindexed || fractional
+if fileindexed || fractional || density
     model.data.X = model.data.X(subsetIndex,:);
     model.data.Y = model.data.Y(subsetIndex,:);
     model.data.Xraw = model.data.Xraw(subsetIndex,:);

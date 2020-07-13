@@ -228,7 +228,7 @@ elseif density
         if ~subsetIndex(ii)
             for jj=ii+1:ninst
                 if ~subsetIndex(jj)
-                    if pdist2(model.data.X(ii,:),model.data.X(jj,:)) <= opts.selvars.mindistance;
+                    if pdist2(model.data.X(ii,:),model.data.X(jj,:)) <= opts.selvars.mindistance
                         subsetIndex(jj) = true;
                     end
                 end

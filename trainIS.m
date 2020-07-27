@@ -223,7 +223,8 @@ elseif fileindexed
     aux(aux>ninst) = [];
     subsetIndex(aux) = true;
 elseif density
-    subsetIndex = false(size(model.data.X,1),1);
+    disp('-> Creating a small scale experiment for validation based on density.');
+    subsetIndex = false(ninst,1);
     for ii=1:ninst
         if ~subsetIndex(ii)
             for jj=ii+1:ninst
@@ -236,6 +237,8 @@ elseif density
         end
     end
     subsetIndex = ~subsetIndex;
+    disp(['-> Percentage of instances retained: ' ...
+          num2str(round(100.*mean(subsetIndex),2)) '%']);
 else
     disp('-> Using the complete set of the instances.');
     subsetIndex = true(ninst,1);

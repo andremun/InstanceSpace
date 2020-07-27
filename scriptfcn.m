@@ -67,7 +67,7 @@ function handle = drawScatter(Z, X, titlelabel)
 
 ubound = ceil(max(Z));
 lbound = floor(min(Z));
-handle = scatter(Z(:,1), Z(:,2), 12, X, 'filled');
+handle = scatter(Z(:,1), Z(:,2), 8, X, 'filled');
 caxis([0,1])
 xlabel('z_{1}'); ylabel('z_{2}'); title(titlelabel);
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
@@ -192,7 +192,7 @@ hold off;
 
 end
 
-function handle = drawBinaryPerformance(Z, Ybin, titlelabel)
+function h = drawBinaryPerformance(Z, Ybin, titlelabel)
 
 ubound = ceil(max(Z));
 lbound = floor(min(Z));

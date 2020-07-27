@@ -95,7 +95,12 @@ disp(['  -> The average cross validated accuracy is: ' ...
 disp('-------------------------------------------------------------------------');
 % We assume that the most precise SVM (as per CV-Precision) is the most
 % reliable.
-[best,out.selection0] = max(bsxfun(@times,out.Yhat,out.precision'),[],2);
+if nalgos>1
+    [best,out.selection0] = max(bsxfun(@times,out.Yhat,out.precision'),[],2);
+else
+    best = out.Yhat;
+    out.selection0 = out.Yhat;
+end
 [~,default] = max(mean(Ybin));
 out.selection1 = out.selection0;
 out.selection0(best<=0) = 0;

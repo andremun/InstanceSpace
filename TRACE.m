@@ -19,7 +19,7 @@ function out = TRACE(Z, Ybin, P, beta, algolabels, opts)
 disp('  -> TRACE is calculating the space area and density.');
 ninst = size(Z,1);
 nalgos = size(Ybin,2);
-out.space = TRACEbuild(Z, true(ninst,1));
+out.space = TRACEbuild(Z, true(ninst,1), opts);
 disp(['    -> Space area: ' num2str(out.space.area) ...
       ' | Space density: ' num2str(out.space.density)]);
 % -------------------------------------------------------------------------
@@ -34,11 +34,11 @@ out.best = cell(1,nalgos);
 for i=1:nalgos
     tic;
     disp(['    -> Good performance footprint for ''' algolabels{i} '''']);
-    out.good{i} = TRACEbuild(Z, Ybin(:,i));
-    disp(['    -> Bad performance footprint for ''' algolabels{i} '''']);
-    out.bad{i} = TRACEbuild(Z, ~Ybin(:,i));
+    out.good{i} = TRACEbuild(Z, Ybin(:,i), opts);
+    % disp(['    -> Bad performance footprint for ''' algolabels{i} '''']);
+    % out.bad{i} = TRACEbuild(Z, ~Ybin(:,i), opts);
     disp(['    -> Best performance footprint for ''' algolabels{i} '''']);
-    out.best{i} = TRACEbuild(Z, P==i);
+    out.best{i} = TRACEbuild(Z, P==i, opts);
     disp(['    -> Algorithm ''' algolabels{i} ''' completed. Elapsed time: ' num2str(toc,'%.2f\n') 's']);
 end
 % -------------------------------------------------------------------------
@@ -52,15 +52,15 @@ for i=1:nalgos
         disp(['      -> TRACE is comparing ''' algolabels{i} ''' with ''' algolabels{j} '''']);
         startTest = tic;
         [out.best{i}, out.best{j}] = TRACEcontra(out.best{i}, out.best{j}, ...
-                                                 Z, P==i, P==j, false);
+                                                 Z, P==i, P==j, opts);%, false);
         
         disp(['      -> Test algorithm ''' algolabels{j} ...
               ''' completed. Elapsed time: ' num2str(toc(startTest),'%.2f\n') 's']);
     end
-    disp(['   -> TRACE is comparing good and bad performance areas for ''' algolabels{i} '''']);
-    [out.good{i}, out.bad{i}] = TRACEcontra(out.good{i}, out.bad{i},...
-                                            Z, Ybin(:,i), ~Ybin(:,i),...
-                                            true);
+%     disp(['   -> TRACE is comparing good and bad performance areas for ''' algolabels{i} '''']);
+%     [out.good{i}, out.bad{i}] = TRACEcontra(out.good{i}, out.bad{i},...
+%                                             Z, Ybin(:,i), ~Ybin(:,i),...
+%                                             opts, true);
     disp(['  -> Base algorithm ''' algolabels{i} ...
           ''' completed. Elapsed time: ' num2str(toc(startBase),'%.2f\n') 's']);
 end
@@ -68,10 +68,10 @@ end
 % Beta hard footprints. First step is to calculate them.
 disp('-------------------------------------------------------------------------');
 disp('  -> TRACE is calculating the beta-footprints.');
-out.easy = TRACEbuild(Z,  beta);
-out.hard = TRACEbuild(Z, ~beta);
+% out.easy = TRACEbuild(Z,  beta, opts);
+out.hard = TRACEbuild(Z, ~beta, opts);
 % Remove the collisions
-[out.easy, out.hard] = TRACEcontra(out.easy, out.hard, Z, beta, ~beta, false);
+% [out.easy, out.hard] = TRACEcontra(out.easy, out.hard, Z, beta, ~beta, opts);%, false);
 % -------------------------------------------------------------------------
 % Calculating performance
 disp('-------------------------------------------------------------------------');
@@ -102,7 +102,7 @@ end
 % =========================================================================
 % SUBFUNCTIONS
 % =========================================================================
-function footprint = TRACEbuild(Z, Ybin)
+function footprint = TRACEbuild(Z, Ybin, opts)
 
 % If there is no Y to work with, then there is not point on this one
 Ig = unique(Z(Ybin,:),'rows');   % There might be points overlapped, so eliminate them to avoid problems
@@ -118,7 +118,7 @@ flag = false;
 for i=1:max(class) %Ignore -1/0
     polydata = Ig(class==i,:);
     polydata = polydata(boundary(polydata,1),:);
-    aux = TRACEfitpoly(polydata);
+    aux = TRACEfitpoly(polydata,Z,Ybin, opts);
     if ~isempty(aux)
         if ~flag
             footprint.polygon = aux;
@@ -141,7 +141,7 @@ end
 
 end
 % =========================================================================
-function [base,test] = TRACEcontra(base,test,Z,Ybase,Ytest,isbin)
+function [base,test] = TRACEcontra(base,test,Z,Ybase,Ytest,opts)%,isbin)
 % 
 if isempty(base.polygon) || isempty(test.polygon)
     return;
@@ -156,21 +156,21 @@ while contradiction.NumRegions~=0 && numtries<=maxtries
     numGoodElementsTest = sum(isinterior(contradiction,Z(Ytest,:)));
     purityBase = numGoodElementsBase/numElements;
     purityTest = numGoodElementsTest/numElements;
-    if purityBase>purityTest && (~isbin || (purityBase>0.55 && isbin))
+    if purityBase>purityTest %&& (~isbin || (purityBase>0.55 && isbin))
         carea = area(contradiction)./area(test.polygon);
         disp(['        -> ' num2str(round(100.*carea,1)) '%' ...
               ' of the test footprint is contradictory.']);
         test.polygon = subtract(test.polygon,contradiction);
         if numtries<maxtries
-            test.polygon = TRACEtight(test.polygon,Z,Ytest);
+            test.polygon = TRACEtight(test.polygon,Z,Ytest,opts);
         end
-    elseif purityTest>purityBase && (~isbin || (purityTest>0.55 && isbin))
+    elseif purityTest>purityBase %&& (~isbin || (purityTest>0.55 && isbin))
         carea = area(contradiction)./area(base.polygon);
         disp(['        -> ' num2str(round(100.*carea,1)) '%' ...
               ' of the base footprint is contradictory.']);
         base.polygon = subtract(base.polygon,contradiction);
         if numtries<maxtries
-            base.polygon = TRACEtight(base.polygon,Z,Ybase);
+            base.polygon = TRACEtight(base.polygon,Z,Ybase,opts);
         end
     else
         disp('        -> Purity of the contradicting areas is equal for both footprints.');
@@ -206,7 +206,7 @@ end
 
 end
 % =========================================================================
-function polygon = TRACEtight(polygon,Z,Ybin)
+function polygon = TRACEtight(polygon,Z,Ybin,opts)
 
 splits = regions(polygon);
 nregions = length(splits);
@@ -219,7 +219,7 @@ for i=1:nregions
         flags(i) = false;
         continue
     end
-    aux = TRACEfitpoly(polydata(boundary(polydata,1),:));
+    aux = TRACEfitpoly(polydata(boundary(polydata,1),:),Z,Ybin,opts);
     if isempty(aux)
         flags(i) = false;
         continue
@@ -234,25 +234,39 @@ end
 
 end
 % =========================================================================
-function polygon = TRACEfitpoly(polydata)
+function polygon = TRACEfitpoly(polydata,Z,Ybin,opts)
 
 warning('off','MATLAB:polyshape:repairedBySimplify');
 
 if size(polydata,1)<3
     polygon = [];
+    warning('on','MATLAB:polyshape:repairedBySimplify');
     return
 end
 
 polygon = polyshape(polydata,'Simplify',true);
 polygon = rmslivers(polygon,5e-2);
-% a = area(polygon);
-% elements = sum(isinterior(polygon,Z));
-% goodElements = sum(isinterior(polygon,Z(Ybin,:)));
-% if ~all(Ybin) % && (opts.RHO>(elements/a) || opts.PI>(goodElements/elements))
-%     polygon = [];
-% end
 
-warning('on','MATLAB:polyshape:repairedBySimplify')
+if ~all(Ybin)
+    if polygon.NumRegions<1
+        polygon = [];
+        warning('on','MATLAB:polyshape:repairedBySimplify');
+        return
+    end
+    tri = triangulation(polygon);
+    nrow = size(tri.ConnectivityList,1);
+    for ii=1:nrow
+        tridata = tri.Points(tri.ConnectivityList(ii,:),:);
+        piece = polyshape(tridata,'Simplify',true);
+        elements = sum(isinterior(piece,Z));
+        goodElements = sum(isinterior(piece,Z(Ybin,:)));
+        if opts.PI>(goodElements/elements)
+            polygon = subtract(polygon,piece);
+        end
+    end
+end
+
+warning('on','MATLAB:polyshape:repairedBySimplify');
 
 end
 % =========================================================================
@@ -366,13 +380,6 @@ for i=1:m
                       type(ob(1))=0;
                    end
 
-%                    for i=1:length(i1)
-%                        if touched(i1(i))==0
-%                           touched(i1(i))=1;
-%                           ind=[ind i1(i)];   
-%                           class(i1(i))=no;
-%                        end                    
-%                    end
                     for j=1:length(i1)
                         if touched(i1(j))==0
                             touched(i1(j))=1;

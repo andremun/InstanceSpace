@@ -28,13 +28,14 @@ opts.cloister.cthres = 0.7;
 
 opts.pythia.cvfolds = 5;
 opts.pythia.useweights = false;
+opts.pythia.uselibsvm = false;
 
 opts.trace.usesim = true;          % Use the actual or simulated data to calculate the footprints
 opts.trace.RHO = 5;                 % Density threshold
 opts.trace.PI = 0.55;               % Purity threshold
 
 opts.selvars.smallscaleflag = true;     % True if you want to do a small scale experiment with a percentage of the available instances
-opts.selvars.smallscale = 0.50;          % Percentage of instances to be kept for a small scale experiment
+opts.selvars.smallscale = 0.50;         % Percentage of instances to be kept for a small scale experiment
 % You can also provide a file with the indexes of the instances to be used.
 % This should be a csvfile with a single column of integer numbers that
 % should be lower than the number of instances

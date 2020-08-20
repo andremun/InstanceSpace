@@ -11,9 +11,9 @@ function out = PILOT(X, Y, featlabels, opts)
 %
 % -------------------------------------------------------------------------
 
-errorfcn = @(alpha,X,n,m) nanmean(nanmean((X-(reshape(alpha((2*n)+1:end),m,2)*... % B,C
-                                              reshape(alpha(1:2*n),2,n)...        % A
-                                              *X(:,1:n)')').^2,1),2);
+errorfcn = @(alpha,Xbar,n,m) nanmean(nanmean((Xbar-(reshape(alpha((2*n)+1:end),m,2)*... % B,C
+                                                    reshape(alpha(1:2*n),2,n)...        % A
+                                                   *Xbar(:,1:n)')').^2,1),2);
 n = size(X, 2); % Number of features
 Xbar = [X Y];
 m = size(Xbar, 2);
@@ -36,16 +36,31 @@ if opts.analytic
     out.error = sum(sum((Xbar-Xhat).^2,2));
     out.R2 = diag(corr(Xbar',Xhat')).^2;
 else
-    if ~isfield(opts,'alpha')
-        disp('  -> PILOT is solving numerically the projection problem.');
-        disp('  -> This may take a while.');
+    if isfield(opts,'alpha') && isnumeric(opts.alpha) && ...
+                size(opts.alpha,1)==2*m+2*n && size(opts.alpha,2)==1
+        disp('  -> PILOT is using a pre-calculated solution.');
+        idx = 1;
+        out.alpha = opts.alpha;
+    else
+        disp('-------------------------------------------------------------------------');
+        if isfield(opts,'X0') && isnumeric(opts.X0) && ...
+                size(opts.X0,1)==2*m+2*n && size(opts.X0,2)>=1
+            disp('  -> PILOT is using a user defined starting points for BFGS.');
+            out.X0 = opts.X0;
+            opts.ntries = size(opts.X0,2);
+        else
+            disp('  -> PILOT is using a random starting points for BFGS.');
+            state = rng;
+            rng('default');
+            out.X0 = 2*rand(2*m+2*n, opts.ntries)-1;
+            rng(state);
+        end
         out.alpha = zeros(2*m+2*n, opts.ntries);
         out.eoptim = zeros(1, opts.ntries);
         out.perf = zeros(1, opts.ntries);
-        state = rng;
-        rng('default');
-        out.X0 = 2*rand(2*m+2*n, opts.ntries)-1;
-        rng(state);
+        disp('-------------------------------------------------------------------------');
+        disp('  -> PILOT is solving numerically the projection problem.');
+        disp('  -> This may take a while.');
         disp('-------------------------------------------------------------------------');
         for i=1:opts.ntries
             [out.alpha(:,i),out.eoptim(i)] = fminunc(errorfcn, out.X0(:,i), ...
@@ -69,10 +84,6 @@ else
         end
 
         [~,idx] = max(out.perf);
-    else
-        disp('  -> PILOT is using a pre-calculated solution.');
-        idx = 1;
-        out.alpha = opts.alpha;
     end
     out.A = reshape(out.alpha(1:2*n,idx),2,n);
     out.Z = X*out.A';

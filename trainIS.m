@@ -140,12 +140,9 @@ else
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 end
-model.data.W = abs(model.data.Y-nanmean(model.data.Y(:)));
-model.data.W(model.data.W==0) = min(model.data.W(model.data.W~=0));
-model.data.W(isnan(model.data.W)) = max(model.data.W(~isnan(model.data.W)));
 disp(msg);
 
-idx = all(model.data.Ybin==0,1);
+idx = all(~model.data.Ybin,1);
 if any(idx)
     warning('-> There are algorithms with no ''good'' instances. They are being removed to increase speed.');
     model.data.Yraw = model.data.Yraw(:,~idx);
@@ -254,7 +251,6 @@ if fileindexed || fractional || density
     model.data.numGoodAlgos = model.data.numGoodAlgos(subsetIndex);
     model.data.bestPerformace = model.data.bestPerformace(subsetIndex); 
     model.data.P = model.data.P(subsetIndex);
-    model.data.W = model.data.W(subsetIndex,:);
     model.data.instlabels = model.data.instlabels(subsetIndex);
     if isfield(model.data,'S')
         model.data.S = model.data.S(subsetIndex);
@@ -308,7 +304,7 @@ model.cloist = CLOISTER(model.data.X, model.pilot.A, opts.cloister);
 disp('=========================================================================');
 disp('-> Summoning PYTHIA to train the prediction models.');
 disp('=========================================================================');
-model.pythia = PYTHIA(model.pilot.Z, model.data.Yraw, model.data.Ybin, model.data.W, model.data.bestPerformace, model.data.algolabels, opts.pythia);
+model.pythia = PYTHIA(model.pilot.Z, model.data.Yraw, model.data.Ybin, model.data.bestPerformace, model.data.algolabels, opts.pythia);
 % -------------------------------------------------------------------------
 % Calculating the algorithm footprints.
 disp('=========================================================================');

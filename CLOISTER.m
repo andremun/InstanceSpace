@@ -36,6 +36,12 @@ for i=1:ncomb
            elseif rho(j,k)<-opts.cthres && sign(Xedge(i,j))==sign(Xedge(i,k))
                remove(i) = true;
            end
+           if remove(i)
+               break;
+           end
+       end
+       if remove(i)
+           break;
        end
    end
 end

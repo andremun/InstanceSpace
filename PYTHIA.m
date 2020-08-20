@@ -1,4 +1,4 @@
-function out = PYTHIA(Z, Y, Ybin, W, Ybest, algolabels, opts)
+function out = PYTHIA(Z, Y, Ybin, Ybest, algolabels, opts)
 % -------------------------------------------------------------------------
 % PYTHIA.m
 % -------------------------------------------------------------------------
@@ -11,11 +11,11 @@ function out = PYTHIA(Z, Y, Ybin, W, Ybest, algolabels, opts)
 %
 % -------------------------------------------------------------------------
 
-disp('  -> Initializing PYTHIA. She may take a while to complete...');
+disp('  -> Initializing PYTHIA.');
+[Znorm,out.mu,out.sigma] = zscore(Z);
 [ninst,nalgos] = size(Ybin);
 out.cp = cell(1,nalgos);
 out.svm = cell(1,nalgos);
-out.post = cell(1,nalgos);
 out.cvcmat = zeros(nalgos,4);
 out.Ysub = false & Ybin;
 out.Yhat = false & Ybin;
@@ -24,48 +24,69 @@ out.Pr0hat = 0.*Ybin;
 out.boxcosnt = zeros(1,nalgos);
 out.kscale = out.boxcosnt;
 disp('-------------------------------------------------------------------------');
-if opts.useweights
-    disp('  -> PYTHIA will use different weights for each observation.');
-    Waux = W;
+precalcparams = isfield(opts,'params') && isnumeric(opts.params) && ...
+                size(opts.params,1)==nalgos && size(opts.params,2)==2;
+params = NaN.*ones(nalgos,2);
+if opts.uselibsvm
+    disp('  -> Using LIBSVM''s libraries.');
+    if precalcparams
+        disp('  -> Using pre-calculated hyper-parameters for the SVM.');
+        params = opts.params;
+    else
+        disp('  -> Search on a latin hyper-cube design will be used for parameter hyper-tunning.');
+    end
+    disp('-------------------------------------------------------------------------');
+    disp('  -> Using a Gaussian kernel without cost-sensitive classification.');
 else
-    disp('  -> PYTHIA will use equal weights for each observation.');
-    Waux = ones(ninst,nalgos);
+    disp('  -> Using MATLAB''s SVM libraries.');
+    if precalcparams
+        disp('  -> Using pre-calculated hyper-parameters for the SVM.');
+        params = opts.params;
+    else
+        disp('  -> Bayesian Optimization will be used for parameter hyper-tunning.');
+    end
+    disp('-------------------------------------------------------------------------');
+    if ninst>1e3
+        KernelFcn = 'polynomial';
+    else
+        KernelFcn = 'gaussian';
+    end
+    msg = ['  -> PYTHIA is using a ' KernelFcn ' kernel '];
+    if opts.useweights
+        disp([msg 'and cost-sensitive classification']);
+        out.W = abs(Y-nanmean(Y(:)));
+        out.W(out.W==0) = min(out.W(out.W~=0));
+        out.W(isnan(out.W)) = max(out.W(~isnan(out.W)));
+        Waux = out.W;
+    else
+        disp([msg 'without cost-sensitive classification']);
+        Waux = ones(ninst,nalgos);
+    end
 end
 disp('-------------------------------------------------------------------------');
-[Znorm,out.mu,out.sigma] = zscore(Z);
-if size(Znorm,1)>1e3
-    KernelFcn = 'polynomial';
-else
-    KernelFcn = 'gaussian';
-end
+disp(['  -> Using a ' num2str(opts.cvfolds) ...
+      '-fold stratified cross-validation experiment to evaluate the SVMs.']);
+disp('-------------------------------------------------------------------------');
+disp('  -> Training has started. PYTHIA may take a while to complete...');
 t = tic;
 for i=1:nalgos
     tic;
     state = rng;
     rng('default');
     out.cp{i} = cvpartition(Ybin(:,i),'Kfold',opts.cvfolds,'Stratify',true);
-    rng('default');
-    out.svm{i} = fitcsvm(Znorm,Ybin(:,i),'Standardize',false,...
-                                         'Weights',Waux(:,i),...
-                                         'CacheSize','maximal',...
-                                         'RemoveDuplicates',true,...
-                                         'KernelFunction',KernelFcn,...
-                                         'OptimizeHyperparameters','auto',...
-                                         'HyperparameterOptimizationOptions',...
-                                         struct('CVPartition',out.cp{i},...
-                                                'Verbose',0,...
-                                                'AcquisitionFunctionName','probability-of-improvement',...
-                                                'ShowPlots',false));
-    out.svm{i} = fitSVMPosterior(out.svm{i});
+    if opts.uselibsvm
+        [out.svm{i},out.Ysub(:,i),out.Pr0sub(:,i),out.Yhat(:,i),...
+            out.Pr0hat(:,i),out.boxcosnt(i),out.kscale(i)] = fitlibsvm(Znorm,Ybin(:,i),...
+                                                                       out.cp{i},params(i,:));
+    else
+        [out.svm{i},out.Ysub(:,i),out.Pr0sub(:,i),out.Yhat(:,i),...
+            out.Pr0hat(:,i),out.boxcosnt(i),out.kscale(i)] = fitmatsvm(Znorm,Ybin(:,i),...
+                                                                       Waux(:,i),out.cp{i},...
+                                                                       KernelFcn,params(i,:));
+    end
     rng(state);
-    [out.Ysub(:,i),aux] = out.svm{i}.resubPredict;
-    out.Pr0sub(:,i) = aux(:,1);
-    [out.Yhat(:,i),aux] = out.svm{i}.predict(Znorm);
-    out.Pr0hat(:,i) = aux(:,1);
     aux = confusionmat(Ybin(:,i),out.Ysub(:,i));
     out.cvcmat(i,:) = aux(:);
-    out.boxcosnt(i) = out.svm{i}.HyperparameterOptimizationResults.bestPoint{1,1};
-    out.kscale(i) = out.svm{i}.HyperparameterOptimizationResults.bestPoint{1,2};
     if i==nalgos
         disp(['    -> PYTHIA has trained a model for ''' algolabels{i}, ...
               ''', there are no models left to train.']);
@@ -154,3 +175,105 @@ disp(' ');
 disp(out.summary);
 
 end
+% =========================================================================
+% SUBFUNCTIONS
+% =========================================================================
+function [svm,Ysub,Psub,Yhat,Phat,C,g] = fitlibsvm(Z,Ybin,cp,params)
+
+ninst = size(Z,1);
+maxgrid =  10;
+mingrid = -10;
+if any(isnan(params))
+    rng('default');
+    nvals = 10;
+    paramgrid = sortrows(2.^((maxgrid-mingrid).*lhsdesign(nvals,2) + mingrid));
+else
+    nvals = 1;
+    paramgrid = params;
+end
+Ybin = double(Ybin)+1;
+Ysub = zeros(ninst,nvals);
+Psub = zeros(ninst,nvals);
+
+for ii=1:nvals
+    cmd = ['-s 0 -t 2 -q -b 1 -c ' num2str(paramgrid(ii,1)) ' -g ' num2str(paramgrid(ii,2))];
+    for jj=1:cp.NumTestSets
+        idx = cp.training(jj);
+        Ztrain = Z(idx,:);
+        Ytrain = Ybin(idx);
+        Ztest = Z(~idx,:);
+        Ytest = Ybin(~idx);
+        prior = mean(bsxfun(@eq,Ytrain,[1 2]));
+        command = [cmd ' -w1 1 -w2 ' num2str(prior(1)./prior(2),4)];
+        rng('default');
+        svm = libsvmtrain(Ytrain, Ztrain, command);
+        [Ysub(~idx,ii),~,Psub(~idx,ii)] = libsvmpredict(Ytest, Ztest, svm, '-q');
+    end
+end
+[~,idx] = max(mean(bsxfun(@eq,Ysub,Ybin),1));
+Ysub = Ysub(:,idx)==2;
+Psub = Psub(:,idx);
+C = paramgrid(idx,1);
+g = paramgrid(idx,2);
+prior = mean(bsxfun(@eq,Ybin,[1 2]));
+command = ['-s 0 -t 2 -q -b 1 -c ' num2str(C) ' -g ' num2str(g) ...
+           ' -w1 1 -w2 ' num2str(prior(1)./prior(2),4)];
+rng('default');
+svm = libsvmtrain(Ybin, Z, command);
+[Yhat,~,Phat] = libsvmpredict(Ybin, Z, svm, '-q');
+Yhat = Yhat==2;
+
+end
+% =========================================================================
+function [svm,Ysub,Psub,Yhat,Phat,C,g] = fitmatsvm(Z,Ybin,W,cp,k,params)
+
+if any(isnan(params))
+    rng('default');
+    svm = fitcsvm(Z,Ybin,'Standardize',false,...
+                         'Weights',W,...
+                         'CacheSize','maximal',...
+                         'RemoveDuplicates',true,...
+                         'KernelFunction',k,...
+                         'OptimizeHyperparameters','auto',...
+                         'HyperparameterOptimizationOptions',...
+                         struct('CVPartition',cp,...
+                                'Verbose',0,...
+                                'AcquisitionFunctionName','probability-of-improvement',...
+                                'ShowPlots',false));
+    svm = fitSVMPosterior(svm);
+    C = svm.HyperparameterOptimizationResults.bestPoint{1,1};
+    g = svm.HyperparameterOptimizationResults.bestPoint{1,2};
+    [Ysub,aux] = svm.resubPredict;
+    Psub = aux(:,1);
+    [Yhat,aux] = svm.predict(Z);
+    Phat = aux(:,1);
+else
+    C = params(1);
+    g = params(2);
+    rng('default');
+    svm = fitcsvm(Z,Ybin,'Standardize',false,...
+                         'Weights',W,...
+                         'CacheSize','maximal',...
+                         'RemoveDuplicates',true,...
+                         'KernelFunction',k,...
+                         'CVPartition',cp,...
+                         'BoxConstraint',C,...
+                         'KernelScale',g);
+    svm = fitSVMPosterior(svm);
+    [Ysub,aux] = svm.kfoldPredict;
+    Psub = aux(:,1);
+    rng('default');
+    svm = fitcsvm(Z,Ybin,'Standardize',false,...
+                         'Weights',W,...
+                         'CacheSize','maximal',...
+                         'RemoveDuplicates',true,...
+                         'KernelFunction',k,...
+                         'BoxConstraint',C,...
+                         'KernelScale',g);
+	svm = fitSVMPosterior(svm);
+    [Yhat,aux] = svm.predict(Z);
+    Phat = aux(:,1);
+end
+
+end
+% =========================================================================

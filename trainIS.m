@@ -29,7 +29,7 @@ for i = 1:length(optfields)
     disp(optfields{i});
     disp(opts.(optfields{i}));
 end
-if isfield(opts.parallel,'flag') && opts.parallel.flag
+if isfield(opts,'parallel') && isfield(opts.parallel,'flag') && opts.parallel.flag
     disp('-------------------------------------------------------------------------');
     disp('-> Starting parallel processing pool.');
     delete(gcp('nocreate'));

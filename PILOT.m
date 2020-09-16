@@ -18,6 +18,12 @@ n = size(X, 2); % Number of features
 Xbar = [X Y];
 m = size(Xbar, 2);
 Hd = pdist(X)';
+mypool = gcp('nocreate');
+if ~isempty(mypool)
+    nworkers = mypool.NumWorkers;
+else
+    nworkers = 0;
+end
 
 if opts.analytic
     disp('  -> PILOT is solving analyticaly the projection problem.');
@@ -46,43 +52,38 @@ else
         if isfield(opts,'X0') && isnumeric(opts.X0) && ...
                 size(opts.X0,1)==2*m+2*n && size(opts.X0,2)>=1
             disp('  -> PILOT is using a user defined starting points for BFGS.');
-            out.X0 = opts.X0;
+            X0 = opts.X0;
             opts.ntries = size(opts.X0,2);
         else
             disp('  -> PILOT is using a random starting points for BFGS.');
             state = rng;
             rng('default');
-            out.X0 = 2*rand(2*m+2*n, opts.ntries)-1;
+            X0 = 2*rand(2*m+2*n, opts.ntries)-1;
             rng(state);
         end
-        out.alpha = zeros(2*m+2*n, opts.ntries);
-        out.eoptim = zeros(1, opts.ntries);
-        out.perf = zeros(1, opts.ntries);
+        alpha = zeros(2*m+2*n, opts.ntries);
+        eoptim = zeros(1, opts.ntries);
+        perf = zeros(1, opts.ntries);
         disp('-------------------------------------------------------------------------');
         disp('  -> PILOT is solving numerically the projection problem.');
-        disp('  -> This may take a while.');
+        disp('  -> This may take a while. Trials will not be run sequentially.');
         disp('-------------------------------------------------------------------------');
-        for i=1:opts.ntries
-            [out.alpha(:,i),out.eoptim(i)] = fminunc(errorfcn, out.X0(:,i), ...
-                                                     optimoptions('fminunc','Algorithm','quasi-newton',...
-                                                                            'Display','off',...
-                                                                            'UseParallel',false),...
-                                                     Xbar, n, m);
-            A = reshape(out.alpha(1:2*n,i),2,n);
+        parfor (i=1:opts.ntries,nworkers)
+            [alpha(:,i),eoptim(i)] = fminunc(errorfcn, X0(:,i), ...
+                                             optimoptions('fminunc','Algorithm','quasi-newton',...
+                                                                    'Display','off',...
+                                                                    'UseParallel',false),...
+                                             Xbar, n, m);
+            aux = alpha(:,i);
+            A = reshape(aux(1:2*n),2,n);
             Z = X*A';
-            out.perf(i) = corr(Hd,pdist(Z)');
-            if i==opts.ntries
-                disp(['    -> PILOT has completed trial ' num2str(i) ...
-                      '. There are no trials left.']);
-            elseif i==opts.ntries-1
-                disp(['    -> PILOT has completed trial ' num2str(i) ...
-                      '. There is 1 trial left.']);
-            else
-                disp(['    -> PILOT has completed trial ' num2str(i) ...
-                      '. There are ' num2str(opts.ntries-i) ' trials left.']);
-            end
+            perf(i) = corr(Hd,pdist(Z)');
+            disp(['    -> PILOT has completed trial ' num2str(i)]);
         end
-
+        out.X0 = X0;
+        out.alpha = alpha;
+        out.eoptim = eoptim;
+        out.perf = perf;
         [~,idx] = max(out.perf);
     end
     out.A = reshape(out.alpha(1:2*n,idx),2,n);

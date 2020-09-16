@@ -29,6 +29,16 @@ for i = 1:length(optfields)
     disp(optfields{i});
     disp(opts.(optfields{i}));
 end
+if isfield(opts.parallel,'flag') && opts.parallel.flag
+    disp('-------------------------------------------------------------------------');
+    disp('-> Starting parallel processing pool.');
+    delete(gcp('nocreate'));
+    if  isfield(opts.parallel,'ncores') && isnumeric(opts.parallel.ncores)
+        mypool = parpool('local',opts.parallel.ncores,'SpmdEnabled',false);
+    else
+        mypool = parpool('local','SpmdEnabled',false);
+    end
+end
 disp('-------------------------------------------------------------------------');
 disp('-> Loading the data.');
 Xbar = readtable(datafile);
@@ -200,11 +210,11 @@ fileindexed = isfield(opts,'selvars') && ...
               opts.selvars.fileidxflag && ...
               isfield(opts.selvars,'fileidx') && ...
               isfile(opts.selvars.fileidx);
-density = isfield(opts,'selvars') && ...
-          isfield(opts.selvars,'densityflag') && ...
-          opts.selvars.densityflag && ...
-          isfield(opts.selvars,'mindistance') && ...
-          isfloat(opts.selvars.mindistance);
+bydensity = isfield(opts,'selvars') && ...
+            isfield(opts.selvars,'densityflag') && ...
+            opts.selvars.densityflag && ...
+            isfield(opts.selvars,'mindistance') && ...
+            isfloat(opts.selvars.mindistance);
 if fractional
     disp(['-> Creating a small scale experiment for validation. Percentage of subset: ' ...
         num2str(round(100.*opts.selvars.smallscale,2)) '%']);
@@ -219,7 +229,7 @@ elseif fileindexed
     aux = table2array(readtable(opts.selvars.fileidx));
     aux(aux>ninst) = [];
     subsetIndex(aux) = true;
-elseif density
+elseif bydensity
     disp('-> Creating a small scale experiment for validation based on density.');
     subsetIndex = false(ninst,1);
     for ii=1:ninst
@@ -241,7 +251,7 @@ else
     subsetIndex = true(ninst,1);
 end
 
-if fileindexed || fractional || density
+if fileindexed || fractional || bydensity
     model.data.X = model.data.X(subsetIndex,:);
     model.data.Y = model.data.Y(subsetIndex,:);
     model.data.Xraw = model.data.Xraw(subsetIndex,:);
@@ -316,6 +326,12 @@ if opts.trace.usesim
 else
     disp('  -> TRACE will use experimental data to calculate the footprints.');
     model.trace = TRACE(model.pilot.Z, model.data.Ybin, model.data.P, model.data.beta, model.data.algolabels, opts.trace);
+end
+
+if opts.parallel.flag
+    disp('-------------------------------------------------------------------------');
+    disp('-> Closing parallel processing pool.');
+    delete(mypool);
 end
 % -------------------------------------------------------------------------
 % Preparing the outputs for further analysis

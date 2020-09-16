@@ -11,7 +11,12 @@ function out = TRACE(Z, Ybin, P, beta, algolabels, opts)
 %
 % -------------------------------------------------------------------------
 
-
+mypool = gcp('nocreate');
+if ~isempty(mypool)
+    nworkers = mypool.NumWorkers;
+else
+    nworkers = 0;
+end
 % -------------------------------------------------------------------------
 % First step is to transform the data to the footprint space, and to
 % calculate the 'space' footprint. This is also the maximum area possible
@@ -27,20 +32,19 @@ disp(['    -> Space area: ' num2str(out.space.area) ...
 % best algorithm.
 disp('-------------------------------------------------------------------------');
 disp('  -> TRACE is calculating the algorithm footprints.');
-out.good = cell(1,nalgos);
-out.bad = cell(1,nalgos);
-out.best = cell(1,nalgos);
+good = cell(1,nalgos);
+best = cell(1,nalgos);
 % Use the actual data to calculate the footprints
-for i=1:nalgos
+parfor (i=1:nalgos,nworkers)
     tic;
     disp(['    -> Good performance footprint for ''' algolabels{i} '''']);
-    out.good{i} = TRACEbuild(Z, Ybin(:,i), opts);
-    % disp(['    -> Bad performance footprint for ''' algolabels{i} '''']);
-    % out.bad{i} = TRACEbuild(Z, ~Ybin(:,i), opts);
+    good{i} = TRACEbuild(Z, Ybin(:,i), opts);
     disp(['    -> Best performance footprint for ''' algolabels{i} '''']);
-    out.best{i} = TRACEbuild(Z, P==i, opts);
+    best{i} = TRACEbuild(Z, P==i, opts);
     disp(['    -> Algorithm ''' algolabels{i} ''' completed. Elapsed time: ' num2str(toc,'%.2f\n') 's']);
 end
+out.good = good;
+out.best = best;
 % -------------------------------------------------------------------------
 % Detecting collisions and removing them.
 disp('-------------------------------------------------------------------------');
@@ -57,21 +61,14 @@ for i=1:nalgos
         disp(['      -> Test algorithm ''' algolabels{j} ...
               ''' completed. Elapsed time: ' num2str(toc(startTest),'%.2f\n') 's']);
     end
-%     disp(['   -> TRACE is comparing good and bad performance areas for ''' algolabels{i} '''']);
-%     [out.good{i}, out.bad{i}] = TRACEcontra(out.good{i}, out.bad{i},...
-%                                             Z, Ybin(:,i), ~Ybin(:,i),...
-%                                             opts, true);
     disp(['  -> Base algorithm ''' algolabels{i} ...
           ''' completed. Elapsed time: ' num2str(toc(startBase),'%.2f\n') 's']);
 end
 % -------------------------------------------------------------------------
 % Beta hard footprints. First step is to calculate them.
 disp('-------------------------------------------------------------------------');
-disp('  -> TRACE is calculating the beta-footprints.');
-% out.easy = TRACEbuild(Z,  beta, opts);
+disp('  -> TRACE is calculating the beta-footprint.');
 out.hard = TRACEbuild(Z, ~beta, opts);
-% Remove the collisions
-% [out.easy, out.hard] = TRACEcontra(out.easy, out.hard, Z, beta, ~beta, opts);%, false);
 % -------------------------------------------------------------------------
 % Calculating performance
 disp('-------------------------------------------------------------------------');

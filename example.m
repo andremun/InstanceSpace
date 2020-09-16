@@ -1,10 +1,13 @@
-rootdir = './';
+rootdir = './trial/';
 
 opts.perf.MaxPerf = false;              % True if Y is a performance measure to maximize, False if it is a cost measure to minimise.
 opts.perf.AbsPerf = true;               % True if an absolute performance measure, False if a relative performance measure
 opts.perf.epsilon = 0.20;               % Threshold of good performance
 
 opts.general.betaThreshold = 0.55;      % Beta-easy threshold
+
+opts.parallel.flag = true;
+opts.parallel.ncores = 2;
 
 opts.auto.preproc = true;               % Automatic preprocessing on. Set to false if you don't want any preprocessing
 opts.bound.flag = true;                 % Bound the outliers. True if you want to bound the outliers, false if you don't
@@ -27,11 +30,12 @@ opts.cloister.pval = 0.05;
 opts.cloister.cthres = 0.7;
 
 opts.pythia.cvfolds = 5;
+opts.pythia.ispolykrnl = true;
 opts.pythia.useweights = false;
-opts.pythia.uselibsvm = false;
+opts.pythia.uselibsvm = true;
 
 opts.trace.usesim = true;          % Use the actual or simulated data to calculate the footprints
-opts.trace.RHO = 5;                 % Density threshold
+% opts.trace.RHO = 5;                 % Density threshold
 opts.trace.PI = 0.55;               % Purity threshold
 
 opts.selvars.smallscaleflag = true;     % True if you want to do a small scale experiment with a percentage of the available instances

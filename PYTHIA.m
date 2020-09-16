@@ -27,6 +27,18 @@ disp('-------------------------------------------------------------------------'
 precalcparams = isfield(opts,'params') && isnumeric(opts.params) && ...
                 size(opts.params,1)==nalgos && size(opts.params,2)==2;
 params = NaN.*ones(nalgos,2);
+if opts.ispolykrnl
+    KernelFcn = 'polynomial';
+else
+    if ninst>1e3
+        disp('  -> For datasets larger than 1K Instances, PYTHIA works better with a Polynomial kernel.');
+        disp('  -> Consider changing the kernel if the results are unsatisfactory.');
+        disp('-------------------------------------------------------------------------');
+    end
+    KernelFcn = 'gaussian';
+end
+disp(['  -> PYTHIA is using a ' KernelFcn ' kernel ']);
+disp('-------------------------------------------------------------------------');
 if opts.uselibsvm
     disp('  -> Using LIBSVM''s libraries.');
     if precalcparams
@@ -35,8 +47,6 @@ if opts.uselibsvm
     else
         disp('  -> Search on a latin hyper-cube design will be used for parameter hyper-tunning.');
     end
-    disp('-------------------------------------------------------------------------');
-    disp('  -> Using a Gaussian kernel without cost-sensitive classification.');
 else
     disp('  -> Using MATLAB''s SVM libraries.');
     if precalcparams
@@ -46,20 +56,14 @@ else
         disp('  -> Bayesian Optimization will be used for parameter hyper-tunning.');
     end
     disp('-------------------------------------------------------------------------');
-    if ninst>1e3
-        KernelFcn = 'polynomial';
-    else
-        KernelFcn = 'gaussian';
-    end
-    msg = ['  -> PYTHIA is using a ' KernelFcn ' kernel '];
     if opts.useweights
-        disp([msg 'and cost-sensitive classification']);
+        disp('  -> PYTHIA is using cost-sensitive classification');
         out.W = abs(Y-nanmean(Y(:)));
         out.W(out.W==0) = min(out.W(out.W~=0));
         out.W(isnan(out.W)) = max(out.W(~isnan(out.W)));
         Waux = out.W;
     else
-        disp([msg 'without cost-sensitive classification']);
+        disp('  -> PYTHIA is not using cost-sensitive classification');
         Waux = ones(ninst,nalgos);
     end
 end
@@ -77,7 +81,8 @@ for i=1:nalgos
     if opts.uselibsvm
         [out.svm{i},out.Ysub(:,i),out.Pr0sub(:,i),out.Yhat(:,i),...
             out.Pr0hat(:,i),out.boxcosnt(i),out.kscale(i)] = fitlibsvm(Znorm,Ybin(:,i),...
-                                                                       out.cp{i},params(i,:));
+                                                                       out.cp{i},KernelFcn,...
+                                                                       params(i,:));
     else
         [out.svm{i},out.Ysub(:,i),out.Pr0sub(:,i),out.Yhat(:,i),...
             out.Pr0hat(:,i),out.boxcosnt(i),out.kscale(i)] = fitmatsvm(Znorm,Ybin(:,i),...
@@ -178,7 +183,7 @@ end
 % =========================================================================
 % SUBFUNCTIONS
 % =========================================================================
-function [svm,Ysub,Psub,Yhat,Phat,C,g] = fitlibsvm(Z,Ybin,cp,params)
+function [svm,Ysub,Psub,Yhat,Phat,C,g] = fitlibsvm(Z,Ybin,cp,k,params)
 
 ninst = size(Z,1);
 maxgrid =  10;
@@ -195,28 +200,49 @@ Ybin = double(Ybin)+1;
 Ysub = zeros(ninst,nvals);
 Psub = zeros(ninst,nvals);
 
-for ii=1:nvals
-    cmd = ['-s 0 -t 2 -q -b 1 -c ' num2str(paramgrid(ii,1)) ' -g ' num2str(paramgrid(ii,2))];
-    for jj=1:cp.NumTestSets
-        idx = cp.training(jj);
-        Ztrain = Z(idx,:);
-        Ytrain = Ybin(idx);
-        Ztest = Z(~idx,:);
-        Ytest = Ybin(~idx);
+if strcmp(k,'polynomial')
+    k = 1;
+else
+    k = 2;
+end
+
+mypool = gcp('nocreate');
+if ~isempty(mypool)
+    nworkers = mypool.NumWorkers;
+else
+    nworkers = 0;
+end
+
+for jj=1:cp.NumTestSets
+    idx = cp.training(jj);
+    Ztrain = Z(idx,:);
+    Ytrain = Ybin(idx);
+    Ztest = Z(~idx,:);
+    Ytest = Ybin(~idx);
+    Yaux = zeros(sum(~idx),nvals);
+    Paux = zeros(sum(~idx),nvals);
+    parfor (ii=1:nvals,nworkers)
+        cparams = paramgrid(ii,:);
         prior = mean(bsxfun(@eq,Ytrain,[1 2]));
-        command = [cmd ' -w1 1 -w2 ' num2str(prior(1)./prior(2),4)];
+        command = ['-s 0 -t ' num2str(k) ' -q -b 1 -c ' num2str(cparams(1)) ...
+                   ' -g ' num2str(cparams(2)) ' -w1 1 -w2 ' num2str(prior(1)./prior(2),4)];
         rng('default');
         svm = libsvmtrain(Ytrain, Ztrain, command);
-        [Ysub(~idx,ii),~,Psub(~idx,ii)] = libsvmpredict(Ytest, Ztest, svm, '-q');
+        [Yaux(:,ii),~,Paux(:,ii)] = libsvmpredict(Ytest, Ztest, svm, '-q');
+    end
+    for ii=1:nvals
+        Ysub(~idx,ii) = Yaux(:,ii);
+        Psub(~idx,ii) = Paux(:,ii);
     end
 end
 [~,idx] = max(mean(bsxfun(@eq,Ysub,Ybin),1));
 Ysub = Ysub(:,idx)==2;
 Psub = Psub(:,idx);
+
 C = paramgrid(idx,1);
 g = paramgrid(idx,2);
 prior = mean(bsxfun(@eq,Ybin,[1 2]));
-command = ['-s 0 -t 2 -q -b 1 -c ' num2str(C) ' -g ' num2str(g) ...
+command = ['-s 0 -t ' num2str(k) ' -q -b 1 -c ' num2str(C) ' -g ' num2str(g) ...
            ' -w1 1 -w2 ' num2str(prior(1)./prior(2),4)];
 rng('default');
 svm = libsvmtrain(Ybin, Z, command);
@@ -239,7 +265,8 @@ if any(isnan(params))
                          struct('CVPartition',cp,...
                                 'Verbose',0,...
                                 'AcquisitionFunctionName','probability-of-improvement',...
-                                'ShowPlots',false));
+                                'ShowPlots',false,...
+                                'UseParallel',~isempty(gcp('nocreate'))));
     svm = fitSVMPosterior(svm);
     C = svm.HyperparameterOptimizationResults.bestPoint{1,1};
     g = svm.HyperparameterOptimizationResults.bestPoint{1,2};

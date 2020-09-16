@@ -144,7 +144,7 @@ axis square; axis([lbound(1)-1 ubound(1)+1 lbound(2)-1 ubound(2)+1]);
 
 end
 
-function h = drawGoodBadFootprint(Z, good, bad, Ybin, titlelabel)
+function h = drawGoodBadFootprint(Z, good, Ybin, titlelabel)
 
 ubound = ceil(max(Z));
 lbound = floor(min(Z));
@@ -153,7 +153,7 @@ blue = [0.0 0.0 1.0];
 lbls = {'GOOD','BAD'};
 h = zeros(1,2);
 if any(~Ybin)
-    drawFootprint(bad, orange, 0.2);
+    % drawFootprint(bad, orange, 0.2);
     h(2) = line(Z(~Ybin,1), Z(~Ybin,2), 'LineStyle', 'none', ...
                                         'Marker', '.', ...
                                         'Color', orange, ...
@@ -180,7 +180,7 @@ end
 function handle = drawFootprint(footprint, color, alpha)
 % 
 hold on;
-if isempty(footprint.polygon)
+if isempty(footprint) || isempty(footprint.polygon)
     handle = patch([0 0],[0 0],...
                    color, ...
                    'EdgeColor','none');

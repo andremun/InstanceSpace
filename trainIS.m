@@ -38,6 +38,13 @@ if isfield(opts,'parallel') && isfield(opts.parallel,'flag') && opts.parallel.fl
     else
         mypool = parpool('local','SpmdEnabled',false);
     end
+    if ispc
+        addAttachedFiles(mypool,{'libsvmpredict.mexw64','libsvmtrain.mexw64'});
+    elseif isunix
+        addAttachedFiles(mypool,{'libsvmpredict.mexa64','libsvmtrain.mexa64'});
+    elseif ismac
+        addAttachedFiles(mypool,{'libsvmpredict.mexmaci64','libsvmtrain.mexmaci64'});
+    end
 end
 disp('-------------------------------------------------------------------------');
 disp('-> Loading the data.');

@@ -227,8 +227,8 @@ for jj=1:cp.NumTestSets
         command = ['-s 0 -t ' num2str(k) ' -q -b 1 -c ' num2str(cparams(1)) ...
                    ' -g ' num2str(cparams(2)) ' -w1 1 -w2 ' num2str(prior(1)./prior(2),4)];
         rng('default');
-        svm = libsvmtrain(Ytrain, Ztrain, command);
-        [Yaux(:,ii),~,Paux(:,ii)] = libsvmpredict(Ytest, Ztest, svm, '-q');
+        svm = svmtrain(Ytrain, Ztrain, command);
+        [Yaux(:,ii),~,Paux(:,ii)] = svmpredict(Ytest, Ztest, svm, '-q');
     end
     for ii=1:nvals
         Ysub(~idx,ii) = Yaux(:,ii);
@@ -245,8 +245,8 @@ prior = mean(bsxfun(@eq,Ybin,[1 2]));
 command = ['-s 0 -t ' num2str(k) ' -q -b 1 -c ' num2str(C) ' -g ' num2str(g) ...
            ' -w1 1 -w2 ' num2str(prior(1)./prior(2),4)];
 rng('default');
-svm = libsvmtrain(Ybin, Z, command);
-[Yhat,~,Phat] = libsvmpredict(Ybin, Z, svm, '-q');
+svm = svmtrain(Ybin, Z, command);
+[Yhat,~,Phat] = svmpredict(Ybin, Z, svm, '-q');
 Yhat = Yhat==2;
 
 end

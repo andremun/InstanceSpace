@@ -18,9 +18,13 @@ n = size(X, 2); % Number of features
 Xbar = [X Y];
 m = size(Xbar, 2);
 Hd = pdist(X)';
-mypool = gcp('nocreate');
-if ~isempty(mypool)
-    nworkers = mypool.NumWorkers;
+if exist('gcp','file')==2
+    mypool = gcp('nocreate');
+    if ~isempty(mypool)
+        nworkers = mypool.NumWorkers;
+    else
+        nworkers = 0;
+    end
 else
     nworkers = 0;
 end
@@ -48,7 +52,6 @@ else
         idx = 1;
         out.alpha = opts.alpha;
     else
-        disp('-------------------------------------------------------------------------');
         if isfield(opts,'X0') && isnumeric(opts.X0) && ...
                 size(opts.X0,1)==2*m+2*n && size(opts.X0,2)>=1
             disp('  -> PILOT is using a user defined starting points for BFGS.');

@@ -13,6 +13,17 @@ function [X, out] = clusterFeatureSelection(X, Ybin, opts)
 
 global comb gacostvals
 
+if exist('gcp','file')==2
+    mypool = gcp('nocreate');
+    if ~isempty(mypool)
+        nworkers = mypool.NumWorkers;
+    else
+        nworkers = 0;
+    end
+else
+    nworkers = 0;
+end
+
 nfeats = size(X,2);
 disp('-> Selecting features based on correlation clustering.');
 nalgos = size(Ybin,2);
@@ -43,7 +54,7 @@ rng('default');
 out.clust = bsxfun(@eq, kmeans(X', K, 'Distance', 'correlation', ...
                                       'MaxIter', opts.MaxIter, ...
                                       'Replicates', opts.Replicates, ...
-                                      'Options', statset('UseParallel', ~isempty(gcp('nocreate'))), ...
+                                      'Options', statset('UseParallel', nworkers~=0), ...
                                       'OnlinePhase', 'on'), 1:K);
 rng(state);
 disp(['-> Constructing ' num2str(K) ' clusters of features.']);
@@ -127,6 +138,17 @@ end
 % =========================================================================
 function ooberr = costfcn(comb,X,Ybin,ntrees)
 
+if exist('gcp','file')==2
+    mypool = gcp('nocreate');
+    if ~isempty(mypool)
+        nworkers = mypool.NumWorkers;
+    else
+        nworkers = 0;
+    end
+else
+    nworkers = 0;
+end
+
 [~, score] = pca(X(:,comb), 'NumComponents', 2); %#ok<*IDISVAR> % Reduce using PCA
 nalgos = size(Ybin,2);
 ooberr = zeros(1,nalgos);
@@ -134,7 +156,7 @@ for j = 1:nalgos
     state = rng;
     rng('default');
     tree = TreeBagger(ntrees, score, Ybin(:,j), 'OOBPrediction', 'on', ...
-                      'Options', statset('UseParallel', ~isempty(gcp('nocreate'))));
+                      'Options', statset('UseParallel', nworkers~=0));
     ooberr(j) = mean(Ybin(:,j)~=str2double(oobPredict(tree)));
     rng(state);
 end

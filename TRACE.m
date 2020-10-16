@@ -11,9 +11,13 @@ function out = TRACE(Z, Ybin, P, beta, algolabels, opts)
 %
 % -------------------------------------------------------------------------
 
-mypool = gcp('nocreate');
-if ~isempty(mypool)
-    nworkers = mypool.NumWorkers;
+if exist('gcp','file')==2
+    mypool = gcp('nocreate');
+    if ~isempty(mypool)
+        nworkers = mypool.NumWorkers;
+    else
+        nworkers = 0;
+    end
 else
     nworkers = 0;
 end

@@ -47,6 +47,37 @@ if any(issource)
 end
 out.data.X = Xbar{:,isfeat};
 out.data.Y = Xbar{:,isalgo};
+[ninst,nalgos] = size(out.data.Y);
+% -------------------------------------------------------------------------
+% HERE CHECK IF THE NUMBER OF ALGORITHMS IS THE SAME AS IN THE MODEL. IF
+% NOT, CHECK IF THE NAMES OF THE ALGORITHMS ARE THE SAME, IF NOT, MOVE THE
+% DATA IN SUCH WAY THAT THE NON-EXISTING ALGORITHMS ARE MADE NAN AND THE
+% NEW ALGORITHMS ARE LAST.
+out.data.algolabels = strrep(varlabels(isalgo),'algo_','');
+algoexist = zeros(1,nalgos);
+for ii=1:nalgos
+    aux = find(strcmp(out.data.algolabels{ii},model.data.algolabels));
+    if ~isempty(aux)
+        algoexist(ii) = aux;
+    end
+end
+newalgos = sum(algoexist==0);
+modelalgos = length(model.data.algolabels);
+Yaux = NaN+ones(ninst, modelalgos+newalgos);
+lblaux = model.data.algolabels;
+acc = modelalgos+1;
+for ii=1:nalgos
+    if algoexist(ii)==0
+       Yaux(:,acc) = out.data.Y(:,ii);
+       lblaux(:,acc) = out.data.algolabels(ii);
+       acc = acc+1;
+    else
+        Yaux(:,algoexist(ii)) = out.data.Y(:,ii);
+        % lblaux(:,acc) = out.data.algolabels(ii);
+    end
+end
+out.data.Y = Yaux;
+out.data.algolabels = lblaux;
 nalgos = size(out.data.Y,2);
 % -------------------------------------------------------------------------
 % Storing the raw data for further processing, e.g., graphs
@@ -100,7 +131,6 @@ end
 disp(msg);
 out.data.numGoodAlgos = sum(out.data.Ybin,2);
 out.data.beta = out.data.numGoodAlgos>model.opts.general.betaThreshold*nalgos;
-
 % ---------------------------------------------------------------------
 % Automated pre-processing
 if model.opts.auto.preproc && model.opts.bound.flag
@@ -122,9 +152,14 @@ if model.opts.auto.preproc && model.opts.norm.flag
     out.data.X = bsxfun(@rdivide,bsxfun(@power,out.data.X,model.norm.lambdaX)-1,model.norm.lambdaX);
     out.data.X = bsxfun(@rdivide,bsxfun(@minus,out.data.X,model.norm.muX),model.norm.sigmaX);
     
+    % If the algorithm is new, something else should be made...
     out.data.Y(out.data.Y==0) = eps; % Assumes that out.data.Y is always positive and higher than 1e-16
-    out.data.Y = bsxfun(@rdivide,bsxfun(@power,out.data.Y,model.norm.lambdaY)-1,model.norm.lambdaY);
-    out.data.Y = bsxfun(@rdivide,bsxfun(@minus,out.data.Y,model.norm.muY),model.norm.sigmaY);
+    out.data.Y(:,1:modelalgos) = bsxfun(@rdivide,bsxfun(@power,out.data.Y(:,1:modelalgos),model.norm.lambdaY)-1,model.norm.lambdaY);
+    out.data.Y(:,1:modelalgos) = bsxfun(@rdivide,bsxfun(@minus,out.data.Y(:,1:modelalgos),model.norm.muY),model.norm.sigmaY);
+    if newalgos>0
+        [~,out.data.Y(:,modelalgos+1:nalgos),out.norm] = autoNormalize(ones(ninst,1), ... % Dummy variable
+                                                                       out.data.Y(:,modelalgos+1:nalgos));
+    end
 end
 % ---------------------------------------------------------------------
 % This is the final subset of features.
@@ -132,7 +167,6 @@ out.featsel.idx = model.featsel.idx;
 out.data.X = out.data.X(:,out.featsel.idx);
 out.data.featlabels = strrep(varlabels(isfeat),'feature_','');
 out.data.featlabels = out.data.featlabels(model.featsel.idx);
-out.data.algolabels = strrep(varlabels(isalgo),'algo_','');
 % ---------------------------------------------------------------------
 %  Calculate the two dimensional projection using the PBLDR algorithm
 %  (Munoz et al. Mach Learn 2018)

@@ -1,12 +1,22 @@
 function out = PYTHIAtest(model, Z, Y, Ybin, Ybest, algolabels)
 
-nalgos = size(Ybin,2);
+nalgos = length(model.svm);
+Y = Y(:,1:nalgos);
+Ybin = Ybin(:,1:nalgos);
 out.Yhat = false(size(Ybin));
 out.Pr0hat = 0.*Ybin;
 out.cvcmat = zeros(nalgos,4);
 for i=1:nalgos
-    [out.Yhat(:,i),aux] = model.svm{i}.predict(Z);
-    out.Pr0hat(:,i) = aux(:,1);
+    if isstruct(model.svm{1})
+        [out.Yhat(:,i),~,out.Pr0hat(:,i)] = svmpredict(double(Ybin(:,i)), Z, model.svm{i}, '-q');
+    elseif isclass(model.svm{1})
+        [out.Yhat(:,i),aux] = model.svm{i}.predict(Z);
+        out.Pr0hat(:,i) = aux(:,1);
+    else
+        disp('There is no model for this algorithm');
+        out.Yhat(:,i) = NaN;
+        out.Pr0hat(:,i) = NaN;
+    end
     aux = confusionmat(Ybin(:,i),out.Yhat(:,i));
     out.cvcmat(i,:) = aux(:);
 end
@@ -44,7 +54,7 @@ recallsel = tg./(tg+fb);
 disp('  -> PYTHIA is preparing the summary table.');
 out.summary = cell(nalgos+3, 9);
 out.summary{1,1} = 'Algorithms ';
-out.summary(2:end-2, 1) = algolabels;
+out.summary(2:end-2, 1) = algolabels(1:nalgos);
 out.summary(end-1:end, 1) = {'Oracle','Selector'};
 out.summary(1, 2:9) = {'Avg_Perf_all_instances';
                        'Std_Perf_all_instances';

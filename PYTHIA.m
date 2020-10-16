@@ -206,9 +206,13 @@ else
     k = 2;
 end
 
-mypool = gcp('nocreate');
-if ~isempty(mypool)
-    nworkers = mypool.NumWorkers;
+if exist('gcp','file')==2
+    mypool = gcp('nocreate');
+    if ~isempty(mypool)
+        nworkers = mypool.NumWorkers;
+    else
+        nworkers = 0;
+    end
 else
     nworkers = 0;
 end
@@ -227,7 +231,7 @@ for jj=1:cp.NumTestSets
         command = ['-s 0 -t ' num2str(k) ' -q -b 1 -c ' num2str(cparams(1)) ...
                    ' -g ' num2str(cparams(2)) ' -w1 1 -w2 ' num2str(prior(1)./prior(2),4)];
         rng('default');
-        svm = svmtrain(Ytrain, Ztrain, command);
+        svm = svmtrain(Ytrain, Ztrain, command); %#ok<SVMTRAIN>
         [Yaux(:,ii),~,Paux(:,ii)] = svmpredict(Ytest, Ztest, svm, '-q');
     end
     for ii=1:nvals
@@ -245,13 +249,24 @@ prior = mean(bsxfun(@eq,Ybin,[1 2]));
 command = ['-s 0 -t ' num2str(k) ' -q -b 1 -c ' num2str(C) ' -g ' num2str(g) ...
            ' -w1 1 -w2 ' num2str(prior(1)./prior(2),4)];
 rng('default');
-svm = svmtrain(Ybin, Z, command);
+svm = svmtrain(Ybin, Z, command); %#ok<SVMTRAIN>
 [Yhat,~,Phat] = svmpredict(Ybin, Z, svm, '-q');
 Yhat = Yhat==2;
 
 end
 % =========================================================================
 function [svm,Ysub,Psub,Yhat,Phat,C,g] = fitmatsvm(Z,Ybin,W,cp,k,params)
+
+if exist('gcp','file')==2
+    mypool = gcp('nocreate');
+    if ~isempty(mypool)
+        nworkers = mypool.NumWorkers;
+    else
+        nworkers = 0;
+    end
+else
+    nworkers = 0;
+end
 
 if any(isnan(params))
     rng('default');
@@ -266,7 +281,7 @@ if any(isnan(params))
                                 'Verbose',0,...
                                 'AcquisitionFunctionName','probability-of-improvement',...
                                 'ShowPlots',false,...
-                                'UseParallel',~isempty(gcp('nocreate'))));
+                                'UseParallel',nworkers~=0));
     svm = fitSVMPosterior(svm);
     C = svm.HyperparameterOptimizationResults.bestPoint{1,1};
     g = svm.HyperparameterOptimizationResults.bestPoint{1,2};

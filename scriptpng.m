@@ -14,6 +14,7 @@ function scriptpng(container,rootdir)
 % -------------------------------------------------------------------------
 % Preliminaries
 scriptfcn;
+colormap('copper');
 nfeats = size(container.data.X,2);
 nalgos = size(container.data.Y,2);
 Xaux = (container.data.X-min(container.data.X,[],1))./range(container.data.X,1);
@@ -58,18 +59,26 @@ for i=1:nalgos
                           strrep(container.data.algolabels{i},'_',' '));
     print(gcf,'-dpng',[rootdir 'binary_performance_' container.data.algolabels{i} '.png']);
     % Drawing the SVM's predictions of good performance
-    clf;
-    drawBinaryPerformance(container.pilot.Z, container.pythia.Yhat(:,i), ...
-                          strrep(container.data.algolabels{i},'_',' '));
-    print(gcf,'-dpng',[rootdir 'binary_svm_' container.data.algolabels{i} '.png']);
+    try
+        clf;
+        drawBinaryPerformance(container.pilot.Z, container.pythia.Yhat(:,i), ...
+                              strrep(container.data.algolabels{i},'_',' '));
+        print(gcf,'-dpng',[rootdir 'binary_svm_' container.data.algolabels{i} '.png']);
+    catch
+        disp('No SVM model has been trained');
+    end
     % Drawing the footprints for good and bad performance acording to the
     % binary measure 
-    clf;
-    drawGoodBadFootprint(container.pilot.Z, ...
-                         container.trace.good{i}, ...
-                         Yfoot(:,i), ...
-                         strrep(container.data.algolabels{i},'_',' '));
-    print(gcf,'-dpng',[rootdir 'footprint_' container.data.algolabels{i} '.png']);
+    try 
+        clf;
+        drawGoodBadFootprint(container.pilot.Z, ...
+                             container.trace.good{i}, ...
+                             Yfoot(:,i), ...
+                             strrep(container.data.algolabels{i},'_',' '));
+        print(gcf,'-dpng',[rootdir 'footprint_' container.data.algolabels{i} '.png']);
+    catch
+        disp('No Footprint has been calculated');
+    end
 end
 % ---------------------------------------------------------------------
 % Plotting the number of good algos

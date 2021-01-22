@@ -1,5 +1,6 @@
 function out = PYTHIAtest(model, Z, Y, Ybin, Ybest, algolabels)
 
+Z = (Z-model.mu)./model.sigma;
 nalgos = length(model.svm);
 Y = Y(:,1:nalgos);
 Ybin = Ybin(:,1:nalgos);
@@ -11,7 +12,7 @@ for ii=1:nalgos
         Yin = double(Ybin(:,ii))+1;
         [aux,~,out.Pr0hat(:,ii)] = svmpredict(Yin, Z, model.svm{ii}, '-q');
         out.Yhat(:,ii) = aux==2;
-    elseif isclass(model.svm{ii})
+    elseif isa(model.svm{ii},'ClassificationSVM')
         [out.Yhat(:,ii),aux] = model.svm{ii}.predict(Z);
         out.Pr0hat(:,ii) = aux(:,1);
     else

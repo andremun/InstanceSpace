@@ -1,5 +1,7 @@
 # Instance Space Analysis: A toolkit for the assessment of algorithmic power
 
+[![View InstanceSpace on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://au.mathworks.com/matlabcentral/fileexchange/75170-instancespace)
+
 Instance Space Analysis is a methodology for the assessment of the strengths and weaknesses of an algorithm, and an approach to objectively compare algorithmic power without bias introduced by restricted choice of test instances. At its core is the modelling of the relationship between structural properties of an instance and the performance of a group of algorithms. Instance Space Analysis allows the construction of **footprints** for each algorithm, defined as regions in the instance space where we statistically infer good performance. Other insights that can be gathered from Instance Space Analysis include:
 
 -	Objective metrics of each algorithm’s footprint across the instance space as a measure of algorithmic power;
@@ -17,7 +19,7 @@ This repository provides a set of MATLAB tools to carry out a complete Instance 
 
 ## Installation Instructions
 
-The only requirement for the software to run is to have a current version of [MATLAB](http://www.mathworks.com), with the [Communications](https://au.mathworks.com/products/communications.html), [Financial](https://au.mathworks.com/products/finance.html), [Global Optimization](https://au.mathworks.com/help/gads/index.html), [Optimization](https://au.mathworks.com/products/optimization.html), and [Statistics and Machine Learning](https://au.mathworks.com/help/stats/index.html) toolboxes installed. It has been tested and known to work properly in version r2018b. Earlier versions may fail to support several functions being used.
+The only requirement for the software to run is to have a current version of [MATLAB](http://www.mathworks.com), with the [Communications](https://au.mathworks.com/products/communications.html), [Financial](https://au.mathworks.com/products/finance.html), [Global Optimization](https://au.mathworks.com/help/gads/index.html), [Parallel Computing](https://www.mathworks.com/products/parallel-computing.html), [Optimization](https://au.mathworks.com/products/optimization.html), and [Statistics and Machine Learning](https://au.mathworks.com/help/stats/index.html) toolboxes installed. It has been tested and known to work properly in version r2018b. Earlier versions may fail to support several functions being used.
 
 ## Working with the code
 
@@ -65,7 +67,7 @@ The toolkit uses CLOISTER, an algorithm based on correlation to detect the empir
 
 ###  Algorithm selection settings
 
-The toolkit uses SVMs with radial basis kernels as algorithm selection models, through MATLAB's Statistics and Machine Learning Toolbox.
+The toolkit uses SVMs with radial basis kernels as algorithm selection models, through MATLAB's Statistics and Machine Learning Toolbox or [LIBSVM](https://www.csie.ntu.edu.tw/~cjlin/libsvm/).
 
 -	```opts.pythia.cvfolds``` number of folds of the cross-validation experiment.
 - ```opts.pythia.useweights``` determines whether weighted (set as ```TRUE```) or unweighted (set as ```FALSE```) classification is performed. The weights are calculated as <img src="https://render.githubusercontent.com/render/math?math=\left|y_{\text{best}}-y\right|">.

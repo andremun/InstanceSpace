@@ -1,4 +1,4 @@
-function model = trainIS(rootdir)
+function model = buildIS(rootdir)
 % -------------------------------------------------------------------------
 % trainIS.m
 % -------------------------------------------------------------------------
@@ -186,7 +186,7 @@ end
 disp(['-> For ' num2str(round(100.*mean(multipleBestAlgos))) '% of the instances there is ' ...
       'more than one best algorithm. Random selection is used to break ties.']);
 model.data.numGoodAlgos = sum(model.data.Ybin,2);
-model.data.beta = model.data.numGoodAlgos>opts.general.betaThreshold*nalgos;
+model.data.beta = model.data.numGoodAlgos>opts.perf.betaThreshold*nalgos;
 % -------------------------------------------------------------------------
 % Automated pre-processing
 if opts.auto.preproc
@@ -281,25 +281,13 @@ nfeats = size(model.data.X,2);
 model.featsel.idx = 1:nfeats;
 if opts.auto.featsel
     disp('=========================================================================');
-    disp('-> Auto-feature selection.');
+    disp('-> Calling SIFTED for auto-feature selection.');
     disp('=========================================================================');
     % Detect correlations between features and algorithms. Keep the top
     % CORTHRESHOLD correlated features for each algorithm
-    if opts.corr.flag
-        [model.data.X, model.corr] = checkCorrelation(model.data.X, model.data.Y, opts.corr);
-        model.data.featlabels = model.data.featlabels(model.corr.selvars);
-        model.featsel.idx = model.featsel.idx(model.corr.selvars);
-    end
-    % Detect similar features, by clustering them according to their
-    % correlation. We assume that the lowest value possible is best, as
-    % this will improve the projection into two dimensions. We set a hard
-    % limit of 10 features. The selection criteria is an average silhouete
-    % value above 0.65
-    if opts.clust.flag
-        [model.data.X, model.clust] = clusterFeatureSelection(model.data.X, model.data.Ybin, opts.clust);
-        model.data.featlabels = model.data.featlabels(model.clust.selvars);
-        model.featsel.idx = model.featsel.idx(model.clust.selvars);
-    end
+    [model.data.X, model.sifted] = SIFTED(model.data.X, model.data.Y, model.data.Ybin, opts.sifted);
+    model.data.featlabels = model.data.featlabels(model.sifted.selvars);
+    model.featsel.idx = model.featsel.idx(model.sifted.selvars);
 end
 % -------------------------------------------------------------------------
 % This is the final subset of features. Calculate the two dimensional

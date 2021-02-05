@@ -3,25 +3,25 @@ rootdir = './trial/';
 opts.perf.MaxPerf = false;              % True if Y is a performance measure to maximize, False if it is a cost measure to minimise.
 opts.perf.AbsPerf = true;               % True if an absolute performance measure, False if a relative performance measure
 opts.perf.epsilon = 0.20;               % Threshold of good performance
+opts.perf.betaThreshold = 0.55;      % Beta-easy threshold
 
-opts.general.betaThreshold = 0.55;      % Beta-easy threshold
-
-opts.parallel.flag = true;
+opts.parallel.flag = false;
 opts.parallel.ncores = 2;
 
 opts.auto.preproc = true;               % Automatic preprocessing on. Set to false if you don't want any preprocessing
 opts.bound.flag = true;                 % Bound the outliers. True if you want to bound the outliers, false if you don't
 opts.norm.flag = true;                  % Normalize/Standarize the data. True if you want to apply Box-Cox and Z transformations to stabilize the variance and scale N(0,1)
 
-opts.auto.featsel = true;               % Automatic feature selectio on. Set to false if you don't want any feature selection.
-opts.corr.flag = true;                  % Run feature selection by correlation between performance and features (Step 2)
-opts.corr.threshold = 10;                % Top N features (by correlation) per algorithm that are selected
-opts.clust.flag = true;                 % Run feature selection by clustering (Step 3)
-opts.clust.KDEFAULT = 10;               % Default maximum number of clusters
-opts.clust.SILTHRESHOLD = 0.9;          % Minimum accepted value for the average silhoute value
-opts.clust.NTREES = 50;                 % Number of trees for the Random Forest (to determine highest separability in the 2-d projection)
-opts.clust.MaxIter = 1000;
-opts.clust.Replicates = 100;
+opts.sifted.flag = true;               % Automatic feature selectio on. Set to false if you don't want any feature selection.
+% opts.corr.flag = true;                  % Run feature selection by correlation between performance and features (Step 2)
+% opts.corr.threshold = 10;                % Top N features (by correlation) per algorithm that are selected
+% opts.clust.flag = true;                 % Run feature selection by clustering (Step 3)
+% opts.clust.KDEFAULT = 10;               % Default maximum number of clusters
+% opts.clust.SILTHRESHOLD = 0.9;          % Minimum accepted value for the average silhoute value
+opts.sifted.K = 5;
+opts.sifted.NTREES = 50;                 % Number of trees for the Random Forest (to determine highest separability in the 2-d projection)
+opts.sifted.MaxIter = 1000;
+opts.sifted.Replicates = 100;
 
 opts.pilot.analytic = false;            % Calculate the analytical or numerical solution
 opts.pilot.ntries = 5;                 % Number of attempts carried out by PBLDR
@@ -59,7 +59,7 @@ fprintf(fid,'%s',jsonencode(opts));
 fclose(fid);
 
 try
-    model = trainIS(rootdir);
+    model = buildIS(rootdir);
     %The trained model can be tested using testing routine
     %"testInterface.m". Make sure to place test data "metadata_test.csv"
     %inside root directory specified at the top (rootdir).

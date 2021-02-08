@@ -279,7 +279,7 @@ nfeats = size(model.data.X,2);
 % Keep track of the features that have been removed so we can use them
 % later
 model.featsel.idx = 1:nfeats;
-if opts.auto.featsel
+if opts.sifted.flag
     disp('=========================================================================');
     disp('-> Calling SIFTED for auto-feature selection.');
     disp('=========================================================================');

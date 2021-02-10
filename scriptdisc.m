@@ -27,7 +27,9 @@ disp('-------------------------------------------------------------------------'
 disp(' ');
 disp(' If using this software, please cite as: ');
 disp(' ');
-disp(' Smith-Miles, K.; Muñoz, M.A. et al. ''Instance Space Analysis'' doi:');
+disp([' Mario Andrés Muñoz, & Kate Smith-Miles. ' ...
+      ' andremun/InstanceSpace: February 2021 Update (Version v0.2-beta). '...
+      ' Zenodo. http://doi.org/10.5281/zenodo.4521336']);
 disp(' ');
 disp('-------------------------------------------------------------------------');
 disp(' ');

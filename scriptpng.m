@@ -14,7 +14,7 @@ function scriptpng(container,rootdir)
 % -------------------------------------------------------------------------
 % Preliminaries
 scriptfcn;
-colormap('copper');
+colormap('parula');
 nfeats = size(container.data.X,2);
 nalgos = size(container.data.Y,2);
 Xaux = (container.data.X-min(container.data.X,[],1))./range(container.data.X,1);

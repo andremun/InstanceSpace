@@ -186,8 +186,8 @@ end
 function [svm,Ysub,Psub,Yhat,Phat,C,g] = fitlibsvm(Z,Ybin,cp,k,params)
 
 ninst = size(Z,1);
-maxgrid =  5;
-mingrid = -5;
+maxgrid =   4;
+mingrid = -10;
 if any(isnan(params))
     rng('default');
     nvals = 10;
@@ -239,7 +239,7 @@ for jj=1:cp.NumTestSets
         Psub(~idx,ii) = Paux(:,ii);
     end
 end
-[~,idx] = max(mean(bsxfun(@eq,Ysub,Ybin),1));
+[~,idx] = min(mean(bsxfun(@ne,Ysub,Ybin),1));
 Ysub = Ysub(:,idx)==2;
 Psub = Psub(:,idx);
 
@@ -272,8 +272,8 @@ if any(isnan(params))
     rng('default');
     hypparams = hyperparameters('fitcsvm',Z,Ybin);
     hypparams = hypparams(1:2);
-    hypparams(1).Range = 2.^[-5,5];
-    hypparams(2).Range = 2.^[-5,5];
+    hypparams(1).Range = 2.^[-10,4];
+    hypparams(2).Range = hypparams(1).Range;
     svm = fitcsvm(Z,Ybin,'Standardize',false,...
                          'Weights',W,...
                          'CacheSize','maximal',...

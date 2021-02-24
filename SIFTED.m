@@ -70,10 +70,14 @@ rng('default');
 out.eva = evalclusters(Xaux', 'kmeans', 'Silhouette', 'KList', 3:nfeats, ... % minimum of three features
                               'Distance', 'correlation');
 disp('-> Average silhouette values for each number of clusters.')
-disp([3:nfeats; out.eva.CriterionValues]);
-if out.eva.CriterionValues((3:nfeats)==opts.K)<0.5
+disp([out.eva.InspectedK; out.eva.CriterionValues]);
+if out.eva.CriterionValues(out.eva.InspectedK==opts.K)<0.5
     disp(['-> The silhouette value for K=' num2str(opts.K) ...
           ' is below 0.5. You should consider increasing K.']);
+    out.Ksuggested = out.eva.InspectedK(find(out.eva.CriterionValues>0.75,1));
+    if ~isempty(out.Ksuggested)
+        disp(['-> A suggested value of K is ' num2str(out.Ksuggested)]);
+    end
 end
 % ---------------------------------------------------------------------
 rng('default');

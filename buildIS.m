@@ -142,7 +142,7 @@ if opts.perf.MaxPerf
     else
         % model.data.Ybin = bsxfun(@ge,Yaux,(1-opts.perf.epsilon).*model.data.bestPerformace); % One is good, zero is bad
         model.data.Y = 1-bsxfun(@rdivide,model.data.Y,model.data.bestPerformace);
-        model.data.Ybin = (1-bsxfun(@rdivide,Yaux,model.data.bestPerformace))<opts.perf.epsilon;
+        model.data.Ybin = (1-bsxfun(@rdivide,Yaux,model.data.bestPerformace))<=opts.perf.epsilon;
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 else
@@ -157,7 +157,7 @@ else
     else
         % model.data.Ybin = bsxfun(@le,Yaux,(1+opts.perf.epsilon).*model.data.bestPerformace);
         model.data.Y = bsxfun(@rdivide,model.data.Y,model.data.bestPerformace)-1;
-        model.data.Ybin = (bsxfun(@rdivide,Yaux,model.data.bestPerformace)-1)<opts.perf.epsilon;
+        model.data.Ybin = (bsxfun(@rdivide,Yaux,model.data.bestPerformace)-1)<=opts.perf.epsilon;
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 end
@@ -178,7 +178,7 @@ end
 % -------------------------------------------------------------------------
 % Testing for ties. If there is a tie in performance, we pick an algorithm
 % at random.
-bestAlgos = bsxfun(@eq,model.data.Y,model.data.bestPerformace);
+bestAlgos = bsxfun(@eq,model.data.Yraw,model.data.bestPerformace);
 multipleBestAlgos = sum(bestAlgos,2)>1;
 aidx = 1:nalgos;
 for i=1:size(model.data.Y,1)

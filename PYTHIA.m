@@ -190,7 +190,7 @@ maxgrid =   4;
 mingrid = -10;
 if any(isnan(params))
     rng('default');
-    nvals = 10;
+    nvals = 30;
     paramgrid = sortrows(2.^((maxgrid-mingrid).*lhsdesign(nvals,2) + mingrid));
 else
     nvals = 1;

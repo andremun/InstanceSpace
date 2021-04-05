@@ -141,6 +141,8 @@ if opts.perf.MaxPerf
         msg = [msg 'higher than ' num2str(opts.perf.epsilon)];
     else
         % model.data.Ybin = bsxfun(@ge,Yaux,(1-opts.perf.epsilon).*model.data.bestPerformace); % One is good, zero is bad
+        model.data.bestPerformace(model.data.bestPerformace==0) = eps;
+        model.data.Y(model.data.Y==0) = eps;
         model.data.Y = 1-bsxfun(@rdivide,model.data.Y,model.data.bestPerformace);
         model.data.Ybin = (1-bsxfun(@rdivide,Yaux,model.data.bestPerformace))<=opts.perf.epsilon;
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
@@ -156,6 +158,8 @@ else
         msg = [msg 'less than ' num2str(opts.perf.epsilon)];
     else
         % model.data.Ybin = bsxfun(@le,Yaux,(1+opts.perf.epsilon).*model.data.bestPerformace);
+        model.data.bestPerformace(model.data.bestPerformace==0) = eps;
+        model.data.Y(model.data.Y==0) = eps;
         model.data.Y = bsxfun(@rdivide,model.data.Y,model.data.bestPerformace)-1;
         model.data.Ybin = (bsxfun(@rdivide,Yaux,model.data.bestPerformace)-1)<=opts.perf.epsilon;
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
@@ -327,7 +331,7 @@ else
     model.trace = TRACE(model.pilot.Z, model.data.Ybin, model.data.P, model.data.beta, model.data.algolabels, opts.trace);
 end
 
-if opts.parallel.flag
+if isfield(opts,'parallel') && isfield(opts.parallel,'flag') && opts.parallel.flag
     disp('-------------------------------------------------------------------------');
     disp('-> Closing parallel processing pool.');
     delete(mypool);

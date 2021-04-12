@@ -14,11 +14,11 @@ function scriptpng(container,rootdir)
 % -------------------------------------------------------------------------
 % Preliminaries
 scriptfcn;
-colormap('copper');
+colormap('parula');
 nfeats = size(container.data.X,2);
 nalgos = size(container.data.Y,2);
 Xaux = (container.data.X-min(container.data.X,[],1))./range(container.data.X,1);
-Yind = (container.data.Y-min(container.data.Y,[],1))./range(container.data.Y,1);
+Yind = (container.data.Yraw-min(container.data.Yraw,[],1))./range(container.data.Yraw,1);
 Yglb = log10(container.data.Yraw+1);
 Yglb = (Yglb-min(Yglb(:)))./range(Yglb(:));
 if container.opts.trace.usesim

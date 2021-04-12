@@ -1,4 +1,4 @@
-function out = testIS(rootdir)
+function out = exploreIS(rootdir)
 % -------------------------------------------------------------------------
 % testIS.m
 % -------------------------------------------------------------------------
@@ -130,7 +130,7 @@ else
 end
 disp(msg);
 out.data.numGoodAlgos = sum(out.data.Ybin,2);
-out.data.beta = out.data.numGoodAlgos>model.opts.general.betaThreshold*nalgos;
+out.data.beta = out.data.numGoodAlgos>model.opts.perf.betaThreshold*nalgos;
 % ---------------------------------------------------------------------
 % Automated pre-processing
 if model.opts.auto.preproc && model.opts.bound.flag

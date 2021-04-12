@@ -1,4 +1,4 @@
-function model = trainIS(rootdir)
+function model = buildIS(rootdir)
 % -------------------------------------------------------------------------
 % trainIS.m
 % -------------------------------------------------------------------------
@@ -140,7 +140,11 @@ if opts.perf.MaxPerf
         model.data.Ybin = Yaux>=opts.perf.epsilon;
         msg = [msg 'higher than ' num2str(opts.perf.epsilon)];
     else
-        model.data.Ybin = bsxfun(@ge,Yaux,(1-opts.perf.epsilon).*model.data.bestPerformace); % One is good, zero is bad
+        % model.data.Ybin = bsxfun(@ge,Yaux,(1-opts.perf.epsilon).*model.data.bestPerformace); % One is good, zero is bad
+        model.data.bestPerformace(model.data.bestPerformace==0) = eps;
+        model.data.Y(model.data.Y==0) = eps;
+        model.data.Y = 1-bsxfun(@rdivide,model.data.Y,model.data.bestPerformace);
+        model.data.Ybin = (1-bsxfun(@rdivide,Yaux,model.data.bestPerformace))<=opts.perf.epsilon;
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 else
@@ -153,7 +157,11 @@ else
         model.data.Ybin = Yaux<=opts.perf.epsilon;
         msg = [msg 'less than ' num2str(opts.perf.epsilon)];
     else
-        model.data.Ybin = bsxfun(@le,Yaux,(1+opts.perf.epsilon).*model.data.bestPerformace);
+        % model.data.Ybin = bsxfun(@le,Yaux,(1+opts.perf.epsilon).*model.data.bestPerformace);
+        model.data.bestPerformace(model.data.bestPerformace==0) = eps;
+        model.data.Y(model.data.Y==0) = eps;
+        model.data.Y = bsxfun(@rdivide,model.data.Y,model.data.bestPerformace)-1;
+        model.data.Ybin = (bsxfun(@rdivide,Yaux,model.data.bestPerformace)-1)<=opts.perf.epsilon;
         msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
     end
 end
@@ -174,7 +182,7 @@ end
 % -------------------------------------------------------------------------
 % Testing for ties. If there is a tie in performance, we pick an algorithm
 % at random.
-bestAlgos = bsxfun(@eq,model.data.Y,model.data.bestPerformace);
+bestAlgos = bsxfun(@eq,model.data.Yraw,model.data.bestPerformace);
 multipleBestAlgos = sum(bestAlgos,2)>1;
 aidx = 1:nalgos;
 for i=1:size(model.data.Y,1)
@@ -186,7 +194,7 @@ end
 disp(['-> For ' num2str(round(100.*mean(multipleBestAlgos))) '% of the instances there is ' ...
       'more than one best algorithm. Random selection is used to break ties.']);
 model.data.numGoodAlgos = sum(model.data.Ybin,2);
-model.data.beta = model.data.numGoodAlgos>opts.general.betaThreshold*nalgos;
+model.data.beta = model.data.numGoodAlgos>opts.perf.betaThreshold*nalgos;
 % -------------------------------------------------------------------------
 % Automated pre-processing
 if opts.auto.preproc
@@ -279,27 +287,15 @@ nfeats = size(model.data.X,2);
 % Keep track of the features that have been removed so we can use them
 % later
 model.featsel.idx = 1:nfeats;
-if opts.auto.featsel
+if opts.sifted.flag
     disp('=========================================================================');
-    disp('-> Auto-feature selection.');
+    disp('-> Calling SIFTED for auto-feature selection.');
     disp('=========================================================================');
     % Detect correlations between features and algorithms. Keep the top
     % CORTHRESHOLD correlated features for each algorithm
-    if opts.corr.flag
-        [model.data.X, model.corr] = checkCorrelation(model.data.X, model.data.Y, opts.corr);
-        model.data.featlabels = model.data.featlabels(model.corr.selvars);
-        model.featsel.idx = model.featsel.idx(model.corr.selvars);
-    end
-    % Detect similar features, by clustering them according to their
-    % correlation. We assume that the lowest value possible is best, as
-    % this will improve the projection into two dimensions. We set a hard
-    % limit of 10 features. The selection criteria is an average silhouete
-    % value above 0.65
-    if opts.clust.flag
-        [model.data.X, model.clust] = clusterFeatureSelection(model.data.X, model.data.Ybin, opts.clust);
-        model.data.featlabels = model.data.featlabels(model.clust.selvars);
-        model.featsel.idx = model.featsel.idx(model.clust.selvars);
-    end
+    [model.data.X, model.sifted] = SIFTED(model.data.X, model.data.Y, model.data.Ybin, opts.sifted);
+    model.data.featlabels = model.data.featlabels(model.sifted.selvars);
+    model.featsel.idx = model.featsel.idx(model.sifted.selvars);
 end
 % -------------------------------------------------------------------------
 % This is the final subset of features. Calculate the two dimensional
@@ -335,7 +331,7 @@ else
     model.trace = TRACE(model.pilot.Z, model.data.Ybin, model.data.P, model.data.beta, model.data.algolabels, opts.trace);
 end
 
-if opts.parallel.flag
+if isfield(opts,'parallel') && isfield(opts.parallel,'flag') && opts.parallel.flag
     disp('-------------------------------------------------------------------------');
     disp('-> Closing parallel processing pool.');
     delete(mypool);

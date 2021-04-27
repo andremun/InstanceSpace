@@ -1,24 +1,27 @@
 function out = PYTHIAtest(model, Z, Y, Ybin, Ybest, algolabels)
 
+Z = (Z-model.mu)./model.sigma;
 nalgos = length(model.svm);
 Y = Y(:,1:nalgos);
 Ybin = Ybin(:,1:nalgos);
 out.Yhat = false(size(Ybin));
 out.Pr0hat = 0.*Ybin;
 out.cvcmat = zeros(nalgos,4);
-for i=1:nalgos
-    if isstruct(model.svm{1})
-        [out.Yhat(:,i),~,out.Pr0hat(:,i)] = svmpredict(double(Ybin(:,i)), Z, model.svm{i}, '-q');
-    elseif isclass(model.svm{1})
-        [out.Yhat(:,i),aux] = model.svm{i}.predict(Z);
-        out.Pr0hat(:,i) = aux(:,1);
+for ii=1:nalgos
+    if isstruct(model.svm{ii})
+        Yin = double(Ybin(:,ii))+1;
+        [aux,~,out.Pr0hat(:,ii)] = svmpredict(Yin, Z, model.svm{ii}, '-q');
+        out.Yhat(:,ii) = aux==2;
+    elseif isa(model.svm{ii},'ClassificationSVM')
+        [out.Yhat(:,ii),aux] = model.svm{ii}.predict(Z);
+        out.Pr0hat(:,ii) = aux(:,1);
     else
         disp('There is no model for this algorithm');
-        out.Yhat(:,i) = NaN;
-        out.Pr0hat(:,i) = NaN;
+        out.Yhat(:,ii) = NaN;
+        out.Pr0hat(:,ii) = NaN;
     end
-    aux = confusionmat(Ybin(:,i),out.Yhat(:,i));
-    out.cvcmat(i,:) = aux(:);
+    aux = confusionmat(Ybin(:,ii),out.Yhat(:,ii));
+    out.cvcmat(ii,:) = aux(:);
 end
 tn = out.cvcmat(:,1);
 fp = out.cvcmat(:,3);

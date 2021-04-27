@@ -111,7 +111,10 @@ if MaxPerf
         out.data.Ybin = out.data.Y>=model.opts.perf.epsilon;
         msg = [msg 'higher than ' num2str(model.opts.perf.epsilon)];
     else
-        out.data.Ybin = bsxfun(@ge,out.data.Y,(1-model.opts.perf.epsilon).*out.data.bestPerformace); % One is good, zero is bad
+        out.data.bestPerformace(out.data.bestPerformace==0) = eps;
+        out.data.Y(out.data.Y==0) = eps;
+        out.data.Y = 1-bsxfun(@rdivide,out.data.Y,out.data.bestPerformace);
+        out.data.Ybin = (1-bsxfun(@rdivide,Yaux,out.data.bestPerformace))<=model.opts.perf.epsilon;
         msg = [msg 'within ' num2str(round(100.*model.opts.perf.epsilon)) '% of the best.'];
     end
 else
@@ -124,7 +127,10 @@ else
         out.data.Ybin = out.data.Y<=model.opts.perf.epsilon;
         msg = [msg 'less than ' num2str(model.opts.perf.epsilon)];
     else
-        out.data.Ybin = bsxfun(@le,out.data.Y,(1+model.opts.perf.epsilon).*out.data.bestPerformace);
+        out.data.bestPerformace(out.data.bestPerformace==0) = eps;
+        out.data.Y(out.data.Y==0) = eps;
+        out.data.Y = bsxfun(@rdivide,out.data.Y,out.data.bestPerformace)-1;
+        out.data.Ybin = (bsxfun(@rdivide,Yaux,out.data.bestPerformace)-1)<=model.opts.perf.epsilon;
         msg = [msg 'within ' num2str(round(100.*model.opts.perf.epsilon)) '% of the best.'];
     end
 end

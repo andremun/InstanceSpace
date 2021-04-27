@@ -44,16 +44,16 @@ ubound = ceil(max(Z));
 lbound = floor(min(Z));
 sourcelabels = cellstr(unique(S));
 nsources = length(sourcelabels);
-clrs = flipud(jet(nsources+1));
+clrs = flipud(lines(nsources));
 handle = zeros(nsources,1);
 for i=nsources:-1:1
     handle(i) = line(Z(S==sourcelabels{i},1), ...
-                Z(S==sourcelabels{i},2), ...
-                'LineStyle', 'none', ...
-                'Marker', '.', ...
-                'Color', clrs(i,:), ...
-                'MarkerFaceColor', clrs(i,:), ...
-                'MarkerSize', 6);
+                     Z(S==sourcelabels{i},2), ...
+                     'LineStyle', 'none', ...
+                     'Marker', '.', ...
+                     'Color', clrs(i,:), ...
+                     'MarkerFaceColor', clrs(i,:), ...
+                     'MarkerSize', 6);
 end
 xlabel('z_{1}'); ylabel('z_{2}'); title('Sources');
 legend(handle, sourcelabels, 'Location', 'NorthEastOutside');
@@ -84,7 +84,7 @@ lbound = floor(min(Z));
 nalgos = length(algolabels);
 algolbls = cell(1,nalgos+1);
 isworty = sum(bsxfun(@eq, P, 0:nalgos))~=0;
-clr = flipud(jet(nalgos+1));
+clr = flipud(lines(nalgos+1));
 for i=0:nalgos
     if ~isworty(i+1)
         continue;
@@ -116,20 +116,20 @@ lbound = floor(min(Z));
 nalgos = length(algolabels);
 algolbls = cell(1,nalgos+1);
 isworty = sum(bsxfun(@eq, P, 0:nalgos))~=0;
-clr = flipud(jet(nalgos+1));
+clr = flipud(lines(nalgos+1));
 h = zeros(1,nalgos+1);
 for i=0:nalgos
     if ~isworty(i+1)
         continue;
     end
-    if i~=0
-        drawFootprint(best{i}, clr(i+1,:), 0.2);
-    end
     h(i+1) = line(Z(P==i,1), Z(P==i,2), 'LineStyle', 'none', ...
                                         'Marker', '.', ...
                                         'Color', clr(i+1,:), ...
                                         'MarkerFaceColor', clr(i+1,:), ...
-                                        'MarkerSize', 6);
+                                        'MarkerSize', 2);
+    if i~=0
+        drawFootprint(best{i}, clr(i+1,:), 0.5);
+    end
     if i==0
         algolbls{i+1} = 'None';
     else
@@ -143,7 +143,7 @@ set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 axis square; axis([lbound(1)-1 ubound(1)+1 lbound(2)-1 ubound(2)+1]);
 
 end
-
+% =========================================================================
 function h = drawGoodBadFootprint(Z, good, Ybin, titlelabel)
 
 ubound = ceil(max(Z));
@@ -158,15 +158,15 @@ if any(~Ybin)
                                         'Marker', '.', ...
                                         'Color', orange, ...
                                         'MarkerFaceColor', orange, ...
-                                        'MarkerSize', 6);
+                                        'MarkerSize', 2);
 end
 if any(Ybin)
-    drawFootprint(good, blue, 0.2);
     h(1) = line(Z(Ybin,1), Z(Ybin,2), 'LineStyle', 'none', ...
                                       'Marker', '.', ...
                                       'Color', blue, ...
                                       'MarkerFaceColor', blue, ...
-                                      'MarkerSize', 6);
+                                      'MarkerSize', 2);
+    drawFootprint(good, blue, 0.5);
 end
 xlabel('z_{1}'); ylabel('z_{2}'); title([titlelabel ' Footprints']);
 legend(h(h~=0), lbls(h~=0), 'Location', 'NorthEastOutside');
@@ -175,8 +175,7 @@ set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 axis square; axis([lbound(1)-1 ubound(1)+1 lbound(2)-1 ubound(2)+1]);
 
 end
-
-
+% =========================================================================
 function handle = drawFootprint(footprint, color, alpha)
 % 
 hold on;
@@ -191,7 +190,7 @@ handle = plot(footprint.polygon,'FaceColor', color, 'EdgeColor','none', 'FaceAlp
 hold off;
 
 end
-
+% =========================================================================
 function h = drawBinaryPerformance(Z, Ybin, titlelabel)
 
 ubound = ceil(max(Z));
@@ -221,3 +220,4 @@ set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 axis square; axis([lbound(1)-1 ubound(1)+1 lbound(2)-1 ubound(2)+1]);
 
 end
+% =========================================================================

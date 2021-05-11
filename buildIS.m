@@ -98,8 +98,15 @@ nalgos = size(model.data.Y,2);
 % -------------------------------------------------------------------------
 % PROBABLY HERE SHOULD DO A SANITY CHECK, I.E., IS THERE TOO MANY NANS?
 idx = all(isnan(model.data.X),2) | all(isnan(model.data.Y),2);
-model.data.X = model.data.X(~idx,:);
-model.data.Y = model.data.Y(~idx,:);
+if any(idx)
+    warning('-> There are instances with too many missing values. They are being removed to increase speed.');
+    model.data.X = model.data.X(~idx,:);
+    model.data.Y = model.data.Y(~idx,:);
+    model.data.instlabels = model.data.instlabels(~idx);
+    if isfield(model.data,'S')
+        model.data.S = model.data.S(~idx);
+    end
+end
 idx = mean(isnan(model.data.X),1)>=0.20; % These features are very weak.
 if any(idx)
     warning('-> There are features with too many missing values. They are being removed to increase speed.');

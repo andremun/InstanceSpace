@@ -42,9 +42,9 @@ rho(isnan(rho) | (out.p>0.05)) = 0;
 out.selvars = false(1,nfeats);
 % Always take the most correlated feature for each algorithm
 out.selvars(unique(row(1,:))) = true;
-% Now take any feature that has correlation at least 0.3
+% Now take any feature that has correlation at least equal to opts.rho
 for ii=2:nfeats
-    out.selvars(unique(row(ii,rho(ii,:)>=0.3))) = true;
+    out.selvars(unique(row(ii,rho(ii,:)>=opts.rho))) = true;
 end
 out.selvars = find(out.selvars);
 Xaux = X(:,out.selvars);

@@ -16,7 +16,8 @@ for i=1:nfeats
     X(~idx,i) = aux;
 end
 
-Y(Y==0) = eps;
+out.minY = min(Y(:));
+Y = (Y-out.minY)+eps;
 out.lambdaY = zeros(1,nalgos);
 out.muY = zeros(1,nalgos);
 out.sigmaY = zeros(1,nalgos);

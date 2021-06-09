@@ -1,7 +1,7 @@
 # Instance Space Analysis: A toolkit for the assessment of algorithmic power
 
 [![View InstanceSpace on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://au.mathworks.com/matlabcentral/fileexchange/75170-instancespace)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4484108.svg)](https://doi.org/10.5281/zenodo.4484108)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4750845.svg)](https://doi.org/10.5281/zenodo.4750845)
 
 Instance Space Analysis is a methodology for the assessment of the strengths and weaknesses of an algorithm, and an approach to objectively compare algorithmic power without bias introduced by restricted choice of test instances. At its core is the modelling of the relationship between structural properties of an instance and the performance of a group of algorithms. Instance Space Analysis allows the construction of **footprints** for each algorithm, defined as regions in the instance space where we statistically infer good performance. Other insights that can be gathered from Instance Space Analysis include:
 

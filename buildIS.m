@@ -1,3 +1,4 @@
+
 function model = buildIS(rootdir)
 % -------------------------------------------------------------------------
 % trainIS.m
@@ -346,6 +347,12 @@ end
 % -------------------------------------------------------------------------
 % Preparing the outputs for further analysis
 model.opts = opts;
+% -------------------------------------------------------------------------
+disp('-------------------------------------------------------------------------');
+disp('-> Storing the raw MATLAB results for post-processing and/or debugging.');
+save([rootdir 'model.mat'],'-struct','model'); % Save the main results
+save([rootdir 'workspace.mat']); % Save the full workspace for debugging
+% -------------------------------------------------------------------------
 if opts.outputs.csv
     % Storing the output data as a CSV files. This is for easier
     % post-processing. All workspace data will be stored in a matlab file
@@ -362,10 +369,6 @@ if opts.outputs.png
     scriptpng(model,rootdir);
 end
 % -------------------------------------------------------------------------
-disp('-------------------------------------------------------------------------');
-disp('-> Storing the raw MATLAB results for post-processing and/or debugging.');
-save([rootdir 'model.mat'],'-struct','model'); % Save the main results
-save([rootdir 'workspace.mat']); % Save the full workspace for debugging
 disp(['-> Completed! Elapsed time: ' num2str(toc(startProcess)) 's']);
 disp('EOF:SUCCESS');
 end

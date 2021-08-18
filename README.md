@@ -20,11 +20,11 @@ If you follow the Instance Space Analysis methodology, please cite as follows:
 
 > K. Smith-Miles and M.A. Muñoz. *Instance Space Analysis for Algorithm Testing: Methodology and Software Tools*. [DOI:10.13140/RG.2.2.33951.48805](https://doi.org/10.13140/RG.2.2.33951.48805), 2021.
 
-If you specifically use this code, please cite as follows:
+Also, if you specifically use this code, please cite as follows:
 
 > M.A. Muñoz and K. Smith-Miles. *Instance Space Analysis: A toolkit for the assessment of algorithmic power*. andremun/InstanceSpace on Github. Zenodo, [DOI:10.5281/zenodo.4484107](https://doi.org/10.5281/zenodo.4484107), 2020.
 
-If you specifically use [MATILDA](http://matilda.unimelb.edu.au/matilda/), please cite as follows:
+Or if you specifically use [MATILDA](http://matilda.unimelb.edu.au/matilda/), please cite as follows:
 
 > K. Smith-Miles, M.A. Muñoz and Neelofar. *Melbourne Algorithm Test Instance Library with Data Analytics (MATILDA)*. Available at (https://matilda.unimelb.edu.au). 2020.
 

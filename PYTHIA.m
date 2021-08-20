@@ -91,7 +91,24 @@ for i=1:nalgos
     end
     rng(state);
     aux = confusionmat(Ybin(:,i),out.Ysub(:,i));
-    out.cvcmat(i,:) = aux(:);
+    if numel(aux)~=4
+        caux = aux;
+        aux = zeros(2);
+        if all(Ybin(:,i)==0)
+            if all(out.Ysub(:,i)==0)
+                aux(1,1) = caux;
+            elseif all(out.Ysub(:,i)==1)
+                aux(2,1) = caux;
+            end
+        elseif all(Ybin(:,i)==1)
+            if all(out.Ysub(:,i)==0)
+                aux(1,2) = caux;
+            elseif all(out.Ysub(:,i)==1)
+                aux(2,2) = caux;
+            end
+        end
+    end
+	out.cvcmat(i,:) = aux(:);
     if i==nalgos
         disp(['    -> PYTHIA has trained a model for ''' algolabels{i}, ...
               ''', there are no models left to train.']);

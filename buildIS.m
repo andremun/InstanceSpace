@@ -230,12 +230,13 @@ if opts.sifted.flag
 
     if bydensity
         disp('-> Creating a small scale experiment for validation based on density.');
+        % model.data.featlabels = model.data_dense.featlabels(model.sifted.selvars);
         subsetIndex = FILTER(model.data_dense.X(:,model.featsel.idx), ...
-                             model.data_dense.Y(:,model.featsel.idx), ...
-                             model.data_dense.Ybin(:,model.featsel.idx), ...
+                             model.data_dense.Y, ...
+                             model.data_dense.Ybin, ...
                              opts.selvars);
         subsetIndex = ~subsetIndex;
-        model.data.X = model.data_dense.X(subsetIndex,:);
+        model.data.X = model.data_dense.X(subsetIndex,model.featsel.idx);
         model.data.Y = model.data_dense.Y(subsetIndex,:);
         model.data.Xraw = model.data_dense.Xraw(subsetIndex,:);
         model.data.Yraw = model.data_dense.Yraw(subsetIndex,:);

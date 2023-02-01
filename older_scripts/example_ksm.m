@@ -1,11 +1,11 @@
-rootdir = './trial/';
+rootdir = './trial_ksm/';
 
 opts.parallel.flag = false;
 opts.parallel.ncores = 2;
 
-opts.perf.MaxPerf = false;          % True if Y is a performance measure to maximize, False if it is a cost measure to minimise.
+opts.perf.MaxPerf = true;           % True if Y is a performance measure to maximize, False if it is a cost measure to minimise.
 opts.perf.AbsPerf = true;           % True if an absolute performance measure, False if a relative performance measure
-opts.perf.epsilon = 0.20;           % Threshold of good performance
+opts.perf.epsilon = 0.05;           % Threshold of good performance
 opts.perf.betaThreshold = 0.55;     % Beta-easy threshold
 opts.auto.preproc = true;           % Automatic preprocessing on. Set to false if you don't want any preprocessing
 opts.bound.flag = true;             % Bound the outliers. True if you want to bound the outliers, false if you don't
@@ -20,7 +20,6 @@ opts.selvars.fileidxflag = false;
 opts.selvars.fileidx = '';
 opts.selvars.densityflag = false;
 opts.selvars.mindistance = 0.1;
-opts.selvars.type = 'Ftr&Good';
 
 opts.sifted.flag = true;            % Automatic feature selectio on. Set to false if you don't want any feature selection.
 opts.sifted.rho = 0.1;              % Minimum correlation value acceptable between performance and a feature. Between 0 and 1
@@ -30,7 +29,7 @@ opts.sifted.MaxIter = 1000;
 opts.sifted.Replicates = 100;
 
 opts.pilot.analytic = false;        % Calculate the analytical or numerical solution
-opts.pilot.ntries = 5;              % Number of attempts carried out by PBLDR
+opts.pilot.ntries = 30;              % Number of attempts carried out by PBLDR
 
 opts.cloister.pval = 0.05;
 opts.cloister.cthres = 0.7;
@@ -38,13 +37,13 @@ opts.cloister.cthres = 0.7;
 opts.pythia.cvfolds = 5;
 opts.pythia.ispolykrnl = false;
 opts.pythia.useweights = false;
-opts.pythia.uselibsvm = false;
+opts.pythia.uselibsvm = true;
 
-opts.trace.usesim = true;           % Use the actual or simulated data to calculate the footprints
+opts.trace.usesim = false;           % Use the actual or simulated data to calculate the footprints
 opts.trace.PI = 0.55;               % Purity threshold
 
 opts.outputs.csv = true;            %
-opts.outputs.web = false;            % NOTE: MAKE THIS FALSE IF YOU ARE USING THIS CODE LOCALY - This flag is only useful if the system is being used 'online' through matilda.unimelb.edu.au
+opts.outputs.web = true;            % NOTE: MAKE THIS FALSE IF YOU ARE USING THIS CODE LOCALY - This flag is only useful if the system is being used 'online' through matilda.unimelb.edu.au
 opts.outputs.png = true;            %
 
 % Saving all the information as a JSON file

@@ -1,6 +1,6 @@
 function out = exploreIS(rootdir)
 % -------------------------------------------------------------------------
-% testIS.m
+% exploreIS.m
 % -------------------------------------------------------------------------
 %
 % By: Mario Andres Munoz Acosta
@@ -12,7 +12,7 @@ function out = exploreIS(rootdir)
 % -------------------------------------------------------------------------
 
 startProcess = tic;
-scriptdisc('testIS.m');
+scriptdisc('exploreIS.m');
 % -------------------------------------------------------------------------
 % Collect all the data from the files
 disp(['Root Directory: ' rootdir]);
@@ -186,13 +186,17 @@ out.pythia = PYTHIAtest(model.pythia, out.pilot.Z, out.data.Yraw, ...
 % -------------------------------------------------------------------------
 % Validating the footprints
 if model.opts.trace.usesim
-    out.trace = TRACEtest(model.trace, out.pilot.Z, out.data.Ybin, ...
+    out.trace = TRACEtest(model.trace, out.pilot.Z, out.pythia.Yhat, ...
                           out.pythia.selection0, out.data.beta, ...
                           out.data.algolabels);
+%     out.trace = TRACE(out.pilot.Z, out.pythia.Yhat, out.pythia.selection0, ...
+%                       out.data.beta, out.data.algolabels, model.opts.trace);
 else
     out.trace = TRACEtest(model.trace, out.pilot.Z, out.data.Ybin, ...
                           out.data.P, out.data.beta, ...
                           out.data.algolabels);
+%     out.trace = TRACE(out.pilot.Z, out.data.Ybin, out.data.P, out.data.beta,...
+%                       out.data.algolabels, model.opts.trace);
 end
 
 out.opts = model.opts;

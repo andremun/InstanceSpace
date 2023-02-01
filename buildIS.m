@@ -1,7 +1,6 @@
-
 function model = buildIS(rootdir)
 % -------------------------------------------------------------------------
-% trainIS.m
+% buildIS.m
 % -------------------------------------------------------------------------
 %
 % By: Mario Andres Munoz Acosta
@@ -13,7 +12,7 @@ function model = buildIS(rootdir)
 % -------------------------------------------------------------------------
 
 startProcess = tic;
-scriptdisc('trainIS.m');
+scriptdisc('buildIS.m');
 % -------------------------------------------------------------------------
 % Collect all the data from the files
 disp(['Root Directory: ' rootdir]);
@@ -30,7 +29,8 @@ for i = 1:length(optfields)
     disp(optfields{i});
     disp(opts.(optfields{i}));
 end
-if isfield(opts,'parallel') && isfield(opts.parallel,'flag') && opts.parallel.flag
+useparallel = isfield(opts,'parallel') && isfield(opts.parallel,'flag') && opts.parallel.flag;
+if useparallel
     disp('-------------------------------------------------------------------------');
     disp('-> Starting parallel processing pool.');
     delete(gcp('nocreate'));
@@ -95,7 +95,7 @@ if isfield(opts,'selvars') && isfield(opts.selvars,'algos')
     model.data.Y = model.data.Y(:,isselalgo);
     model.data.algolabels = model.data.algolabels(isselalgo);
 end
-nalgos = size(model.data.Y,2);
+% nalgos = size(model.data.Y,2);
 % -------------------------------------------------------------------------
 % PROBABLY HERE SHOULD DO A SANITY CHECK, I.E., IS THERE TOO MANY NANS?
 idx = all(isnan(model.data.X),2) | all(isnan(model.data.Y),2);
@@ -129,51 +129,13 @@ model.data.Yraw = model.data.Y;
 model.data.featlabels = strrep(model.data.featlabels,'feature_','');
 model.data.algolabels = strrep(model.data.algolabels,'algo_','');
 % -------------------------------------------------------------------------
-% Determine whether the performance of an algorithm is a cost measure to
-% be minimized or a profit measure to be maximized. Moreover, determine
-% whether we are using an absolute threshold as good peformance (the
-% algorithm has a performance better than the threshold) or a relative
-% performance (the algorithm has a performance that is similar that the
-% best algorithm minus a percentage).
-disp('-------------------------------------------------------------------------');
-disp('-> Calculating the binary measure of performance');
-msg = '-> An algorithm is good if its performace is ';
-if opts.perf.MaxPerf
-    Yaux = model.data.Y;
-    Yaux(isnan(Yaux)) = -Inf;
-    [rankPerf,rankAlgo] = sort(Yaux,2,'descend');
-    model.data.bestPerformace = rankPerf(:,1);
-    model.data.P = rankAlgo(:,1);
-    if opts.perf.AbsPerf
-        model.data.Ybin = Yaux>=opts.perf.epsilon;
-        msg = [msg 'higher than ' num2str(opts.perf.epsilon)];
-    else
-        % model.data.Ybin = bsxfun(@ge,Yaux,(1-opts.perf.epsilon).*model.data.bestPerformace); % One is good, zero is bad
-        model.data.bestPerformace(model.data.bestPerformace==0) = eps;
-        model.data.Y(model.data.Y==0) = eps;
-        model.data.Y = 1-bsxfun(@rdivide,model.data.Y,model.data.bestPerformace);
-        model.data.Ybin = (1-bsxfun(@rdivide,Yaux,model.data.bestPerformace))<=opts.perf.epsilon;
-        msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
-    end
-else
-    Yaux = model.data.Y;
-    Yaux(isnan(Yaux)) = Inf;
-    [rankPerf,rankAlgo] = sort(Yaux,2,'ascend');
-    model.data.bestPerformace = rankPerf(:,1);
-    model.data.P = rankAlgo(:,1);
-    if opts.perf.AbsPerf
-        model.data.Ybin = Yaux<=opts.perf.epsilon;
-        msg = [msg 'less than ' num2str(opts.perf.epsilon)];
-    else
-        % model.data.Ybin = bsxfun(@le,Yaux,(1+opts.perf.epsilon).*model.data.bestPerformace);
-        model.data.bestPerformace(model.data.bestPerformace==0) = eps;
-        model.data.Y(model.data.Y==0) = eps;
-        model.data.Y = bsxfun(@rdivide,model.data.Y,model.data.bestPerformace)-1;
-        model.data.Ybin = (bsxfun(@rdivide,Yaux,model.data.bestPerformace)-1)<=opts.perf.epsilon;
-        msg = [msg 'within ' num2str(round(100.*opts.perf.epsilon)) '% of the best.'];
-    end
-end
-disp(msg);
+% Running PRELIM as to pre-process the data, including scaling and bounding
+opts.prelim = opts.perf;
+opts.prelim.bound = opts.bound.flag;
+opts.prelim.norm = opts.norm.flag;
+[model.data.X,model.data.Y,model.data.Ybest,...
+    model.data.Ybin,model.data.P,model.data.numGoodAlgos,...
+    model.data.beta,model.prelim] = PRELIM(model.data.X, model.data.Y, opts.prelim);
 
 idx = all(~model.data.Ybin,1);
 if any(idx)
@@ -185,38 +147,6 @@ if any(idx)
     nalgos = size(model.data.Y,2);
     if nalgos==0
         error('-> There are no ''good'' algorithms. Please verify the binary performance measure. STOPPING!')
-    end
-end
-% -------------------------------------------------------------------------
-% Testing for ties. If there is a tie in performance, we pick an algorithm
-% at random.
-bestAlgos = bsxfun(@eq,model.data.Yraw,model.data.bestPerformace);
-multipleBestAlgos = sum(bestAlgos,2)>1;
-aidx = 1:nalgos;
-for i=1:size(model.data.Y,1)
-    if multipleBestAlgos(i)
-        aux = aidx(bestAlgos(i,:));
-        model.data.P(i) = aux(randi(length(aux),1)); % Pick one at random
-    end
-end
-disp(['-> For ' num2str(round(100.*mean(multipleBestAlgos))) '% of the instances there is ' ...
-      'more than one best algorithm. Random selection is used to break ties.']);
-model.data.numGoodAlgos = sum(model.data.Ybin,2);
-model.data.beta = model.data.numGoodAlgos>opts.perf.betaThreshold*nalgos;
-% -------------------------------------------------------------------------
-% Automated pre-processing
-if opts.auto.preproc
-    disp('=========================================================================');
-    disp('-> Auto-pre-processing.');
-    disp('=========================================================================');
-    % Eliminate extreme outliers, i.e., any point that exceedes 5 times the
-    % inter quantile range, by bounding them to that value.
-    if opts.bound.flag
-        [model.data.X, model.bound] = boundOutliers(model.data.X);
-    end
-    % Normalize the data using Box-Cox and Z-transformations
-    if opts.norm.flag
-        [model.data.X, model.data.Y, model.norm] = autoNormalize(model.data.X, model.data.Y);
     end
 end
 % -------------------------------------------------------------------------
@@ -237,7 +167,9 @@ bydensity = isfield(opts,'selvars') && ...
             isfield(opts.selvars,'densityflag') && ...
             opts.selvars.densityflag && ...
             isfield(opts.selvars,'mindistance') && ...
-            isfloat(opts.selvars.mindistance);
+            isfloat(opts.selvars.mindistance) && ...
+            isfield(opts.selvars,'type') && ...
+            ischar(opts.selvars.type);
 if fractional
     disp(['-> Creating a small scale experiment for validation. Percentage of subset: ' ...
         num2str(round(100.*opts.selvars.smallscale,2)) '%']);
@@ -254,18 +186,8 @@ elseif fileindexed
     subsetIndex(aux) = true;
 elseif bydensity
     disp('-> Creating a small scale experiment for validation based on density.');
-    subsetIndex = false(ninst,1);
-    for ii=1:ninst
-        if ~subsetIndex(ii)
-            for jj=ii+1:ninst
-                if ~subsetIndex(jj)
-                    if pdist2(model.data.X(ii,:),model.data.X(jj,:)) <= opts.selvars.mindistance
-                        subsetIndex(jj) = true;
-                    end
-                end
-            end
-        end
-    end
+    subsetIndex = FILTER(model.data.X, model.data.Y, model.data.Ybin, ...
+                         opts.selvars);
     subsetIndex = ~subsetIndex;
     disp(['-> Percentage of instances retained: ' ...
           num2str(round(100.*mean(subsetIndex),2)) '%']);
@@ -275,6 +197,9 @@ else
 end
 
 if fileindexed || fractional || bydensity
+    if bydensity
+        model.data_dense = model.data;
+    end
     model.data.X = model.data.X(subsetIndex,:);
     model.data.Y = model.data.Y(subsetIndex,:);
     model.data.Xraw = model.data.Xraw(subsetIndex,:);
@@ -282,7 +207,7 @@ if fileindexed || fractional || bydensity
     model.data.Ybin = model.data.Ybin(subsetIndex,:);
     model.data.beta = model.data.beta(subsetIndex);
     model.data.numGoodAlgos = model.data.numGoodAlgos(subsetIndex);
-    model.data.bestPerformace = model.data.bestPerformace(subsetIndex); 
+    model.data.Ybest = model.data.Ybest(subsetIndex); 
     model.data.P = model.data.P(subsetIndex);
     model.data.instlabels = model.data.instlabels(subsetIndex);
     if isfield(model.data,'S')
@@ -299,11 +224,34 @@ if opts.sifted.flag
     disp('=========================================================================');
     disp('-> Calling SIFTED for auto-feature selection.');
     disp('=========================================================================');
-    % Detect correlations between features and algorithms. Keep the top
-    % CORTHRESHOLD correlated features for each algorithm
     [model.data.X, model.sifted] = SIFTED(model.data.X, model.data.Y, model.data.Ybin, opts.sifted);
     model.data.featlabels = model.data.featlabels(model.sifted.selvars);
     model.featsel.idx = model.featsel.idx(model.sifted.selvars);
+
+    if bydensity
+        disp('-> Creating a small scale experiment for validation based on density.');
+        % model.data.featlabels = model.data_dense.featlabels(model.sifted.selvars);
+        subsetIndex = FILTER(model.data_dense.X(:,model.featsel.idx), ...
+                             model.data_dense.Y, ...
+                             model.data_dense.Ybin, ...
+                             opts.selvars);
+        subsetIndex = ~subsetIndex;
+        model.data.X = model.data_dense.X(subsetIndex,model.featsel.idx);
+        model.data.Y = model.data_dense.Y(subsetIndex,:);
+        model.data.Xraw = model.data_dense.Xraw(subsetIndex,:);
+        model.data.Yraw = model.data_dense.Yraw(subsetIndex,:);
+        model.data.Ybin = model.data_dense.Ybin(subsetIndex,:);
+        model.data.beta = model.data_dense.beta(subsetIndex);
+        model.data.numGoodAlgos = model.data_dense.numGoodAlgos(subsetIndex);
+        model.data.Ybest = model.data_dense.Ybest(subsetIndex);
+        model.data.P = model.data_dense.P(subsetIndex);
+        model.data.instlabels = model.data_dense.instlabels(subsetIndex);
+        if isfield(model.data_dense,'S')
+            model.data.S = model.data_dense.S(subsetIndex);
+        end
+        disp(['-> Percentage of instances retained: ' ...
+              num2str(round(100.*mean(subsetIndex),2)) '%']);
+    end
 end
 % -------------------------------------------------------------------------
 % This is the final subset of features. Calculate the two dimensional
@@ -325,7 +273,7 @@ model.cloist = CLOISTER(model.data.X, model.pilot.A, opts.cloister);
 disp('=========================================================================');
 disp('-> Summoning PYTHIA to train the prediction models.');
 disp('=========================================================================');
-model.pythia = PYTHIA(model.pilot.Z, model.data.Yraw, model.data.Ybin, model.data.bestPerformace, model.data.algolabels, opts.pythia);
+model.pythia = PYTHIA(model.pilot.Z, model.data.Yraw, model.data.Ybin, model.data.Ybest, model.data.algolabels, opts.pythia);
 % -------------------------------------------------------------------------
 % Calculating the algorithm footprints.
 disp('=========================================================================');
@@ -339,7 +287,7 @@ else
     model.trace = TRACE(model.pilot.Z, model.data.Ybin, model.data.P, model.data.beta, model.data.algolabels, opts.trace);
 end
 
-if isfield(opts,'parallel') && isfield(opts.parallel,'flag') && opts.parallel.flag
+if useparallel
     disp('-------------------------------------------------------------------------');
     disp('-> Closing parallel processing pool.');
     delete(mypool);

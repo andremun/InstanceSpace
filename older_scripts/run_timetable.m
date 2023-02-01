@@ -1,5 +1,5 @@
 % ------ Rephrasing the Timetable data
-rdir = 'C:\Users\mariom1\OneDrive - The University of Melbourne\Documents\MATLAB\InstanceSpace_Timetabling\';
+rdir = '../../InstanceSpace_Timetabling/';
 load([rdir 'workspace.mat']);
 % Loading the options
 model.opts.perf.MaxPerf = opts.perf.MaxMin;              % True if Y is a performance measure to maximize, False if it is a cost measure to minimise.
@@ -79,20 +79,28 @@ save([rdir 'model.mat'],'-struct','model'); % Save the main results
 
 %% 
 clearvars;
-rdir = 'C:\Users\mariom1\OneDrive - The University of Melbourne\Documents\MATLAB\InstanceSpace_Timetabling\';
+rdir = '../../InstanceSpace_Timetabling/';
 model = load([rdir 'model.mat']);
 
-opts = model.opts;
-model.pilot.summary = cell(3, length(model.data.featlabels)+1);
-model.pilot.summary(1,2:end) = model.data.featlabels;
-model.pilot.summary(2:end,1) = {'Z_{1}','Z_{2}'};
-model.pilot.summary(2:end,2:end) = num2cell(round(model.pilot.A,4));
-model.cloist = CLOISTER(model.data.X, model.pilot.A, opts.cloister);
-model.pythia = PYTHIA(model.pilot.Z, model.data.Yraw, model.data.Ybin, model.data.bestPerformace, model.data.algolabels, opts.pythia);
-model.trace = TRACE(model.pilot.Z, model.data.Ybin, model.data.P, model.data.beta, model.data.algolabels, opts.trace);
-save([rdir 'model.mat'],'-struct','model'); % Save the main results
-scriptcsv(model,rdir);
+% opts = model.opts;
+% model.pilot.summary = cell(3, length(model.data.featlabels)+1);
+% model.pilot.summary(1,2:end) = model.data.featlabels;
+% model.pilot.summary(2:end,1) = {'Z_{1}','Z_{2}'};
+% model.pilot.summary(2:end,2:end) = num2cell(round(model.pilot.A,4));
+% model.cloist = CLOISTER(model.data.X, model.pilot.A, opts.cloister);
+% model.pythia = PYTHIA(model.pilot.Z, model.data.Yraw, model.data.Ybin, model.data.bestPerformace, model.data.algolabels, opts.pythia);
+% model.trace = TRACE(model.pilot.Z, model.data.Ybin, model.data.P, model.data.beta, model.data.algolabels, opts.trace);
+% save([rdir 'model.mat'],'-struct','model'); % Save the main results
+% scriptcsv(model,rdir);
 scriptpng(model,rdir);
+h = drawSources(model.pilot.Z, model.data.S);
+nsources = length(h);
+h(nsources+1) = line(model.cloist.Zedge(:,1),model.cloist.Zedge(:,2), 'Color', [0.49 0.18 0.56]);
+sourcelabels = cellstr(unique(model.data.S));
+sourcelabels{nsources+1} = 'estimated bound';
+legend(h, sourcelabels, 'Location', 'NorthEastOutside');
+axis square; axis([-10 10 -12 12]);
+print(gcf,'-dpng',[rdir 'distribution_sources.png']);
 
 %%
 clearvars;

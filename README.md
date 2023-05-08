@@ -18,7 +18,7 @@ This repository provides a set of MATLAB tools to carry out a complete Instance 
 
 If you follow the Instance Space Analysis methodology, please cite as follows:
 
-> K. Smith-Miles and M.A. Muñoz. *Instance Space Analysis for Algorithm Testing: Methodology and Software Tools*. ACM Comput. Surv. [DOI:10.1145/3572895](https://doi.org/10.1145/3572895), 2022.
+> K. Smith-Miles and M.A. Muñoz. *Instance Space Analysis for Algorithm Testing: Methodology and Software Tools*. ACM Comput. Surv. 55(12:255),1-31 [DOI:10.1145/3572895](https://doi.org/10.1145/3572895), 2023.
 
 Also, if you specifically use this code, please cite as follows:
 

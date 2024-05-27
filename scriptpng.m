@@ -54,10 +54,14 @@ for i=1:nalgos
                 strrep(container.data.algolabels{i},'_',' '));
     print(gcf,'-dpng',[rootdir 'distribution_performance_individual_normalized_' container.data.algolabels{i} '.png']);
     % Actual binary performance
-    clf;
-    drawBinaryPerformance(container.pilot.Z, container.data.Ybin(:,i), ...
-                          strrep(container.data.algolabels{i},'_',' '));
-    print(gcf,'-dpng',[rootdir 'binary_performance_' container.data.algolabels{i} '.png']);
+    try
+        clf;
+        drawBinaryPerformance(container.pilot.Z, container.data.Ybin(:,i), ...
+                              strrep(container.data.algolabels{i},'_',' '));
+        print(gcf,'-dpng',[rootdir 'binary_performance_' container.data.algolabels{i} '.png']);
+    catch
+        disp('No binary performance has been calculated');
+    end
     % Drawing the SVM's predictions of good performance
     try
         clf;

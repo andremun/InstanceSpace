@@ -35,6 +35,7 @@ opts.pilot.ntries = 5;              % Number of attempts carried out by PBLDR
 opts.cloister.pval = 0.05;
 opts.cloister.cthres = 0.7;
 
+opts.pythia.flag = true;
 opts.pythia.cvfolds = 5;
 opts.pythia.ispolykrnl = false;
 opts.pythia.useweights = false;

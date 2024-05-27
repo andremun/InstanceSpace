@@ -43,6 +43,7 @@ if opts.analytic
     out.A = V'*Xbar*Xr;
     out.Z = out.A*X;
     Xhat = [out.B*out.Z; out.C'*out.Z];
+    out.Z = out.Z';
     out.error = sum(sum((Xbar-Xhat).^2,2));
     out.R2 = diag(corr(Xbar',Xhat')).^2;
 else

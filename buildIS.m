@@ -131,6 +131,7 @@ model.data.algolabels = strrep(model.data.algolabels,'algo_','');
 % -------------------------------------------------------------------------
 % Running PRELIM as to pre-process the data, including scaling and bounding
 opts.prelim = opts.perf;
+opts.prelim.auto = opts.auto.preproc;
 opts.prelim.bound = opts.bound.flag;
 opts.prelim.norm = opts.norm.flag;
 [model.data.X,model.data.Y,model.data.Ybest,...

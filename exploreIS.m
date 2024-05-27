@@ -155,12 +155,16 @@ if model.opts.auto.preproc && model.opts.norm.flag
     % Normalize the data using Box-Cox and out.pilot.Z-transformations
     disp('-> Auto-normalizing the data.');
     out.data.X = bsxfun(@minus,out.data.X,model.norm.minX)+1;
-    out.data.X = bsxfun(@rdivide,bsxfun(@power,out.data.X,model.norm.lambdaX)-1,model.norm.lambdaX);
+    for ii=1:legnth(model.norm.lambdaX)
+        out.data.X(:,ii) = boxcox(out.data.X(:,ii),model.norm.lambdaX(:,ii));
+    end
     out.data.X = bsxfun(@rdivide,bsxfun(@minus,out.data.X,model.norm.muX),model.norm.sigmaX);
     
     % If the algorithm is new, something else should be made...
     out.data.Y(out.data.Y==0) = eps; % Assumes that out.data.Y is always positive and higher than 1e-16
-    out.data.Y(:,1:modelalgos) = bsxfun(@rdivide,bsxfun(@power,out.data.Y(:,1:modelalgos),model.norm.lambdaY)-1,model.norm.lambdaY);
+    for ii=1:modelalgos
+        out.data.Y(:,ii) = boxcox(out.data.Y(:,ii),model.norm.lambdaY);
+    end
     out.data.Y(:,1:modelalgos) = bsxfun(@rdivide,bsxfun(@minus,out.data.Y(:,1:modelalgos),model.norm.muY),model.norm.sigmaY);
     if newalgos>0
         [~,out.data.Y(:,modelalgos+1:nalgos),out.norm] = autoNormalize(ones(ninst,1), ... % Dummy variable

@@ -59,30 +59,36 @@ disp(['-> For ' num2str(round(100.*mean(multipleBestAlgos))) '% of the instances
 numGoodAlgos = sum(Ybin,2);
 beta = numGoodAlgos>(opts.betaThreshold*nalgos);
 
-disp('=========================================================================');
-disp('-> Auto-pre-processing.');
-disp('=========================================================================');
-if opts.bound
+if opts.auto
+    disp('=========================================================================');
+    disp('-> Auto-pre-processing.');
+    disp('=========================================================================');
+end
+out.medval = nanmedian(X, 1);
+out.iqrange = iqr(X, 1);
+out.hibound = out.medval + 5.*out.iqrange;
+out.lobound = out.medval - 5.*out.iqrange;
+if opts.auto && opts.bound
     disp('-> Removing extreme outliers from the feature values.');
-    out.medval = nanmedian(X, 1);
-    out.iqrange = iqr(X, 1);
-    out.hibound = out.medval + 5.*out.iqrange;
-    out.lobound = out.medval - 5.*out.iqrange;
     himask = bsxfun(@gt,X,out.hibound);
     lomask = bsxfun(@lt,X,out.lobound);
     X = X.*~(himask | lomask) + bsxfun(@times,himask,out.hibound) + ...
                                 bsxfun(@times,lomask,out.lobound);
 end
 
-if opts.norm
-    nfeats = size(X,2);
-    nalgos = size(Y,2);
+nfeats = size(X,2);
+nalgos = size(Y,2);
+out.minX = min(X,[],1);
+out.lambdaX = zeros(1,nfeats);
+out.muX = zeros(1,nfeats);
+out.sigmaX = zeros(1,nfeats);
+out.minY = min(Y(:));
+out.lambdaY = zeros(1,nalgos);
+out.muY = zeros(1,nalgos);
+out.sigmaY = zeros(1,nalgos);
+if opts.auto && opts.norm
     disp('-> Auto-normalizing the data using Box-Cox and Z transformations.');
-    out.minX = min(X,[],1);
     X = bsxfun(@minus,X,out.minX)+1;
-    out.lambdaX = zeros(1,nfeats);
-    out.muX = zeros(1,nfeats);
-    out.sigmaX = zeros(1,nfeats);
     for i=1:nfeats
         aux = X(:,i);
         idx = isnan(aux);
@@ -91,11 +97,7 @@ if opts.norm
         X(~idx,i) = aux;
     end
 
-    out.minY = min(Y(:));
     Y = (Y-out.minY)+eps;
-    out.lambdaY = zeros(1,nalgos);
-    out.muY = zeros(1,nalgos);
-    out.sigmaY = zeros(1,nalgos);
     for i=1:nalgos
         aux = Y(:,i);
         idx = isnan(aux);

@@ -1,7 +1,7 @@
 rootdir = './trial/';
 
 opts.parallel.flag = false;
-opts.parallel.ncores = 2;
+opts.parallel.ncores = 18;
 
 opts.perf.MaxPerf = false;          % True if Y is a performance measure to maximize, False if it is a cost measure to minimise.
 opts.perf.AbsPerf = true;           % True if an absolute performance measure, False if a relative performance measure
@@ -36,6 +36,7 @@ opts.cloister.pval = 0.05;
 opts.cloister.cthres = 0.7;
 
 opts.pythia.flag = true;
+opts.pythia.useknn = true;
 opts.pythia.cvfolds = 5;
 opts.pythia.ispolykrnl = false;
 opts.pythia.useweights = false;

@@ -225,7 +225,8 @@ if opts.sifted.flag
     disp('=========================================================================');
     disp('-> Calling SIFTED for auto-feature selection.');
     disp('=========================================================================');
-    [model.data.X, model.sifted] = SIFTED(model.data.X, model.data.Y, model.data.Ybin, opts.sifted);
+    % [model.data.X, model.sifted] = SIFTED(model.data.X, model.data.Y, model.data.Ybin, opts.sifted);
+    [model.data.X, model.sifted] = SIFTED2(model.data.X, model.data.Y, model.data.Ybin, model.data.featlabels, opts.sifted);
     model.data.featlabels = model.data.featlabels(model.sifted.selvars);
     model.featsel.idx = model.featsel.idx(model.sifted.selvars);
 
@@ -274,7 +275,11 @@ model.cloist = CLOISTER(model.data.X, model.pilot.A, opts.cloister);
 disp('=========================================================================');
 disp('-> Summoning PYTHIA to train the prediction models.');
 disp('=========================================================================');
-model.pythia = PYTHIA(model.pilot.Z, model.data.Yraw, model.data.Ybin, model.data.Ybest, model.data.algolabels, opts.pythia);
+if isfield(opts.pythia,'useknn') && opts.pythia.useknn
+    model.pythia = PYTHIA2(model.pilot.Z, model.data.Yraw, model.data.Ybin, model.data.Ybest, model.data.algolabels, opts.pythia);
+else
+    model.pythia = PYTHIA(model.pilot.Z, model.data.Yraw, model.data.Ybin, model.data.Ybest, model.data.algolabels, opts.pythia);
+end
 % -------------------------------------------------------------------------
 % Calculating the algorithm footprints.
 disp('=========================================================================');

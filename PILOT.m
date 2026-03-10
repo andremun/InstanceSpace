@@ -10,10 +10,16 @@ function out = PILOT(X, Y, featlabels, opts)
 %     2020
 %
 % -------------------------------------------------------------------------
-
-errorfcn = @(alpha,Xbar,n,m) nanmean(nanmean((Xbar-(reshape(alpha((2*n)+1:end),m,2)*... % B,C
+if ~opts.ISA3D
+    errorfcn = @(alpha,Xbar,n,m) nanmean(nanmean((Xbar-(reshape(alpha((2*n)+1:end),m,2)*... % B,C
                                                     reshape(alpha(1:2*n),2,n)...        % A
                                                    *Xbar(:,1:n)')').^2,1),2);
+else
+    errorfcn = @(alpha,Xbar,n,m) nanmean(nanmean(nanmean((Xbar-(reshape(alpha((3*n)+1:end),m,3)*... % B,C
+                                                    reshape(alpha(1:3*n),3,n)...        % A
+                                                   *Xbar(:,1:n)')').^2,1),2),3);
+end
+
 n = size(X, 2); % Number of features
 Xbar = [X Y];
 m = size(Xbar, 2);
@@ -29,7 +35,7 @@ else
     nworkers = 0;
 end
 
-if opts.analytic
+if opts.analytic && ~opts.ISA3D
     disp('  -> PILOT is solving analyticaly the projection problem.');
     disp('  -> This won''t take long.');
     Xbar = Xbar';
@@ -39,11 +45,15 @@ if opts.analytic
     V = V(:,idx(1:2));
     out.B = V(1:n,:);
     out.C = V(n+1:m,:)';
-    Xr = X'/(X*X');
+    XtX = X*X';
+    if rcond(XtX) < eps
+        warning('ISA:PILOT:rankDeficient', ...
+            'X*X'' is rank-deficient (rcond=%.2e). Using pseudo-inverse.', rcond(XtX));
+    end
+    Xr = X'*pinv(XtX);
     out.A = V'*Xbar*Xr;
     out.Z = out.A*X;
     Xhat = [out.B*out.Z; out.C'*out.Z];
-    out.Z = out.Z';
     out.error = sum(sum((Xbar-Xhat).^2,2));
     out.R2 = diag(corr(Xbar',Xhat')).^2;
 else
@@ -52,20 +62,42 @@ else
         disp('  -> PILOT is using a pre-calculated solution.');
         idx = 1;
         out.alpha = opts.alpha;
+    elseif isfield(opts,'alpha') && isnumeric(opts.alpha) && opts.ISA3D && ...
+                size(opts.alpha,1)==3*m+3*n && size(opts.alpha,2)==1
+        disp('  -> PILOT3D is using a pre-calculated solution.');
+        idx = 1;
+        out.alpha = opts.alpha; 
     else
         if isfield(opts,'X0') && isnumeric(opts.X0) && ...
                 size(opts.X0,1)==2*m+2*n && size(opts.X0,2)>=1
             disp('  -> PILOT is using a user defined starting points for BFGS.');
             X0 = opts.X0;
             opts.ntries = size(opts.X0,2);
+        elseif isfield(opts,'X0') && isnumeric(opts.X0) && opts.ISA3D && ...
+                size(opts.X0,1)==3*m+3*n && size(opts.X0,2)>=1
+            disp('  -> PILOT3D is using a user defined starting points for BFGS.');
+            X0 = opts.X0;
+            opts.ntries = size(opts.X0,2);
         else
-            disp('  -> PILOT is using a random starting points for BFGS.');
-            state = rng;
-            rng('default');
-            X0 = 2*rand(2*m+2*n, opts.ntries)-1;
-            rng(state);
+            if opts.ISA3D 
+                disp('  -> PILOT3D is using a random starting points for BFGS.');
+                state = rng;
+                rng('default');
+                X0 = 2*rand(3*m+3*n, opts.ntries)-1;
+                rng(state);
+            else
+                disp('  -> PILOT is using a random starting points for BFGS.');
+                state = rng;
+                rng('default');
+                X0 = 2*rand(2*m+2*n, opts.ntries)-1;
+                rng(state);
+            end
         end
-        alpha = zeros(2*m+2*n, opts.ntries);
+        if opts.ISA3D
+            alpha = zeros(3*m+3*n, opts.ntries);
+        else
+            alpha = zeros(2*m+2*n, opts.ntries);
+        end
         eoptim = zeros(1, opts.ntries);
         perf = zeros(1, opts.ntries);
         disp('-------------------------------------------------------------------------');
@@ -79,7 +111,11 @@ else
                                                                     'UseParallel',false),...
                                              Xbar, n, m);
             aux = alpha(:,i);
-            A = reshape(aux(1:2*n),2,n);
+            if opts.ISA3D
+                A = reshape(aux(1:3*n),3,n);
+            else
+                A = reshape(aux(1:2*n),2,n);
+            end
             Z = X*A';
             perf(i) = corr(Hd,pdist(Z)');
             disp(['    -> PILOT has completed trial ' num2str(i)]);
@@ -90,19 +126,34 @@ else
         out.perf = perf;
         [~,idx] = max(out.perf);
     end
-    out.A = reshape(out.alpha(1:2*n,idx),2,n);
-    out.Z = X*out.A';
-    B = reshape(out.alpha((2*n)+1:end,idx),m,2);
-    Xhat = out.Z*B';
-    out.C = B(n+1:m,:)';
-    out.B = B(1:n,:);
-    out.error = sum(sum((Xbar-Xhat).^2,2));
-    out.R2 = diag(corr(Xbar,Xhat)).^2;
+    if opts.ISA3D
+        out.A = reshape(out.alpha(1:3*n,idx),3,n);
+        out.Z = X*out.A';
+        B = reshape(out.alpha((3*n)+1:end,idx),m,3);
+        Xhat = out.Z*B';
+        out.C = B(n+1:m,:)';
+        out.B = B(1:n,:);
+        out.error = sum(sum((Xbar-Xhat).^2,2));
+        out.R2 = diag(corr(Xbar,Xhat)).^2;
+    else
+        out.A = reshape(out.alpha(1:2*n,idx),2,n);
+        out.Z = X*out.A';
+        B = reshape(out.alpha((2*n)+1:end,idx),m,2);
+        Xhat = out.Z*B';
+        out.C = B(n+1:m,:)';
+        out.B = B(1:n,:);
+        out.error = sum(sum((Xbar-Xhat).^2,2));
+        out.R2 = diag(corr(Xbar,Xhat)).^2;
+    end
 end
 
 disp('-------------------------------------------------------------------------');
 disp('  -> PILOT has completed. The projection matrix A is:');
-out.summary = cell(3, n+1);
+if opts.ISA3D 
+    out.summary = cell(4, n+1);
+else
+    out.summary = cell(3, n+1);
+end
 out.summary(1,2:end) = featlabels;
 out.summary(2:end,1) = {'Z_{1}','Z_{2}'};
 out.summary(2:end,2:end) = num2cell(round(out.A,4));

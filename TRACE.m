@@ -10,6 +10,10 @@ function out = TRACE(Z, Ybin, P, beta, algolabels, opts)
 %     2020
 %
 % -------------------------------------------------------------------------
+if size(Z,2) == 3 
+    disp('  -> 3D Instance Space detected using TRACE2');
+    opts.Trace2 = true;
+end
 
 if exist('gcp','file')==2
     mypool = gcp('nocreate');
@@ -25,58 +29,84 @@ end
 % First step is to transform the data to the footprint space, and to
 % calculate the 'space' footprint. This is also the maximum area possible
 % for a footprint.
-disp('  -> TRACE is calculating the space area and density.');
+if opts.Trace2
+    disp('  -> TRACE2 is calculating the space area and density.');
+else
+    disp('  -> TRACE is calculating the space area and density.');
+end
 ninst = size(Z,1);
 nalgos = size(Ybin,2);
-out.space = TRACEbuild(Z, true(ninst,1), opts);
+if opts.Trace2
+    out.space = TRACEbuild2(Z, true(ninst,1), opts);
+else
+    out.space = TRACEbuild(Z, true(ninst,1), opts);
+end
 disp(['    -> Space area: ' num2str(out.space.area) ...
       ' | Space density: ' num2str(out.space.density)]);
 % -------------------------------------------------------------------------
 % This loop will calculate the footprints for good/bad instances and the
 % best algorithm.
 disp('-------------------------------------------------------------------------');
-disp('  -> TRACE is calculating the algorithm footprints.');
+if opts.Trace2
+    disp('  -> TRACE2 is calculating the algorithm footprints.');
+else
+    disp('  -> TRACE is calculating the algorithm footprints.');
+end
+
 good = cell(1,nalgos);
 best = cell(1,nalgos);
 % Use the actual data to calculate the footprints
 parfor (i=1:nalgos,nworkers)
     tic;
-    disp(['    -> Good performance footprint for ''' algolabels{i} '''']);
-    good{i} = TRACEbuild(Z, Ybin(:,i), opts);
-    disp(['    -> Best performance footprint for ''' algolabels{i} '''']);
-    best{i} = TRACEbuild(Z, P==i, opts);
+    if opts.Trace2
+        disp(['    -> Good performance footprint for ''' algolabels{i} '''']);
+        good{i} = TRACEbuild2(Z, Ybin(:,i), opts);
+        disp(['    -> Best performance footprint for ''' algolabels{i} '''']);
+        best{i} = TRACEbuild2(Z, P==i, opts);
+    else
+        disp(['    -> Good performance footprint for ''' algolabels{i} '''']);
+        good{i} = TRACEbuild(Z, Ybin(:,i), opts);
+        disp(['    -> Best performance footprint for ''' algolabels{i} '''']);
+        best{i} = TRACEbuild(Z, P==i, opts);
+    end
     disp(['    -> Algorithm ''' algolabels{i} ''' completed. Elapsed time: ' num2str(toc,'%.2f\n') 's']);
 end
 out.good = good;
 out.best = best;
 % -------------------------------------------------------------------------
-% Detecting collisions and removing them.
-disp('-------------------------------------------------------------------------');
-disp('  -> TRACE is detecting and removing contradictory sections of the footprints.');
-for i=1:nalgos
-    disp(['  -> Base algorithm ''' algolabels{i} '''']);
-    startBase = tic;
-    for j=i+1:nalgos
-        disp(['      -> TRACE is comparing ''' algolabels{i} ''' with ''' algolabels{j} '''']);
-        startTest = tic;
-        [out.best{i}, out.best{j}] = TRACEcontra(out.best{i}, out.best{j}, ...
-                                                 Z, P==i, P==j, opts);%, false);
-        
-        disp(['      -> Test algorithm ''' algolabels{j} ...
-              ''' completed. Elapsed time: ' num2str(toc(startTest),'%.2f\n') 's']);
+% Detecting collisions and removing them. Original Trace ONLY
+if ~opts.Trace2
+    disp('-------------------------------------------------------------------------');
+    disp('  -> TRACE is detecting and removing contradictory sections of the footprints.');
+    for i=1:nalgos
+        disp(['  -> Base algorithm ''' algolabels{i} '''']);
+        startBase = tic;
+        for j=i+1:nalgos
+            disp(['      -> TRACE is comparing ''' algolabels{i} ''' with ''' algolabels{j} '''']);
+            startTest = tic;
+            [out.best{i}, out.best{j}] = TRACEcontra(out.best{i}, out.best{j}, ...
+                                                     Z, P==i, P==j, opts);%, false);
+
+            disp(['      -> Test algorithm ''' algolabels{j} ...
+                  ''' completed. Elapsed time: ' num2str(toc(startTest),'%.2f\n') 's']);
+        end
+        disp(['  -> Base algorithm ''' algolabels{i} ...
+              ''' completed. Elapsed time: ' num2str(toc(startBase),'%.2f\n') 's']);
     end
-    disp(['  -> Base algorithm ''' algolabels{i} ...
-          ''' completed. Elapsed time: ' num2str(toc(startBase),'%.2f\n') 's']);
 end
 % -------------------------------------------------------------------------
 % Beta hard footprints. First step is to calculate them.
 disp('-------------------------------------------------------------------------');
-disp('  -> TRACE is calculating the beta-footprint.');
+if opts.Trace2
+    disp('  -> TRACE2 is calculating the beta-footprint.');
+else
+    disp('  -> TRACE is calculating the beta-footprint.');
+end
 out.hard = TRACEbuild(Z, ~beta, opts);
 % -------------------------------------------------------------------------
 % Calculating performance
 disp('-------------------------------------------------------------------------');
-disp('  -> TRACE is preparing the summary table.');
+disp('  -> Preparing the summary table.');
 out.summary = cell(nalgos+1,11);
 out.summary(1,2:end) = {'Area_Good',...
                         'Area_Good_Normalized',...
@@ -94,8 +124,11 @@ for i=1:nalgos
            TRACEsummary(out.best{i}, out.space.area, out.space.density)];
     out.summary(i+1,2:end) = num2cell(round(row,3));
 end
-
-disp('  -> TRACE has completed. Footprint analysis results:');
+if opts.Trace2
+    disp('  -> TRACE2 has completed. Footprint analysis results:');
+else
+    disp('  -> TRACE has completed. Footprint analysis results:');
+end
 disp(' ');
 disp(out.summary);
 
@@ -114,7 +147,7 @@ else
 end
     
 nn = max(min(ceil(sum(Ybin)/20),50),3);
-class = dbscan(Ig,nn); % Use DBSCAN to identify dense regions
+class = TRACEdbscan(Ig,nn); % Use DBSCAN to identify dense regions (local impl, no toolbox)
 flag = false;
 for i=1:max(class) %Ignore -1/0
     polydata = Ig(class==i,:);
@@ -136,6 +169,94 @@ if isfield(footprint,'polygon') && ~isempty(footprint.polygon)
     footprint.goodElements = sum(isinterior(footprint.polygon,Z(Ybin,:)));
     footprint.density = footprint.elements./footprint.area;
     footprint.purity = footprint.goodElements./footprint.elements;
+else
+    footprint = TRACEthrow;
+end
+
+end
+% =========================================================================
+function footprint = TRACEbuild2(Z, Ybin, opts)
+
+% If there is no Y to work with, then there is not point on this one
+Ig = unique(Z(Ybin,:),'rows');   % There might be points overlapped, so eliminate them to avoid problems
+if size(Ig,1)<3
+    footprint = TRACEthrow;
+else
+    footprint = struct;
+end
+if ~isfield(opts,'prior')
+    opts.prior = [0.6,0.4];
+end
+if ~isfield(opts,'nn')
+    opts.nn=50;
+end
+
+
+if size(unique(Ybin),1) > 1
+    knt = fitcknn(Z,Ybin,'Prior',opts.prior,'NumNeighbors',opts.nn); %Fit a KNN classification
+    prt = predict(knt,Z); 
+    polydata = Z(prt==1 & Ybin == 1,:); %Build poly data from instances correctly identfied as good from the KNN classifier
+else
+    %knt = fitcknn(Z,Ybin,'NumNeighbors',nn); %'Prior',[0.6,0.4],
+    polydata = Z;
+end
+footprint.polygon = alphaShape(polydata); %Build the alpha shape from poly data
+D = size(Z);
+
+
+%Below removes outlier points untill the minimum purity threshold is met
+if isfield(footprint,'polygon') && ~isempty(footprint.polygon.Points) && ~(footprint.polygon.Alpha==Inf) && D(2) == 2
+    footprint.area = area(footprint.polygon);
+    footprint.elements = sum(inShape(footprint.polygon,Z));
+    footprint.goodElements = sum(inShape(footprint.polygon,Z(Ybin,:)));
+    footprint.density = footprint.elements./footprint.area;
+    footprint.purity = footprint.goodElements./footprint.elements;
+    AS = alphaSpectrum(footprint.polygon);
+    AS = footprint.polygon.Alpha:-((footprint.polygon.Alpha-min(AS))/100):min(AS);
+    ii = 1;
+    while footprint.purity < opts.PI && ii < size(AS,2)
+        footprint.polygon.Alpha = AS(ii);
+        footprint.area = area(footprint.polygon);
+        footprint.polygon.RegionThreshold =  footprint.area/20; %footprint.polygon.RegionThreshold + *(1-footprint.purity)
+        footprint.area = area(footprint.polygon);
+        if footprint.area > 0
+            footprint.elements = sum(inShape(footprint.polygon,Z));
+            footprint.goodElements = sum(inShape(footprint.polygon,Z(Ybin,:)));
+            footprint.purity = footprint.goodElements./footprint.elements;
+            footprint.density = footprint.elements./footprint.area;
+        else
+            ii = size(AS,2);
+            footprint = TRACEthrow;
+        end
+        ii = ii+1;
+    end
+elseif  isfield(footprint,'polygon') && ~isempty(footprint.polygon.Points) && ~(footprint.polygon.Alpha==Inf) && D(2) == 3
+    footprint.area = volume(footprint.polygon);
+    footprint.elements = sum(inShape(footprint.polygon,Z));
+    footprint.goodElements = sum(inShape(footprint.polygon,Z(Ybin,:)));
+    footprint.density = footprint.elements./footprint.area;
+    footprint.purity = footprint.goodElements./footprint.elements;
+    AS = alphaSpectrum(footprint.polygon);
+    AS = footprint.polygon.Alpha:-((footprint.polygon.Alpha-min(AS))/100):min(AS);
+    ii = 1;
+    while footprint.purity < opts.PI && ii < size(AS,2)
+        footprint.polygon.Alpha = AS(ii);
+        footprint.area = volume(footprint.polygon);
+        footprint.polygon.RegionThreshold =  footprint.area/20; %footprint.polygon.RegionThreshold + *(1-footprint.purity)
+        footprint.area = volume(footprint.polygon);
+        if footprint.area > 0
+            footprint.elements = sum(inShape(footprint.polygon,Z));
+            footprint.goodElements = sum(inShape(footprint.polygon,Z(Ybin,:)));
+            footprint.purity = footprint.goodElements./footprint.elements;
+            footprint.density = footprint.elements./footprint.area;
+        else
+            ii = size(AS,2);
+            footprint = TRACEthrow;
+        end
+        ii = ii+1;
+    end
+    
+    
 else
     footprint = TRACEthrow;
 end
@@ -261,7 +382,7 @@ if ~all(Ybin)
         piece = polyshape(tridata,'Simplify',true);
         elements = sum(isinterior(piece,Z));
         goodElements = sum(isinterior(piece,Z(Ybin,:)));
-        if opts.PI>(goodElements/elements)
+        if elements==0 || opts.PI>(goodElements/elements)
             polygon = subtract(polygon,piece);
         end
     end
@@ -295,10 +416,16 @@ footprint.purity = 0;
 
 end
 % =========================================================================
-% Function: [class,type]=dbscan(x,k,Eps)
+% Function: [class,type]=TRACEdbscan(x,k,Eps)
 % -------------------------------------------------------------------------
 % Aim: 
 % Clustering the data with Density-Based Scan Algorithm with Noise (DBSCAN)
+% -------------------------------------------------------------------------
+% NOTE: This is a local implementation originally written by Michal
+% Daszykowski (see references below). It has been renamed from dbscan() to
+% TRACEdbscan() to avoid shadowing the dbscan() function introduced in
+% MATLAB's Statistics and Machine Learning Toolbox (R2019a+). Do not rename
+% it back without checking for toolbox availability.
 % -------------------------------------------------------------------------
 % Input: 
 % x - data set (m,n); m-objects, n-variables
@@ -314,7 +441,7 @@ end
 % -------------------------------------------------------------------------
 % Example of use:
 % x=[randn(30,2)*.4;randn(40,2)*.5+ones(40,1)*[4 4]];
-% [class,type]=dbscan(x,5,[]);
+% [class,type]=TRACEdbscan(x,5,[]);
 % -------------------------------------------------------------------------
 % References:
 % [1] M. Ester, H. Kriegel, J. Sander, X. Xu, A density-based algorithm for 
@@ -332,7 +459,7 @@ end
 % December 2004
 % http://www.chemometria.us.edu.pl
 
-function [class,type]=dbscan(x,k,Eps)
+function [class,type]=TRACEdbscan(x,k,Eps)
 
 m=size(x,1);
 

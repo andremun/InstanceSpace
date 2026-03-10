@@ -139,8 +139,9 @@ function y = costfcn(ind,X,Y,Ybin,clust,cvpart,featlabels,nworkers)
     else
         out = PILOT(X(:,idx), Y, featlabels(idx), struct('analytic', analytic, 'ntries', ntries));
         Z = out.Z;
-        rng('default');
         y = -Inf;
+        % NOTE: ga runs fitness calls serially (no UseParallel in gaopts), so this
+        % inner parfor does not nest and can safely use nworkers.
         parfor (ii=1:size(Y,2),nworkers)
             knn = fitcknn(Z, Ybin(:,ii), 'CVPartition', cvpart, 'NumNeighbors', kneighbours);
             y = max(y, knn.kfoldLoss);

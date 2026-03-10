@@ -8,3 +8,4 @@
 old_versions/*.*
 old_versions
 *.json
+!test/data/**

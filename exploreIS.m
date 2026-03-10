@@ -56,7 +56,7 @@ out.data.Y = Xbar{:,isalgo};
 out.data.algolabels = strrep(varlabels(isalgo),'algo_','');
 algoexist = zeros(1,nalgos);
 for ii=1:nalgos
-    aux = find(strcmp(out.data.algolabels{ii},model.data.algolabels));
+    aux = find(strcmpi(strtrim(out.data.algolabels{ii}), strtrim(model.data.algolabels)));
     if ~isempty(aux)
         algoexist(ii) = aux;
     end
@@ -105,32 +105,32 @@ if MaxPerf
     Yaux = out.data.Y;
     Yaux(isnan(Yaux)) = -Inf;
     [rankPerf,rankAlgo] = sort(Yaux,2,'descend');
-    out.data.bestPerformace = rankPerf(:,1);
+    out.data.Ybest = rankPerf(:,1);
     out.data.P = rankAlgo(:,1);
     if model.opts.perf.AbsPerf
         out.data.Ybin = out.data.Y>=model.opts.perf.epsilon;
         msg = [msg 'higher than ' num2str(model.opts.perf.epsilon)];
     else
-        out.data.bestPerformace(out.data.bestPerformace==0) = eps;
+        out.data.Ybest(out.data.Ybest==0) = eps;
         out.data.Y(out.data.Y==0) = eps;
-        out.data.Y = 1-bsxfun(@rdivide,out.data.Y,out.data.bestPerformace);
-        out.data.Ybin = (1-bsxfun(@rdivide,Yaux,out.data.bestPerformace))<=model.opts.perf.epsilon;
+        out.data.Y = 1-bsxfun(@rdivide,out.data.Y,out.data.Ybest);
+        out.data.Ybin = (1-bsxfun(@rdivide,Yaux,out.data.Ybest))<=model.opts.perf.epsilon;
         msg = [msg 'within ' num2str(round(100.*model.opts.perf.epsilon)) '% of the best.'];
     end
 else
     Yaux = out.data.Y;
     Yaux(isnan(Yaux)) = Inf;
     [rankPerf,rankAlgo] = sort(Yaux,2,'ascend');
-    out.data.bestPerformace = rankPerf(:,1);
+    out.data.Ybest = rankPerf(:,1);
     out.data.P = rankAlgo(:,1);
     if model.opts.perf.AbsPerf
         out.data.Ybin = out.data.Y<=model.opts.perf.epsilon;
         msg = [msg 'less than ' num2str(model.opts.perf.epsilon)];
     else
-        out.data.bestPerformace(out.data.bestPerformace==0) = eps;
+        out.data.Ybest(out.data.Ybest==0) = eps;
         out.data.Y(out.data.Y==0) = eps;
-        out.data.Y = bsxfun(@rdivide,out.data.Y,out.data.bestPerformace)-1;
-        out.data.Ybin = (bsxfun(@rdivide,Yaux,out.data.bestPerformace)-1)<=model.opts.perf.epsilon;
+        out.data.Y = bsxfun(@rdivide,out.data.Y,out.data.Ybest)-1;
+        out.data.Ybin = (bsxfun(@rdivide,Yaux,out.data.Ybest)-1)<=model.opts.perf.epsilon;
         msg = [msg 'within ' num2str(round(100.*model.opts.perf.epsilon)) '% of the best.'];
     end
 end
@@ -155,7 +155,7 @@ if model.opts.auto.preproc && model.opts.norm.flag
     % Normalize the data using Box-Cox and out.pilot.Z-transformations
     disp('-> Auto-normalizing the data.');
     out.data.X = bsxfun(@minus,out.data.X,model.norm.minX)+1;
-    for ii=1:legnth(model.norm.lambdaX)
+    for ii=1:length(model.norm.lambdaX)
         out.data.X(:,ii) = boxcox(out.data.X(:,ii),model.norm.lambdaX(:,ii));
     end
     out.data.X = bsxfun(@rdivide,bsxfun(@minus,out.data.X,model.norm.muX),model.norm.sigmaX);
@@ -185,7 +185,7 @@ out.pilot.Z = out.data.X*model.pilot.A';
 % Algorithm selection. Fit a model that would separate the space into
 % classes of good and bad performance. 
 out.pythia = PYTHIAtest(model.pythia, out.pilot.Z, out.data.Yraw, ...
-                        out.data.Ybin, out.data.bestPerformace, ...
+                        out.data.Ybin, out.data.Ybest, ...
                         out.data.algolabels);
 % -------------------------------------------------------------------------
 % Validating the footprints

@@ -39,13 +39,6 @@ if useparallel
     else
         mypool = parpool('local','SpmdEnabled',false);
     end
-    if ispc
-        addAttachedFiles(mypool,{'svmpredict.mexw64','svmtrain.mexw64'});
-    elseif isunix
-        addAttachedFiles(mypool,{'svmpredict.mexa64','svmtrain.mexa64'});
-    elseif ismac
-        addAttachedFiles(mypool,{'libsvmpredict.mexmaci64','libsvmtrain.mexmaci64'});
-    end
 end
 disp('-------------------------------------------------------------------------');
 disp('-> Loading the data.');

@@ -18,10 +18,22 @@ nfeats = size(X,2);
 rho = rho.*(pval<opts.pval);
 
 Xbnds = [min(X); max(X)];
-% if no feature selection. then make a note in the boundary construction
-% that it won't work, because nfeats is soo large that de2bi wont be able
-% to make a matrix.
-idx = de2bi(0:2^nfeats-1)+1;
+% Guard: if too many features, de2bi would produce an intractable matrix.
+% Use convex hull of Z as a safe fallback.
+MAX_FEATS = 20;
+if nfeats > MAX_FEATS
+    warning('ISA:CLOISTER:tooManyFeatures', ...
+        'CLOISTER skipped: %d features exceeds limit of %d. Using convex hull as boundary.', ...
+        nfeats, MAX_FEATS);
+    Zall = X*A';
+    Kedge = convhull(Zall(:,1), Zall(:,2));
+    out.Zedge  = Zall(Kedge,:);
+    out.Zecorr = out.Zedge;
+    disp('  -> CLOISTER has completed.');
+    return;
+end
+% Pure-MATLAB replacement for de2bi (no Communications Toolbox required)
+idx = rem(floor((0:2^nfeats-1)' .* 2.^(-(nfeats-1:-1:0))), 2) + 1;
 ncomb = size(idx,1);
 Xedge = zeros(ncomb,nfeats);
 remove = false(ncomb,1);
@@ -62,4 +74,3 @@ catch
 end
 disp('-------------------------------------------------------------------------');
 disp('  -> CLOISTER has completed.');
-

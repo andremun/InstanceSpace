@@ -35,6 +35,12 @@ else
     nworkers = 0;
 end
 
+if opts.analytic && rank(X) < size(X,2)
+    warning('ISA:PILOT:rankDeficient', ...
+        'Feature matrix rank-deficient; falling back to numerical solution.');
+    opts.analytic = false;
+end
+
 if opts.analytic && ~opts.ISA3D
     disp('  -> PILOT is solving analyticaly the projection problem.');
     disp('  -> This won''t take long.');
@@ -45,12 +51,7 @@ if opts.analytic && ~opts.ISA3D
     V = V(:,idx(1:2));
     out.B = V(1:n,:);
     out.C = V(n+1:m,:)';
-    XtX = X*X';
-    if rcond(XtX) < eps
-        warning('ISA:PILOT:rankDeficient', ...
-            'X*X'' is rank-deficient (rcond=%.2e). Using pseudo-inverse.', rcond(XtX));
-    end
-    Xr = X'*pinv(XtX);
+    Xr = X'/(X*X');
     out.A = V'*Xbar*Xr;
     out.Z = out.A*X;
     Xhat = [out.B*out.Z; out.C'*out.Z];

@@ -22,8 +22,7 @@ innaceptableClustering = 0.5; % A silhouette less than this value trigers a warn
 acceptableClustering = 0.75; % This is a preferable silhouette value
 % ---------------------------------------------------------------------
 
-global mymap
-mymap = containers.Map('KeyType','char','ValueType','double');
+clearCache(); % reset the persistent fitness cache at the start of each call
 
 if exist('gcp','file')==2
     mypool = gcp('nocreate');
@@ -120,7 +119,10 @@ disp(['-> Keeping ' num2str(size(X, 2)) ' out of ' num2str(nfeats) ' features (c
 end
 % =========================================================================
 function y = costfcn(ind,X,Y,Ybin,clust,cvpart,featlabels,nworkers)
-    global mymap
+    persistent mymap
+    if isempty(mymap)
+        mymap = containers.Map('KeyType','char','ValueType','double');
+    end
     % Magik numbers
     ntries = 5; % Number of trials on PILOT
     analytic = false; % Whether the solution to PILOT is analytic or not
@@ -148,5 +150,13 @@ function y = costfcn(ind,X,Y,Ybin,clust,cvpart,featlabels,nworkers)
         end
         mymap(key) = y;
     end
+end
+% =========================================================================
+function clearCache()
+% Clears the persistent fitness cache in costfcn.
+% Called at the start of each SIFTED2 invocation to prevent stale hits
+% across successive buildIS calls in the same MATLAB session.
+    persistent mymap %#ok<NUSED>
+    clear mymap
 end
 % =========================================================================

@@ -9,8 +9,8 @@ nalgos = size(Y,2);
 % algorithm has a performance better than the threshold) or a relative
 % performance (the algorithm has a performance that is similar that the
 % best algorithm minus a percentage).
-disp('-------------------------------------------------------------------------');
-disp('-> Calculating the binary measure of performance');
+fprintf('-------------------------------------------------------------------------\n');
+fprintf('-> Calculating the binary measure of performance\n');
 msg = '-> An algorithm is good if its performace is ';
 if opts.MaxPerf
     Yaux = Y;
@@ -41,7 +41,7 @@ else
         msg = [msg 'within ' num2str(round(100.*opts.epsilon)) '% of the best.'];
     end
 end
-disp(msg);
+fprintf('%s\n', msg);
 % -------------------------------------------------------------------------
 % Testing for ties. If there is a tie in performance, we pick an algorithm
 % at random.
@@ -54,22 +54,22 @@ for i=1:size(Y,1)
         P(i) = aux(randi(length(aux),1)); % Pick one at random
     end
 end
-disp(['-> For ' num2str(round(100.*mean(multipleBestAlgos))) '% of the instances there is ' ...
-      'more than one best algorithm. Random selection is used to break ties.']);
+fprintf('-> For %s%% of the instances there is more than one best algorithm. Random selection is used to break ties.\n', ...
+    num2str(round(100.*mean(multipleBestAlgos))));
 numGoodAlgos = sum(Ybin,2);
 beta = numGoodAlgos>(opts.betaThreshold*nalgos);
 
 if opts.auto
-    disp('=========================================================================');
-    disp('-> Auto-pre-processing.');
-    disp('=========================================================================');
+    fprintf('=========================================================================\n');
+    fprintf('-> Auto-pre-processing.\n');
+    fprintf('=========================================================================\n');
 end
 out.medval = nanmedian(X, 1);
 out.iqrange = iqr(X, 1);
 out.hibound = out.medval + 5.*out.iqrange;
 out.lobound = out.medval - 5.*out.iqrange;
 if opts.auto && opts.bound
-    disp('-> Removing extreme outliers from the feature values.');
+    fprintf('-> Removing extreme outliers from the feature values.\n');
     himask = bsxfun(@gt,X,out.hibound);
     lomask = bsxfun(@lt,X,out.lobound);
     X = X.*~(himask | lomask) + bsxfun(@times,himask,out.hibound) + ...
@@ -87,7 +87,7 @@ out.lambdaY = zeros(1,nalgos);
 out.muY = zeros(1,nalgos);
 out.sigmaY = zeros(1,nalgos);
 if opts.auto && opts.norm
-    disp('-> Auto-normalizing the data using Box-Cox and Z transformations.');
+    fprintf('-> Auto-normalizing the data using Box-Cox and Z transformations.\n');
     X = bsxfun(@minus,X,out.minX)+1;
     for i=1:nfeats
         aux = X(:,i);

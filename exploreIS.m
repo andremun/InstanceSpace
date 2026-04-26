@@ -15,22 +15,25 @@ startProcess = tic;
 scriptdisc('exploreIS.m');
 % -------------------------------------------------------------------------
 % Collect all the data from the files
-disp(['Root Directory: ' rootdir]);
+fprintf('Root Directory: %s\n', rootdir);
 modelfile = [rootdir 'model.mat'];
 datafile = [rootdir 'metadata_test.csv'];
 if ~isfile(modelfile) || ~isfile(datafile)
     error(['Please place the datafiles in the directory ''' rootdir '''']);
 end
 model = load(modelfile);
-disp('-------------------------------------------------------------------------');
-disp('Listing options used:');
-optfields = fieldnames(model.opts);
-for i = 1:length(optfields)
-    disp(optfields{i});
-    disp(model.opts.(optfields{i}));
+model.opts = ISAdefaults(model.opts);
+if model.opts.general.verbose
+    fprintf('-------------------------------------------------------------------------\n');
+    fprintf('Listing options used:\n');
+    optfields = fieldnames(model.opts);
+    for i = 1:length(optfields)
+        fprintf('%s\n', optfields{i});
+        disp(model.opts.(optfields{i}));
+    end
 end
-disp('-------------------------------------------------------------------------');
-disp('-> Loading the data');
+fprintf('-------------------------------------------------------------------------\n');
+fprintf('-> Loading the data\n');
 Xbar = readtable(datafile);
 varlabels = Xbar.Properties.VariableNames;
 isname = strcmpi(varlabels,'instances');
@@ -73,7 +76,6 @@ for ii=1:nalgos
        acc = acc+1;
     else
         Yaux(:,algoexist(ii)) = out.data.Y(:,ii);
-        % lblaux(:,acc) = out.data.algolabels(ii);
     end
 end
 out.data.Y = Yaux;
@@ -90,8 +92,8 @@ out.data.Yraw = out.data.Y;
 % algorithm has a performance better than the threshold) or a relative
 % performance (the algorithm has a performance that is similar that the
 % best algorithm minus a percentage).
-disp('-------------------------------------------------------------------------');
-disp('-> Calculating the binary measure of performance');
+fprintf('-------------------------------------------------------------------------\n');
+fprintf('-> Calculating the binary measure of performance\n');
 msg = '-> An algorithm is good if its performace is ';
 MaxPerf = false;
 if isfield(model.opts.perf, 'MaxPerf')
@@ -134,17 +136,17 @@ else
         msg = [msg 'within ' num2str(round(100.*model.opts.perf.epsilon)) '% of the best.'];
     end
 end
-disp(msg);
+fprintf('%s\n', msg);
 out.data.numGoodAlgos = sum(out.data.Ybin,2);
 out.data.beta = out.data.numGoodAlgos>model.opts.perf.betaThreshold*nalgos;
 % ---------------------------------------------------------------------
 % Automated pre-processing
 if model.opts.auto.preproc && model.opts.bound.flag
-    disp('-------------------------------------------------------------------------');
-    disp('-> Auto-pre-processing. Bounding outliers, scaling and normalizing the data.');
+    fprintf('-------------------------------------------------------------------------\n');
+    fprintf('-> Auto-pre-processing. Bounding outliers, scaling and normalizing the data.\n');
     % Eliminate extreme outliers, i.e., any point that exceedes 5 times the
     % inter quantile range, by bounding them to that value.
-    disp('-> Removing extreme outliers from the feature values.');
+    fprintf('-> Removing extreme outliers from the feature values.\n');
     himask = bsxfun(@gt,out.data.X,model.bound.hibound);
     lomask = bsxfun(@lt,out.data.X,model.bound.lobound);
     out.data.X = out.data.X.*~(himask | lomask) + bsxfun(@times,himask,model.bound.hibound) + ...
@@ -153,13 +155,13 @@ end
 
 if model.opts.auto.preproc && model.opts.norm.flag
     % Normalize the data using Box-Cox and out.pilot.Z-transformations
-    disp('-> Auto-normalizing the data.');
+    fprintf('-> Auto-normalizing the data.\n');
     out.data.X = bsxfun(@minus,out.data.X,model.norm.minX)+1;
     for ii=1:length(model.norm.lambdaX)
         out.data.X(:,ii) = boxcox(out.data.X(:,ii),model.norm.lambdaX(:,ii));
     end
     out.data.X = bsxfun(@rdivide,bsxfun(@minus,out.data.X,model.norm.muX),model.norm.sigmaX);
-    
+
     % If the algorithm is new, something else should be made...
     out.data.Y(out.data.Y==0) = eps; % Assumes that out.data.Y is always positive and higher than 1e-16
     for ii=1:modelalgos
@@ -183,7 +185,7 @@ out.data.featlabels = out.data.featlabels(model.featsel.idx);
 out.pilot.Z = out.data.X*model.pilot.A';
 % -------------------------------------------------------------------------
 % Algorithm selection. Fit a model that would separate the space into
-% classes of good and bad performance. 
+% classes of good and bad performance.
 out.pythia = PYTHIAtest(model.pythia, out.pilot.Z, out.data.Yraw, ...
                         out.data.Ybin, out.data.Ybest, ...
                         out.data.algolabels);
@@ -193,14 +195,10 @@ if model.opts.trace.usesim
     out.trace = TRACEtest(model.trace, out.pilot.Z, out.pythia.Yhat, ...
                           out.pythia.selection0, out.data.beta, ...
                           out.data.algolabels);
-%     out.trace = TRACE(out.pilot.Z, out.pythia.Yhat, out.pythia.selection0, ...
-%                       out.data.beta, out.data.algolabels, model.opts.trace);
 else
     out.trace = TRACEtest(model.trace, out.pilot.Z, out.data.Ybin, ...
                           out.data.P, out.data.beta, ...
                           out.data.algolabels);
-%     out.trace = TRACE(out.pilot.Z, out.data.Ybin, out.data.P, out.data.beta,...
-%                       out.data.algolabels, model.opts.trace);
 end
 
 out.opts = model.opts;
@@ -217,10 +215,10 @@ if model.opts.outputs.png
     scriptpng(out,rootdir);
 end
 
-disp('-------------------------------------------------------------------------');
-disp('-> Storing the raw MATLAB results for post-processing and/or debugging.');
+fprintf('-------------------------------------------------------------------------\n');
+fprintf('-> Storing the raw MATLAB results for post-processing and/or debugging.\n');
 save([rootdir 'workspace_test.mat']); % Save the full workspace for debugging
-disp(['-> Completed! Elapsed time: ' num2str(toc(startProcess)) 's']);
-disp('EOF:SUCCESS');
+fprintf('-> Completed! Elapsed time: %ss\n', num2str(toc(startProcess)));
+fprintf('EOF:SUCCESS\n');
 end
 % =========================================================================

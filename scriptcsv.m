@@ -14,20 +14,18 @@ function scriptcsv(container,rootdir)
 scriptfcn;
 
 nalgos = size(container.data.Y,2);
-disp('=========================================================================');
-disp('-> Writing the data on CSV files for posterior analysis.');
+fprintf('=========================================================================\n');
+fprintf('-> Writing the data on CSV files for posterior analysis.\n');
 % -------------------------------------------------------------------------
 for i=1:nalgos
-    if isfield(container.trace.best{i},'polygon') && ~isempty(container.trace.best{i}.polygon)
-        writeArray2CSV(container.trace.best{i}.polygon.Vertices, ...
-                       {'z_1','z_2'},...
-                       makeBndLabels(container.trace.best{i}.polygon.Vertices),...
+    verts = footprintBoundary(container.trace.best{i});
+    if ~isempty(verts)
+        writeArray2CSV(verts, {'z_1','z_2'}, makeBndLabels(verts), ...
                        [rootdir 'footprint_' container.data.algolabels{i} '_best.csv']);
     end
-    if isfield(container.trace.good{i},'polygon') && ~isempty(container.trace.good{i}.polygon)
-        writeArray2CSV(container.trace.good{i}.polygon.Vertices, ...
-                       {'z_1','z_2'},...
-                       makeBndLabels(container.trace.good{i}.polygon.Vertices),...
+    verts = footprintBoundary(container.trace.good{i});
+    if ~isempty(verts)
+        writeArray2CSV(verts, {'z_1','z_2'}, makeBndLabels(verts), ...
                        [rootdir 'footprint_' container.data.algolabels{i} '_good.csv']);
     end
 %     if isfield(container.trace.bad{i},'polygon') && ~isempty(container.trace.bad{i}.polygon)
@@ -100,3 +98,56 @@ writeCell2CSV(container.pythia.summary(2:end,2:end), ...
               container.pythia.summary(1,2:end), ...
               container.pythia.summary(2:end,1), ...
               [rootdir 'svm_table.csv']);
+end
+
+% =========================================================================
+function verts = footprintBoundary(fp)
+% Extract ordered 2-D boundary vertices from a footprint struct.
+% Handles both polyshape (legacy) and alphaShape (TRACE3) polygons.
+verts = [];
+if ~isfield(fp, 'polygon') || isempty(fp.polygon)
+    return;
+end
+poly = fp.polygon;
+if isa(poly, 'alphaShape')
+    [bf, bv] = boundaryFacets(poly);
+    if isempty(bf)
+        return;
+    end
+    verts = traceAlphaBoundary(bf, bv);
+elseif isa(poly, 'polyshape')
+    verts = poly.Vertices;
+end
+end
+
+% =========================================================================
+function verts = traceAlphaBoundary(bf, bv)
+% Trace an ordered closed polygon from a 2-D boundary-facets edge list.
+% bf: (m x 2) edge index pairs into bv rows; bv: (n x 2) point coordinates.
+% Works correctly for simple (single-region) connected alpha shapes.
+n = size(bv, 1);
+if n == 0, verts = []; return; end
+% Build adjacency: each vertex has exactly 2 neighbours on the boundary.
+adj = zeros(n, 2);
+cnt = zeros(n, 1);
+for k = 1:size(bf, 1)
+    v1 = bf(k,1); v2 = bf(k,2);
+    cnt(v1) = cnt(v1)+1;
+    if cnt(v1) <= 2, adj(v1, cnt(v1)) = v2; end
+    cnt(v2) = cnt(v2)+1;
+    if cnt(v2) <= 2, adj(v2, cnt(v2)) = v1; end
+end
+% Trace from vertex 1 following the boundary.
+order = zeros(n, 1);
+order(1) = 1;
+prev = 0; curr = 1;
+for k = 2:n
+    nxt = adj(curr, adj(curr,:) ~= prev & adj(curr,:) ~= 0);
+    if isempty(nxt), break; end
+    order(k) = nxt(1);
+    prev = curr;
+    curr = order(k);
+end
+valid = order ~= 0;
+verts = bv(order(valid), :);
+end

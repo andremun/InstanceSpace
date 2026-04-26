@@ -72,11 +72,13 @@ if ~isfield(opts.pythia, 'uselibsvm'),      opts.pythia.uselibsvm      = false; 
 if ~isfield(opts.pythia, 'verbose'),        opts.pythia.verbose        = opts.general.verbose; end
 
 % trace
-if ~isfield(opts, 'trace'),             opts.trace             = struct; end
-if ~isfield(opts.trace, 'usesim'),      opts.trace.usesim      = false;  end
-if ~isfield(opts.trace, 'PI'),          opts.trace.PI          = 0.75;   end
-if ~isfield(opts.trace, 'RHO'),         opts.trace.RHO         = 10;     end
-if ~isfield(opts.trace, 'Trace2'),      opts.trace.Trace2      = false;  end
+if ~isfield(opts, 'trace'),                     opts.trace                     = struct;    end
+if ~isfield(opts.trace, 'method'),              opts.trace.method              = 'trace3';  end
+if ~isfield(opts.trace, 'PI'),                  opts.trace.PI                  = 0.6;       end
+if ~isfield(opts.trace, 'nn'),                  opts.trace.nn                  = 50;        end
+if ~isfield(opts.trace, 'prior'),               opts.trace.prior               = [0.6,0.4]; end
+if ~isfield(opts.trace, 'minInstances'),        opts.trace.minInstances        = 4;         end
+if ~isfield(opts.trace, 'minAreaFrac'),         opts.trace.minAreaFrac         = 0.01;      end
 
 % outputs
 if ~isfield(opts, 'outputs'),           opts.outputs           = struct; end

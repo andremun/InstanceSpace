@@ -21,16 +21,11 @@ Xaux = (container.data.X-min(container.data.X,[],1))./range(container.data.X,1);
 Yind = (container.data.Yraw-min(container.data.Yraw,[],1))./range(container.data.Yraw,1);
 Yglb = log10(container.data.Yraw+1);
 Yglb = (Yglb-min(Yglb(:)))./range(Yglb(:));
-if container.opts.trace.usesim
-    Yfoot = container.pythia.Yhat;
-    Pfoot = container.pythia.selection0;
-else
-    Yfoot = container.data.Ybin;
-    Pfoot = container.data.P;
-end
+Yfoot = container.data.Ybin;
+Pfoot = container.data.P;
 % -------------------------------------------------------------------------
-disp('=========================================================================');
-disp('-> Producing the plots.');
+fprintf('=========================================================================\n');
+fprintf('-> Producing the plots.\n');
 % -------------------------------------------------------------------------
 % Drawing feature plots
 for i=1:nfeats
@@ -60,7 +55,7 @@ for i=1:nalgos
                               strrep(container.data.algolabels{i},'_',' '));
         print(gcf,'-dpng',[rootdir 'binary_performance_' container.data.algolabels{i} '.png']);
     catch
-        disp('No binary performance has been calculated');
+        fprintf('No binary performance has been calculated.\n');
     end
     % Drawing the SVM's predictions of good performance
     try
@@ -69,7 +64,7 @@ for i=1:nalgos
                               strrep(container.data.algolabels{i},'_',' '));
         print(gcf,'-dpng',[rootdir 'binary_svm_' container.data.algolabels{i} '.png']);
     catch
-        disp('No SVM model has been trained');
+        fprintf('No SVM model has been trained.\n');
     end
     % Drawing the footprints for good and bad performance acording to the
     % binary measure 
@@ -81,7 +76,7 @@ for i=1:nalgos
                              strrep(container.data.algolabels{i},'_',' '));
         print(gcf,'-dpng',[rootdir 'footprint_' container.data.algolabels{i} '.png']);
     catch
-        disp('No Footprint has been calculated');
+        fprintf('No Footprint has been calculated.\n');
     end
 end
 % ---------------------------------------------------------------------

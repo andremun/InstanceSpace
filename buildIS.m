@@ -244,13 +244,7 @@ end
 fprintf('=========================================================================\n');
 fprintf('-> Calling TRACE to perform the footprint analysis.\n');
 fprintf('=========================================================================\n');
-if opts.trace.usesim
-    fprintf('  -> TRACE will use PYTHIA''s results to calculate the footprints.\n');
-    model.trace = TRACE(model.pilot.Z, model.pythia.Yhat, model.pythia.selection0, model.data.beta, model.data.algolabels, opts.trace);
-else
-    fprintf('  -> TRACE will use experimental data to calculate the footprints.\n');
-    model.trace = TRACE(model.pilot.Z, model.data.Ybin, model.data.P, model.data.beta, model.data.algolabels, opts.trace);
-end
+model.trace = TRACE(model.pilot.Z, model.data.Ybin, model.pythia.Yhat, model.data.P, model.data.beta, model.data.algolabels, opts.trace);
 
 if opts.parallel.flag
     fprintf('-------------------------------------------------------------------------\n');

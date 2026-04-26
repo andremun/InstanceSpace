@@ -15,33 +15,35 @@ startProcess = tic;
 scriptdisc('buildIS.m');
 % -------------------------------------------------------------------------
 % Collect all the data from the files
-disp(['Root Directory: ' rootdir]);
+fprintf('Root Directory: %s\n', rootdir);
 datafile = [rootdir 'metadata.csv'];
 optsfile = [rootdir 'options.json'];
 if ~isfile(datafile) || ~isfile(optsfile)
     error(['Please place the datafiles in the directory ''' rootdir '''']);
 end
 opts = jsondecode(fileread(optsfile));
-disp('-------------------------------------------------------------------------');
-disp('-> Listing options to be used:');
-optfields = fieldnames(opts);
-for i = 1:length(optfields)
-    disp(optfields{i});
-    disp(opts.(optfields{i}));
-end
-useparallel = isfield(opts,'parallel') && isfield(opts.parallel,'flag') && opts.parallel.flag;
-if useparallel
-    disp('-------------------------------------------------------------------------');
-    disp('-> Starting parallel processing pool.');
-    delete(gcp('nocreate'));
-    if  isfield(opts.parallel,'ncores') && isnumeric(opts.parallel.ncores)
-        mypool = parpool('local',opts.parallel.ncores,'SpmdEnabled',false);
-    else
-        mypool = parpool('local','SpmdEnabled',false);
+opts = ISAdefaults(opts);
+if opts.general.verbose
+    fprintf('-------------------------------------------------------------------------\n');
+    fprintf('-> Listing options to be used:\n');
+    optfields = fieldnames(opts);
+    for i = 1:length(optfields)
+        fprintf('%s\n', optfields{i});
+        disp(opts.(optfields{i}));
     end
 end
-disp('-------------------------------------------------------------------------');
-disp('-> Loading the data.');
+if opts.parallel.flag
+    fprintf('-------------------------------------------------------------------------\n');
+    fprintf('-> Starting parallel processing pool.\n');
+    delete(gcp('nocreate'));
+    if isnumeric(opts.parallel.ncores)
+        mypool = parpool('local', opts.parallel.ncores, 'SpmdEnabled', false);
+    else
+        mypool = parpool('local', 'SpmdEnabled', false);
+    end
+end
+fprintf('-------------------------------------------------------------------------\n');
+fprintf('-> Loading the data.\n');
 Xbar = readtable(datafile);
 varlabels = Xbar.Properties.VariableNames;
 isname = strcmpi(varlabels,'instances');
@@ -63,32 +65,31 @@ model.data.Y = Xbar{:,isalgo};
 % work with
 model.data.featlabels = varlabels(isfeat);
 if isfield(opts,'selvars') && isfield(opts.selvars,'feats')
-    disp('-------------------------------------------------------------------------');
+    fprintf('-------------------------------------------------------------------------\n');
     msg = '-> Using the following features: ';
     isselfeat = false(1,length(model.data.featlabels));
     for i=1:length(opts.selvars.feats)
         isselfeat = isselfeat | strcmp(model.data.featlabels,opts.selvars.feats{i});
         msg = [msg opts.selvars.feats{i} ' ']; %#ok<AGROW>
     end
-    disp(msg);
+    fprintf('%s\n', msg);
     model.data.X = model.data.X(:,isselfeat);
     model.data.featlabels = model.data.featlabels(isselfeat);
 end
 
 model.data.algolabels = varlabels(isalgo);
 if isfield(opts,'selvars') && isfield(opts.selvars,'algos')
-    disp('-------------------------------------------------------------------------');
+    fprintf('-------------------------------------------------------------------------\n');
     msg = '-> Using the following algorithms: ';
     isselalgo = false(1,length(model.data.algolabels));
     for i=1:length(opts.selvars.algos)
         isselalgo = isselalgo | strcmp(model.data.algolabels,opts.selvars.algos{i});
         msg = [msg opts.selvars.algos{i} ' ']; %#ok<AGROW>
     end
-    disp(msg);
+    fprintf('%s\n', msg);
     model.data.Y = model.data.Y(:,isselalgo);
     model.data.algolabels = model.data.algolabels(isselalgo);
 end
-% nalgos = size(model.data.Y,2);
 % -------------------------------------------------------------------------
 % PROBABLY HERE SHOULD DO A SANITY CHECK, I.E., IS THERE TOO MANY NANS?
 idx = all(isnan(model.data.X),2) | all(isnan(model.data.Y),2);
@@ -145,48 +146,36 @@ if any(idx)
 end
 % -------------------------------------------------------------------------
 % If we are only meant to take some observations
-disp('-------------------------------------------------------------------------');
+fprintf('-------------------------------------------------------------------------\n');
 ninst = size(model.data.X,1);
-fractional = isfield(opts,'selvars') && ...
-             isfield(opts.selvars,'smallscaleflag') && ...
-             opts.selvars.smallscaleflag && ...
-             isfield(opts.selvars,'smallscale') && ...
-             isfloat(opts.selvars.smallscale);
-fileindexed = isfield(opts,'selvars') && ...
-              isfield(opts.selvars,'fileidxflag') && ...
-              opts.selvars.fileidxflag && ...
-              isfield(opts.selvars,'fileidx') && ...
-              isfile(opts.selvars.fileidx);
-bydensity = isfield(opts,'selvars') && ...
-            isfield(opts.selvars,'densityflag') && ...
-            opts.selvars.densityflag && ...
-            isfield(opts.selvars,'mindistance') && ...
-            isfloat(opts.selvars.mindistance) && ...
-            isfield(opts.selvars,'type') && ...
-            ischar(opts.selvars.type);
+fractional = opts.selvars.smallscaleflag && isfloat(opts.selvars.smallscale);
+fileindexed = opts.selvars.fileidxflag && isfile(opts.selvars.fileidx);
+bydensity   = opts.selvars.densityflag && ...
+              isfloat(opts.selvars.mindistance) && ...
+              ischar(opts.selvars.type);
 if fractional
-    disp(['-> Creating a small scale experiment for validation. Percentage of subset: ' ...
-        num2str(round(100.*opts.selvars.smallscale,2)) '%']);
+    fprintf('-> Creating a small scale experiment for validation. Percentage of subset: %s%%\n', ...
+        num2str(round(100.*opts.selvars.smallscale,2)));
     state = rng;
     rng('default');
     aux = cvpartition(ninst,'HoldOut',opts.selvars.smallscale);
     rng(state);
     subsetIndex = aux.test;
 elseif fileindexed
-    disp('-> Using a subset of the instances.');
+    fprintf('-> Using a subset of the instances.\n');
     subsetIndex = false(size(model.data.X,1),1);
     aux = table2array(readtable(opts.selvars.fileidx));
     aux(aux>ninst) = [];
     subsetIndex(aux) = true;
 elseif bydensity
-    disp('-> Creating a small scale experiment for validation based on density.');
+    fprintf('-> Creating a small scale experiment for validation based on density.\n');
     subsetIndex = FILTER(model.data.X, model.data.Y, model.data.Ybin, ...
                          opts.selvars);
     subsetIndex = ~subsetIndex;
-    disp(['-> Percentage of instances retained: ' ...
-          num2str(round(100.*mean(subsetIndex),2)) '%']);
+    fprintf('-> Percentage of instances retained: %s%%\n', ...
+        num2str(round(100.*mean(subsetIndex),2)));
 else
-    disp('-> Using the complete set of the instances.');
+    fprintf('-> Using the complete set of the instances.\n');
     subsetIndex = true(ninst,1);
 end
 
@@ -194,19 +183,7 @@ if fileindexed || fractional || bydensity
     if bydensity
         model.data_dense = model.data;
     end
-    model.data.X = model.data.X(subsetIndex,:);
-    model.data.Y = model.data.Y(subsetIndex,:);
-    model.data.Xraw = model.data.Xraw(subsetIndex,:);
-    model.data.Yraw = model.data.Yraw(subsetIndex,:);
-    model.data.Ybin = model.data.Ybin(subsetIndex,:);
-    model.data.beta = model.data.beta(subsetIndex);
-    model.data.numGoodAlgos = model.data.numGoodAlgos(subsetIndex);
-    model.data.Ybest = model.data.Ybest(subsetIndex); 
-    model.data.P = model.data.P(subsetIndex);
-    model.data.instlabels = model.data.instlabels(subsetIndex);
-    if isfield(model.data,'S')
-        model.data.S = model.data.S(subsetIndex);
-    end
+    model.data = ISAsubsetData(model.data, subsetIndex);
 end
 nfeats = size(model.data.X,2);
 % -------------------------------------------------------------------------
@@ -215,107 +192,88 @@ nfeats = size(model.data.X,2);
 % later
 model.featsel.idx = 1:nfeats;
 if opts.sifted.flag
-    disp('=========================================================================');
-    disp('-> Calling SIFTED for auto-feature selection.');
-    disp('=========================================================================');
-    % [model.data.X, model.sifted] = SIFTED(model.data.X, model.data.Y, model.data.Ybin, opts.sifted);
+    fprintf('=========================================================================\n');
+    fprintf('-> Calling SIFTED for auto-feature selection.\n');
+    fprintf('=========================================================================\n');
     [model.data.X, model.sifted] = SIFTED2(model.data.X, model.data.Y, model.data.Ybin, model.data.featlabels, opts.sifted);
     model.data.featlabels = model.data.featlabels(model.sifted.selvars);
     model.featsel.idx = model.featsel.idx(model.sifted.selvars);
 
     if bydensity
-        disp('-> Creating a small scale experiment for validation based on density.');
-        % model.data.featlabels = model.data_dense.featlabels(model.sifted.selvars);
+        fprintf('-> Creating a small scale experiment for validation based on density.\n');
         subsetIndex = FILTER(model.data_dense.X(:,model.featsel.idx), ...
                              model.data_dense.Y, ...
                              model.data_dense.Ybin, ...
                              opts.selvars);
         subsetIndex = ~subsetIndex;
-        model.data.X = model.data_dense.X(subsetIndex,model.featsel.idx);
-        model.data.Y = model.data_dense.Y(subsetIndex,:);
-        model.data.Xraw = model.data_dense.Xraw(subsetIndex,:);
-        model.data.Yraw = model.data_dense.Yraw(subsetIndex,:);
-        model.data.Ybin = model.data_dense.Ybin(subsetIndex,:);
-        model.data.beta = model.data_dense.beta(subsetIndex);
-        model.data.numGoodAlgos = model.data_dense.numGoodAlgos(subsetIndex);
-        model.data.Ybest = model.data_dense.Ybest(subsetIndex);
-        model.data.P = model.data_dense.P(subsetIndex);
-        model.data.instlabels = model.data_dense.instlabels(subsetIndex);
-        if isfield(model.data_dense,'S')
-            model.data.S = model.data_dense.S(subsetIndex);
-        end
-        disp(['-> Percentage of instances retained: ' ...
-              num2str(round(100.*mean(subsetIndex),2)) '%']);
+        model.data = ISAsubsetData(model.data_dense, subsetIndex, model.featsel.idx);
+        fprintf('-> Percentage of instances retained: %s%%\n', ...
+            num2str(round(100.*mean(subsetIndex),2)));
     end
 end
 % -------------------------------------------------------------------------
 % This is the final subset of features. Calculate the two dimensional
 % projection using the PILOT algorithm (Munoz et al. Mach Learn 2018)
-disp('=========================================================================');
-disp('-> Calling PILOT to find the optimal projection.');
-disp('=========================================================================');
+fprintf('=========================================================================\n');
+fprintf('-> Calling PILOT to find the optimal projection.\n');
+fprintf('=========================================================================\n');
 model.pilot = PILOT(model.data.X, model.data.Y, model.data.featlabels, opts.pilot);
 % -------------------------------------------------------------------------
 % Finding the empirical bounds based on the ranges of the features and the
 % correlations of the different edges.
-disp('=========================================================================');
-disp('-> Finding empirical bounds using CLOISTER.');
-disp('=========================================================================');
+fprintf('=========================================================================\n');
+fprintf('-> Finding empirical bounds using CLOISTER.\n');
+fprintf('=========================================================================\n');
 model.cloist = CLOISTER(model.data.X, model.pilot.A, opts.cloister);
 % -------------------------------------------------------------------------
 % Algorithm selection. Fit a model that would separate the space into
-% classes of good and bad performance. 
-disp('=========================================================================');
-disp('-> Summoning PYTHIA to train the prediction models.');
-disp('=========================================================================');
-if isfield(opts.pythia,'useknn') && opts.pythia.useknn
+% classes of good and bad performance.
+fprintf('=========================================================================\n');
+fprintf('-> Summoning PYTHIA to train the prediction models.\n');
+fprintf('=========================================================================\n');
+if opts.pythia.useknn
     model.pythia = PYTHIA2(model.pilot.Z, model.data.Yraw, model.data.Ybin, model.data.Ybest, model.data.algolabels, opts.pythia);
 else
     model.pythia = PYTHIA(model.pilot.Z, model.data.Yraw, model.data.Ybin, model.data.Ybest, model.data.algolabels, opts.pythia);
 end
 % -------------------------------------------------------------------------
 % Calculating the algorithm footprints.
-disp('=========================================================================');
-disp('-> Calling TRACE to perform the footprint analysis.');
-disp('=========================================================================');
+fprintf('=========================================================================\n');
+fprintf('-> Calling TRACE to perform the footprint analysis.\n');
+fprintf('=========================================================================\n');
 if opts.trace.usesim
-    disp('  -> TRACE will use PYTHIA''s results to calculate the footprints.');
+    fprintf('  -> TRACE will use PYTHIA''s results to calculate the footprints.\n');
     model.trace = TRACE(model.pilot.Z, model.pythia.Yhat, model.pythia.selection0, model.data.beta, model.data.algolabels, opts.trace);
 else
-    disp('  -> TRACE will use experimental data to calculate the footprints.');
+    fprintf('  -> TRACE will use experimental data to calculate the footprints.\n');
     model.trace = TRACE(model.pilot.Z, model.data.Ybin, model.data.P, model.data.beta, model.data.algolabels, opts.trace);
 end
 
-if useparallel
-    disp('-------------------------------------------------------------------------');
-    disp('-> Closing parallel processing pool.');
+if opts.parallel.flag
+    fprintf('-------------------------------------------------------------------------\n');
+    fprintf('-> Closing parallel processing pool.\n');
     delete(mypool);
 end
 % -------------------------------------------------------------------------
 % Preparing the outputs for further analysis
 model.opts = opts;
 % -------------------------------------------------------------------------
-disp('-------------------------------------------------------------------------');
-disp('-> Storing the raw MATLAB results for post-processing and/or debugging.');
+fprintf('-------------------------------------------------------------------------\n');
+fprintf('-> Storing the raw MATLAB results for post-processing and/or debugging.\n');
 save([rootdir 'model.mat'],'-struct','model'); % Save the main results
 save([rootdir 'workspace.mat']); % Save the full workspace for debugging
 % -------------------------------------------------------------------------
 if opts.outputs.csv
-    % Storing the output data as a CSV files. This is for easier
-    % post-processing. All workspace data will be stored in a matlab file
-    % later.
     scriptcsv(model,rootdir);
     if opts.outputs.web
         scriptweb(model,rootdir);
     end
 end
 % -------------------------------------------------------------------------
-% Making all the plots. First, plotting the features and performance as
-% scatter plots.
 if opts.outputs.png
     scriptpng(model,rootdir);
 end
 % -------------------------------------------------------------------------
-disp(['-> Completed! Elapsed time: ' num2str(toc(startProcess)) 's']);
-disp('EOF:SUCCESS');
+fprintf('-> Completed! Elapsed time: %ss\n', num2str(toc(startProcess)));
+fprintf('EOF:SUCCESS\n');
 end

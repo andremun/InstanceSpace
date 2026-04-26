@@ -40,12 +40,12 @@ nfeats = size(X,2);
 if nfeats<=1
     error('-> There is only 1 feature. Stopping space construction.');
 elseif nfeats<=3
-    disp('-> There are 3 or less features to do selection. Skipping feature selection.')
+    fprintf('-> There are 3 or less features to do selection. Skipping feature selection.\n')
     out.selvars = 1:nfeats;
     return;
 end
 % ---------------------------------------------------------------------
-disp('-> Selecting features based on correlation with performance.');
+fprintf('-> Selecting features based on correlation with performance.\n');
 [out.rho,out.p] = corr(X,Y,'rows','pairwise');
 rho = out.rho;
 rho(isnan(rho) | (out.p>alphaval)) = 0;
@@ -59,34 +59,34 @@ for ii=2:nfeats
 end
 out.selvars = find(out.selvars);
 Xaux = X(:,out.selvars);
-disp(['-> Keeping ' num2str(size(Xaux,2)) ' out of ' num2str(nfeats) ' features (correlation).']);
+fprintf('-> Keeping %d out of %d features (correlation).\n', size(Xaux,2), nfeats);
 % ---------------------------------------------------------------------
 nfeats = size(Xaux,2);
 if nfeats<=1
     error('-> There is only 1 feature. Stopping space construction.');
 elseif nfeats<=3
-    disp('-> There are 3 or less features to do selection. Skipping correlation clustering selection.');
+    fprintf('-> There are 3 or less features to do selection. Skipping correlation clustering selection.\n');
     X = Xaux;
     return;
 elseif nfeats<=opts.K
-    disp('-> There are less or equal features than clusters. Skipping correlation clustering selection.');
+    fprintf('-> There are less or equal features than clusters. Skipping correlation clustering selection.\n');
     X = Xaux;
     return;
 end
 % ---------------------------------------------------------------------
-disp('-> Selecting features based on correlation clustering.');
+fprintf('-> Selecting features based on correlation clustering.\n');
 state = rng;
 rng('default');
 out.eva = evalclusters(Xaux', 'kmeans', 'Silhouette', 'KList', 3:nfeats, ... % minimum of three features
                               'Distance', 'correlation');
-disp('-> Average silhouette values for each number of clusters.')
+fprintf('-> Average silhouette values for each number of clusters.\n')
 disp([out.eva.InspectedK; out.eva.CriterionValues]);
 if out.eva.CriterionValues(out.eva.InspectedK==opts.K)<innaceptableClustering
-    disp(['-> The silhouette value for K=' num2str(opts.K) ...
-          ' is below ' num2str(innaceptableClustering) '. You should consider increasing K.']);
+    fprintf('-> The silhouette value for K=%d is below %s. You should consider increasing K.\n', ...
+        opts.K, num2str(innaceptableClustering));
     out.Ksuggested = out.eva.InspectedK(find(out.eva.CriterionValues>acceptableClustering,1));
     if ~isempty(out.Ksuggested)
-        disp(['-> A suggested value of K is ' num2str(out.Ksuggested)]);
+        fprintf('-> A suggested value of K is %d\n', out.Ksuggested);
     end
 end
 % ---------------------------------------------------------------------
@@ -97,8 +97,8 @@ out.clust = bsxfun(@eq, kmeans(Xaux', opts.K, 'Distance', 'correlation', ...
                                               'Options', statset('UseParallel', nworkers~=0), ...
                                               'OnlinePhase', 'on'), 1:opts.K);
 rng(state);
-disp(['-> Constructing ' num2str(opts.K) ' clusters of features.']);
-disp('-> Using a GA+LookUpTable to find an optimal combination.');
+fprintf('-> Constructing %d clusters of features.\n', opts.K);
+fprintf('-> Using a GA+LookUpTable to find an optimal combination.\n');
 % ---------------------------------------------------------------------
 cvpart = cvpartition(size(Xaux,1), 'Kfold', Kfolds);
 fcnwrap = @(x) costfcn(x, Xaux, Y, Ybin, out.clust, cvpart, featlabels, nworkers);
@@ -114,7 +114,7 @@ for i=1:opts.K
 end
 out.selvars = out.selvars(decoder);
 X = X(:,out.selvars);
-disp(['-> Keeping ' num2str(size(X, 2)) ' out of ' num2str(nfeats) ' features (clustering).']);
+fprintf('-> Keeping %d out of %d features (clustering).\n', size(X,2), nfeats);
 
 end
 % =========================================================================

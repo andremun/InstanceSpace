@@ -10,8 +10,8 @@ function out = TRACE(Z, Ybin, P, beta, algolabels, opts)
 %     2020
 %
 % -------------------------------------------------------------------------
-if size(Z,2) == 3 
-    disp('  -> 3D Instance Space detected using TRACE2');
+if size(Z,2) == 3
+    fprintf('  -> 3D Instance Space detected using TRACE2\n');
     opts.Trace2 = true;
 end
 
@@ -30,9 +30,9 @@ end
 % calculate the 'space' footprint. This is also the maximum area possible
 % for a footprint.
 if opts.Trace2
-    disp('  -> TRACE2 is calculating the space area and density.');
+    fprintf('  -> TRACE2 is calculating the space area and density.\n');
 else
-    disp('  -> TRACE is calculating the space area and density.');
+    fprintf('  -> TRACE is calculating the space area and density.\n');
 end
 ninst = size(Z,1);
 nalgos = size(Ybin,2);
@@ -41,16 +41,16 @@ if opts.Trace2
 else
     out.space = TRACEbuild(Z, true(ninst,1), opts);
 end
-disp(['    -> Space area: ' num2str(out.space.area) ...
-      ' | Space density: ' num2str(out.space.density)]);
+fprintf('    -> Space area: %s | Space density: %s\n', ...
+    num2str(out.space.area), num2str(out.space.density));
 % -------------------------------------------------------------------------
 % This loop will calculate the footprints for good/bad instances and the
 % best algorithm.
-disp('-------------------------------------------------------------------------');
+fprintf('-------------------------------------------------------------------------\n');
 if opts.Trace2
-    disp('  -> TRACE2 is calculating the algorithm footprints.');
+    fprintf('  -> TRACE2 is calculating the algorithm footprints.\n');
 else
-    disp('  -> TRACE is calculating the algorithm footprints.');
+    fprintf('  -> TRACE is calculating the algorithm footprints.\n');
 end
 
 good = cell(1,nalgos);
@@ -59,54 +59,53 @@ best = cell(1,nalgos);
 parfor (i=1:nalgos,nworkers)
     tic;
     if opts.Trace2
-        disp(['    -> Good performance footprint for ''' algolabels{i} '''']);
+        fprintf('    -> Good performance footprint for ''%s''\n', algolabels{i});
         good{i} = TRACEbuild2(Z, Ybin(:,i), opts);
-        disp(['    -> Best performance footprint for ''' algolabels{i} '''']);
+        fprintf('    -> Best performance footprint for ''%s''\n', algolabels{i});
         best{i} = TRACEbuild2(Z, P==i, opts);
     else
-        disp(['    -> Good performance footprint for ''' algolabels{i} '''']);
+        fprintf('    -> Good performance footprint for ''%s''\n', algolabels{i});
         good{i} = TRACEbuild(Z, Ybin(:,i), opts);
-        disp(['    -> Best performance footprint for ''' algolabels{i} '''']);
+        fprintf('    -> Best performance footprint for ''%s''\n', algolabels{i});
         best{i} = TRACEbuild(Z, P==i, opts);
     end
-    disp(['    -> Algorithm ''' algolabels{i} ''' completed. Elapsed time: ' num2str(toc,'%.2f\n') 's']);
+    fprintf('    -> Algorithm ''%s'' completed. Elapsed time: %.2fs\n', algolabels{i}, toc);
 end
 out.good = good;
 out.best = best;
 % -------------------------------------------------------------------------
 % Detecting collisions and removing them. Original Trace ONLY
 if ~opts.Trace2
-    disp('-------------------------------------------------------------------------');
-    disp('  -> TRACE is detecting and removing contradictory sections of the footprints.');
+    fprintf('-------------------------------------------------------------------------\n');
+    fprintf('  -> TRACE is detecting and removing contradictory sections of the footprints.\n');
     for i=1:nalgos
-        disp(['  -> Base algorithm ''' algolabels{i} '''']);
+        fprintf('  -> Base algorithm ''%s''\n', algolabels{i});
         startBase = tic;
         for j=i+1:nalgos
-            disp(['      -> TRACE is comparing ''' algolabels{i} ''' with ''' algolabels{j} '''']);
+            fprintf('      -> TRACE is comparing ''%s'' with ''%s''\n', algolabels{i}, algolabels{j});
             startTest = tic;
             [out.best{i}, out.best{j}] = TRACEcontra(out.best{i}, out.best{j}, ...
-                                                     Z, P==i, P==j, opts);%, false);
-
-            disp(['      -> Test algorithm ''' algolabels{j} ...
-                  ''' completed. Elapsed time: ' num2str(toc(startTest),'%.2f\n') 's']);
+                                                     Z, P==i, P==j, opts);
+            fprintf('      -> Test algorithm ''%s'' completed. Elapsed time: %.2fs\n', ...
+                algolabels{j}, toc(startTest));
         end
-        disp(['  -> Base algorithm ''' algolabels{i} ...
-              ''' completed. Elapsed time: ' num2str(toc(startBase),'%.2f\n') 's']);
+        fprintf('  -> Base algorithm ''%s'' completed. Elapsed time: %.2fs\n', ...
+            algolabels{i}, toc(startBase));
     end
 end
 % -------------------------------------------------------------------------
 % Beta hard footprints. First step is to calculate them.
-disp('-------------------------------------------------------------------------');
+fprintf('-------------------------------------------------------------------------\n');
 if opts.Trace2
-    disp('  -> TRACE2 is calculating the beta-footprint.');
+    fprintf('  -> TRACE2 is calculating the beta-footprint.\n');
 else
-    disp('  -> TRACE is calculating the beta-footprint.');
+    fprintf('  -> TRACE is calculating the beta-footprint.\n');
 end
 out.hard = TRACEbuild(Z, ~beta, opts);
 % -------------------------------------------------------------------------
 % Calculating performance
-disp('-------------------------------------------------------------------------');
-disp('  -> Preparing the summary table.');
+fprintf('-------------------------------------------------------------------------\n');
+fprintf('  -> Preparing the summary table.\n');
 out.summary = cell(nalgos+1,11);
 out.summary(1,2:end) = {'Area_Good',...
                         'Area_Good_Normalized',...
@@ -125,11 +124,11 @@ for i=1:nalgos
     out.summary(i+1,2:end) = num2cell(round(row,3));
 end
 if opts.Trace2
-    disp('  -> TRACE2 has completed. Footprint analysis results:');
+    fprintf('  -> TRACE2 has completed. Footprint analysis results:\n');
 else
-    disp('  -> TRACE has completed. Footprint analysis results:');
+    fprintf('  -> TRACE has completed. Footprint analysis results:\n');
 end
-disp(' ');
+fprintf('\n');
 disp(out.summary);
 
 end
@@ -280,23 +279,21 @@ while contradiction.NumRegions~=0 && numtries<=maxtries
     purityTest = numGoodElementsTest/numElements;
     if purityBase>purityTest %&& (~isbin || (purityBase>0.55 && isbin))
         carea = area(contradiction)./area(test.polygon);
-        disp(['        -> ' num2str(round(100.*carea,1)) '%' ...
-              ' of the test footprint is contradictory.']);
+        fprintf('        -> %.1f%% of the test footprint is contradictory.\n', round(100.*carea,1));
         test.polygon = subtract(test.polygon,contradiction);
         if numtries<maxtries
             test.polygon = TRACEtight(test.polygon,Z,Ytest,opts);
         end
     elseif purityTest>purityBase %&& (~isbin || (purityTest>0.55 && isbin))
         carea = area(contradiction)./area(base.polygon);
-        disp(['        -> ' num2str(round(100.*carea,1)) '%' ...
-              ' of the base footprint is contradictory.']);
+        fprintf('        -> %.1f%% of the base footprint is contradictory.\n', round(100.*carea,1));
         base.polygon = subtract(base.polygon,contradiction);
         if numtries<maxtries
             base.polygon = TRACEtight(base.polygon,Z,Ybase,opts);
         end
     else
-        disp('        -> Purity of the contradicting areas is equal for both footprints.');
-        disp('        -> Ignoring the contradicting area.');
+        fprintf('        -> Purity of the contradicting areas is equal for both footprints.\n');
+        fprintf('        -> Ignoring the contradicting area.\n');
         break;
     end
     if isempty(base.polygon) || isempty(test.polygon)
@@ -405,8 +402,8 @@ end
 % =========================================================================
 function footprint = TRACEthrow
 
-disp('        -> There are not enough instances to calculate a footprint.');
-disp('        -> The subset of instances used is too small.');
+fprintf('        -> There are not enough instances to calculate a footprint.\n');
+fprintf('        -> The subset of instances used is too small.\n');
 footprint.polygon = [];
 footprint.area = 0;
 footprint.elements = 0;

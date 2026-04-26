@@ -43,6 +43,7 @@ if ~isfield(opts.selvars, 'type'),               opts.selvars.type              
 if ~isfield(opts, 'sifted'),                opts.sifted                = struct; end
 if ~isfield(opts.sifted, 'flag'),           opts.sifted.flag           = true;   end
 if ~isfield(opts.sifted, 'rho'),            opts.sifted.rho            = 0.10;   end
+if ~isfield(opts.sifted, 'pval'),           opts.sifted.pval           = 0.05;   end
 if ~isfield(opts.sifted, 'K'),              opts.sifted.K              = 10;     end
 if ~isfield(opts.sifted, 'NTREES'),         opts.sifted.NTREES         = 50;     end
 if ~isfield(opts.sifted, 'MaxIter'),        opts.sifted.MaxIter        = 1000;   end

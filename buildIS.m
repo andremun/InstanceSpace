@@ -128,9 +128,12 @@ opts.prelim = opts.perf;
 opts.prelim.auto = opts.auto.preproc;
 opts.prelim.bound = opts.bound.flag;
 opts.prelim.norm = opts.norm.flag;
-[model.data.X,model.data.Y,model.data.Ybest,...
-    model.data.Ybin,model.data.P,model.data.numGoodAlgos,...
-    model.data.beta,model.prelim] = PRELIM(model.data.X, model.data.Y, opts.prelim);
+[model.data.X, model.data.Y, model.prelim] = PRELIM(model.data.X, model.data.Y, opts.prelim);
+model.data.Ybest        = model.prelim.Ybest;
+model.data.Ybin         = model.prelim.Ybin;
+model.data.P            = model.prelim.P;
+model.data.numGoodAlgos = model.prelim.numGoodAlgos;
+model.data.beta         = model.prelim.beta;
 
 idx = all(~model.data.Ybin,1);
 if any(idx)

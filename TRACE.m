@@ -99,10 +99,11 @@ end
 disp('-------------------------------------------------------------------------');
 if opts.Trace2
     disp('  -> TRACE2 is calculating the beta-footprint.');
+    out.hard = TRACEbuild2(Z, ~beta, opts);
 else
     disp('  -> TRACE is calculating the beta-footprint.');
+    out.hard = TRACEbuild(Z, ~beta, opts);
 end
-out.hard = TRACEbuild(Z, ~beta, opts);
 % -------------------------------------------------------------------------
 % Calculating performance
 disp('-------------------------------------------------------------------------');
@@ -168,7 +169,11 @@ if isfield(footprint,'polygon') && ~isempty(footprint.polygon)
     footprint.elements = sum(isinterior(footprint.polygon,Z));
     footprint.goodElements = sum(isinterior(footprint.polygon,Z(Ybin,:)));
     footprint.density = footprint.elements./footprint.area;
-    footprint.purity = footprint.goodElements./footprint.elements;
+    if footprint.elements > 0
+        footprint.purity = footprint.goodElements./footprint.elements;
+    else
+        footprint.purity = 0;
+    end
 else
     footprint = TRACEthrow;
 end
@@ -195,10 +200,10 @@ end
 if size(unique(Ybin),1) > 1
     knt = fitcknn(Z,Ybin,'Prior',opts.prior,'NumNeighbors',opts.nn); %Fit a KNN classification
     prt = predict(knt,Z); 
-    polydata = Z(prt==1 & Ybin == 1,:); %Build poly data from instances correctly identfied as good from the KNN classifier
+    polydata = unique(Z(prt==1 & Ybin == 1,:),'rows'); %Build poly data from instances correctly identfied as good from the KNN classifier
 else
     %knt = fitcknn(Z,Ybin,'NumNeighbors',nn); %'Prior',[0.6,0.4],
-    polydata = Z;
+    polydata = unique(Z,'rows');
 end
 footprint.polygon = alphaShape(polydata); %Build the alpha shape from poly data
 D = size(Z);
@@ -360,6 +365,16 @@ function polygon = TRACEfitpoly(polydata,Z,Ybin,opts)
 
 warning('off','MATLAB:polyshape:repairedBySimplify');
 
+if size(polydata,1)<3
+    polygon = [];
+    warning('on','MATLAB:polyshape:repairedBySimplify');
+    return
+end
+
+% Deduplicate before passing to polyshape: boundary() closes the polygon
+% by repeating the first vertex, and near-collinear clusters may produce
+% fewer than 3 distinct vertices after polyshape's internal simplification.
+polydata = unique(polydata,'rows','stable');
 if size(polydata,1)<3
     polygon = [];
     warning('on','MATLAB:polyshape:repairedBySimplify');

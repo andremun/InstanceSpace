@@ -152,11 +152,13 @@ disp('-------------------------------------------------------------------------'
 disp('  -> PILOT has completed. The projection matrix A is:');
 if opts.ISA3D 
     out.summary = cell(4, n+1);
+    out.summary(2:end,1) = {'Z_{1}','Z_{2}','Z_{3}'};
 else
     out.summary = cell(3, n+1);
+    out.summary(2:end,1) = {'Z_{1}','Z_{2}'};
 end
 out.summary(1,2:end) = featlabels;
-out.summary(2:end,1) = {'Z_{1}','Z_{2}'};
+% out.summary(2:end,1) = {'Z_{1}','Z_{2}'};
 out.summary(2:end,2:end) = num2cell(round(out.A,4));
 disp(' ');
 disp(out.summary);

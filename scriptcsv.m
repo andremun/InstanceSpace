@@ -14,18 +14,24 @@ function scriptcsv(container,rootdir)
 scriptfcn;
 
 nalgos = size(container.data.Y,2);
+ndim = size(container.pilot.Z, 2);
+if ndim == 3
+    zcols = {'z_1','z_2','z_3'};
+else
+    zcols = {'z_1','z_2'};
+end
 fprintf('=========================================================================\n');
 fprintf('-> Writing the data on CSV files for posterior analysis.\n');
 % -------------------------------------------------------------------------
 for i=1:nalgos
     verts = footprintBoundary(container.trace.best{i});
     if ~isempty(verts)
-        writeArray2CSV(verts, {'z_1','z_2'}, makeBndLabels(verts), ...
+        writeArray2CSV(verts, zcols, makeBndLabels(verts), ...
                        [rootdir 'footprint_' container.data.algolabels{i} '_best.csv']);
     end
     verts = footprintBoundary(container.trace.good{i});
     if ~isempty(verts)
-        writeArray2CSV(verts, {'z_1','z_2'}, makeBndLabels(verts), ...
+        writeArray2CSV(verts, zcols, makeBndLabels(verts), ...
                        [rootdir 'footprint_' container.data.algolabels{i} '_good.csv']);
     end
 %     if isfield(container.trace.bad{i},'polygon') && ~isempty(container.trace.bad{i}.polygon)
@@ -36,14 +42,14 @@ for i=1:nalgos
 %     end
 end
 
-writeArray2CSV(container.pilot.Z, {'z_1','z_2'}, ...
+writeArray2CSV(container.pilot.Z, zcols, ...
                container.data.instlabels, ...
                [rootdir 'coordinates.csv']);
 if isfield(container,'cloist')
-    writeArray2CSV(container.cloist.Zedge, {'z_1','z_2'}, ...
+    writeArray2CSV(container.cloist.Zedge, zcols, ...
                    makeBndLabels(container.cloist.Zedge), ...
                    [rootdir 'bounds.csv']);
-    writeArray2CSV(container.cloist.Zecorr, {'z_1','z_2'}, ...
+    writeArray2CSV(container.cloist.Zecorr, zcols, ...
                    makeBndLabels(container.cloist.Zecorr), ...
                    [rootdir 'bounds_prunned.csv']);
 end
@@ -110,6 +116,11 @@ if ~isfield(fp, 'polygon') || isempty(fp.polygon)
 end
 poly = fp.polygon;
 if isa(poly, 'alphaShape')
+    if size(poly.Points, 2) == 3
+        % 3D boundary CSV export not supported; skip silently.
+        % Full 3D boundary extraction is deferred to a later phase.
+        return;
+    end
     [bf, bv] = boundaryFacets(poly);
     if isempty(bf)
         return;

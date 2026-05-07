@@ -19,8 +19,10 @@ function out = TRACE(Z, Ybin, Yhat, P, beta, algolabels, opts, trainedTrace)
 %     opts       - struct with fields (see ISAdefaults for defaults):
 %                    method        'trace3' (default) or 'legacy'
 %                    PI            minimum purity threshold (0.6)
-%                    nn            fallback KNN neighbours when Yhat absent (50)
-%                    prior         fallback KNN prior [bad, good] ([0.6, 0.4])
+%                    nn            (unused; reserved for future KNN fallback)
+%                    prior         (unused; reserved for future KNN fallback)
+%                  Note: in TRACE3, if Yhat is empty, Zu = {yi=1} directly;
+%                  there is no KNN fallback in this version.
 %                    minInstances  minimum instances for a valid footprint (4)
 %                    minAreaFrac   footprint must exceed this fraction of space (0.01)
 %                    contra        contradiction removal; legacy only; default true
@@ -50,6 +52,11 @@ isEvalMode = nargin == 8;
 is3D       = size(Z, 2) == 3;
 nalgos     = size(Ybin, 2);
 useLegacy  = isfield(opts, 'method') && strcmpi(opts.method, 'legacy');
+if useLegacy && is3D
+    warning('ISA:TRACE:legacyNo3D', ...
+        'Legacy TRACE does not support 3D instance spaces; switching to TRACE3.');
+    useLegacy = false;
+end
 pythiaAvailable = ~isempty(Yhat);
 
 % -------------------------------------------------------------------------
@@ -76,9 +83,20 @@ if isEvalMode
     if ~isfield(trainedTrace.space, 'measureLabel')
         trainedTrace.space.measureLabel = measureLabel;
     end
-    for i = 1:nalgos
+    out.space = trainedTrace.space;
+    ngood = numel(trainedTrace.good);
+    nbest = numel(trainedTrace.best);
+    for i = 1:min(nalgos, ngood)
         out.good{i} = TRACErescore(trainedTrace.good{i}, Z, Ybin(:,i), is3D);
-        out.best{i} = TRACErescore(trainedTrace.best{i}, Z, P==i,      is3D);
+    end
+    for i = ngood+1:nalgos
+        out.good{i} = TRACEthrow3(is3D);
+    end
+    for i = 1:min(nalgos, nbest)
+        out.best{i} = TRACErescore(trainedTrace.best{i}, Z, P==i, is3D);
+    end
+    for i = nbest+1:nalgos
+        out.best{i} = TRACEthrow3(is3D);
     end
     out.hard    = TRACErescore(trainedTrace.hard, Z, ~beta, is3D);
     out.summary = TRACEsummaryTable(out.good, out.best, algolabels, trainedTrace.space);

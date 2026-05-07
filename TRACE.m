@@ -324,7 +324,15 @@ end
 
 % =========================================================================
 function summary = TRACEsummaryTable(good, best, algolabels, space)
-nalgos = length(good);
+nGood = length(good);
+nBest = length(best);
+nLabels = numel(algolabels);
+if nGood ~= nBest || nGood ~= nLabels
+    error('ISA:TRACE:summaryMismatch', ...
+        'TRACEsummaryTable: good=%d, best=%d, labels=%d must all match.', ...
+        nGood, nBest, nLabels);
+end
+nalgos = nGood;
 ml = space.measureLabel;
 summary = cell(nalgos+1, 11);
 summary(1, 2:end) = {[ml '_Good'],            [ml '_Good_Normalized'], ...

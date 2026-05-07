@@ -14,15 +14,17 @@ function scriptcsv(container,rootdir)
 scriptfcn;
 
 nalgos = size(container.data.Y,2);
+fprintf('=========================================================================\n');
+fprintf('-> Writing the data on CSV files for posterior analysis.\n');
+% -------------------------------------------------------------------------
+% Determine dimensionality
 ndim = size(container.pilot.Z, 2);
 if ndim == 3
     zcols = {'z_1','z_2','z_3'};
 else
     zcols = {'z_1','z_2'};
 end
-fprintf('=========================================================================\n');
-fprintf('-> Writing the data on CSV files for posterior analysis.\n');
-% -------------------------------------------------------------------------
+
 for i=1:nalgos
     verts = footprintBoundary(container.trace.best{i});
     if ~isempty(verts)
@@ -34,12 +36,6 @@ for i=1:nalgos
         writeArray2CSV(verts, zcols, makeBndLabels(verts), ...
                        [rootdir 'footprint_' container.data.algolabels{i} '_good.csv']);
     end
-%     if isfield(container.trace.bad{i},'polygon') && ~isempty(container.trace.bad{i}.polygon)
-%         writeArray2CSV(container.trace.bad{i}.polygon.Vertices, ...
-%                        {'z_1','z_2'},...
-%                        makeBndLabels(container.trace.bad{i}.polygon.Vertices),...
-%                        [rootdir 'footprint_' container.data.algolabels{i} '_bad.csv']);
-%     end
 end
 
 writeArray2CSV(container.pilot.Z, zcols, ...

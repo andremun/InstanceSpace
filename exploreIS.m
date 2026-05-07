@@ -162,7 +162,7 @@ if model.opts.auto.preproc && model.opts.norm.flag
     % If the algorithm is new, something else should be made...
     out.data.Y(out.data.Y==0) = eps; % Assumes that out.data.Y is always positive and higher than 1e-16
     for ii = 1:modelalgos
-        out.data.Y(:,ii) = boxcox(out.data.Y(:,ii), model.prelim.lambdaY);
+        out.data.Y(:,ii) = boxcox(out.data.Y(:,ii), model.prelim.lambdaY(ii));
     end
     out.data.Y(:,1:modelalgos) = bsxfun(@rdivide, bsxfun(@minus, out.data.Y(:,1:modelalgos), model.prelim.muY), model.prelim.sigmaY);
     if newalgos>0

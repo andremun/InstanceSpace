@@ -33,6 +33,7 @@ assignin('caller','drawPortfolioFootprint',@drawPortfolioFootprint);
 assignin('caller','drawGoodBadFootprint',@drawGoodBadFootprint);
 assignin('caller','drawFootprint',@drawFootprint);
 assignin('caller','drawBinaryPerformance',@drawBinaryPerformance);
+assignin('caller','getPolygonPoints',@getPolygonPoints);
 
 end
 % =========================================================================
@@ -225,3 +226,12 @@ axis square; axis([lbound(1)-1 ubound(1)+1 lbound(2)-1 ubound(2)+1]);
 
 end
 % =========================================================================
+function pts = getPolygonPoints(polygon)
+% Extract vertex/point matrix from either a polyshape or alphaShape object.
+if isa(polygon, 'alphaShape')
+    pts = polygon.Points;
+else
+    pts = polygon.Vertices;
+    pts = pts(~any(isnan(pts),2),:); % polyshape uses NaN rows as region separators
+end
+end

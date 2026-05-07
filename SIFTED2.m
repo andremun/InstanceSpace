@@ -61,7 +61,7 @@ MaxGenerations    = 100;  % hard cap on GA generations
 MaxStallGenerations = 5;  % early-stop if best fitness unchanged for this many generations
 PopulationSize    = 50;   % GA population size (caps combinations at ~50*K evaluations)
 % Silhouette thresholds for advisory messages only
-innaceptableClustering = 0.50;
+unnaceptableClustering = 0.50;
 acceptableClustering   = 0.75;
 % -------------------------------------------------------------------------
 
@@ -127,9 +127,9 @@ out.eva = evalclusters(Xaux', 'kmeans', 'Silhouette', 'KList', 3:nfeats, ...
                               'Distance', 'correlation');
 fprintf('-> Average silhouette values for each number of clusters.\n');
 disp([out.eva.InspectedK; out.eva.CriterionValues]);
-if out.eva.CriterionValues(out.eva.InspectedK==opts.K) < innaceptableClustering
+if out.eva.CriterionValues(out.eva.InspectedK==opts.K) < unnaceptableClustering
     fprintf('-> The silhouette value for K=%d is below %.2f. You should consider increasing K.\n', ...
-        opts.K, innaceptableClustering);
+        opts.K, unnaceptableClustering);
     out.Ksuggested = out.eva.InspectedK(find(out.eva.CriterionValues > acceptableClustering, 1));
     if ~isempty(out.Ksuggested)
         fprintf('-> A suggested value of K is %d\n', out.Ksuggested);
@@ -206,7 +206,6 @@ function clearCache()
 % Clears the persistent fitness cache in costfcn.
 % Called at the start of each SIFTED2 invocation to prevent stale hits
 % across successive buildIS calls in the same MATLAB session.
-    persistent mymap %#ok<NUSED>
-    clear mymap
+    clear costfcn
 end
 % =========================================================================

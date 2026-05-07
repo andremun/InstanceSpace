@@ -23,6 +23,7 @@ if ~isfile(datafile) || ~isfile(optsfile)
 end
 opts = jsondecode(fileread(optsfile));
 opts = ISAdefaults(opts);
+rng(opts.general.seed, 'twister');
 if opts.general.verbose
     fprintf('-------------------------------------------------------------------------\n');
     fprintf('-> Listing options to be used:\n');

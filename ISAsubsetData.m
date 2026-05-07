@@ -4,9 +4,10 @@ function data = ISAsubsetData(data, subsetIndex, featIdx)
 %   data = ISAsubsetData(data, subsetIndex, featIdx) also selects feature
 %   columns featIdx from data.X (used in the post-SIFTED density path).
 if nargin < 3
-    featIdx = ':';
+    data.X = data.X(subsetIndex, :);
+else
+    data.X = data.X(subsetIndex, featIdx);
 end
-data.X            = data.X(subsetIndex, featIdx);
 data.Y            = data.Y(subsetIndex, :);
 data.Xraw         = data.Xraw(subsetIndex, :);
 data.Yraw         = data.Yraw(subsetIndex, :);

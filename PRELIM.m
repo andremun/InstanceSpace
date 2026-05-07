@@ -118,7 +118,7 @@ end
 
 nfeats = size(X, 2);
 nalgos = size(Y, 2);
-out.minX    = min(X, [], 1);
+out.minX    = min(X, [], 1, 'omitnan');
 out.lambdaX = zeros(1, nfeats);
 out.muX     = zeros(1, nfeats);
 out.sigmaX  = zeros(1, nfeats);

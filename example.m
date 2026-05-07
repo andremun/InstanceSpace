@@ -58,6 +58,7 @@ fclose(fid);
 
 try
     model = buildIS(rootdir);
+    out = exploreIS(rootdir);
 catch ME
     disp('EOF:ERROR');
     rethrow(ME)

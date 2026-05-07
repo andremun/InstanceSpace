@@ -154,21 +154,44 @@ end
 if model.opts.auto.preproc && model.opts.norm.flag
     fprintf('-> Auto-normalizing the data.\n');
     out.data.X = bsxfun(@minus, out.data.X, model.prelim.minX) + 1;
+    out.data.X(~isnan(out.data.X) & out.data.X < 1) = 1;  % clamp to training minimum
     for ii = 1:length(model.prelim.lambdaX)
-        out.data.X(:,ii) = boxcox(out.data.X(:,ii), model.prelim.lambdaX(:,ii));
+        lambda = model.prelim.lambdaX(ii);
+        x = out.data.X(:,ii);
+        idx = ~isnan(x);
+        if abs(lambda) < 1e-10
+            % lambda ≈ 0: log transform
+            x(idx) = log(x(idx));
+        else
+            x(idx) = (x(idx).^lambda - 1) ./ lambda;
+        end
+        out.data.X(:,ii) = x;
     end
     out.data.X = bsxfun(@rdivide, bsxfun(@minus, out.data.X, model.prelim.muX), model.prelim.sigmaX);
 
     % If the algorithm is new, something else should be made...
-    out.data.Y(out.data.Y==0) = eps; % Assumes that out.data.Y is always positive and higher than 1e-16
+    out.data.Y = (out.data.Y - model.prelim.minY) + eps;
+    out.data.Y(out.data.Y <= 0) = eps;  % clamp any remaining non-positives
     for ii = 1:modelalgos
-        out.data.Y(:,ii) = boxcox(out.data.Y(:,ii), model.prelim.lambdaY(ii));
+        lambda = model.prelim.lambdaY(ii);
+        y = out.data.Y(:,ii);
+        idx = ~isnan(y);
+        if abs(lambda) < 1e-10
+            y(idx) = log(y(idx));
+        else
+            y(idx) = (y(idx).^lambda - 1) ./ lambda;
+        end
+        out.data.Y(:,ii) = y;
     end
     out.data.Y(:,1:modelalgos) = bsxfun(@rdivide, bsxfun(@minus, out.data.Y(:,1:modelalgos), model.prelim.muY), model.prelim.sigmaY);
     if newalgos>0
         [~,out.data.Y(:,modelalgos+1:nalgos),out.norm] = autoNormalize(ones(ninst,1), ... % Dummy variable
                                                                        out.data.Y(:,modelalgos+1:nalgos));
     end
+end
+if ~isreal(out.data.X)
+    error('ISA:exploreIS:complexX', ...
+        'Feature matrix X is complex after normalisation. Check test data range vs training data.');
 end
 % ---------------------------------------------------------------------
 % This is the final subset of features.
@@ -187,16 +210,9 @@ out.pythia = PYTHIAtest(model.pythia, out.pilot.Z, out.data.Yraw, ...
                         out.data.Ybin, out.data.Ybest, ...
                         out.data.algolabels);
 % -------------------------------------------------------------------------
-% Validating the footprints
-if model.opts.trace.usesim
-    out.trace = TRACEtest(model.trace, out.pilot.Z, out.pythia.Yhat, ...
-                          out.pythia.selection0, out.data.beta, ...
-                          out.data.algolabels);
-else
-    out.trace = TRACEtest(model.trace, out.pilot.Z, out.data.Ybin, ...
-                          out.data.P, out.data.beta, ...
-                          out.data.algolabels);
-end
+% Validating the footprints (evaluation mode: polygons from training reused)
+out.trace = TRACE(out.pilot.Z, out.data.Ybin, out.pythia.Yhat, out.data.P, ...
+                  out.data.beta, out.data.algolabels, model.opts.trace, model.trace);
 
 out.opts = model.opts;
 % -------------------------------------------------------------------------

@@ -1,583 +1,378 @@
-function out = TRACE(Z, Ybin, P, beta, algolabels, opts)
-% -------------------------------------------------------------------------
-% TRACE.m
-% -------------------------------------------------------------------------
+function out = TRACE(Z, Ybin, Yhat, P, beta, algolabels, opts, trainedTrace)
+% TRACE  Compute or evaluate algorithm footprints in the instance space.
 %
-% By: Mario Andres Munoz Acosta
-%     School of Mathematics and Statistics
-%     The University of Melbourne
-%     Australia
-%     2020
+%   Training mode (7 args):
+%     out = TRACE(Z, Ybin, Yhat, P, beta, algolabels, opts)
+%     Builds footprints using TRACE3 (default) or the legacy DBSCAN algorithm.
 %
-% -------------------------------------------------------------------------
-if size(Z,2) == 3
-    fprintf('  -> 3D Instance Space detected using TRACE2\n');
-    opts.Trace2 = true;
-end
+%   Evaluation mode (8 args):
+%     out = TRACE(Z, Ybin, Yhat, P, beta, algolabels, opts, trainedTrace)
+%     Re-evaluates trained footprints on new instances; polygons are not rebuilt.
+%
+%   Inputs
+%     Z          - (ninst x ndim) projected instance coordinates (2D or 3D)
+%     Ybin       - (ninst x nalgos) true binary performance labels
+%     Yhat       - (ninst x nalgos) PYTHIA predicted labels; [] if unavailable
+%     P          - (ninst x 1) best-algorithm index per instance
+%     beta       - (ninst x 1) logical: instance is easy (has a good algorithm)
+%     algolabels - (1 x nalgos) cell array of algorithm name strings
+%     opts       - struct with fields (see ISAdefaults for defaults):
+%                    method        'trace3' (default) or 'legacy'
+%                    PI            minimum purity threshold (0.6)
+%                    nn            (unused; reserved for future KNN fallback)
+%                    prior         (unused; reserved for future KNN fallback)
+%                  Note: in TRACE3, if Yhat is empty, Zu = {yi=1} directly;
+%                  there is no KNN fallback in this version.
+%                    minInstances  minimum instances for a valid footprint (4)
+%                    minAreaFrac   footprint must exceed this fraction of space (0.01)
+%                    contra        contradiction removal; legacy only; default true
+%                                  when method='legacy', false otherwise
+%     trainedTrace - (optional) trained trace struct from a prior TRACE call;
+%                    when provided, activates evaluation mode.
+%
+%   Outputs
+%     out  - struct with fields:
+%              space           convex-hull space footprint (measure, density, ...)
+%              good{nalgos}    good-performance footprints
+%              best{nalgos}    best-algorithm footprints
+%              hard            beta-hard footprint (~beta instances)
+%              summary         (nalgos+1 x 11) cell array performance table
+%
+%   TRACE3 reference
+%     Simpson, D. et al. (2025). [TRACE3 paper citation.]
+%
+%   By: Mario Andres Munoz Acosta
+%       School of Mathematics and Statistics
+%       The University of Melbourne
+%       Australia
+%       2020 (TRACE3 refactor 2025)
 
-if exist('gcp','file')==2
-    mypool = gcp('nocreate');
-    if ~isempty(mypool)
-        nworkers = mypool.NumWorkers;
-    else
-        nworkers = 0;
-    end
-else
-    nworkers = 0;
+narginchk(7, 8);
+isEvalMode = nargin == 8;
+is3D       = size(Z, 2) == 3;
+nalgos     = size(Ybin, 2);
+useLegacy  = isfield(opts, 'method') && strcmpi(opts.method, 'legacy');
+if useLegacy && is3D
+    warning('ISA:TRACE:legacyNo3D', ...
+        'Legacy TRACE does not support 3D instance spaces; switching to TRACE3.');
+    useLegacy = false;
 end
-% -------------------------------------------------------------------------
-% First step is to transform the data to the footprint space, and to
-% calculate the 'space' footprint. This is also the maximum area possible
-% for a footprint.
-if opts.Trace2
-    fprintf('  -> TRACE2 is calculating the space area and density.\n');
-else
-    fprintf('  -> TRACE is calculating the space area and density.\n');
-end
-ninst = size(Z,1);
-nalgos = size(Ybin,2);
-if opts.Trace2
-    out.space = TRACEbuild2(Z, true(ninst,1), opts);
-else
-    out.space = TRACEbuild(Z, true(ninst,1), opts);
-end
-fprintf('    -> Space area: %s | Space density: %s\n', ...
-    num2str(out.space.area), num2str(out.space.density));
-% -------------------------------------------------------------------------
-% This loop will calculate the footprints for good/bad instances and the
-% best algorithm.
-fprintf('-------------------------------------------------------------------------\n');
-if opts.Trace2
-    fprintf('  -> TRACE2 is calculating the algorithm footprints.\n');
-else
-    fprintf('  -> TRACE is calculating the algorithm footprints.\n');
-end
+pythiaAvailable = ~isempty(Yhat);
 
-good = cell(1,nalgos);
-best = cell(1,nalgos);
-% Use the actual data to calculate the footprints
-parfor (i=1:nalgos,nworkers)
-    tic;
-    if opts.Trace2
-        fprintf('    -> Good performance footprint for ''%s''\n', algolabels{i});
-        good{i} = TRACEbuild2(Z, Ybin(:,i), opts);
-        fprintf('    -> Best performance footprint for ''%s''\n', algolabels{i});
-        best{i} = TRACEbuild2(Z, P==i, opts);
-    else
-        fprintf('    -> Good performance footprint for ''%s''\n', algolabels{i});
-        good{i} = TRACEbuild(Z, Ybin(:,i), opts);
-        fprintf('    -> Best performance footprint for ''%s''\n', algolabels{i});
-        best{i} = TRACEbuild(Z, P==i, opts);
-    end
-    fprintf('    -> Algorithm ''%s'' completed. Elapsed time: %.2fs\n', algolabels{i}, toc);
-end
-out.good = good;
-out.best = best;
 % -------------------------------------------------------------------------
-% Detecting collisions and removing them. Original Trace ONLY
-if ~opts.Trace2
-    fprintf('-------------------------------------------------------------------------\n');
-    fprintf('  -> TRACE is detecting and removing contradictory sections of the footprints.\n');
-    for i=1:nalgos
-        fprintf('  -> Base algorithm ''%s''\n', algolabels{i});
-        startBase = tic;
-        for j=i+1:nalgos
-            fprintf('      -> TRACE is comparing ''%s'' with ''%s''\n', algolabels{i}, algolabels{j});
-            startTest = tic;
-            [out.best{i}, out.best{j}] = TRACEcontra(out.best{i}, out.best{j}, ...
-                                                     Z, P==i, P==j, opts);
-            fprintf('      -> Test algorithm ''%s'' completed. Elapsed time: %.2fs\n', ...
-                algolabels{j}, toc(startTest));
-        end
-        fprintf('  -> Base algorithm ''%s'' completed. Elapsed time: %.2fs\n', ...
-            algolabels{i}, toc(startBase));
-    end
-end
-% -------------------------------------------------------------------------
-% Beta hard footprints. First step is to calculate them.
-fprintf('-------------------------------------------------------------------------\n');
-if opts.Trace2
-    disp('  -> TRACE2 is calculating the beta-footprint.');
-    out.hard = TRACEbuild2(Z, ~beta, opts);
+% Space measure from convex hull of all instances (computed once).
+% Passed to TRACEbuild3 so stopping criteria are relative to bounded space.
+if is3D
+    [~, spaceArea] = convhull(Z);
 else
-    disp('  -> TRACE is calculating the beta-footprint.');
-    out.hard = TRACEbuild(Z, ~beta, opts);
+    [~, spaceArea] = convhull(Z(:,1), Z(:,2));
 end
-% -------------------------------------------------------------------------
-% Calculating performance
-fprintf('-------------------------------------------------------------------------\n');
-fprintf('  -> Preparing the summary table.\n');
-out.summary = cell(nalgos+1,11);
-out.summary(1,2:end) = {'Area_Good',...
-                        'Area_Good_Normalized',...
-                        'Density_Good',...
-                        'Density_Good_Normalized',...
-                        'Purity_Good',...
-                        'Area_Best',...
-                        'Area_Best_Normalized',...
-                        'Density_Best',...
-                        'Density_Best_Normalized',...
-                        'Purity_Best'};
-out.summary(2:end,1) = algolabels;
-for i=1:nalgos
-    row = [TRACEsummary(out.good{i}, out.space.area, out.space.density), ...
-           TRACEsummary(out.best{i}, out.space.area, out.space.density)];
-    out.summary(i+1,2:end) = num2cell(round(row,3));
-end
-if opts.Trace2
-    fprintf('  -> TRACE2 has completed. Footprint analysis results:\n');
-else
-    fprintf('  -> TRACE has completed. Footprint analysis results:\n');
-end
-fprintf('\n');
-disp(out.summary);
+if is3D; measureLabel = 'Volume'; else; measureLabel = 'Area'; end
 
-end
 % =========================================================================
-% SUBFUNCTIONS
+% EVALUATION MODE: re-score trained footprints on new instances
 % =========================================================================
-function footprint = TRACEbuild(Z, Ybin, opts)
-
-% If there is no Y to work with, then there is not point on this one
-Ig = unique(Z(Ybin,:),'rows');   % There might be points overlapped, so eliminate them to avoid problems
-if size(Ig,1)<3
-    footprint = TRACEthrow;
-else
-    footprint = struct;
-end
-    
-nn = max(min(ceil(sum(Ybin)/20),50),3);
-class = TRACEdbscan(Ig,nn); % Use DBSCAN to identify dense regions (local impl, no toolbox)
-flag = false;
-for i=1:max(class) %Ignore -1/0
-    polydata = Ig(class==i,:);
-    polydata = polydata(boundary(polydata,1),:);
-    aux = TRACEfitpoly(polydata,Z,Ybin, opts);
-    if ~isempty(aux)
-        if ~flag
-            footprint.polygon = aux;
-            flag = true;
-        else
-            footprint.polygon = union(footprint.polygon,aux);
-        end
+if isEvalMode
+    fprintf('  -> TRACE is evaluating trained footprints on new instances.\n');
+    out = trainedTrace;
+    % Normalise backward-compat: old models stored .area instead of .measure
+    if ~isfield(trainedTrace.space, 'measure')
+        trainedTrace.space.measure  = trainedTrace.space.area;
+        trainedTrace.space.density  = trainedTrace.space.density;
     end
-end
-if isfield(footprint,'polygon') && ~isempty(footprint.polygon)
-    footprint.polygon = rmslivers(footprint.polygon,1e-2);
-    footprint.area = area(footprint.polygon);
-    footprint.elements = sum(isinterior(footprint.polygon,Z));
-    footprint.goodElements = sum(isinterior(footprint.polygon,Z(Ybin,:)));
-    footprint.density = footprint.elements./footprint.area;
-    if footprint.elements > 0
-        footprint.purity = footprint.goodElements./footprint.elements;
-    else
-        footprint.purity = 0;
+    if ~isfield(trainedTrace.space, 'measureLabel')
+        trainedTrace.space.measureLabel = measureLabel;
     end
-else
-    footprint = TRACEthrow;
-end
-
-end
-% =========================================================================
-function footprint = TRACEbuild2(Z, Ybin, opts)
-
-% If there is no Y to work with, then there is not point on this one
-Ig = unique(Z(Ybin,:),'rows');   % There might be points overlapped, so eliminate them to avoid problems
-if size(Ig,1)<3
-    footprint = TRACEthrow;
-else
-    footprint = struct;
-end
-if ~isfield(opts,'prior')
-    opts.prior = [0.6,0.4];
-end
-if ~isfield(opts,'nn')
-    opts.nn=50;
-end
-
-
-if size(unique(Ybin),1) > 1
-    knt = fitcknn(Z,Ybin,'Prior',opts.prior,'NumNeighbors',opts.nn); %Fit a KNN classification
-    prt = predict(knt,Z); 
-    polydata = unique(Z(prt==1 & Ybin == 1,:),'rows'); %Build poly data from instances correctly identfied as good from the KNN classifier
-else
-    %knt = fitcknn(Z,Ybin,'NumNeighbors',nn); %'Prior',[0.6,0.4],
-    polydata = unique(Z,'rows');
-end
-footprint.polygon = alphaShape(polydata); %Build the alpha shape from poly data
-D = size(Z);
-
-
-%Below removes outlier points untill the minimum purity threshold is met
-if isfield(footprint,'polygon') && ~isempty(footprint.polygon.Points) && ~(footprint.polygon.Alpha==Inf) && D(2) == 2
-    footprint.area = area(footprint.polygon);
-    footprint.elements = sum(inShape(footprint.polygon,Z));
-    footprint.goodElements = sum(inShape(footprint.polygon,Z(Ybin,:)));
-    footprint.density = footprint.elements./footprint.area;
-    footprint.purity = footprint.goodElements./footprint.elements;
-    AS = alphaSpectrum(footprint.polygon);
-    AS = footprint.polygon.Alpha:-((footprint.polygon.Alpha-min(AS))/100):min(AS);
-    ii = 1;
-    while footprint.purity < opts.PI && ii < size(AS,2)
-        footprint.polygon.Alpha = AS(ii);
-        footprint.area = area(footprint.polygon);
-        footprint.polygon.RegionThreshold =  footprint.area/20; %footprint.polygon.RegionThreshold + *(1-footprint.purity)
-        footprint.area = area(footprint.polygon);
-        if footprint.area > 0
-            footprint.elements = sum(inShape(footprint.polygon,Z));
-            footprint.goodElements = sum(inShape(footprint.polygon,Z(Ybin,:)));
-            footprint.purity = footprint.goodElements./footprint.elements;
-            footprint.density = footprint.elements./footprint.area;
-        else
-            ii = size(AS,2);
-            footprint = TRACEthrow;
-        end
-        ii = ii+1;
+    out.space = trainedTrace.space;
+    ngood = numel(trainedTrace.good);
+    nbest = numel(trainedTrace.best);
+    for i = 1:min(nalgos, ngood)
+        out.good{i} = TRACErescore(trainedTrace.good{i}, Z, Ybin(:,i), is3D);
     end
-elseif  isfield(footprint,'polygon') && ~isempty(footprint.polygon.Points) && ~(footprint.polygon.Alpha==Inf) && D(2) == 3
-    footprint.area = volume(footprint.polygon);
-    footprint.elements = sum(inShape(footprint.polygon,Z));
-    footprint.goodElements = sum(inShape(footprint.polygon,Z(Ybin,:)));
-    footprint.density = footprint.elements./footprint.area;
-    footprint.purity = footprint.goodElements./footprint.elements;
-    AS = alphaSpectrum(footprint.polygon);
-    AS = footprint.polygon.Alpha:-((footprint.polygon.Alpha-min(AS))/100):min(AS);
-    ii = 1;
-    while footprint.purity < opts.PI && ii < size(AS,2)
-        footprint.polygon.Alpha = AS(ii);
-        footprint.area = volume(footprint.polygon);
-        footprint.polygon.RegionThreshold =  footprint.area/20; %footprint.polygon.RegionThreshold + *(1-footprint.purity)
-        footprint.area = volume(footprint.polygon);
-        if footprint.area > 0
-            footprint.elements = sum(inShape(footprint.polygon,Z));
-            footprint.goodElements = sum(inShape(footprint.polygon,Z(Ybin,:)));
-            footprint.purity = footprint.goodElements./footprint.elements;
-            footprint.density = footprint.elements./footprint.area;
-        else
-            ii = size(AS,2);
-            footprint = TRACEthrow;
-        end
-        ii = ii+1;
+    for i = ngood+1:nalgos
+        out.good{i} = TRACEthrow3(is3D);
     end
-    
-    
-else
-    footprint = TRACEthrow;
-end
-
-end
-% =========================================================================
-function [base,test] = TRACEcontra(base,test,Z,Ybase,Ytest,opts)%,isbin)
-% 
-if isempty(base.polygon) || isempty(test.polygon)
+    for i = 1:min(nalgos, nbest)
+        out.best{i} = TRACErescore(trainedTrace.best{i}, Z, P==i, is3D);
+    end
+    for i = nbest+1:nalgos
+        out.best{i} = TRACEthrow3(is3D);
+    end
+    out.hard    = TRACErescore(trainedTrace.hard, Z, ~beta, is3D);
+    out.summary = TRACEsummaryTable(out.good, out.best, algolabels, trainedTrace.space);
+    fprintf('  -> Evaluation complete.\n');
     return;
 end
 
-maxtries = 3; % Tries once to tighten the bounds.
-numtries = 1;
-contradiction = intersect(base.polygon,test.polygon);
-while contradiction.NumRegions~=0 && numtries<=maxtries
-    numElements = sum(isinterior(contradiction,Z));
-    numGoodElementsBase = sum(isinterior(contradiction,Z(Ybase,:)));
-    numGoodElementsTest = sum(isinterior(contradiction,Z(Ytest,:)));
-    purityBase = numGoodElementsBase/numElements;
-    purityTest = numGoodElementsTest/numElements;
-    if purityBase>purityTest %&& (~isbin || (purityBase>0.55 && isbin))
-        carea = area(contradiction)./area(test.polygon);
-        fprintf('        -> %.1f%% of the test footprint is contradictory.\n', round(100.*carea,1));
-        test.polygon = subtract(test.polygon,contradiction);
-        if numtries<maxtries
-            test.polygon = TRACEtight(test.polygon,Z,Ytest,opts);
-        end
-    elseif purityTest>purityBase %&& (~isbin || (purityTest>0.55 && isbin))
-        carea = area(contradiction)./area(base.polygon);
-        fprintf('        -> %.1f%% of the base footprint is contradictory.\n', round(100.*carea,1));
-        base.polygon = subtract(base.polygon,contradiction);
-        if numtries<maxtries
-            base.polygon = TRACEtight(base.polygon,Z,Ybase,opts);
-        end
+% =========================================================================
+% TRAINING MODE — LEGACY
+% =========================================================================
+if useLegacy
+    fprintf('-------------------------------------------------------------------------\n');
+    fprintf('  -> TRACE (legacy) is building footprints.\n');
+    % Contradiction removal defaults to true for legacy (spec 4.1)
+    useContra = ~isfield(opts, 'contra') || opts.contra;
+    out = TRACE_legacy(Z, Ybin, P, beta, algolabels, opts, useContra);
+    out = normalizeLegacyOut(out, measureLabel, nalgos);
+    out.summary = TRACEsummaryTable(out.good, out.best, algolabels, out.space);
+    fprintf('  -> TRACE (legacy) has completed. Footprint analysis results:\n\n');
+    disp(out.summary);
+    return;
+end
+
+% =========================================================================
+% TRAINING MODE — TRACE3 (default)
+% =========================================================================
+fprintf('-------------------------------------------------------------------------\n');
+fprintf('  -> TRACE3 is calculating the space %s and density.\n', lower(measureLabel));
+out.space.measure      = spaceArea;
+out.space.measureLabel = measureLabel;
+out.space.elements     = size(Z, 1);
+out.space.density      = out.space.elements / spaceArea;
+out.space.purity       = 1;
+out.space.polygon      = [];
+fprintf('    -> Space %s: %s | Space density: %s\n', ...
+    measureLabel, num2str(spaceArea), num2str(out.space.density));
+
+if ~pythiaAvailable
+    warning('ISA:TRACE3:noPYTHIA', ...
+        'PYTHIA predictions unavailable; using true labels only (Zu = {yi=1}).');
+end
+
+if exist('gcp', 'file') == 2
+    pool = gcp('nocreate');
+    nworkers = 0;
+    if ~isempty(pool), nworkers = pool.NumWorkers; end
+else
+    nworkers = 0;
+end
+
+fprintf('-------------------------------------------------------------------------\n');
+fprintf('  -> TRACE3 is calculating the algorithm footprints.\n');
+good = cell(1, nalgos);
+best = cell(1, nalgos);
+parfor (i = 1:nalgos, nworkers)
+    t = tic;
+    yhat_i = [];
+    if pythiaAvailable, yhat_i = Yhat(:,i); end
+    fprintf('    -> Good performance footprint for ''%s''\n', algolabels{i});
+    good{i} = TRACEbuild3(Z, Ybin(:,i), yhat_i, spaceArea, opts);
+    fprintf('    -> Best performance footprint for ''%s''\n', algolabels{i});
+    best{i} = TRACEbuild3(Z, P==i, yhat_i, spaceArea, opts);
+    fprintf('    -> Algorithm ''%s'' completed. Elapsed time: %.2fs\n', algolabels{i}, toc(t));
+end
+out.good = good;
+out.best = best;
+
+fprintf('-------------------------------------------------------------------------\n');
+fprintf('  -> TRACE3 is calculating the beta-footprint.\n');
+out.hard = TRACEbuild3(Z, ~beta, [], spaceArea, opts);
+
+fprintf('-------------------------------------------------------------------------\n');
+fprintf('  -> Preparing the summary table.\n');
+out.summary = TRACEsummaryTable(out.good, out.best, algolabels, out.space);
+fprintf('  -> TRACE3 has completed. Footprint analysis results:\n\n');
+disp(out.summary);
+
+end
+
+% =========================================================================
+% SUBFUNCTIONS
+% =========================================================================
+
+function footprint = TRACEbuild3(Z, Ybin, Yhat, spaceArea, opts)
+% Build a TRACE3 footprint for one binary performance vector.
+% Yhat = [] triggers fallback: Zu = {zi | yi=1} with no prediction filter.
+is3D = size(Z, 2) == 3;
+
+% Step 3: Zu = {zi | yhat_i=1 AND ybin_i=1}
+if isempty(Yhat)
+    Zu = Z(logical(Ybin), :);
+else
+    Zu = Z(logical(Yhat) & logical(Ybin), :);
+end
+Zu = unique(Zu, 'rows');
+
+if size(Zu, 1) <= opts.minInstances
+    footprint = TRACEthrow3(is3D);
+    return;
+end
+
+% Step 4: build alpha-shape at default (minimum enclosing) alpha
+as = alphaShape(Zu);
+
+% Step 5: compute initial metrics
+[footprint, valid] = TRACEmetrics3(as, Z, Ybin, is3D);
+if ~valid || footprint.measure < opts.minAreaFrac * spaceArea
+    footprint = TRACEthrow3(is3D);
+    return;
+end
+if footprint.purity >= opts.PI
+    return;
+end
+
+% Steps 6-7: iterate through alpha spectrum to tighten purity
+AS = alphaSpectrum(as);
+if numel(AS) < 2
+    return;
+end
+alphaVec = linspace(as.Alpha, min(AS), 101);
+alphaVec = alphaVec(2:end);  % first entry already evaluated above
+for ii = 1:numel(alphaVec)
+    as.Alpha = alphaVec(ii);
+    if is3D
+        as.RegionThreshold = volume(as) / 20;
     else
-        fprintf('        -> Purity of the contradicting areas is equal for both footprints.\n');
-        fprintf('        -> Ignoring the contradicting area.\n');
-        break;
+        as.RegionThreshold = area(as) / 20;
     end
-    if isempty(base.polygon) || isempty(test.polygon)
-        break;
-    else
-        contradiction = intersect(base.polygon,test.polygon);
+    [footprint, valid] = TRACEmetrics3(as, Z, Ybin, is3D);
+    if ~valid || footprint.measure < opts.minAreaFrac * spaceArea
+        footprint = TRACEthrow3(is3D);
+        return;
     end
-    numtries = numtries+1;
+    if footprint.purity >= opts.PI
+        return;
+    end
+end
+% Alpha spectrum exhausted — return the best footprint found.
 end
 
-if isempty(base.polygon)
-    base = TRACEthrow;
+% =========================================================================
+function [footprint, valid] = TRACEmetrics3(as, Z, Ybin, is3D)
+% Compute footprint metrics from an alphaShape object.
+valid = true;
+footprint.polygon = as;
+if is3D
+    m = volume(as);
+    footprint.measureLabel = 'Volume';
 else
-    base.area = area(base.polygon);
-    base.elements = sum(isinterior(base.polygon,Z));
-    base.goodElements = sum(isinterior(base.polygon,Z(Ybase,:)));
-    base.density = base.elements./base.area;
-    base.purity = base.goodElements./base.elements;
+    m = area(as);
+    footprint.measureLabel = 'Area';
 end
-if isempty(test.polygon)
-    test = TRACEthrow;
-else
-    test.area = area(test.polygon);
-    test.elements = sum(isinterior(test.polygon,Z));
-    test.goodElements = sum(isinterior(test.polygon,Z(Ytest,:)));
-    test.density = test.elements./test.area;
-    test.purity = test.goodElements./test.elements;
+if m <= 0 || isinf(as.Alpha)
+    valid = false;
+    footprint.measure      = 0;
+    footprint.elements     = 0;
+    footprint.goodElements = 0;
+    footprint.density      = 0;
+    footprint.purity       = 0;
+    return;
+end
+footprint.measure      = m;
+footprint.elements     = sum(inShape(as, Z));
+footprint.goodElements = sum(inShape(as, Z(logical(Ybin),:)));
+if footprint.elements == 0
+    valid = false;
+    footprint.density = 0;
+    footprint.purity  = 0;
+    return;
+end
+footprint.density = footprint.elements / m;
+footprint.purity  = footprint.goodElements / footprint.elements;
 end
 
-end
 % =========================================================================
-function polygon = TRACEtight(polygon,Z,Ybin,opts)
-
-splits = regions(polygon);
-nregions = length(splits);
-flags = true(1,nregions);
-for i=1:nregions
-    % Find the vertex of this polygon
-    criteria = isinterior(splits(i),Z) & Ybin;
-    polydata = Z(criteria,:);
-    if size(polydata,1)<3
-        flags(i) = false;
-        continue
-    end
-    aux = TRACEfitpoly(polydata(boundary(polydata,1),:),Z,Ybin,opts);
-    if isempty(aux)
-        flags(i) = false;
-        continue
-    end
-    splits(i) = aux;
-end
-if any(flags)
-    polygon = union(splits(flags));
-else
-    polygon = [];
-end
-
-end
-% =========================================================================
-function polygon = TRACEfitpoly(polydata,Z,Ybin,opts)
-
-warning('off','MATLAB:polyshape:repairedBySimplify');
-
-if size(polydata,1)<3
-    polygon = [];
-    warning('on','MATLAB:polyshape:repairedBySimplify');
-    return
-end
-
-% Deduplicate before passing to polyshape: boundary() closes the polygon
-% by repeating the first vertex, and near-collinear clusters may produce
-% fewer than 3 distinct vertices after polyshape's internal simplification.
-polydata = unique(polydata,'rows','stable');
-if size(polydata,1)<3
-    polygon = [];
-    warning('on','MATLAB:polyshape:repairedBySimplify');
-    return
-end
-
-polygon = polyshape(polydata,'Simplify',true);
-polygon = rmslivers(polygon,5e-2);
-
-if ~all(Ybin)
-    if polygon.NumRegions<1
-        polygon = [];
-        warning('on','MATLAB:polyshape:repairedBySimplify');
-        return
-    end
-    tri = triangulation(polygon);
-    nrow = size(tri.ConnectivityList,1);
-    for ii=1:nrow
-        tridata = tri.Points(tri.ConnectivityList(ii,:),:);
-        piece = polyshape(tridata,'Simplify',true);
-        elements = sum(isinterior(piece,Z));
-        goodElements = sum(isinterior(piece,Z(Ybin,:)));
-        if elements==0 || opts.PI>(goodElements/elements)
-            polygon = subtract(polygon,piece);
-        end
-    end
-end
-
-warning('on','MATLAB:polyshape:repairedBySimplify');
-
-end
-% =========================================================================
-function out = TRACEsummary(footprint, spaceArea, spaceDensity)
-% 
-out = [footprint.area,...
-       footprint.area/spaceArea,...
-       footprint.density,...
-       footprint.density/spaceDensity,...
-       footprint.purity];
-out(isnan(out)) = 0;
-
-end
-% =========================================================================
-function footprint = TRACEthrow
-
+function footprint = TRACEthrow3(is3D)
 fprintf('        -> There are not enough instances to calculate a footprint.\n');
-fprintf('        -> The subset of instances used is too small.\n');
-footprint.polygon = [];
-footprint.area = 0;
-footprint.elements = 0;
+footprint.polygon      = [];
+footprint.measure      = 0;
+footprint.measureLabel = 'Area';
+if is3D, footprint.measureLabel = 'Volume'; end
+footprint.elements     = 0;
 footprint.goodElements = 0;
-footprint.density = 0;
-footprint.purity = 0;
-
+footprint.density      = 0;
+footprint.purity       = 0;
 end
+
 % =========================================================================
-% Function: [class,type]=TRACEdbscan(x,k,Eps)
-% -------------------------------------------------------------------------
-% Aim: 
-% Clustering the data with Density-Based Scan Algorithm with Noise (DBSCAN)
-% -------------------------------------------------------------------------
-% NOTE: This is a local implementation originally written by Michal
-% Daszykowski (see references below). It has been renamed from dbscan() to
-% TRACEdbscan() to avoid shadowing the dbscan() function introduced in
-% MATLAB's Statistics and Machine Learning Toolbox (R2019a+). Do not rename
-% it back without checking for toolbox availability.
-% -------------------------------------------------------------------------
-% Input: 
-% x - data set (m,n); m-objects, n-variables
-% k - number of objects in a neighborhood of an object 
-% (minimal number of objects considered as a cluster)
-% Eps - neighborhood radius, if not known avoid this parameter or put []
-% -------------------------------------------------------------------------
-% Output: 
-% class - vector specifying assignment of the i-th object to certain 
-% cluster (m,1)
-% type - vector specifying type of the i-th object 
-% (core: 1, border: 0, outlier: -1)
-% -------------------------------------------------------------------------
-% Example of use:
-% x=[randn(30,2)*.4;randn(40,2)*.5+ones(40,1)*[4 4]];
-% [class,type]=TRACEdbscan(x,5,[]);
-% -------------------------------------------------------------------------
-% References:
-% [1] M. Ester, H. Kriegel, J. Sander, X. Xu, A density-based algorithm for 
-% discovering clusters in large spatial databases with noise, proc. 
-% 2nd Int. Conf. on Knowledge Discovery and Data Mining, Portland, OR, 1996, 
-% p. 226, available from: 
-% www.dbs.informatik.uni-muenchen.de/cgi-bin/papers?query=--CO
-% [2] M. Daszykowski, B. Walczak, D. L. Massart, Looking for 
-% Natural Patterns in Data. Part 1: Density Based Approach, 
-% Chemom. Intell. Lab. Syst. 56 (2001) 83-92 
-% -------------------------------------------------------------------------
-% Written by Michal Daszykowski
-% Department of Chemometrics, Institute of Chemistry, 
-% The University of Silesia
-% December 2004
-% http://www.chemometria.us.edu.pl
-
-function [class,type]=TRACEdbscan(x,k,Eps)
-
-m=size(x,1);
-
-if nargin<3 || isempty(Eps)
-   [Eps]=epsilon(x,k);
+function footprint = TRACErescore(trainedFp, Z, Ybin, is3D)
+% Re-evaluate a trained footprint against new instances Z.
+footprint = trainedFp;
+% Backward-compat: old models stored .area; normalise to .measure
+if isfield(footprint, 'area') && ~isfield(footprint, 'measure')
+    footprint.measure = footprint.area;
+    if is3D; footprint.measureLabel = 'Volume'; else; footprint.measureLabel = 'Area'; end
+end
+poly = trainedFp.polygon;
+if isempty(poly)
+    footprint.elements     = 0;
+    footprint.goodElements = 0;
+    footprint.density      = 0;
+    footprint.purity       = 0;
+    return;
+end
+if isa(poly, 'alphaShape')
+    inside = inShape(poly, Z);
+elseif isa(poly, 'polyshape')
+    inside = isinterior(poly, Z);
+else
+    footprint.elements = 0; footprint.goodElements = 0;
+    footprint.density  = 0; footprint.purity       = 0;
+    return;
+end
+footprint.elements     = sum(inside);
+footprint.goodElements = sum(inside & logical(Ybin));
+m = footprint.measure;
+if footprint.elements == 0 || m == 0
+    footprint.density = 0;
+    footprint.purity  = 0;
+else
+    footprint.density = footprint.elements / m;
+    footprint.purity  = footprint.goodElements / footprint.elements;
+end
 end
 
-x=[(1:m)' x];
-[m,n]=size(x);
-type=zeros(1,m);
-no=1;
-touched=zeros(m,1);
-class=zeros(1,m);
-for i=1:m
-    if touched(i)==0
-       ob=x(i,:);
-       D=dist(ob(2:n),x(:,2:n));
-       ind=find(D<=Eps);
-    
-       if length(ind)>1 && length(ind)<k+1       
-          type(i)=0;
-          class(i)=0;
-       end
-       if length(ind)==1
-          type(i)=-1;
-          class(i)=-1;  
-          touched(i)=1;
-       end
-
-       if length(ind)>=k+1
-          type(i)=1;
-          class(ind)=ones(length(ind),1)*max(no);
-          
-          while ~isempty(ind)
-                ob=x(ind(1),:);
-                touched(ind(1))=1;
-                ind(1)=[];
-                D=dist(ob(2:n),x(:,2:n));
-                i1=find(D<=Eps);
-     
-                if length(i1)>1
-                   class(i1)=no;
-                   if length(i1)>=k+1
-                      type(ob(1))=1;
-                   else
-                      type(ob(1))=0;
-                   end
-
-                    for j=1:length(i1)
-                        if touched(i1(j))==0
-                            touched(i1(j))=1;
-                            ind=[ind i1(j)];
-                            class(i1(j))=no;
-                        end
-                    end
-                end
-          end
-          no=no+1; 
-       end
-   end
-end
-
-i1=find(class==0);
-class(i1)=-1;
-type(i1)=-1;
-
-end
 % =========================================================================
-function [Eps]=epsilon(x,k)
-
-% Function: [Eps]=epsilon(x,k)
-%
-% Aim: 
-% Analytical way of estimating neighborhood radius for DBSCAN
-%
-% Input: 
-% x - data matrix (m,n); m-objects, n-variables
-% k - number of objects in a neighborhood of an object
-% (minimal number of objects considered as a cluster)
-
-[m,n]=size(x);
-
-Eps=((prod(max(x)-min(x))*k*gamma(.5*n+1))/(m*sqrt(pi.^n))).^(1/n);
-
+function summary = TRACEsummaryTable(good, best, algolabels, space)
+nGood = length(good);
+nBest = length(best);
+nLabels = numel(algolabels);
+if nGood ~= nBest || nGood ~= nLabels
+    error('ISA:TRACE:summaryMismatch', ...
+        'TRACEsummaryTable: good=%d, best=%d, labels=%d must all match.', ...
+        nGood, nBest, nLabels);
 end
+nalgos = nGood;
+ml = space.measureLabel;
+summary = cell(nalgos+1, 11);
+summary(1, 2:end) = {[ml '_Good'],            [ml '_Good_Normalized'], ...
+                     'Density_Good',           'Density_Good_Normalized', ...
+                     'Purity_Good', ...
+                     [ml '_Best'],             [ml '_Best_Normalized'], ...
+                     'Density_Best',           'Density_Best_Normalized', ...
+                     'Purity_Best'};
+summary(2:end, 1) = algolabels;
+for i = 1:nalgos
+    row = [TRACEsummaryRow(good{i}, space.measure, space.density), ...
+           TRACEsummaryRow(best{i}, space.measure, space.density)];
+    summary(i+1, 2:end) = num2cell(round(row, 3));
+end
+end
+
 % =========================================================================
-function [D]=dist(i,x)
-
-% function: [D]=dist(i,x)
-%
-% Aim: 
-% Calculates the Euclidean distances between the i-th object and all objects in x	 
-%								    
-% Input: 
-% i - an object (1,n)
-% x - data matrix (m,n); m-objects, n-variables	    
-%                                                                 
-% Output: 
-% D - Euclidean distance (m,1)
-
-[m,n]=size(x);
-D=sqrt(sum((((ones(m,1)*i)-x).^2)'));
-
-if n==1
-   D=abs((ones(m,1)*i-x))';
+function row = TRACEsummaryRow(fp, spaceMeasure, spaceDensity)
+m = fp.measure;
+row = [m, m/spaceMeasure, fp.density, fp.density/spaceDensity, fp.purity];
+row(isnan(row)) = 0;
 end
 
-end
 % =========================================================================
+function out = normalizeLegacyOut(out, measureLabel, nalgos)
+% Add .measure / .measureLabel to all footprints from a legacy out struct.
+out.space = addMeasureField(out.space, measureLabel);
+for i = 1:nalgos
+    out.good{i} = addMeasureField(out.good{i}, measureLabel);
+    out.best{i} = addMeasureField(out.best{i}, measureLabel);
+end
+out.hard = addMeasureField(out.hard, measureLabel);
+end
+
+% =========================================================================
+function fp = addMeasureField(fp, ml)
+if isfield(fp, 'area')
+    fp.measure = fp.area;
+elseif ~isfield(fp, 'measure')
+    fp.measure = 0;
+end
+fp.measureLabel = ml;
+end

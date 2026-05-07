@@ -1,4 +1,5 @@
 function out = PILOT(X, Y, featlabels, opts)
+if ~isfield(opts, 'verbose'), opts.verbose = true; end
 % -------------------------------------------------------------------------
 % PILOT.m
 % -------------------------------------------------------------------------
@@ -42,8 +43,8 @@ if opts.analytic && rank(X) < size(X,2)
 end
 
 if opts.analytic && ~opts.ISA3D
-    disp('  -> PILOT is solving analyticaly the projection problem.');
-    disp('  -> This won''t take long.');
+    fprintf('  -> PILOT is solving analyticaly the projection problem.\n');
+    fprintf('  -> This won''t take long.\n');
     Xbar = Xbar';
     X = X';
     [V,D] = eig(Xbar*Xbar');
@@ -60,34 +61,34 @@ if opts.analytic && ~opts.ISA3D
 else
     if isfield(opts,'alpha') && isnumeric(opts.alpha) && ...
                 size(opts.alpha,1)==2*m+2*n && size(opts.alpha,2)==1
-        disp('  -> PILOT is using a pre-calculated solution.');
+        fprintf('  -> PILOT is using a pre-calculated solution.\n');
         idx = 1;
         out.alpha = opts.alpha;
     elseif isfield(opts,'alpha') && isnumeric(opts.alpha) && opts.ISA3D && ...
                 size(opts.alpha,1)==3*m+3*n && size(opts.alpha,2)==1
-        disp('  -> PILOT3D is using a pre-calculated solution.');
+        fprintf('  -> PILOT3D is using a pre-calculated solution.\n');
         idx = 1;
         out.alpha = opts.alpha; 
     else
         if isfield(opts,'X0') && isnumeric(opts.X0) && ...
                 size(opts.X0,1)==2*m+2*n && size(opts.X0,2)>=1
-            disp('  -> PILOT is using a user defined starting points for BFGS.');
+            fprintf('  -> PILOT is using a user defined starting points for BFGS.\n');
             X0 = opts.X0;
             opts.ntries = size(opts.X0,2);
         elseif isfield(opts,'X0') && isnumeric(opts.X0) && opts.ISA3D && ...
                 size(opts.X0,1)==3*m+3*n && size(opts.X0,2)>=1
-            disp('  -> PILOT3D is using a user defined starting points for BFGS.');
+            fprintf('  -> PILOT3D is using a user defined starting points for BFGS.\n');
             X0 = opts.X0;
             opts.ntries = size(opts.X0,2);
         else
-            if opts.ISA3D 
-                disp('  -> PILOT3D is using a random starting points for BFGS.');
+            if opts.ISA3D
+                fprintf('  -> PILOT3D is using a random starting points for BFGS.\n');
                 state = rng;
                 rng('default');
                 X0 = 2*rand(3*m+3*n, opts.ntries)-1;
                 rng(state);
             else
-                disp('  -> PILOT is using a random starting points for BFGS.');
+                fprintf('  -> PILOT is using a random starting points for BFGS.\n');
                 state = rng;
                 rng('default');
                 X0 = 2*rand(2*m+2*n, opts.ntries)-1;
@@ -101,10 +102,10 @@ else
         end
         eoptim = zeros(1, opts.ntries);
         perf = zeros(1, opts.ntries);
-        disp('-------------------------------------------------------------------------');
-        disp('  -> PILOT is solving numerically the projection problem.');
-        disp('  -> This may take a while. Trials will not be run sequentially.');
-        disp('-------------------------------------------------------------------------');
+        fprintf('-------------------------------------------------------------------------\n');
+        fprintf('  -> PILOT is solving numerically the projection problem.\n');
+        fprintf('  -> This may take a while. Trials will not be run sequentially.\n');
+        fprintf('-------------------------------------------------------------------------\n');
         parfor (i=1:opts.ntries,nworkers)
             [alpha(:,i),eoptim(i)] = fminunc(errorfcn, X0(:,i), ...
                                              optimoptions('fminunc','Algorithm','quasi-newton',...
@@ -119,7 +120,9 @@ else
             end
             Z = X*A';
             perf(i) = corr(Hd,pdist(Z)');
-            disp(['    -> PILOT has completed trial ' num2str(i)]);
+            if opts.verbose
+                fprintf('    -> PILOT has completed trial %d\n', i);
+            end
         end
         out.X0 = X0;
         out.alpha = alpha;
@@ -148,8 +151,8 @@ else
     end
 end
 
-disp('-------------------------------------------------------------------------');
-disp('  -> PILOT has completed. The projection matrix A is:');
+fprintf('-------------------------------------------------------------------------\n');
+fprintf('  -> PILOT has completed. The projection matrix A is:\n');
 if opts.ISA3D 
     out.summary = cell(4, n+1);
     out.summary(2:end,1) = {'Z_{1}','Z_{2}','Z_{3}'};
@@ -160,7 +163,7 @@ end
 out.summary(1,2:end) = featlabels;
 % out.summary(2:end,1) = {'Z_{1}','Z_{2}'};
 out.summary(2:end,2:end) = num2cell(round(out.A,4));
-disp(' ');
+fprintf('\n');
 disp(out.summary);
 
 end

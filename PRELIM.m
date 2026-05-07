@@ -1,110 +1,150 @@
-function [X,Y,Ybest,Ybin,P,numGoodAlgos,beta,out] = PRELIM(X,Y,opts)
+function [X, Y, out] = PRELIM(X, Y, opts)
+% PRELIM  Pre-process instance-space data before projection.
+%
+%   [X, Y, out] = PRELIM(X, Y, opts)
+%
+%   Inputs
+%     X     - (ninst x nfeats) feature matrix; may contain NaN
+%     Y     - (ninst x nalgos) performance matrix; may contain NaN
+%     opts  - struct with fields:
+%               MaxPerf       logical  true = maximise performance (default false)
+%               AbsPerf       logical  true = absolute threshold (default false)
+%               epsilon       double   good-performance threshold (default 0.05)
+%               betaThreshold double   easy-instance fraction (default 0.55)
+%               auto          logical  run auto pre-processing (default true)
+%               bound         logical  bound outliers (default true)
+%               norm          logical  Box-Cox + Z normalisation (default true)
+%
+%   Outputs
+%     X     - pre-processed feature matrix
+%     Y     - pre-processed performance matrix
+%     out   - struct with fields:
+%               Ybest, Ybin, P, numGoodAlgos, beta  (performance summary)
+%               medval, iqrange, hibound, lobound    (outlier bounds)
+%               minX, lambdaX, muX, sigmaX           (feature normalisation)
+%               minY, lambdaY, muY, sigmaY           (performance normalisation)
+%
+%   By: Mario Andres Munoz Acosta
+%       School of Mathematics and Statistics
+%       The University of Melbourne
+%       Australia
+%       2019
+
+narginchk(3, 3);
+if size(X, 1) ~= size(Y, 1)
+    error('ISA:PRELIM:sizeMismatch', ...
+        'X and Y must have the same number of rows (got %d vs %d).', ...
+        size(X,1), size(Y,1));
+end
+if ~isstruct(opts)
+    error('ISA:PRELIM:badOpts', 'opts must be a struct.');
+end
 
 Yraw = Y;
-nalgos = size(Y,2);
+nalgos = size(Y, 2);
 % -------------------------------------------------------------------------
 % Determine whether the performance of an algorithm is a cost measure to
 % be minimized or a profit measure to be maximized. Moreover, determine
-% whether we are using an absolute threshold as good peformance (the
+% whether we are using an absolute threshold as good performance (the
 % algorithm has a performance better than the threshold) or a relative
-% performance (the algorithm has a performance that is similar that the
+% performance (the algorithm has a performance that is similar to the
 % best algorithm minus a percentage).
-disp('-------------------------------------------------------------------------');
-disp('-> Calculating the binary measure of performance');
+fprintf('-------------------------------------------------------------------------\n');
+fprintf('-> Calculating the binary measure of performance\n');
 msg = '-> An algorithm is good if its performace is ';
 if opts.MaxPerf
     Yaux = Y;
     Yaux(isnan(Yaux)) = -Inf;
-    [Ybest,P] = max(Yaux,[],2);
+    [out.Ybest, out.P] = max(Yaux, [], 2);
     if opts.AbsPerf
-        Ybin = Yaux>=opts.epsilon;
+        out.Ybin = Yaux >= opts.epsilon;
         msg = [msg 'higher than ' num2str(opts.epsilon)];
     else
-        Ybest(Ybest==0) = eps;
+        out.Ybest(out.Ybest==0) = eps;
         Y(Y==0) = eps;
-        Y = 1-bsxfun(@rdivide,Y,Ybest);
-        Ybin = (1-bsxfun(@rdivide,Yaux,Ybest))<=opts.epsilon;
+        Y = 1 - bsxfun(@rdivide, Y, out.Ybest);
+        out.Ybin = (1 - bsxfun(@rdivide, Yaux, out.Ybest)) <= opts.epsilon;
         msg = [msg 'within ' num2str(round(100.*opts.epsilon)) '% of the best.'];
     end
 else
     Yaux = Y;
     Yaux(isnan(Yaux)) = Inf;
-    [Ybest,P] = min(Yaux,[],2);
+    [out.Ybest, out.P] = min(Yaux, [], 2);
     if opts.AbsPerf
-        Ybin = Yaux<=opts.epsilon;
+        out.Ybin = Yaux <= opts.epsilon;
         msg = [msg 'less than ' num2str(opts.epsilon)];
     else
-        Ybest(Ybest==0) = eps;
+        out.Ybest(out.Ybest==0) = eps;
         Y(Y==0) = eps;
-        Y = bsxfun(@rdivide,Y,Ybest)-1;
-        Ybin = (bsxfun(@rdivide,Yaux,Ybest)-1)<=opts.epsilon;
+        Y = bsxfun(@rdivide, Y, out.Ybest) - 1;
+        out.Ybin = (bsxfun(@rdivide, Yaux, out.Ybest) - 1) <= opts.epsilon;
         msg = [msg 'within ' num2str(round(100.*opts.epsilon)) '% of the best.'];
     end
 end
-disp(msg);
+fprintf('%s\n', msg);
 % -------------------------------------------------------------------------
 % Testing for ties. If there is a tie in performance, we pick an algorithm
 % at random.
-bestAlgos = bsxfun(@eq,Yraw,Ybest);
-multipleBestAlgos = sum(bestAlgos,2)>1;
+bestAlgos = bsxfun(@eq, Yraw, out.Ybest);
+multipleBestAlgos = sum(bestAlgos, 2) > 1;
 aidx = 1:nalgos;
-for i=1:size(Y,1)
+for i = 1:size(Y, 1)
     if multipleBestAlgos(i)
         aux = aidx(bestAlgos(i,:));
-        P(i) = aux(randi(length(aux),1)); % Pick one at random
+        out.P(i) = aux(randi(length(aux), 1));
     end
 end
-disp(['-> For ' num2str(round(100.*mean(multipleBestAlgos))) '% of the instances there is ' ...
-      'more than one best algorithm. Random selection is used to break ties.']);
-numGoodAlgos = sum(Ybin,2);
-beta = numGoodAlgos>(opts.betaThreshold*nalgos);
-
+fprintf('-> For %s%% of the instances there is more than one best algorithm. Random selection is used to break ties.\n', ...
+    num2str(round(100.*mean(multipleBestAlgos))));
+out.numGoodAlgos = sum(out.Ybin, 2);
+out.beta = out.numGoodAlgos > (opts.betaThreshold * nalgos);
+% -------------------------------------------------------------------------
 if opts.auto
-    disp('=========================================================================');
-    disp('-> Auto-pre-processing.');
-    disp('=========================================================================');
+    fprintf('=========================================================================\n');
+    fprintf('-> Auto-pre-processing.\n');
+    fprintf('=========================================================================\n');
 end
-out.medval = nanmedian(X, 1);
+out.medval  = nanmedian(X, 1);
 out.iqrange = iqr(X, 1);
 out.hibound = out.medval + 5.*out.iqrange;
 out.lobound = out.medval - 5.*out.iqrange;
 if opts.auto && opts.bound
-    disp('-> Removing extreme outliers from the feature values.');
-    himask = bsxfun(@gt,X,out.hibound);
-    lomask = bsxfun(@lt,X,out.lobound);
-    X = X.*~(himask | lomask) + bsxfun(@times,himask,out.hibound) + ...
-                                bsxfun(@times,lomask,out.lobound);
+    fprintf('-> Removing extreme outliers from the feature values.\n');
+    himask = bsxfun(@gt, X, out.hibound);
+    lomask = bsxfun(@lt, X, out.lobound);
+    X = X.*~(himask | lomask) + bsxfun(@times, himask, out.hibound) + ...
+                                bsxfun(@times, lomask, out.lobound);
 end
 
-nfeats = size(X,2);
-nalgos = size(Y,2);
-out.minX = min(X,[],1);
-out.lambdaX = zeros(1,nfeats);
-out.muX = zeros(1,nfeats);
-out.sigmaX = zeros(1,nfeats);
-out.minY = nanmin(Y(:));
-out.lambdaY = zeros(1,nalgos);
-out.muY = zeros(1,nalgos);
-out.sigmaY = zeros(1,nalgos);
+nfeats = size(X, 2);
+nalgos = size(Y, 2);
+out.minX    = min(X, [], 1);
+out.lambdaX = zeros(1, nfeats);
+out.muX     = zeros(1, nfeats);
+out.sigmaX  = zeros(1, nfeats);
+out.minY    = nanmin(Y(:));
+out.lambdaY = zeros(1, nalgos);
+out.muY     = zeros(1, nalgos);
+out.sigmaY  = zeros(1, nalgos);
 if opts.auto && opts.norm
-    disp('-> Auto-normalizing the data using Box-Cox and Z transformations.');
-    X = bsxfun(@minus,X,out.minX)+1;
-    for i=1:nfeats
-        aux = X(:,i);
+    fprintf('-> Auto-normalizing the data using Box-Cox and Z transformations.\n');
+    X = bsxfun(@minus, X, out.minX) + 1;
+    for i = 1:nfeats
+        aux = X(:, i);
         idx = isnan(aux);
         [aux, out.lambdaX(i)] = boxcox(aux(~idx));
         [aux, out.muX(i), out.sigmaX(i)] = zscore(aux);
-        X(~idx,i) = aux;
+        X(~idx, i) = aux;
     end
 
-    Y = (Y-out.minY)+eps;
-    for i=1:nalgos
-        aux = Y(:,i);
+    Y = (Y - out.minY) + eps;
+    for i = 1:nalgos
+        aux = Y(:, i);
         idx = isnan(aux);
         [aux, out.lambdaY(i)] = boxcox(aux(~idx));
         [aux, out.muY(i), out.sigmaY(i)] = zscore(aux);
-        Y(~idx,i) = aux;
-    end 
+        Y(~idx, i) = aux;
+    end
 end
 
 end

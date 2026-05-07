@@ -1,4 +1,5 @@
 function out = PYTHIA(Z, Y, Ybin, Ybest, algolabels, opts)
+if ~isfield(opts, 'verbose'), opts.verbose = true; end
 % -------------------------------------------------------------------------
 % PYTHIA.m
 % -------------------------------------------------------------------------
@@ -11,7 +12,7 @@ function out = PYTHIA(Z, Y, Ybin, Ybest, algolabels, opts)
 %
 % -------------------------------------------------------------------------
 
-disp('  -> Initializing PYTHIA.');
+fprintf('  -> Initializing PYTHIA.\n');
 [Znorm,out.mu,out.sigma] = zscore(Z);
 [ninst,nalgos] = size(Ybin);
 out.cp = cell(1,nalgos);
@@ -23,7 +24,7 @@ out.Pr0sub = 0.*Ybin;
 out.Pr0hat = 0.*Ybin;
 out.boxcosnt = zeros(1,nalgos);
 out.kscale = out.boxcosnt;
-disp('-------------------------------------------------------------------------');
+fprintf('-------------------------------------------------------------------------\n');
 precalcparams = isfield(opts,'params') && isnumeric(opts.params) && ...
                 size(opts.params,1)==nalgos && size(opts.params,2)==2;
 params = NaN.*ones(nalgos,2);
@@ -31,47 +32,46 @@ if opts.ispolykrnl
     KernelFcn = 'polynomial';
 else
     if ninst>1e3
-        disp('  -> For datasets larger than 1K Instances, PYTHIA works better with a Polynomial kernel.');
-        disp('  -> Consider changing the kernel if the results are unsatisfactory.');
-        disp('-------------------------------------------------------------------------');
+        fprintf('  -> For datasets larger than 1K Instances, PYTHIA works better with a Polynomial kernel.\n');
+        fprintf('  -> Consider changing the kernel if the results are unsatisfactory.\n');
+        fprintf('-------------------------------------------------------------------------\n');
     end
     KernelFcn = 'gaussian';
 end
-disp(['  -> PYTHIA is using a ' KernelFcn ' kernel ']);
-disp('-------------------------------------------------------------------------');
+fprintf('  -> PYTHIA is using a %s kernel\n', KernelFcn);
+fprintf('-------------------------------------------------------------------------\n');
 if opts.uselibsvm
-    disp('  -> Using LIBSVM''s libraries.');
+    fprintf('  -> Using LIBSVM''s libraries.\n');
     if precalcparams
-        disp('  -> Using pre-calculated hyper-parameters for the SVM.');
+        fprintf('  -> Using pre-calculated hyper-parameters for the SVM.\n');
         params = opts.params;
     else
-        disp('  -> Search on a latin hyper-cube design will be used for parameter hyper-tunning.');
+        fprintf('  -> Search on a latin hyper-cube design will be used for parameter hyper-tunning.\n');
     end
 else
-    disp('  -> Using MATLAB''s SVM libraries.');
+    fprintf('  -> Using MATLAB''s SVM libraries.\n');
     if precalcparams
-        disp('  -> Using pre-calculated hyper-parameters for the SVM.');
+        fprintf('  -> Using pre-calculated hyper-parameters for the SVM.\n');
         params = opts.params;
     else
-        disp('  -> Bayesian Optimization will be used for parameter hyper-tunning.');
+        fprintf('  -> Bayesian Optimization will be used for parameter hyper-tunning.\n');
     end
-    disp('-------------------------------------------------------------------------');
+    fprintf('-------------------------------------------------------------------------\n');
     if opts.useweights
-        disp('  -> PYTHIA is using cost-sensitive classification');
+        fprintf('  -> PYTHIA is using cost-sensitive classification\n');
         out.W = abs(Y-nanmean(Y(:)));
         out.W(out.W==0) = min(out.W(out.W~=0));
         out.W(isnan(out.W)) = max(out.W(~isnan(out.W)));
         Waux = out.W;
     else
-        disp('  -> PYTHIA is not using cost-sensitive classification');
+        fprintf('  -> PYTHIA is not using cost-sensitive classification\n');
         Waux = ones(ninst,nalgos);
     end
 end
-disp('-------------------------------------------------------------------------');
-disp(['  -> Using a ' num2str(opts.cvfolds) ...
-      '-fold stratified cross-validation experiment to evaluate the SVMs.']);
-disp('-------------------------------------------------------------------------');
-disp('  -> Training has started. PYTHIA may take a while to complete...');
+fprintf('-------------------------------------------------------------------------\n');
+fprintf('  -> Using a %d-fold stratified cross-validation experiment to evaluate the SVMs.\n', opts.cvfolds);
+fprintf('-------------------------------------------------------------------------\n');
+fprintf('  -> Training has started. PYTHIA may take a while to complete...\n');
 t = tic;
 for i=1:nalgos
     tic;
@@ -109,17 +109,16 @@ for i=1:nalgos
         end
     end
 	out.cvcmat(i,:) = aux(:);
-    if i==nalgos
-        disp(['    -> PYTHIA has trained a model for ''' algolabels{i}, ...
-              ''', there are no models left to train.']);
-    elseif i==nalgos-1
-        disp(['    -> PYTHIA has trained a model for ''' algolabels{i}, ...
-              ''', there is 1 model left to train.']);
-    else
-        disp(['    -> PYTHIA has trained a model for ''' algolabels{i}, ...
-              ''', there are ' num2str(nalgos-i) ' models left to train.']);
+    if opts.verbose
+        if i==nalgos
+            fprintf('    -> PYTHIA has trained a model for ''%s'', there are no models left to train.\n', algolabels{i});
+        elseif i==nalgos-1
+            fprintf('    -> PYTHIA has trained a model for ''%s'', there is 1 model left to train.\n', algolabels{i});
+        else
+            fprintf('    -> PYTHIA has trained a model for ''%s'', there are %d models left to train.\n', algolabels{i}, nalgos-i);
+        end
+        fprintf('      -> Elapsed time: %.2fs\n', toc);
     end
-    disp(['      -> Elapsed time: ' num2str(toc,'%.2f\n') 's']);
 end
 tn = out.cvcmat(:,1);
 fp = out.cvcmat(:,3);
@@ -128,14 +127,12 @@ tp = out.cvcmat(:,4);
 out.precision = tp./(tp+fp);
 out.recall = tp./(tp+fn);
 out.accuracy = (tp+tn)./ninst;
-disp('-------------------------------------------------------------------------');
-disp('  -> PYTHIA has completed training the models.');
-disp(['  -> The average cross validated precision is: ' ...
-      num2str(round(100.*mean(out.precision),1)) '%']);
-disp(['  -> The average cross validated accuracy is: ' ...
-      num2str(round(100.*mean(out.accuracy),1)) '%']);
-  disp(['      -> Elapsed time: ' num2str(toc(t),'%.2f\n') 's']);
-disp('-------------------------------------------------------------------------');
+fprintf('-------------------------------------------------------------------------\n');
+fprintf('  -> PYTHIA has completed training the models.\n');
+fprintf('  -> The average cross validated precision is: %s%%\n', num2str(round(100.*mean(out.precision),1)));
+fprintf('  -> The average cross validated accuracy is: %s%%\n', num2str(round(100.*mean(out.accuracy),1)));
+fprintf('      -> Elapsed time: %.2fs\n', toc(t));
+fprintf('-------------------------------------------------------------------------\n');
 % We assume that the most precise SVM (as per CV-Precision) is the most
 % reliable.
 if nalgos>1
@@ -166,7 +163,7 @@ tg = sum(any( Ybin &  sel0,2));
 precisionsel = tg./(tg+fg);
 recallsel = tg./(tg+fb);
 
-disp('  -> PYTHIA is preparing the summary table.');
+fprintf('  -> PYTHIA is preparing the summary table.\n');
 out.summary = cell(nalgos+3, 11);
 out.summary{1,1} = 'Algorithms ';
 out.summary(2:end-2, 1) = algolabels;
@@ -192,8 +189,8 @@ out.summary(2:end, 9) = num2cell(round(100.*[out.recall' NaN recallsel],1));
 out.summary(2:end-2, 10) = num2cell(round(out.boxcosnt,3));
 out.summary(2:end-2, 11) = num2cell(round(out.kscale,3));
 out.summary(cellfun(@(x) all(isnan(x)),out.summary)) = {[]}; % Clean up. Not really needed
-disp('  -> PYTHIA has completed! Performance of the models:');
-disp(' ');
+fprintf('  -> PYTHIA has completed! Performance of the models:\n');
+fprintf('\n');
 disp(out.summary);
 
 end

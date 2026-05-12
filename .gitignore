@@ -2,10 +2,13 @@
 *.zip
 *.png
 *.pdf
+!docs/**/*.pdf
 *.mat
 *.db
 *.csv
 old_versions/*.*
 old_versions
 *.json
-!test/data/**
+test/data/*
+!test/data/metadata.csv
+!test/data/metadata_test.csv

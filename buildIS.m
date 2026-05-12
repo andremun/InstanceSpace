@@ -235,11 +235,7 @@ model.cloist = CLOISTER(model.data.X, model.pilot.A, opts.cloister);
 fprintf('=========================================================================\n');
 fprintf('-> Summoning PYTHIA to train the prediction models.\n');
 fprintf('=========================================================================\n');
-if opts.pythia.useknn
-    model.pythia = PYTHIA2(model.pilot.Z, model.data.Yraw, model.data.Ybin, model.data.Ybest, model.data.algolabels, opts.pythia);
-else
-    model.pythia = PYTHIA(model.pilot.Z, model.data.Yraw, model.data.Ybin, model.data.Ybest, model.data.algolabels, opts.pythia);
-end
+model.pythia = PYTHIA(model.pilot.Z, model.data.Yraw, model.data.Ybin, model.data.Ybest, model.data.algolabels, opts.pythia);
 % -------------------------------------------------------------------------
 % Calculating the algorithm footprints.
 fprintf('=========================================================================\n');

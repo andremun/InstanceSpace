@@ -7,33 +7,54 @@ function model = ISAmigrateModel(model)
 % Loads a model saved by an older version of buildIS and updates field names
 % to match the current PYTHIA interface:
 %
-%   model.pythia.svm{i}  / .knn{i}   -> model.pythia.classifier{i}
+%   model.pythia.svm{i}  / .knn{i}   -> model.pythia.classifiers{i}  (note: plural)
 %   model.pythia.boxcosnt             -> model.pythia.param1
 %   model.pythia.kscale               -> model.pythia.param2
+%   opts.oracle                       -> opts.pythia  (very old models)
 %
-% After migration the model can be used directly with PYTHIAtest and scriptcsv.
+% After migration the model can be passed to PYTHIA eval mode and scriptcsv.
 %
 % Example:
 %   m = load('model.mat');
 %   m = ISAmigrateModel(m);
 %   save('model.mat', '-struct', 'm');
 
-if ~isstruct(model) || ~isfield(model, 'pythia')
+if ~isstruct(model)
+    return;
+end
+
+% ------------------------------------------------------------------
+% Migrate very old opts layout: opts.oracle -> opts.pythia
+if isfield(model, 'opts') && isfield(model.opts, 'oracle') && ...
+        ~isfield(model.opts, 'pythia')
+    model.opts.pythia = model.opts.oracle;
+    model.opts = rmfield(model.opts, 'oracle');
+    fprintf('ISAmigrateModel: renamed opts.oracle -> opts.pythia.\n');
+end
+
+% ------------------------------------------------------------------
+% Migrate pythia struct fields.
+if ~isfield(model, 'pythia')
     return;
 end
 p = model.pythia;
 
-% Rename legacy classifier cell array.
-if isfield(p, 'svm') && ~isfield(p, 'classifier')
-    p.classifier     = p.svm;
+% Rename legacy classifier cell array to 'classifiers' (plural).
+if isfield(p, 'svm') && ~isfield(p, 'classifiers')
+    p.classifiers    = p.svm;
     p.classifierType = 'svm';
     p = rmfield(p, 'svm');
-    fprintf('ISAmigrateModel: renamed pythia.svm -> pythia.classifier (type=svm).\n');
-elseif isfield(p, 'knn') && ~isfield(p, 'classifier')
-    p.classifier     = p.knn;
+    fprintf('ISAmigrateModel: renamed pythia.svm -> pythia.classifiers (type=svm).\n');
+elseif isfield(p, 'knn') && ~isfield(p, 'classifiers')
+    p.classifiers    = p.knn;
     p.classifierType = 'knn';
     p = rmfield(p, 'knn');
-    fprintf('ISAmigrateModel: renamed pythia.knn -> pythia.classifier (type=knn).\n');
+    fprintf('ISAmigrateModel: renamed pythia.knn -> pythia.classifiers (type=knn).\n');
+elseif isfield(p, 'classifier') && ~isfield(p, 'classifiers')
+    % Phase 4 early naming (singular) -> plural.
+    p.classifiers = p.classifier;
+    p = rmfield(p, 'classifier');
+    fprintf('ISAmigrateModel: renamed pythia.classifier -> pythia.classifiers.\n');
 end
 
 % Rename legacy hyperparameter fields.

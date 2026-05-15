@@ -62,15 +62,19 @@ if ~isfield(opts.cloister, 'pval'),     opts.cloister.pval     = 0.05;   end
 if ~isfield(opts.cloister, 'cthres'),   opts.cloister.cthres   = 0.70;   end
 
 % pythia
-if ~isfield(opts, 'pythia'),                opts.pythia                = struct;             end
-if ~isfield(opts.pythia, 'flag'),           opts.pythia.flag           = true;               end
-if ~isfield(opts.pythia, 'cvfolds'),        opts.pythia.cvfolds        = 5;                  end
-if ~isfield(opts.pythia, 'nsobol'),         opts.pythia.nsobol         = 32;                 end
-if ~isfield(opts.pythia, 'ispolykrnl'),     opts.pythia.ispolykrnl     = false;              end
-if ~isfield(opts.pythia, 'useweights'),     opts.pythia.useweights     = false;              end
-if ~isfield(opts.pythia, 'verbose'),        opts.pythia.verbose        = opts.general.verbose; end
-% classifier: 'knn' (default) or 'svm'.
-% Honour legacy useknn flag if present; otherwise default to 'knn'.
+if ~isfield(opts, 'pythia'),                   opts.pythia                   = struct;                   end
+if ~isfield(opts.pythia, 'flag'),              opts.pythia.flag              = true;                    end
+if ~isfield(opts.pythia, 'cvfolds'),           opts.pythia.cvfolds           = 5;                      end
+if ~isfield(opts.pythia, 'tuning'),            opts.pythia.tuning            = 'sobol';                 end
+if ~isfield(opts.pythia, 'nTuningIter'),       opts.pythia.nTuningIter       = 20;                     end
+if ~isfield(opts.pythia, 'params'),            opts.pythia.params            = {};                     end
+if ~isfield(opts.pythia, 'skip'),              opts.pythia.skip              = false;                   end
+if ~isfield(opts.pythia, 'ispolykrnl'),        opts.pythia.ispolykrnl        = false;                  end
+if ~isfield(opts.pythia, 'useweights'),        opts.pythia.useweights        = false;                  end
+if ~isfield(opts.pythia, 'ensembleMethod'),    opts.pythia.ensembleMethod    = 'Bag';                  end
+if ~isfield(opts.pythia, 'verbose'),           opts.pythia.verbose           = opts.general.verbose;   end
+if ~isfield(opts.pythia, 'seed'),              opts.pythia.seed              = opts.general.seed;      end
+% classifier: registry name ('knn' default). Honour legacy useknn flag.
 if ~isfield(opts.pythia, 'classifier')
     if isfield(opts.pythia, 'useknn') && ~opts.pythia.useknn
         opts.pythia.classifier = 'svm';

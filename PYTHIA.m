@@ -92,6 +92,12 @@ end
 nIter = opts.nTuningIter;
 precalcparams = ~isempty(opts.params) && isnumeric(opts.params) && ...
                 size(opts.params,1)==nalgos && size(opts.params,2)==2;
+if strcmp(opts.tuning, 'none') && ~precalcparams
+    error('ISA:PYTHIA:noParamsForNoneTuning', ...
+        ['opts.tuning=''none'' requires opts.params to be a valid [%d x 2] numeric ' ...
+         'matrix of pre-calculated hyperparameters. ' ...
+         'Either supply opts.params or change opts.tuning to ''sobol''.'], nalgos);
+end
 
 fprintf('-------------------------------------------------------------------------\n');
 fprintf('  -> Classifier: %s | Tuning: %s (%d evals) | CV: %d-fold.\n', ...
@@ -144,9 +150,8 @@ for i = 1:nalgos
     if strcmpi(classifierType, 'knn')
         distOpts = {'euclidean','cityblock','cosine','correlation'};
         out.param2Label{i} = distOpts{min(4,max(1,round(p2_best)))};
-    else
-        out.param2Label{i} = num2str(round(p2_best, 3));
     end
+    % Non-KNN classifiers: param2 is already numeric; param2Label left empty.
 
     cm = confusionmat(logical(Ybin(:,i)), out.Ysub(:,i), 'Order', [false true]);
     out.cvcmat(i,:) = cm(:)';
@@ -511,12 +516,12 @@ summary(2:end, 9) = num2cell(round(100.*[out.recall' NaN recallsel], 1));
 if ~isempty(p1label)
     summary(2:end-2, 10) = num2cell(round(out.param1, 3));
     if hasP2
-        if isfield(out, 'param2Label') && ~isempty(out.param2Label)
+        % KNN: param2Label holds the resolved distance name (categorical string).
+        % All other classifiers: use the numeric param2 value directly so the
+        % summary/CSV cell contains a number, not a string representation.
+        if strcmpi(out.classifierType, 'knn') && isfield(out, 'param2Label') ...
+                && ~isempty(out.param2Label{1})
             summary(2:end-2, 11) = out.param2Label;
-        elseif strcmpi(out.classifierType, 'knn')
-            distOpts = {'euclidean','cityblock','cosine','correlation'};
-            summary(2:end-2, 11) = cellfun(@(x) distOpts{min(4,max(1,round(x)))}, ...
-                                           num2cell(out.param2), 'UniformOutput', false);
         else
             summary(2:end-2, 11) = num2cell(round(out.param2, 3));
         end

@@ -22,7 +22,8 @@ if ~isfile(modelfile) || ~isfile(datafile)
     error(['Please place the datafiles in the directory ''' rootdir '''']);
 end
 model = load(modelfile);
-model.opts = ISAdefaults(model.opts);
+model = ISAmigrateModel(model);        % migrate opts.oracle->pythia, svm/knn->classifiers, etc.
+model.opts = ISAdefaults(model.opts);  % fill in any defaults absent from the saved model
 if model.opts.general.verbose
     fprintf('-------------------------------------------------------------------------\n');
     fprintf('Listing options used:\n');

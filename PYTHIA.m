@@ -349,10 +349,10 @@ end
 function clf = fitOneClassifier(type, Z, Y, W, p1, p2, opts, isFinal)
 % Dispatch training call to the appropriate MATLAB fitc* function.
 if nargin < 8; isFinal = false; end
-distOpts = {'euclidean','cityblock','cosine','correlation'};
 
 switch lower(type)
     case 'knn'
+        distOpts = {'euclidean','cityblock','cosine','correlation'};
         clf = fitcknn(Z, Y, ...
                       'Weights', W, ...
                       'NumNeighbors', max(1, round(p1)), ...
@@ -464,7 +464,8 @@ end
 function summary = buildSummary(out, algolabels, nalgos, ninst, ...
                                 Y, Ybin, Ybest, p1label, p2label)
 % Build the PYTHIA summary cell array.
-ncols = 9 + 2*~isempty(p1label);   % 9 cols in eval mode; 11 in training mode
+hasP2 = ~isempty(p1label) && ~strcmp(p2label, 'N/A');
+ncols = 9 + ~isempty(p1label) + hasP2;  % 9 (eval), 10 (1-param classifier), 11 (2-param)
 
 sel0 = bsxfun(@eq, out.selection0, 1:nalgos);
 sel1 = bsxfun(@eq, out.selection1, 1:nalgos);
@@ -495,7 +496,8 @@ colheads = {'Avg_Perf_all_instances';
             'CV_model_precision';
             'CV_model_recall'};
 if ~isempty(p1label)
-    colheads = [colheads; {p1label; p2label}];
+    colheads = [colheads; {p1label}];
+    if hasP2; colheads = [colheads; {p2label}]; end
 end
 summary(1, 2:end) = colheads;
 summary(2:end, 2) = num2cell(round([avgperf  nanmean(Ybest) nanmean(Yfull(:))], 3));
@@ -508,15 +510,16 @@ summary(2:end, 8) = num2cell(round(100.*[out.precision' NaN precisionsel], 1));
 summary(2:end, 9) = num2cell(round(100.*[out.recall' NaN recallsel], 1));
 if ~isempty(p1label)
     summary(2:end-2, 10) = num2cell(round(out.param1, 3));
-    if isfield(out, 'param2Label') && ~isempty(out.param2Label)
-        % param2Label stores resolved strings (distance name for KNN, numeric otherwise).
-        summary(2:end-2, 11) = out.param2Label;
-    elseif strcmpi(out.classifierType, 'knn')
-        distOpts = {'euclidean','cityblock','cosine','correlation'};
-        summary(2:end-2, 11) = cellfun(@(x) distOpts{min(4,max(1,round(x)))}, ...
-                                       num2cell(out.param2), 'UniformOutput', false);
-    else
-        summary(2:end-2, 11) = num2cell(round(out.param2, 3));
+    if hasP2
+        if isfield(out, 'param2Label') && ~isempty(out.param2Label)
+            summary(2:end-2, 11) = out.param2Label;
+        elseif strcmpi(out.classifierType, 'knn')
+            distOpts = {'euclidean','cityblock','cosine','correlation'};
+            summary(2:end-2, 11) = cellfun(@(x) distOpts{min(4,max(1,round(x)))}, ...
+                                           num2cell(out.param2), 'UniformOutput', false);
+        else
+            summary(2:end-2, 11) = num2cell(round(out.param2, 3));
+        end
     end
 end
 summary(cellfun(@(x) isnumeric(x) && all(isnan(x(:))), summary)) = {[]};

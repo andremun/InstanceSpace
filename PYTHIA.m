@@ -34,7 +34,7 @@ if ~isfield(opts, 'cvfolds'),         opts.cvfolds         = 5;        end
 if ~isfield(opts, 'ispolykrnl'),      opts.ispolykrnl      = false;    end
 if ~isfield(opts, 'useweights'),      opts.useweights      = false;    end
 if ~isfield(opts, 'verbose'),         opts.verbose         = true;     end
-if ~isfield(opts, 'params'),          opts.params          = {};       end
+if ~isfield(opts, 'params'),          opts.params          = [];       end
 if ~isfield(opts, 'skip'),            opts.skip            = false;    end
 if ~isfield(opts, 'ensembleMethod'),  opts.ensembleMethod  = 'Bag';    end
 if ~isfield(opts, 'seed'),            opts.seed            = 42;       end
@@ -43,9 +43,6 @@ if isfield(opts, 'uselibsvm') && opts.uselibsvm
     warning('ISA:PYTHIA:libsvmDeprecated', ...
         ['opts.uselibsvm is deprecated and ignored. ' ...
          'Migrate saved models with ISAmigrateModel.']);
-end
-if isfield(opts, 'useknn') && opts.useknn && ~isfield(opts, 'classifier')
-    opts.classifier = 'knn';
 end
 if strcmp(opts.tuning, 'bayes')
     warning('ISA:PYTHIA:bayesFallback', ...
@@ -110,6 +107,7 @@ out.Pr0sub         = zeros(ninst, nalgos);
 out.Pr0hat         = zeros(ninst, nalgos);
 out.param1         = zeros(1, nalgos);
 out.param2         = zeros(1, nalgos);
+out.param2Label    = cell(1, nalgos);  % human-readable param2 (distance name for KNN)
 
 t = tic;
 for i = 1:nalgos
@@ -141,6 +139,12 @@ for i = 1:nalgos
                              p1_best, p2_best, opts);
     out.param1(i) = p1_best;
     out.param2(i) = p2_best;
+    if strcmpi(classifierType, 'knn')
+        distOpts = {'euclidean','cityblock','cosine','correlation'};
+        out.param2Label{i} = distOpts{min(4,max(1,round(p2_best)))};
+    else
+        out.param2Label{i} = num2str(round(p2_best, 3));
+    end
 
     cm = confusionmat(logical(Ybin(:,i)), out.Ysub(:,i), 'Order', [false true]);
     out.cvcmat(i,:) = cm(:)';
@@ -308,9 +312,14 @@ function [Yp, Pp] = evalFoldClassifier(type, Ztrain, Ytrain, Wtrain, Ztest, p1, 
 try
     clf = fitOneClassifier(type, Ztrain, Ytrain, Wtrain, p1, p2, opts);
     [Yp, Pp] = predictClassifier(clf, Ztest);
-catch
+catch ME
+    if opts.verbose
+        warning('ISA:PYTHIA:foldTrainFailed', ...
+            'Classifier training failed on CV fold (p1=%.4g, p2=%.4g): %s', ...
+            p1, p2, ME.message);
+    end
     Yp = false(size(Ztest,1), 1);
-    Pp = zeros(size(Ztest,1), 1);
+    Pp = NaN(size(Ztest,1), 1);  % NaN disqualifies this candidate from Sobol selection
 end
 end
 
@@ -343,7 +352,13 @@ switch lower(type)
                 'Standardize', false, 'CacheSize', 'maximal'};
         if isFinal; args = [args, {'RemoveDuplicates', true}]; end
         clf = fitcsvm(Z, Y, args{:});
-        try; clf = fitSVMPosterior(clf); catch; end
+        try
+            clf = fitSVMPosterior(clf);
+        catch ME
+            warning('ISA:PYTHIA:posteriorFailed', ...
+                'fitSVMPosterior failed; predict will return raw decision scores: %s', ...
+                ME.message);
+        end
 
     case 'tree'
         clf = fitctree(Z, Y, ...
@@ -416,6 +431,8 @@ end
 function out = computeSelection(out, nalgos, Ybin, trainPrecision)
 % Compute algorithm selection vectors using CV-precision-weighted voting.
 if nargin < 4; trainPrecision = out.precision; end
+% Replace NaN precision (tp+fp==0) with 0 so max() never returns NaN.
+trainPrecision(isnan(trainPrecision)) = 0;
 if nalgos > 1
     [best, out.selection0] = max(bsxfun(@times, out.Yhat, trainPrecision'), [], 2);
 else
@@ -476,14 +493,16 @@ summary(2:end, 8) = num2cell(round(100.*[out.precision' NaN precisionsel], 1));
 summary(2:end, 9) = num2cell(round(100.*[out.recall' NaN recallsel], 1));
 if ~isempty(p1label)
     summary(2:end-2, 10) = num2cell(round(out.param1, 3));
-    if strcmp(lower(out.classifierType), 'knn')
+    if isfield(out, 'param2Label') && ~isempty(out.param2Label)
+        % param2Label stores resolved strings (distance name for KNN, numeric otherwise).
+        summary(2:end-2, 11) = out.param2Label;
+    elseif strcmpi(out.classifierType, 'knn')
         distOpts = {'euclidean','cityblock','cosine','correlation'};
-        p2cells  = cellfun(@(x) distOpts{min(4,max(1,round(x)))}, ...
-                           num2cell(out.param2), 'UniformOutput', false);
+        summary(2:end-2, 11) = cellfun(@(x) distOpts{min(4,max(1,round(x)))}, ...
+                                       num2cell(out.param2), 'UniformOutput', false);
     else
-        p2cells = num2cell(round(out.param2, 3));
+        summary(2:end-2, 11) = num2cell(round(out.param2, 3));
     end
-    summary(2:end-2, 11) = p2cells;
 end
 summary(cellfun(@(x) isnumeric(x) && all(isnan(x(:))), summary)) = {[]};
 end
@@ -506,6 +525,7 @@ out.recall         = NaN(1, nalgos);
 out.accuracy       = NaN(1, nalgos);
 out.param1         = zeros(1, nalgos);
 out.param2         = zeros(1, nalgos);
+out.param2Label    = cell(1, nalgos);
 out.selection0     = zeros(ninst, 1);
 out.selection1     = zeros(ninst, 1);
 out.summary        = {};

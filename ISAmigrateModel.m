@@ -50,8 +50,9 @@ elseif isfield(p, 'knn') && ~isfield(p, 'classifiers')
     p.classifierType = 'knn';
     p = rmfield(p, 'knn');
     fprintf('ISAmigrateModel: renamed pythia.knn -> pythia.classifiers (type=knn).\n');
-elseif isfield(p, 'classifier') && ~isfield(p, 'classifiers')
-    % Phase 4 early naming (singular) -> plural.
+elseif isfield(p, 'classifier') && ~isfield(p, 'classifiers') && iscell(p.classifier)
+    % Phase 4 early naming: classifier cell array stored under singular name -> plural.
+    % Guard on iscell to avoid renaming the v1.7 opts string 'knn'/'svm'/etc.
     p.classifiers = p.classifier;
     p = rmfield(p, 'classifier');
     fprintf('ISAmigrateModel: renamed pythia.classifier -> pythia.classifiers.\n');

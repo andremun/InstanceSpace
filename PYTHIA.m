@@ -72,7 +72,9 @@ classifierType = opts.classifier;
 % Skip mode: fill outputs with NaN and return so TRACE can use Ybin directly.
 if opts.skip
     fprintf('  -> opts.pythia.skip is true; bypassing classifier training.\n');
-    out = emptyPYTHIAout(ninst, nalgos, algolabels, Y, Ybin, Ybest);
+    mu_z = out.mu; sigma_z = out.sigma;      % preserve correct feature-wise params
+    out = emptyPYTHIAout(ninst, nalgos, algolabels, Y, Ybin, Ybest, size(Z,2));
+    out.mu = mu_z; out.sigma = sigma_z;
     return;
 end
 
@@ -240,7 +242,13 @@ out.precision = tp ./ (tp + fp);
 out.recall    = tp ./ (tp + fn);
 out.accuracy  = (tp + tn) ./ ninst;
 
-out = computeSelection(out, nalgos, Ybin, trained.precision);
+% Use the training-time precision for selection weighting if available; fall back
+% to the freshly computed eval precision so old/migrated models still work.
+if isfield(trained, 'precision') && ~isempty(trained.precision)
+    out = computeSelection(out, nalgos, Ybin, trained.precision);
+else
+    out = computeSelection(out, nalgos, Ybin);
+end
 % Eval-mode summary has 9 columns (no hyperparameter columns).
 out.summary = buildSummary(out, algolabels, nalgos, ninst, ...
                            Y, Ybin, Ybest, [], []);
@@ -280,6 +288,13 @@ end
 
 Ybin_rep = repmat(logical(Ybin), 1, nsobol);
 errs = mean(Ysub_all ~= Ybin_rep, 1);
+% Invalidate candidates where any fold's training failed (NaN probability).
+errs(any(isnan(Psub_all), 1)) = Inf;
+if all(isinf(errs))
+    warning('ISA:PYTHIA:allSobolFailed', ...
+        'All Sobol candidates failed (training error on every fold). Using first candidate.');
+    errs(1) = 0;
+end
 [~, best] = min(errs);
 Ysub   = Ysub_all(:, best);
 Psub   = Psub_all(:, best);
@@ -508,12 +523,14 @@ summary(cellfun(@(x) isnumeric(x) && all(isnan(x(:))), summary)) = {[]};
 end
 
 % -------------------------------------------------------------------------
-function out = emptyPYTHIAout(ninst, nalgos, algolabels, Y, Ybin, Ybest)
+function out = emptyPYTHIAout(ninst, nalgos, algolabels, Y, Ybin, Ybest, nfeats)
 % Return a no-op PYTHIA output when opts.skip = true.
+% nfeats must match size(Z,2) so that eval-mode normalisation (Z - mu)./sigma works.
+if nargin < 7; nfeats = 2; end   % 2D projected space is the common case
 out.classifiers    = cell(1, nalgos);
 out.classifierType = 'none';
-out.mu             = zeros(1, size(Y,2));
-out.sigma          = ones(1, size(Y,2));
+out.mu             = zeros(1, nfeats);
+out.sigma          = ones(1, nfeats);
 out.cp             = cell(1, nalgos);
 out.cvcmat         = zeros(nalgos, 4);
 out.Ysub           = false(ninst, nalgos);

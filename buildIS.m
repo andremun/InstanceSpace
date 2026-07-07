@@ -97,7 +97,7 @@ if any(idx)
         model.data.S = model.data.S(~idx);
     end
 end
-idx = mean(isnan(model.data.X),1)>=0.20; % These features are very weak.
+idx = mean(isnan(model.data.X),1)>=opts.prelim.nanThreshold; % These features are very weak.
 if any(idx)
     warning('-> There are features with too many missing values. They are being removed to increase speed.');
     model.data.X = model.data.X(:,~idx);
@@ -120,10 +120,12 @@ model.data.algolabels = strrep(model.data.algolabels,'algo_','');
 % -------------------------------------------------------------------------
 % Running PRELIM as to pre-process the data, including scaling and bounding
 fprintf('[PRELIM] Calling PRELIM for data pre-processing.\n');
+iqrMultiplier = opts.prelim.iqrMultiplier;  % capture before opts.prelim is rebuilt below
 opts.prelim = opts.perf;
 opts.prelim.auto = opts.auto.preproc;
 opts.prelim.bound = opts.bound.flag;
 opts.prelim.norm = opts.norm.flag;
+opts.prelim.iqrMultiplier = iqrMultiplier;
 [model.data.X, model.data.Y, model.prelim] = PRELIM(model.data.X, model.data.Y, opts.prelim);
 model.data.Ybest        = model.prelim.Ybest;
 model.data.Ybin         = model.prelim.Ybin;

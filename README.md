@@ -109,8 +109,9 @@ The toolkit uses TRACE3, an algorithm based on MATLAB's [```alphaShape```](https
 The toolkit implements simple routines to bound outliers and scale the data. **These routines are by no means perfect, and users should pre-process their data independently if preferred**. However, the automatic bounding and scaling routines should give some idea of the kind of results may be achieved. In general, we recommend that the data is transformed to become **close to normally distributed** due to the linear nature of PILOT's optimal projection algorithm.
 
 - ```opts.auto.preproc``` turns on (set as ```TRUE```) the automatic pre-processing.
-- ```opts.bound.flag``` turns on (set as ```TRUE```) data bounding. This sub-routine calculates the median and the interquartile range ([IQR](https://en.wikipedia.org/wiki/Interquartile_range)) of each feature and performance measure, and bounds the data to the median plus or minus five times the IQR.
+- ```opts.bound.flag``` turns on (set as ```TRUE```) data bounding. This sub-routine calculates the median and the interquartile range ([IQR](https://en.wikipedia.org/wiki/Interquartile_range)) of each feature and performance measure, and bounds the data to the median plus or minus ```opts.prelim.iqrMultiplier``` (default 5) times the IQR.
 - ```opts.norm.flag``` turns on (set as ```TRUE```) scalling. This sub-routine scales into a positive range each feature and performance measure. Then it calculates a [box-cox transformation](https://en.wikipedia.org/wiki/Power_transform#Box%E2%80%93Cox_transformation) to stabilise the variance, and a [Z-transformation](https://en.wikipedia.org/wiki/Standard_score) to standarise the data. The result are features and performance measures that are close to normally distributed.
+- ```opts.prelim.nanThreshold``` (default 0.20) maximum fraction of missing (```NaN```) values allowed for a feature before it is dropped entirely.
 
 ### Automatic feature selection
 

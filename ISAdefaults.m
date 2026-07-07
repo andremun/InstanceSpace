@@ -17,6 +17,12 @@ if ~isfield(opts.perf, 'AbsPerf'),          opts.perf.AbsPerf          = false; 
 if ~isfield(opts.perf, 'epsilon'),          opts.perf.epsilon          = 0.05;   end
 if ~isfield(opts.perf, 'betaThreshold'),    opts.perf.betaThreshold    = 0.55;   end
 
+% prelim (buildIS-level pre-processing config; iqrMultiplier is also passed
+% into PRELIM itself, nanThreshold is read directly by buildIS beforehand)
+if ~isfield(opts, 'prelim'),                 opts.prelim                 = struct; end
+if ~isfield(opts.prelim, 'iqrMultiplier'),   opts.prelim.iqrMultiplier   = 5;      end
+if ~isfield(opts.prelim, 'nanThreshold'),    opts.prelim.nanThreshold    = 0.20;   end
+
 % auto
 if ~isfield(opts, 'auto'),              opts.auto              = struct; end
 if ~isfield(opts.auto, 'preproc'),      opts.auto.preproc      = true;  end

@@ -1,6 +1,7 @@
 {
   "general":  {"seed": 42, "verbose": true},
   "perf":     {"MaxPerf": false, "AbsPerf": false, "epsilon": 0.05, "betaThreshold": 0.55},
+  "prelim":   {"iqrMultiplier": 5, "nanThreshold": 0.20},
   "auto":     {"preproc": true},
   "bound":    {"flag": true},
   "norm":     {"flag": true},

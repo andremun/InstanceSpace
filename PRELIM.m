@@ -14,6 +14,7 @@ function [X, Y, out] = PRELIM(X, Y, opts)
 %               auto          logical  run auto pre-processing (default true)
 %               bound         logical  bound outliers (default true)
 %               norm          logical  Box-Cox + Z normalisation (default true)
+%               iqrMultiplier double   outlier bound = median +/- N*IQR (default 5)
 %
 %   Outputs
 %     X     - pre-processed feature matrix
@@ -39,6 +40,7 @@ end
 if ~isstruct(opts)
     error('ISA:PRELIM:badOpts', 'opts must be a struct.');
 end
+if ~isfield(opts, 'iqrMultiplier'), opts.iqrMultiplier = 5; end
 
 Yraw = Y;
 nalgos = size(Y, 2);
@@ -117,8 +119,8 @@ if opts.auto
 end
 out.medval  = nanmedian(X, 1);
 out.iqrange = iqr(X, 1);
-out.hibound = out.medval + 5.*out.iqrange;
-out.lobound = out.medval - 5.*out.iqrange;
+out.hibound = out.medval + opts.iqrMultiplier.*out.iqrange;
+out.lobound = out.medval - opts.iqrMultiplier.*out.iqrange;
 if opts.auto && opts.bound
     fprintf('[PRELIM] Removing extreme outliers from the feature values.\n');
     himask = bsxfun(@gt, X, out.hibound);

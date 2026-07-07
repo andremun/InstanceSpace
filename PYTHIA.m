@@ -81,8 +81,18 @@ end
 if opts.useweights
     fprintf('  -> Using cost-sensitive classification.\n');
     W = abs(Y - nanmean(Y(:)));
-    W(W==0) = min(W(W~=0));
-    W(isnan(W)) = max(W(~isnan(W)));
+    if any(W(:)~=0 & ~isnan(W(:)))
+        W(W==0) = min(W(W~=0));
+        W(isnan(W)) = max(W(~isnan(W)));
+    else
+        % Degenerate case: Y is constant or entirely NaN, so every weight is
+        % 0 or NaN. Fall back to uniform weighting rather than erroring on
+        % min([])/max([]).
+        warning('ISA:PYTHIA:degenerateWeights', ...
+            ['opts.useweights=true but performance data yields all-zero/NaN ' ...
+             'weights (constant or all-NaN Y). Falling back to uniform weights.']);
+        W = ones(ninst, nalgos);
+    end
     out.W = W;
 else
     fprintf('  -> Not using cost-sensitive classification.\n');
@@ -143,7 +153,7 @@ for i = 1:nalgos
 
         [out.Ysub(:,i), out.Pr0sub(:,i), p1_best, p2_best] = ...
             sobolSearch(classifierType, Znorm, Ybin(:,i), W(:,i), ...
-                        out.cp{i}, P1, P2, opts);
+                        out.cp{i}, P1, P2, opts, opts.seed + i);
     end
 
     [out.classifiers{i}, out.Yhat(:,i), out.Pr0hat(:,i)] = ...
@@ -272,8 +282,9 @@ end
 % =========================================================================
 
 function [Ysub, Psub, p1_best, p2_best] = sobolSearch( ...
-        type, Z, Ybin, W, cp, P1, P2, opts)
+        type, Z, Ybin, W, cp, P1, P2, opts, baseSeed)
 % Evaluate nIter Sobol candidates via k-fold CV and return best params + CV predictions.
+if nargin < 9; baseSeed = opts.seed; end
 nsobol = length(P1);
 ninst  = size(Z, 1);
 nworkers = getParallelWorkers();
@@ -289,7 +300,11 @@ for fold = 1:cp.NumTestSets
 
     Yfold = false(ntest, nsobol);
     Pfold = zeros(ntest, nsobol);
+    % Deterministic per-(fold,candidate) seed so parfor workers — which do not
+    % inherit the client's RNG stream — reproduce the same result every run.
+    foldSeeds = baseSeed*1e5 + fold*1e3 + (1:nsobol);
     parfor (j = 1:nsobol, nworkers)
+        rng(foldSeeds(j), 'twister');
         [Yfold(:,j), Pfold(:,j)] = evalFoldClassifier( ...
             type, Ztrain, Ytrain, Wtrain, Ztest, P1(j), P2(j), opts);
     end
@@ -510,7 +525,7 @@ if ~isempty(p1label)
     colheads = [colheads; {p1label}];
     if hasP2; colheads = [colheads; {p2label}]; end
 end
-summary(1, 2:end) = colheads;
+summary(1, 2:end) = colheads';
 % Column vectors (nalgos+2)×1 assembled with ; — required for 2D cell-slice assignment.
 summary(2:end, 2) = num2cell(round([avgperf(:);        nanmean(Ybest);  nanmean(Yfull(:))], 3));
 summary(2:end, 3) = num2cell(round([stdperf(:);        nanstd(Ybest);   nanstd(Yfull(:))],  3));

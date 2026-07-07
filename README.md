@@ -36,7 +36,9 @@ The main requirement for the software to run is to have a current version of [MA
 
 ## Working with the code
 
-The main interfase is the script ```example.m``` which provides the path for the ```metadata.csv``` file, and constructs the ```options.json``` file. The path provided will also be the location of all the software outputs, such as images (in ```.png``` format), tables (in ```.csv``` format) and raw intermediate data (in ```.mat``` format).
+The main interfase is the script ```example.m```, which runs a suite of pipeline configurations (different classifiers, tuning strategies, 2D/3D projection, feature selection on/off, etc.) against the reference dataset in ```test/data/```. Each configuration gets its own subdirectory (e.g. ```test/data/classifier_svm/```), which becomes the location of that run's software outputs: images (```.png```), tables (```.csv```), and raw intermediate data (```.mat```).
+
+**```options.json``` is a generated artifact, not a source file.** Each test case in ```example.m``` writes its own ```options.json``` into its output subdirectory from the ```opts``` struct built in MATLAB, every time the script runs. Hand-editing an ```options.json``` file has no lasting effect — the next run of ```example.m``` silently overwrites it. To change what gets run, edit ```example.m``` (the ```defaultOpts()``` local function for shared settings, or a specific test case's ```override``` function).
 
 ## The metadata file
 

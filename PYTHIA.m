@@ -117,6 +117,10 @@ out.param1         = zeros(1, nalgos);
 out.param2         = zeros(1, nalgos);
 out.param2Label    = cell(1, nalgos);  % human-readable param2 (distance name for KNN)
 
+% Save global RNG state so downstream code (TRACE, user scripts) is unaffected.
+% Per-algorithm seeding inside the loop keeps each classifier's training
+% reproducible without permanently mutating the session RNG.
+prevRNG = rng;
 t = tic;
 for i = 1:nalgos
     tic;
@@ -181,6 +185,8 @@ fprintf('  -> Average CV precision: %.1f%%\n', 100.*nanmean(out.precision));
 fprintf('  -> Average CV accuracy : %.1f%%\n', 100.*nanmean(out.accuracy));
 fprintf('      -> Elapsed time: %.2fs\n', toc(t));
 fprintf('-------------------------------------------------------------------------\n');
+
+rng(prevRNG);  % restore global RNG so downstream code is unaffected
 
 out = computeSelection(out, nalgos, Ybin);
 out.summary = buildSummary(out, algolabels, nalgos, ninst, ...
@@ -505,6 +511,9 @@ if ~isempty(p1label)
     if hasP2; colheads = [colheads; {p2label}]; end
 end
 summary(1, 2:end) = colheads;
+% Each row of data is assembled as a 1×(nalgos+2) row vector, which MATLAB's
+% cell-array assignment maps into the (nalgos+2)×1 column slice without error
+% because element counts match — consistent with the original PYTHIAtest.m.
 summary(2:end, 2) = num2cell(round([avgperf  nanmean(Ybest) nanmean(Yfull(:))], 3));
 summary(2:end, 3) = num2cell(round([stdperf  nanstd(Ybest)  nanstd(Yfull(:))],  3));
 summary(2:end, 4) = num2cell(round([mean(Ybin) 1 pgood], 3));
@@ -534,6 +543,10 @@ end
 function out = emptyPYTHIAout(ninst, nalgos, algolabels, Y, Ybin, Ybest, nfeats)
 % Return a no-op PYTHIA output when opts.skip = true.
 % nfeats must match size(Z,2) so that eval-mode normalisation (Z - mu)./sigma works.
+% mu/sigma are overwritten by the caller with the correct zscore parameters.
+%
+% precision/recall/accuracy are nalgos×1 column vectors (matching training/eval
+% mode) so that buildSummary's transpose-and-concatenate idiom works correctly.
 if nargin < 7; nfeats = 2; end   % 2D projected space is the common case
 out.classifiers    = cell(1, nalgos);
 out.classifierType = 'none';
@@ -545,15 +558,18 @@ out.Ysub           = false(ninst, nalgos);
 out.Yhat           = false(ninst, nalgos);
 out.Pr0sub         = zeros(ninst, nalgos);
 out.Pr0hat         = zeros(ninst, nalgos);
-out.precision      = NaN(1, nalgos);
-out.recall         = NaN(1, nalgos);
-out.accuracy       = NaN(1, nalgos);
+out.precision      = NaN(nalgos, 1);   % column vector — matches training/eval orientation
+out.recall         = NaN(nalgos, 1);
+out.accuracy       = NaN(nalgos, 1);
 out.param1         = zeros(1, nalgos);
 out.param2         = zeros(1, nalgos);
 out.param2Label    = cell(1, nalgos);
 out.selection0     = zeros(ninst, 1);
 out.selection1     = zeros(ninst, 1);
-out.summary        = {};
+% Populate a NaN-filled 9-column summary so scriptcsv/scriptpng can index
+% into it without error even in skip mode.  No hyperparameter columns since
+% no classifier was trained.
+out.summary = buildSummary(out, algolabels, nalgos, ninst, Y, Ybin, Ybest, [], []);
 end
 
 % -------------------------------------------------------------------------

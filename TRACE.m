@@ -57,7 +57,11 @@ if useLegacy && is3D
         'Legacy TRACE does not support 3D instance spaces; switching to TRACE3.');
     useLegacy = false;
 end
-pythiaAvailable = ~isempty(Yhat);
+% opts.pythiaSkip is set by buildIS.m when opts.pythia.skip=true. It must be
+% checked explicitly: PYTHIA's skip-mode Yhat is a full-shape false(...)
+% placeholder (not []), so isempty(Yhat) alone never detects the skip case.
+pythiaSkipped   = isfield(opts, 'pythiaSkip') && opts.pythiaSkip;
+pythiaAvailable = ~isempty(Yhat) && ~pythiaSkipped;
 
 % -------------------------------------------------------------------------
 % Space measure from convex hull of all instances (computed once).

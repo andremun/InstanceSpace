@@ -56,10 +56,17 @@ if opts.MaxPerf
     Yaux = Y;
     Yaux(isnan(Yaux)) = -Inf;
     [out.Ybest, out.P] = max(Yaux, [], 2);
+    YbestTie = out.Ybest;  % pre-eps-substitution snapshot, used for tie detection below
     if opts.AbsPerf
         out.Ybin = Yaux >= opts.epsilon;
         msg = [msg 'higher than ' num2str(opts.epsilon)];
     else
+        if mean(out.Ybest==0) > 0.05
+            warning('ISA:PRELIM:manyZeroBest', ...
+                ['More than 5%% of instances have a best-algorithm performance of ' ...
+                 'exactly zero; the relative-performance matrix will be close to 1 ' ...
+                 'everywhere for these instances.']);
+        end
         out.Ybest(out.Ybest==0) = eps;
         Y(Y==0) = eps;
         Y = 1 - bsxfun(@rdivide, Y, out.Ybest);
@@ -70,10 +77,17 @@ else
     Yaux = Y;
     Yaux(isnan(Yaux)) = Inf;
     [out.Ybest, out.P] = min(Yaux, [], 2);
+    YbestTie = out.Ybest;  % pre-eps-substitution snapshot, used for tie detection below
     if opts.AbsPerf
         out.Ybin = Yaux <= opts.epsilon;
         msg = [msg 'less than ' num2str(opts.epsilon)];
     else
+        if mean(out.Ybest==0) > 0.05
+            warning('ISA:PRELIM:manyZeroBest', ...
+                ['More than 5%% of instances have a best-algorithm performance of ' ...
+                 'exactly zero; the relative-performance matrix will be close to 1 ' ...
+                 'everywhere for these instances.']);
+        end
         out.Ybest(out.Ybest==0) = eps;
         Y(Y==0) = eps;
         Y = bsxfun(@rdivide, Y, out.Ybest) - 1;
@@ -84,15 +98,15 @@ end
 fprintf('%s\n', msg);
 % -------------------------------------------------------------------------
 % Testing for ties. If there is a tie in performance, we pick an algorithm
-% at random.
-bestAlgos = bsxfun(@eq, Yraw, out.Ybest);
+% at random. Compared against YbestTie (captured before the eps
+% substitution above) so exact-zero best scores are still matched correctly.
+bestAlgos = bsxfun(@eq, Yraw, YbestTie);
 multipleBestAlgos = sum(bestAlgos, 2) > 1;
 aidx = 1:nalgos;
-for i = 1:size(Y, 1)
-    if multipleBestAlgos(i)
-        aux = aidx(bestAlgos(i,:));
-        out.P(i) = aux(randi(length(aux), 1));
-    end
+tieRows = find(multipleBestAlgos)';  % typically very few rows
+for i = tieRows
+    aux = aidx(bestAlgos(i,:));
+    out.P(i) = aux(randi(numel(aux)));
 end
 fprintf('-> For %s%% of the instances there is more than one best algorithm. Random selection is used to break ties.\n', ...
     num2str(round(100.*mean(multipleBestAlgos))));

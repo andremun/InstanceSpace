@@ -18,9 +18,10 @@ nfeats = size(X,2);
 rho = rho.*(pval<opts.pval);
 
 Xbnds = [min(X); max(X)];
-% Guard: if too many features, de2bi would produce an intractable matrix.
-% Use convex hull of Z as a safe fallback.
-MAX_FEATS = 20;
+% Guard: if too many features, the bit-matrix enumeration below would
+% produce an intractable matrix. Use convex hull of Z as a safe fallback.
+if ~isfield(opts, 'maxFeatures'), opts.maxFeatures = 20; end
+MAX_FEATS = opts.maxFeatures;
 if nfeats > MAX_FEATS
     warning('ISA:CLOISTER:tooManyFeatures', ...
         'CLOISTER skipped: %d features exceeds limit of %d. Using convex hull as boundary.', ...

@@ -57,9 +57,10 @@ if ~isfield(opts.pilot, 'ISA3D'),       opts.pilot.ISA3D       = false;  end
 if ~isfield(opts.pilot, 'verbose'),     opts.pilot.verbose     = opts.general.verbose; end
 
 % cloister
-if ~isfield(opts, 'cloister'),          opts.cloister          = struct; end
-if ~isfield(opts.cloister, 'pval'),     opts.cloister.pval     = 0.05;   end
-if ~isfield(opts.cloister, 'cthres'),   opts.cloister.cthres   = 0.70;   end
+if ~isfield(opts, 'cloister'),              opts.cloister              = struct; end
+if ~isfield(opts.cloister, 'pval'),         opts.cloister.pval         = 0.05;   end
+if ~isfield(opts.cloister, 'cthres'),       opts.cloister.cthres       = 0.70;   end
+if ~isfield(opts.cloister, 'maxFeatures'),  opts.cloister.maxFeatures  = 20;     end
 
 % pythia
 if ~isfield(opts, 'pythia'),                   opts.pythia                   = struct;                   end

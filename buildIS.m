@@ -241,6 +241,7 @@ model.pythia = PYTHIA(model.pilot.Z, model.data.Yraw, model.data.Ybin, model.dat
 fprintf('=========================================================================\n');
 fprintf('-> Calling TRACE to perform the footprint analysis.\n');
 fprintf('=========================================================================\n');
+opts.trace.pythiaSkip = opts.pythia.skip;  % Yhat is NaN-placeholder shaped, not empty, when skipped
 model.trace = TRACE(model.pilot.Z, model.data.Ybin, model.pythia.Yhat, model.data.P, model.data.beta, model.data.algolabels, opts.trace);
 
 if opts.parallel.flag

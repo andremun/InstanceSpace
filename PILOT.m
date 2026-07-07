@@ -1,5 +1,6 @@
 function out = PILOT(X, Y, featlabels, opts)
 if ~isfield(opts, 'verbose'), opts.verbose = true; end
+if ~isfield(opts, 'ISA3D'),   opts.ISA3D   = false; end
 % -------------------------------------------------------------------------
 % PILOT.m
 % -------------------------------------------------------------------------
@@ -161,7 +162,6 @@ else
     out.summary(2:end,1) = {'Z_{1}','Z_{2}'};
 end
 out.summary(1,2:end) = featlabels;
-% out.summary(2:end,1) = {'Z_{1}','Z_{2}'};
 out.summary(2:end,2:end) = num2cell(round(out.A,4));
 fprintf('\n');
 disp(out.summary);

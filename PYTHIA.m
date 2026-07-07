@@ -71,7 +71,7 @@ classifierType = opts.classifier;
 
 % Skip mode: fill outputs with NaN and return so TRACE can use Ybin directly.
 if opts.skip
-    fprintf('  -> opts.pythia.skip is true; bypassing classifier training.\n');
+    fprintf('  -> opts.skip is true; bypassing classifier training.\n');
     mu_z = out.mu; sigma_z = out.sigma;      % preserve correct feature-wise params
     out = emptyPYTHIAout(ninst, nalgos, algolabels, Y, Ybin, Ybest, size(Z,2));
     out.mu = mu_z; out.sigma = sigma_z;
@@ -511,28 +511,26 @@ if ~isempty(p1label)
     if hasP2; colheads = [colheads; {p2label}]; end
 end
 summary(1, 2:end) = colheads;
-% Each row of data is assembled as a 1×(nalgos+2) row vector, which MATLAB's
-% cell-array assignment maps into the (nalgos+2)×1 column slice without error
-% because element counts match — consistent with the original PYTHIAtest.m.
-summary(2:end, 2) = num2cell(round([avgperf  nanmean(Ybest) nanmean(Yfull(:))], 3));
-summary(2:end, 3) = num2cell(round([stdperf  nanstd(Ybest)  nanstd(Yfull(:))],  3));
-summary(2:end, 4) = num2cell(round([mean(Ybin) 1 pgood], 3));
-summary(2:end, 5) = num2cell(round([nanmean(Ysvms) NaN nanmean(Y(:))], 3));
-summary(2:end, 6) = num2cell(round([nanstd(Ysvms)  NaN nanstd(Y(:))],  3));
-summary(2:end, 7) = num2cell(round(100.*[out.accuracy' NaN NaN], 1));
-summary(2:end, 8) = num2cell(round(100.*[out.precision' NaN precisionsel], 1));
-summary(2:end, 9) = num2cell(round(100.*[out.recall' NaN recallsel], 1));
+% Column vectors (nalgos+2)×1 assembled with ; — required for 2D cell-slice assignment.
+summary(2:end, 2) = num2cell(round([avgperf(:);        nanmean(Ybest);  nanmean(Yfull(:))], 3));
+summary(2:end, 3) = num2cell(round([stdperf(:);        nanstd(Ybest);   nanstd(Yfull(:))],  3));
+summary(2:end, 4) = num2cell(round([mean(Ybin)';       1;               pgood],             3));
+summary(2:end, 5) = num2cell(round([nanmean(Ysvms)';   NaN;             nanmean(Y(:))],     3));
+summary(2:end, 6) = num2cell(round([nanstd(Ysvms)';    NaN;             nanstd(Y(:))],      3));
+summary(2:end, 7) = num2cell(round(100.*[out.accuracy;  NaN;            NaN],               1));
+summary(2:end, 8) = num2cell(round(100.*[out.precision; NaN;            precisionsel],       1));
+summary(2:end, 9) = num2cell(round(100.*[out.recall;    NaN;            recallsel],          1));
 if ~isempty(p1label)
-    summary(2:end-2, 10) = num2cell(round(out.param1, 3));
+    summary(2:end-2, 10) = num2cell(round(out.param1(:), 3));
     if hasP2
         % KNN: param2Label holds the resolved distance name (categorical string).
         % All other classifiers: use the numeric param2 value directly so the
         % summary/CSV cell contains a number, not a string representation.
         if strcmpi(out.classifierType, 'knn') && isfield(out, 'param2Label') ...
                 && ~isempty(out.param2Label{1})
-            summary(2:end-2, 11) = out.param2Label;
+            summary(2:end-2, 11) = out.param2Label(:);
         else
-            summary(2:end-2, 11) = num2cell(round(out.param2, 3));
+            summary(2:end-2, 11) = num2cell(round(out.param2(:), 3));
         end
     end
 end

@@ -18,7 +18,7 @@ function [fitFcn, p1label, p2label] = ISAgetClassifierFcn(name)
 %   | 'tree'    | fitctree      | MinLeafSize [1,100] | N/A              |
 %   | 'nb'      | fitcnb        | Bandwidth  log10    | N/A              |
 %   | 'linear'  | fitclinear    | Lambda     log10    | N/A              |
-%   | 'ensemble'| fitcensemble  | NumCycles [10,200]  | MinLeafSize [1,20]|
+%   | 'ensemble'| fitcensemble  | NumLearningCycles [10,200] | MinLeafSize [1,20]|
 %   +-----------+---------------+---------------------+------------------+
 %
 %   fitcecoc is excluded: PYTHIA trains one binary classifier per algorithm;

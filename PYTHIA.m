@@ -23,7 +23,8 @@ function out = PYTHIA(Z, Y, Ybin, Ybest, algolabels, opts, trainedModel)
 % Hyperparameter tuning (opts.tuning):
 %   'sobol' (default) — scrambled Sobol quasi-random search, opts.nTuningIter evals
 %   'none'            — use pre-supplied opts.params directly; skip tuning
-%   'bayes'           — reserved; falls back to 'sobol' with a warning
+%   'bayes'           — MATLAB bayesopt (Gaussian process surrogate),
+%                       opts.nTuningIter evals, same k-fold CV as 'sobol'
 % -------------------------------------------------------------------------
 
 % Defensive defaults — guard against callers that bypass ISAdefaults.
@@ -43,12 +44,6 @@ if isfield(opts, 'uselibsvm') && opts.uselibsvm
     warning('ISA:PYTHIA:libsvmDeprecated', ...
         ['opts.uselibsvm is deprecated and ignored. ' ...
          'Migrate saved models with ISAmigrateModel.']);
-end
-if strcmp(opts.tuning, 'bayes')
-    warning('ISA:PYTHIA:bayesFallback', ...
-        ['opts.tuning=''bayes'' is not yet fully supported; ' ...
-         'falling back to ''sobol''.']);
-    opts.tuning = 'sobol';
 end
 
 % -------------------------------------------------------------------------
@@ -145,6 +140,11 @@ for i = 1:nalgos
         [out.Ysub(:,i), out.Pr0sub(:,i)] = crossValPredict( ...
             classifierType, Znorm, Ybin(:,i), W(:,i), out.cp{i}, ...
             p1_best, p2_best, opts);
+    elseif strcmp(opts.tuning, 'bayes')
+        % MATLAB bayesopt (Gaussian-process surrogate) over the same
+        % classifier/CV-fold evaluation used by 'sobol'.
+        [out.Ysub(:,i), out.Pr0sub(:,i), p1_best, p2_best] = ...
+            bayesSearch(classifierType, Znorm, Ybin(:,i), W(:,i), out.cp{i}, opts);
     else
         % Scrambled Sobol search.
         ss = sobolset(2, 'Skip', 1, 'Scramble', 'MatousekAffineOwen');
@@ -326,6 +326,92 @@ Ysub   = Ysub_all(:, best);
 Psub   = Psub_all(:, best);
 p1_best = P1(best);
 p2_best = P2(best);
+end
+
+% -------------------------------------------------------------------------
+function [Ysub, Psub, p1_best, p2_best] = bayesSearch(type, Z, Ybin, W, cp, opts)
+% Bayesian-optimisation hyperparameter search (opts.tuning='bayes').
+% Uses MATLAB's bayesopt (Gaussian process surrogate) over the same
+% per-candidate k-fold CV evaluator as sobolSearch (crossValPredict), so
+% 'bayes' and 'sobol' are directly comparable tuning strategies over the
+% same classifier/search-space contract.
+vars  = classifierBayesVars(type);
+hasP2 = numel(vars) == 2;
+
+objFcn = @(tbl) bayesObjective(type, Z, Ybin, W, cp, tbl, hasP2, opts);
+
+% UseParallel is left false: bayesopt's sequential GP-driven search does not
+% parallelise across candidates the way Sobol's space-filling grid does, and
+% running serially lets it inherit the ambient RNG already seeded by the
+% caller (rng(opts.seed+i,'twister')) without needing per-worker reseeding.
+results = bayesopt(objFcn, vars, ...
+    'MaxObjectiveEvaluations', opts.nTuningIter, ...
+    'AcquisitionFunctionName', 'expected-improvement-plus', ...
+    'Verbose', 0, 'PlotFcn', [], 'UseParallel', false);
+
+p1_best = double(results.XAtMinObjective.p1);
+if hasP2
+    p2_best = bayesVarToNumeric(results.XAtMinObjective.p2);
+else
+    p2_best = 1;
+end
+[Ysub, Psub] = crossValPredict(type, Z, Ybin, W, cp, p1_best, p2_best, opts);
+end
+
+% -------------------------------------------------------------------------
+function vars = classifierBayesVars(type)
+% Bayesian-optimisation search space per classifier, mirroring sobolToParams's
+% ranges so 'bayes' and 'sobol' explore the same domain.
+switch lower(type)
+    case 'knn'
+        vars = [optimizableVariable('p1', [1 25], 'Type', 'integer'), ...
+                optimizableVariable('p2', {'euclidean','cityblock','cosine','correlation'})];
+    case 'svm'
+        vars = [optimizableVariable('p1', [2^-10 2^4], 'Transform', 'log'), ...
+                optimizableVariable('p2', [2^-10 2^4], 'Transform', 'log')];
+    case 'tree'
+        vars = optimizableVariable('p1', [1 100], 'Type', 'integer');
+    case 'nb'
+        vars = optimizableVariable('p1', [1e-3 10], 'Transform', 'log');
+    case 'linear'
+        vars = optimizableVariable('p1', [1e-6 1e3], 'Transform', 'log');
+    case 'ensemble'
+        vars = [optimizableVariable('p1', [10 200], 'Type', 'integer'), ...
+                optimizableVariable('p2', [1 20], 'Type', 'integer')];
+end
+end
+
+% -------------------------------------------------------------------------
+function p2num = bayesVarToNumeric(p2raw)
+% KNN's p2 is a categorical distance name in the bayesopt search space, but
+% numeric elsewhere in PYTHIA (out.param2, fitOneClassifier). Resolve back
+% to the same 1-4 index sobolToParams uses.
+if iscategorical(p2raw)
+    distOpts = {'euclidean','cityblock','cosine','correlation'};
+    p2num = find(strcmp(distOpts, char(p2raw)));
+else
+    p2num = double(p2raw);
+end
+end
+
+% -------------------------------------------------------------------------
+function err = bayesObjective(type, Z, Ybin, W, cp, tbl, hasP2, opts)
+% bayesopt objective: k-fold CV misclassification rate for one candidate row.
+p1 = double(tbl.p1);
+if hasP2
+    p2 = bayesVarToNumeric(tbl.p2);
+else
+    p2 = 1;
+end
+[Ysub, Psub] = crossValPredict(type, Z, Ybin, W, cp, p1, p2, opts);
+if any(isnan(Psub))
+    % At least one fold failed to train this candidate (see evalFoldClassifier);
+    % report the worst possible error so bayesopt steers away from it, mirroring
+    % sobolSearch's errs(...)=Inf invalidation of NaN-probability candidates.
+    err = 1;
+else
+    err = mean(Ysub ~= logical(Ybin));
+end
 end
 
 % -------------------------------------------------------------------------

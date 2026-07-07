@@ -1,5 +1,5 @@
 {
-  "general":  {"seed": 42, "verbose": true},
+  "general":  {"seed": 42, "verbose": true, "parallel": false, "ncores": 18},
   "perf":     {"MaxPerf": false, "AbsPerf": false, "epsilon": 0.05, "betaThreshold": 0.55},
   "prelim":   {"iqrMultiplier": 5, "nanThreshold": 0.20},
   "auto":     {"preproc": true},
@@ -11,9 +11,8 @@
   "sifted":   {"flag": true, "rho": 0.1, "pval": 0.05, "K": 10, "NTREES": 50,
                "MaxIter": 1000, "Replicates": 100},
   "pilot":    {"analytic": false, "ntries": 10},
-  "cloister": {"pval": 0.05, "cthres": 0.7},
-  "pythia":   {"classifier": "knn", "tuning": "sobol", "nTuningIter": 20, "cvfolds": 5},
+  "cloister": {"pval": 0.05, "corrThreshold": 0.7},
+  "pythia":   {"classifier": "knn", "tuning": "sobol", "nTuningIter": 20, "kFold": 5},
   "trace":    {"method": "trace3", "PI": 0.6, "minInstances": 4, "minAreaFrac": 0.01},
-  "outputs":  {"csv": true, "png": true, "web": false},
-  "parallel": {"flag": false, "ncores": 18}
+  "outputs":  {"csv": true, "png": true, "web": false}
 }

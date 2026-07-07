@@ -32,11 +32,11 @@ if opts.general.verbose
         disp(opts.(optfields{i}));
     end
 end
-if opts.parallel.flag
+if opts.general.parallel
     fprintf('[BUILD] Starting parallel processing pool.\n');
     delete(gcp('nocreate'));
-    if isnumeric(opts.parallel.ncores)
-        mypool = parpool('local', opts.parallel.ncores, 'SpmdEnabled', false);
+    if isnumeric(opts.general.ncores)
+        mypool = parpool('local', opts.general.ncores, 'SpmdEnabled', false);
     else
         mypool = parpool('local', 'SpmdEnabled', false);
     end
@@ -230,7 +230,7 @@ fprintf('[TRACE] Calling TRACE to perform the footprint analysis.\n');
 opts.trace.pythiaSkip = opts.pythia.skip;  % Yhat is NaN-placeholder shaped, not empty, when skipped
 model.trace = TRACE(model.pilot.Z, model.data.Ybin, model.pythia.Yhat, model.data.P, model.data.beta, model.data.algolabels, opts.trace);
 
-if opts.parallel.flag
+if opts.general.parallel
     fprintf('[BUILD] Closing parallel processing pool.\n');
     delete(mypool);
 end

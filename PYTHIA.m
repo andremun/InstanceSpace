@@ -31,7 +31,7 @@ function out = PYTHIA(Z, Y, Ybin, Ybest, algolabels, opts, trainedModel)
 if ~isfield(opts, 'classifier'),      opts.classifier      = 'knn';    end
 if ~isfield(opts, 'tuning'),          opts.tuning          = 'sobol';  end
 if ~isfield(opts, 'nTuningIter'),     opts.nTuningIter     = 20;       end
-if ~isfield(opts, 'cvfolds'),         opts.cvfolds         = 5;        end
+if ~isfield(opts, 'kFold'),           opts.kFold           = 5;        end
 if ~isfield(opts, 'ispolykrnl'),      opts.ispolykrnl      = false;    end
 if ~isfield(opts, 'useweights'),      opts.useweights      = false;    end
 if ~isfield(opts, 'verbose'),         opts.verbose         = true;     end
@@ -105,7 +105,7 @@ if strcmp(opts.tuning, 'none') && ~precalcparams
 end
 
 fprintf('[PYTHIA] Classifier: %s | Tuning: %s (%d evals) | CV: %d-fold.\n', ...
-        classifierType, opts.tuning, nIter, opts.cvfolds);
+        classifierType, opts.tuning, nIter, opts.kFold);
 fprintf('[PYTHIA] Training has started. PYTHIA may take a while to complete...\n');
 
 out.classifiers    = cell(1, nalgos);
@@ -129,7 +129,7 @@ for i = 1:nalgos
     tic;
     % Per-algorithm reproducible seed: opts.seed + i (per spec §6.2).
     rng(opts.seed + i, 'twister');
-    out.cp{i} = cvpartition(Ybin(:,i), 'Kfold', opts.cvfolds, 'Stratify', true);
+    out.cp{i} = cvpartition(Ybin(:,i), 'Kfold', opts.kFold, 'Stratify', true);
 
     if precalcparams
         p1_best = opts.params(i,1);

@@ -44,9 +44,9 @@ for i=1:ncomb
    for j=1:nfeats
        for k=j+1:nfeats
            % Check for valid points give the correlation trend
-           if rho(j,k)>opts.cthres && sign(Xedge(i,j))~=sign(Xedge(i,k))
+           if rho(j,k)>opts.corrThreshold && sign(Xedge(i,j))~=sign(Xedge(i,k))
                remove(i) = true;
-           elseif rho(j,k)<-opts.cthres && sign(Xedge(i,j))==sign(Xedge(i,k))
+           elseif rho(j,k)<-opts.corrThreshold && sign(Xedge(i,j))==sign(Xedge(i,k))
                remove(i) = true;
            end
            if remove(i)

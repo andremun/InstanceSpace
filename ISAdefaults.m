@@ -9,6 +9,17 @@ function opts = ISAdefaults(opts)
 if ~isfield(opts, 'general'),           opts.general           = struct; end
 if ~isfield(opts.general, 'seed'),      opts.general.seed      = 42;    end
 if ~isfield(opts.general, 'verbose'),   opts.general.verbose   = true;  end
+% Legacy: top-level opts.parallel.flag/.ncores -> opts.general.parallel/.ncores.
+if isfield(opts, 'parallel')
+    if isfield(opts.parallel, 'flag') && ~isfield(opts.general, 'parallel')
+        opts.general.parallel = opts.parallel.flag;
+    end
+    if isfield(opts.parallel, 'ncores') && ~isfield(opts.general, 'ncores')
+        opts.general.ncores = opts.parallel.ncores;
+    end
+end
+if ~isfield(opts.general, 'parallel'),  opts.general.parallel  = false; end  % conservative default; spec Appendix A default is true
+if ~isfield(opts.general, 'ncores'),    opts.general.ncores    = 18;    end
 
 % perf
 if ~isfield(opts, 'perf'),                  opts.perf                  = struct; end
@@ -65,13 +76,21 @@ if ~isfield(opts.pilot, 'verbose'),     opts.pilot.verbose     = opts.general.ve
 % cloister
 if ~isfield(opts, 'cloister'),              opts.cloister              = struct; end
 if ~isfield(opts.cloister, 'pval'),         opts.cloister.pval         = 0.05;   end
-if ~isfield(opts.cloister, 'cthres'),       opts.cloister.cthres       = 0.70;   end
+% Legacy: opts.cloister.cthres -> opts.cloister.corrThreshold.
+if isfield(opts.cloister, 'cthres') && ~isfield(opts.cloister, 'corrThreshold')
+    opts.cloister.corrThreshold = opts.cloister.cthres;
+end
+if ~isfield(opts.cloister, 'corrThreshold'),opts.cloister.corrThreshold= 0.70;   end
 if ~isfield(opts.cloister, 'maxFeatures'),  opts.cloister.maxFeatures  = 20;     end
 
 % pythia
 if ~isfield(opts, 'pythia'),                   opts.pythia                   = struct;                   end
 if ~isfield(opts.pythia, 'flag'),              opts.pythia.flag              = true;                    end
-if ~isfield(opts.pythia, 'cvfolds'),           opts.pythia.cvfolds           = 5;                      end
+% Legacy: opts.pythia.cvfolds -> opts.pythia.kFold.
+if isfield(opts.pythia, 'cvfolds') && ~isfield(opts.pythia, 'kFold')
+    opts.pythia.kFold = opts.pythia.cvfolds;
+end
+if ~isfield(opts.pythia, 'kFold'),             opts.pythia.kFold             = 5;                      end
 if ~isfield(opts.pythia, 'tuning'),            opts.pythia.tuning            = 'sobol';                 end
 if ~isfield(opts.pythia, 'nTuningIter'),       opts.pythia.nTuningIter       = 20;                     end
 if ~isfield(opts.pythia, 'params'),            opts.pythia.params            = [];                     end
@@ -109,10 +128,5 @@ if ~isfield(opts, 'outputs'),           opts.outputs           = struct; end
 if ~isfield(opts.outputs, 'csv'),       opts.outputs.csv       = true;   end
 if ~isfield(opts.outputs, 'png'),       opts.outputs.png       = true;   end
 if ~isfield(opts.outputs, 'web'),       opts.outputs.web       = false;  end
-
-% parallel
-if ~isfield(opts, 'parallel'),          opts.parallel          = struct; end
-if ~isfield(opts.parallel, 'flag'),     opts.parallel.flag     = false;  end
-if ~isfield(opts.parallel, 'ncores'),   opts.parallel.ncores   = 18;     end
 
 end

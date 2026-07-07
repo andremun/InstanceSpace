@@ -1,11 +1,28 @@
-function model = ISAmigrateModel(model)
+function modelOut = ISAmigrateModel(input, varargin)
 % ISAmigrateModel  Migrate a pre-v1.7 ISA model to the current field layout.
 %
-% Usage:
-%   model = ISAmigrateModel(model)
+% Two calling conventions, dispatched on the type of the first argument:
 %
-% Loads a model saved by an older version of buildIS and updates field names
-% to match the current PYTHIA interface:
+%   1) File-based (spec §6.4, the primary/recommended form): pass a rootdir
+%      containing model.mat. The original file is backed up alongside it
+%      (default name: model_legacy.mat) and the migrated model is written
+%      back to model.mat in the same directory.
+%
+%        ISAmigrateModel(rootdir)
+%        ISAmigrateModel(rootdir, 'backupSuffix', '_v1')   % -> model_v1.mat
+%
+%   2) In-memory: pass an already-loaded model struct and use the returned,
+%      migrated struct directly; no file I/O occurs. This form exists
+%      because exploreIS.m already holds the loaded model in memory (it
+%      calls load(modelfile) itself to migrate-then-fill-defaults in one
+%      pass) and has no reason to write the migrated model back to disk
+%      and re-read it on every explore() call — the file-based form is for
+%      one-time offline migration of a model.mat produced by an older
+%      toolkit version, not for use on every read.
+%
+%        model = ISAmigrateModel(model);
+%
+% Both paths apply the identical field migrations:
 %
 %   model.pythia.svm{i}  / .knn{i}   -> model.pythia.classifiers{i}  (note: plural)
 %   model.pythia.boxcosnt             -> model.pythia.param1
@@ -14,11 +31,48 @@ function model = ISAmigrateModel(model)
 %
 % After migration the model can be passed to PYTHIA eval mode and scriptcsv.
 %
-% Example:
-%   m = load('model.mat');
-%   m = ISAmigrateModel(m);
-%   save('model.mat', '-struct', 'm');
+% Examples:
+%   ISAmigrateModel('/path/to/rootdir/');            % migrates model.mat on disk
+%   m = load('model.mat'); m = ISAmigrateModel(m);   % migrates an in-memory struct
 
+if ischar(input) || (isstring(input) && isscalar(input))
+    modelOut = migrateFromRootdir(char(input), varargin{:});
+else
+    if ~isempty(varargin)
+        warning('ISA:ISAmigrateModel:ignoredArgs', ...
+            ['Name-value arguments (e.g. ''backupSuffix'') only apply to the ' ...
+             'rootdir calling form and are ignored for in-memory structs.']);
+    end
+    modelOut = migrateModelStruct(input);
+end
+end
+
+% =========================================================================
+function model = migrateFromRootdir(rootdir, varargin)
+p = inputParser;
+addParameter(p, 'backupSuffix', '_legacy', @(x) ischar(x) || isstring(x));
+parse(p, varargin{:});
+backupSuffix = char(p.Results.backupSuffix);
+
+modelfile = fullfile(rootdir, 'model.mat');
+if ~isfile(modelfile)
+    error('ISA:ISAmigrateModel:noModelFile', ...
+        'No model.mat found in ''%s''.', rootdir);
+end
+
+model = load(modelfile);
+model = migrateModelStruct(model);
+
+[dir, base, ext] = fileparts(modelfile);
+backupfile = fullfile(dir, [base backupSuffix ext]);
+copyfile(modelfile, backupfile);
+save(modelfile, '-struct', 'model');
+fprintf('ISAmigrateModel: migrated model written to ''%s''; original backed up to ''%s''.\n', ...
+    modelfile, backupfile);
+end
+
+% =========================================================================
+function model = migrateModelStruct(model)
 if ~isstruct(model)
     return;
 end

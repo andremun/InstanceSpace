@@ -12,7 +12,7 @@
   "pilot":    {"analytic": false, "ntries": 10},
   "cloister": {"pval": 0.05, "cthres": 0.7},
   "pythia":   {"classifier": "knn", "tuning": "sobol", "nTuningIter": 20, "cvfolds": 5},
-  "trace":    {"method": "trace3", "PI": 0.6, "nn": 50, "prior": [0.6, 0.4], "minInstances": 4, "minAreaFrac": 0.01},
+  "trace":    {"method": "trace3", "PI": 0.6, "minInstances": 4, "minAreaFrac": 0.01},
   "outputs":  {"csv": true, "png": true, "web": false},
   "parallel": {"flag": false, "ncores": 18}
 }

@@ -85,13 +85,18 @@ if ~isfield(opts.pythia, 'classifier')
 end
 
 % trace
+% Note: no nn/prior fields. PYTHIA always runs before TRACE (mandatory coupling,
+% spec §4.5), so TRACE never trains its own KNN classifier; a per-algorithm
+% opts.trace.nn/prior configuration for that purpose would never be read.
 if ~isfield(opts, 'trace'),                     opts.trace                     = struct;    end
 if ~isfield(opts.trace, 'method'),              opts.trace.method              = 'trace3';  end
 if ~isfield(opts.trace, 'PI'),                  opts.trace.PI                  = 0.6;       end
-if ~isfield(opts.trace, 'nn'),                  opts.trace.nn                  = 50;        end  % legacy only
-if ~isfield(opts.trace, 'prior'),               opts.trace.prior               = [0.6,0.4]; end  % legacy only
 if ~isfield(opts.trace, 'minInstances'),        opts.trace.minInstances        = 4;         end
 if ~isfield(opts.trace, 'minAreaFrac'),         opts.trace.minAreaFrac         = 0.01;      end
+if ~isfield(opts.trace, 'contra')
+    % Contradiction removal defaults to true only for the legacy method (spec §4.1).
+    opts.trace.contra = strcmpi(opts.trace.method, 'legacy');
+end
 
 % outputs
 if ~isfield(opts, 'outputs'),           opts.outputs           = struct; end

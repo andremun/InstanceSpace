@@ -49,9 +49,8 @@ nalgos = size(Y, 2);
 % algorithm has a performance better than the threshold) or a relative
 % performance (the algorithm has a performance that is similar to the
 % best algorithm minus a percentage).
-fprintf('-------------------------------------------------------------------------\n');
-fprintf('-> Calculating the binary measure of performance\n');
-msg = '-> An algorithm is good if its performace is ';
+fprintf('[PRELIM] Calculating the binary measure of performance\n');
+msg = 'An algorithm is good if its performace is ';
 if opts.MaxPerf
     Yaux = Y;
     Yaux(isnan(Yaux)) = -Inf;
@@ -95,7 +94,7 @@ else
         msg = [msg 'within ' num2str(round(100.*opts.epsilon)) '% of the best.'];
     end
 end
-fprintf('%s\n', msg);
+fprintf('[PRELIM] %s\n', msg);
 % -------------------------------------------------------------------------
 % Testing for ties. If there is a tie in performance, we pick an algorithm
 % at random. Compared against YbestTie (captured before the eps
@@ -108,22 +107,20 @@ for i = tieRows
     aux = aidx(bestAlgos(i,:));
     out.P(i) = aux(randi(numel(aux)));
 end
-fprintf('-> For %s%% of the instances there is more than one best algorithm. Random selection is used to break ties.\n', ...
+fprintf('[PRELIM] For %s%% of the instances there is more than one best algorithm. Random selection is used to break ties.\n', ...
     num2str(round(100.*mean(multipleBestAlgos))));
 out.numGoodAlgos = sum(out.Ybin, 2);
 out.beta = out.numGoodAlgos > (opts.betaThreshold * nalgos);
 % -------------------------------------------------------------------------
 if opts.auto
-    fprintf('=========================================================================\n');
-    fprintf('-> Auto-pre-processing.\n');
-    fprintf('=========================================================================\n');
+    fprintf('[PRELIM] Auto-pre-processing.\n');
 end
 out.medval  = nanmedian(X, 1);
 out.iqrange = iqr(X, 1);
 out.hibound = out.medval + 5.*out.iqrange;
 out.lobound = out.medval - 5.*out.iqrange;
 if opts.auto && opts.bound
-    fprintf('-> Removing extreme outliers from the feature values.\n');
+    fprintf('[PRELIM] Removing extreme outliers from the feature values.\n');
     himask = bsxfun(@gt, X, out.hibound);
     lomask = bsxfun(@lt, X, out.lobound);
     X = X.*~(himask | lomask) + bsxfun(@times, himask, out.hibound) + ...
@@ -141,7 +138,7 @@ out.lambdaY = zeros(1, nalgos);
 out.muY     = zeros(1, nalgos);
 out.sigmaY  = zeros(1, nalgos);
 if opts.auto && opts.norm
-    fprintf('-> Auto-normalizing the data using Box-Cox and Z transformations.\n');
+    fprintf('[PRELIM] Auto-normalizing the data using Box-Cox and Z transformations.\n');
     X = bsxfun(@minus, X, out.minX) + 1;
     for i = 1:nfeats
         aux = X(:, i);

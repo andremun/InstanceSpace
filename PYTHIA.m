@@ -59,14 +59,14 @@ end
 % Validate classifier name early (gives clean error before any work).
 [~, p1label, p2label] = ISAgetClassifierFcn(opts.classifier);
 
-fprintf('  -> Initializing PYTHIA.\n');
+fprintf('[PYTHIA] Initializing PYTHIA.\n');
 [Znorm, out.mu, out.sigma] = zscore(Z);
 [ninst, nalgos] = size(Ybin);
 classifierType = opts.classifier;
 
 % Skip mode: fill outputs with NaN and return so TRACE can use Ybin directly.
 if opts.skip
-    fprintf('  -> opts.skip is true; bypassing classifier training.\n');
+    fprintf('[PYTHIA] opts.skip is true; bypassing classifier training.\n');
     mu_z = out.mu; sigma_z = out.sigma;      % preserve correct feature-wise params
     out = emptyPYTHIAout(ninst, nalgos, algolabels, Y, Ybin, Ybest, size(Z,2));
     out.mu = mu_z; out.sigma = sigma_z;
@@ -74,7 +74,7 @@ if opts.skip
 end
 
 if opts.useweights
-    fprintf('  -> Using cost-sensitive classification.\n');
+    fprintf('[PYTHIA] Using cost-sensitive classification.\n');
     W = abs(Y - nanmean(Y(:)));
     if any(W(:)~=0 & ~isnan(W(:)))
         W(W==0) = min(W(W~=0));
@@ -90,7 +90,7 @@ if opts.useweights
     end
     out.W = W;
 else
-    fprintf('  -> Not using cost-sensitive classification.\n');
+    fprintf('[PYTHIA] Not using cost-sensitive classification.\n');
     W = ones(ninst, nalgos);
 end
 
@@ -104,11 +104,9 @@ if strcmp(opts.tuning, 'none') && ~precalcparams
          'Either supply opts.params or change opts.tuning to ''sobol''.'], nalgos);
 end
 
-fprintf('-------------------------------------------------------------------------\n');
-fprintf('  -> Classifier: %s | Tuning: %s (%d evals) | CV: %d-fold.\n', ...
+fprintf('[PYTHIA] Classifier: %s | Tuning: %s (%d evals) | CV: %d-fold.\n', ...
         classifierType, opts.tuning, nIter, opts.cvfolds);
-fprintf('-------------------------------------------------------------------------\n');
-fprintf('  -> Training has started. PYTHIA may take a while to complete...\n');
+fprintf('[PYTHIA] Training has started. PYTHIA may take a while to complete...\n');
 
 out.classifiers    = cell(1, nalgos);
 out.classifierType = classifierType;
@@ -173,13 +171,13 @@ for i = 1:nalgos
     if opts.verbose
         remaining = nalgos - i;
         if remaining == 0
-            fprintf('    -> PYTHIA trained ''%s''; no models left.\n', algolabels{i});
+            fprintf('[PYTHIA] PYTHIA trained ''%s''; no models left.\n', algolabels{i});
         elseif remaining == 1
-            fprintf('    -> PYTHIA trained ''%s''; 1 model left.\n', algolabels{i});
+            fprintf('[PYTHIA] PYTHIA trained ''%s''; 1 model left.\n', algolabels{i});
         else
-            fprintf('    -> PYTHIA trained ''%s''; %d models left.\n', algolabels{i}, remaining);
+            fprintf('[PYTHIA] PYTHIA trained ''%s''; %d models left.\n', algolabels{i}, remaining);
         end
-        fprintf('      -> Elapsed time: %.2fs\n', toc);
+        fprintf('[PYTHIA] Elapsed time: %.2fs\n', toc);
     end
 end
 
@@ -189,19 +187,17 @@ out.precision = tp ./ (tp + fp);
 out.recall    = tp ./ (tp + fn);
 out.accuracy  = (tp + tn) ./ ninst;
 
-fprintf('-------------------------------------------------------------------------\n');
-fprintf('  -> PYTHIA training complete.\n');
-fprintf('  -> Average CV precision: %.1f%%\n', 100.*nanmean(out.precision));
-fprintf('  -> Average CV accuracy : %.1f%%\n', 100.*nanmean(out.accuracy));
-fprintf('      -> Elapsed time: %.2fs\n', toc(t));
-fprintf('-------------------------------------------------------------------------\n');
+fprintf('[PYTHIA] PYTHIA training complete.\n');
+fprintf('[PYTHIA] Average CV precision: %.1f%%\n', 100.*nanmean(out.precision));
+fprintf('[PYTHIA] Average CV accuracy : %.1f%%\n', 100.*nanmean(out.accuracy));
+fprintf('[PYTHIA] Completed in %.1f s.\n', toc(t));
 
 rng(prevRNG);  % restore global RNG so downstream code is unaffected
 
 out = computeSelection(out, nalgos, Ybin);
 out.summary = buildSummary(out, algolabels, nalgos, ninst, ...
                            Y, Ybin, Ybest, p1label, p2label);
-fprintf('  -> PYTHIA has completed! Performance of the models:\n\n');
+fprintf('[PYTHIA] PYTHIA has completed! Performance of the models:\n\n');
 disp(out.summary);
 end
 
@@ -273,7 +269,7 @@ end
 % Eval-mode summary has 9 columns (no hyperparameter columns).
 out.summary = buildSummary(out, algolabels, nalgos, ninst, ...
                            Y, Ybin, Ybest, [], []);
-fprintf('  -> PYTHIA has completed! Performance of the models:\n\n');
+fprintf('[PYTHIA] PYTHIA has completed! Performance of the models:\n\n');
 disp(out.summary);
 end
 

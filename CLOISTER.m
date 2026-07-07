@@ -11,7 +11,7 @@ function out = CLOISTER(X, A, opts)
 %
 % -------------------------------------------------------------------------
 
-fprintf('  -> CLOISTER is using correlation to estimate a boundary for the space.\n');
+fprintf('[CLOISTER] CLOISTER is using correlation to estimate a boundary for the space.\n');
 
 nfeats = size(X,2);
 [rho,pval] = corr(X);
@@ -30,7 +30,7 @@ if nfeats > MAX_FEATS
     Kedge = convhull(Zall(:,1), Zall(:,2));
     out.Zedge  = Zall(Kedge,:);
     out.Zecorr = out.Zedge;
-    fprintf('  -> CLOISTER has completed.\n');
+    fprintf('[CLOISTER] CLOISTER has completed.\n');
     return;
 end
 % Pure-MATLAB replacement for de2bi (no Communications Toolbox required)
@@ -68,10 +68,9 @@ try
     Kecorr = convhull(Zecorr(:,1),Zecorr(:,2));
     out.Zecorr = Zecorr(Kecorr,:);
 catch
-    fprintf('  -> The acceptable correlation threshold was too strict.\n');
-    fprintf('  -> The features are weakely correlated.\n');
-    fprintf('  -> Please consider increasing it.\n');
+    fprintf('[CLOISTER] The acceptable correlation threshold was too strict.\n');
+    fprintf('[CLOISTER] The features are weakely correlated.\n');
+    fprintf('[CLOISTER] Please consider increasing it.\n');
     out.Zecorr = out.Zedge;
 end
-fprintf('-------------------------------------------------------------------------\n');
-fprintf('  -> CLOISTER has completed.\n');
+fprintf('[CLOISTER] CLOISTER has completed.\n');

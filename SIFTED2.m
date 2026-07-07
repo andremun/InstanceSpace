@@ -84,12 +84,12 @@ if nfeats <= 1
     error('ISA:SIFTED2:tooFewFeatures', ...
         'There is only 1 feature. Stopping space construction.');
 elseif nfeats <= 3
-    fprintf('-> There are 3 or less features. Skipping feature selection.\n');
+    fprintf('[SIFTED] There are 3 or less features. Skipping feature selection.\n');
     out.selvars = 1:nfeats;
     return;
 end
 % -------------------------------------------------------------------------
-fprintf('-> Selecting features based on correlation with performance.\n');
+fprintf('[SIFTED] Selecting features based on correlation with performance.\n');
 [out.rho, out.p] = corr(X, Y, 'rows', 'pairwise');
 rho = out.rho;
 rho(isnan(rho) | (out.p > opts.pval)) = 0;
@@ -103,36 +103,36 @@ for ii = 2:nfeats
 end
 out.selvars = find(out.selvars);
 Xaux = X(:, out.selvars);
-fprintf('-> Keeping %d out of %d features (correlation).\n', size(Xaux,2), nfeats);
+fprintf('[SIFTED] Keeping %d out of %d features (correlation).\n', size(Xaux,2), nfeats);
 % -------------------------------------------------------------------------
 nfeats = size(Xaux, 2);
 if nfeats <= 1
     error('ISA:SIFTED2:tooFewFeatures', ...
         'There is only 1 feature after correlation filter. Stopping space construction.');
 elseif nfeats <= 3
-    fprintf('-> There are 3 or less features. Skipping correlation clustering selection.\n');
+    fprintf('[SIFTED] There are 3 or less features. Skipping correlation clustering selection.\n');
     X = Xaux;
     return;
 elseif nfeats <= opts.K
-    fprintf('-> Fewer features than clusters (%d <= %d). Skipping correlation clustering selection.\n', ...
+    fprintf('[SIFTED] Fewer features than clusters (%d <= %d). Skipping correlation clustering selection.\n', ...
         nfeats, opts.K);
     X = Xaux;
     return;
 end
 % -------------------------------------------------------------------------
-fprintf('-> Selecting features based on correlation clustering.\n');
+fprintf('[SIFTED] Selecting features based on correlation clustering.\n');
 state = rng;
 rng('default');
 out.eva = evalclusters(Xaux', 'kmeans', 'Silhouette', 'KList', 3:nfeats, ...
                               'Distance', 'correlation');
-fprintf('-> Average silhouette values for each number of clusters.\n');
+fprintf('[SIFTED] Average silhouette values for each number of clusters.\n');
 disp([out.eva.InspectedK; out.eva.CriterionValues]);
 if out.eva.CriterionValues(out.eva.InspectedK==opts.K) < unnaceptableClustering
-    fprintf('-> The silhouette value for K=%d is below %.2f. You should consider increasing K.\n', ...
+    fprintf('[SIFTED] The silhouette value for K=%d is below %.2f. You should consider increasing K.\n', ...
         opts.K, unnaceptableClustering);
     out.Ksuggested = out.eva.InspectedK(find(out.eva.CriterionValues > acceptableClustering, 1));
     if ~isempty(out.Ksuggested)
-        fprintf('-> A suggested value of K is %d\n', out.Ksuggested);
+        fprintf('[SIFTED] A suggested value of K is %d\n', out.Ksuggested);
     end
 end
 % -------------------------------------------------------------------------
@@ -143,8 +143,8 @@ out.clust = bsxfun(@eq, kmeans(Xaux', opts.K, 'Distance', 'correlation', ...
                                               'Options', statset('UseParallel', nworkers~=0), ...
                                               'OnlinePhase', 'on'), 1:opts.K);
 rng(state);
-fprintf('-> Constructing %d clusters of features.\n', opts.K);
-fprintf('-> Using a GA+LookUpTable to find an optimal combination.\n');
+fprintf('[SIFTED] Constructing %d clusters of features.\n', opts.K);
+fprintf('[SIFTED] Using a GA+LookUpTable to find an optimal combination.\n');
 % -------------------------------------------------------------------------
 cvpart  = cvpartition(size(Xaux,1), 'Kfold', Kfolds);
 fcnwrap = @(x) costfcn(x, Xaux, Y, Ybin, out.clust, cvpart, featlabels(out.selvars), nworkers);
@@ -163,7 +163,7 @@ for i = 1:opts.K
 end
 out.selvars = out.selvars(decoder);
 X = X(:, out.selvars);
-fprintf('-> Keeping %d out of %d features (clustering).\n', size(X,2), nfeats);
+fprintf('[SIFTED] Keeping %d out of %d features (clustering).\n', size(X,2), nfeats);
 
 end
 % =========================================================================

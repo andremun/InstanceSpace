@@ -31,48 +31,45 @@ ninst  = size(Z, 1);
 nalgos = size(Ybin, 2);
 
 % Space footprint (all instances)
-fprintf('  -> TRACE (legacy) is calculating the space area and density.\n');
+fprintf('[TRACE] TRACE (legacy) is calculating the space area and density.\n');
 out.space = TRACEbuild(Z, true(ninst,1), opts);
-fprintf('    -> Space area: %s | Space density: %s\n', ...
+fprintf('[TRACE] Space area: %s | Space density: %s\n', ...
     num2str(out.space.area), num2str(out.space.density));
 
 % Per-algorithm footprints
-fprintf('-------------------------------------------------------------------------\n');
-fprintf('  -> TRACE (legacy) is calculating the algorithm footprints.\n');
+fprintf('[TRACE] TRACE (legacy) is calculating the algorithm footprints.\n');
 good = cell(1, nalgos);
 best = cell(1, nalgos);
 parfor (i = 1:nalgos, nworkers)
     t = tic;
-    fprintf('    -> Good performance footprint for ''%s''\n', algolabels{i});
+    fprintf('[TRACE] Good performance footprint for ''%s''\n', algolabels{i});
     good{i} = TRACEbuild(Z, Ybin(:,i), opts);
-    fprintf('    -> Best performance footprint for ''%s''\n', algolabels{i});
+    fprintf('[TRACE] Best performance footprint for ''%s''\n', algolabels{i});
     best{i} = TRACEbuild(Z, P==i, opts);
-    fprintf('    -> Algorithm ''%s'' completed. Elapsed time: %.2fs\n', algolabels{i}, toc(t));
+    fprintf('[TRACE] Algorithm ''%s'' completed. Elapsed time: %.2fs\n', algolabels{i}, toc(t));
 end
 out.good = good;
 out.best = best;
 
 % Contradiction removal
 if useContra
-    fprintf('-------------------------------------------------------------------------\n');
-    fprintf('  -> TRACE (legacy) is detecting and removing contradictory footprint sections.\n');
+    fprintf('[TRACE] TRACE (legacy) is detecting and removing contradictory footprint sections.\n');
     for i = 1:nalgos
-        fprintf('  -> Base algorithm ''%s''\n', algolabels{i});
+        fprintf('[TRACE] Base algorithm ''%s''\n', algolabels{i});
         tBase = tic;
         for j = i+1:nalgos
-            fprintf('      -> Comparing ''%s'' with ''%s''\n', algolabels{i}, algolabels{j});
+            fprintf('[TRACE] Comparing ''%s'' with ''%s''\n', algolabels{i}, algolabels{j});
             tTest = tic;
             [out.best{i}, out.best{j}] = TRACEcontra(out.best{i}, out.best{j}, ...
                                                       Z, P==i, P==j, opts);
-            fprintf('      -> Completed. Elapsed time: %.2fs\n', toc(tTest));
+            fprintf('[TRACE] Completed. Elapsed time: %.2fs\n', toc(tTest));
         end
-        fprintf('  -> Base algorithm ''%s'' completed. Elapsed time: %.2fs\n', algolabels{i}, toc(tBase));
+        fprintf('[TRACE] Base algorithm ''%s'' completed. Elapsed time: %.2fs\n', algolabels{i}, toc(tBase));
     end
 end
 
 % Beta hard footprint
-fprintf('-------------------------------------------------------------------------\n');
-fprintf('  -> TRACE (legacy) is calculating the beta-footprint.\n');
+fprintf('[TRACE] TRACE (legacy) is calculating the beta-footprint.\n');
 out.hard = TRACEbuild(Z, ~beta, opts);
 
 end
@@ -135,21 +132,21 @@ while contradiction.NumRegions ~= 0 && numtries <= maxtries
     purityTest = numGoodElementsTest / numElements;
     if purityBase > purityTest
         carea = area(contradiction) / area(test.polygon);
-        fprintf('        -> %.1f%% of the test footprint is contradictory.\n', round(100.*carea,1));
+        fprintf('[TRACE] %.1f%% of the test footprint is contradictory.\n', round(100.*carea,1));
         test.polygon = subtract(test.polygon, contradiction);
         if numtries < maxtries
             test.polygon = TRACEtight(test.polygon, Z, Ytest, opts);
         end
     elseif purityTest > purityBase
         carea = area(contradiction) / area(base.polygon);
-        fprintf('        -> %.1f%% of the base footprint is contradictory.\n', round(100.*carea,1));
+        fprintf('[TRACE] %.1f%% of the base footprint is contradictory.\n', round(100.*carea,1));
         base.polygon = subtract(base.polygon, contradiction);
         if numtries < maxtries
             base.polygon = TRACEtight(base.polygon, Z, Ybase, opts);
         end
     else
-        fprintf('        -> Purity of the contradicting areas is equal for both footprints.\n');
-        fprintf('        -> Ignoring the contradicting area.\n');
+        fprintf('[TRACE] Purity of the contradicting areas is equal for both footprints.\n');
+        fprintf('[TRACE] Ignoring the contradicting area.\n');
         break;
     end
     if isempty(base.polygon) || isempty(test.polygon)
@@ -239,7 +236,7 @@ end
 
 % =========================================================================
 function footprint = TRACEthrow
-fprintf('        -> There are not enough instances to calculate a footprint.\n');
+fprintf('[TRACE] There are not enough instances to calculate a footprint.\n');
 footprint.polygon      = [];
 footprint.area         = 0;
 footprint.elements     = 0;

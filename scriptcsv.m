@@ -14,8 +14,7 @@ function scriptcsv(container,rootdir)
 scriptfcn;
 
 nalgos = size(container.data.Y,2);
-fprintf('=========================================================================\n');
-fprintf('-> Writing the data on CSV files for posterior analysis.\n');
+fprintf('[OUTPUT] Writing the data on CSV files for posterior analysis.\n');
 % -------------------------------------------------------------------------
 % Determine dimensionality
 ndim = size(container.pilot.Z, 2);

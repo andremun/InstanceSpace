@@ -207,6 +207,9 @@ out.pilot.Z = out.data.X*model.pilot.A';
 % -------------------------------------------------------------------------
 % Algorithm selection. Fit a model that would separate the space into
 % classes of good and bad performance.
+% model.opts.pythia is guaranteed here: ISAmigrateModel (line 25) has already
+% renamed opts.oracle->opts.pythia for pre-v1.7 models, and ISAdefaults (line 26)
+% fills in any missing pythia sub-fields, so this call is always safe.
 out.pythia = PYTHIA(out.pilot.Z, out.data.Yraw, out.data.Ybin, out.data.Ybest, ...
                     out.data.algolabels, model.opts.pythia, model.pythia);
 % -------------------------------------------------------------------------

@@ -82,19 +82,27 @@ The toolkit uses CLOISTER, an algorithm based on correlation to detect the empir
 
 ###  Algorithm selection settings
 
-The toolkit uses SVMs with radial basis kernels as algorithm selection models, through MATLAB's Statistics and Machine Learning Toolbox or [LIBSVM](https://www.csie.ntu.edu.tw/~cjlin/libsvm/).
+The toolkit selects one binary classifier per algorithm (good/not-good performance) from a registry of MATLAB-native classifiers, resolved via `ISAgetClassifierFcn`. **LIBSVM is deprecated and no longer dispatched**; existing models trained with LIBSVM should be migrated with `ISAmigrateModel` (see below), which retrains them using the current registry.
 
-- ```opts.pythia.uselibsvm``` determines whether to use LIBSVM (set as ```TRUE```) or MATLAB's implementation of an SVM, depending on which a different method is used to fine tune the parameters. For the former, tuning is achieved using 30 iterations of the random search algorithm, usinga Latin Hyper-cube design bounded between <img src="https://render.githubusercontent.com/render/math?math=\left[2^{-10},\ 2^{4}\right]"> as sample points, withk-fold stratified cross-validation (CV), and using model error as the loss function. On the other hand, for the latter, tuning is achieved using 30 iterations of the Bayesian Optimization algorithm bounded between <img src="https://render.githubusercontent.com/render/math?math=\left[2^{-10},\ 2^{4}\right]">, with k-fold stratified CV.
--	```opts.pythia.cvfolds``` number of folds of the CV experiment.
--	```opts.pythia.ispolykrnl``` determines whether to use a polynomial (set as ```TRUE```) or Gaussian (set as ```FALSE```) kernel. Usually, the latter one is significantly faster to calculate and more accurate; however, it also has the disadvantage of producing discontinuous areas of good performance which may look overfitted. We tend to recommend a polynomial kernel if the dataset is higher than 1000 instances.
+- ```opts.pythia.classifier``` selects the classifier: ```'knn'``` (default, via `fitcknn`), ```'svm'``` (`fitcsvm`), ```'tree'``` (`fitctree`), ```'nb'``` (Naive Bayes, `fitcnb`), ```'linear'``` (`fitclinear`), or ```'ensemble'``` (`fitcensemble`; see ```opts.pythia.ensembleMethod```, default ```'Bag'```). All algorithms in the portfolio use the same classifier.
+- ```opts.pythia.tuning``` selects the hyperparameter search strategy: ```'sobol'``` (default; a scrambled Sobol quasi-random sequence, ```opts.pythia.nTuningIter``` evaluations with k-fold CV), ```'bayes'``` (MATLAB `bayesopt`, Gaussian-process surrogate, same evaluation budget and CV), or ```'none'``` (use ```opts.pythia.params``` directly, skipping tuning).
+- ```opts.pythia.nTuningIter``` number of Sobol/Bayes evaluations (default 20).
+- ```opts.pythia.cvfolds``` number of folds of the CV experiment.
+- ```opts.pythia.params``` pre-calculated ```[nalgos x 2]``` hyperparameters; required when ```opts.pythia.tuning = 'none'```, and always takes precedence over tuning when supplied.
+- ```opts.pythia.skip``` bypasses classifier training entirely (TRACE then falls back to the true labels directly, with a warning).
+- ```opts.pythia.ispolykrnl``` (SVM only) determines whether to use a polynomial (set as ```TRUE```) or Gaussian (set as ```FALSE```) kernel. Usually, the latter one is significantly faster to calculate and more accurate; however, it also has the disadvantage of producing discontinuous areas of good performance which may look overfitted. We tend to recommend a polynomial kernel if the dataset is higher than 1000 instances.
 - ```opts.pythia.useweights``` determines whether weighted (set as ```TRUE```) or unweighted (set as ```FALSE```) classification is performed. The weights are calculated as <img src="https://render.githubusercontent.com/render/math?math=\left|y_{\text{best}}-y\right|">.
+
+**Removed options** (no longer read by the toolkit; kept here only so old ```options.json```/```example.m``` files can be understood): ```opts.pythia.uselibsvm``` and ```opts.pythia.useknn``` — superseded by ```opts.pythia.classifier```. Existing ```model.mat``` files using the old fields can be updated with `ISAmigrateModel`.
 
 ### Footprint construction settings
 
-The toolkit uses TRACE, an algorithm based on MATLAB's [```polyshapes```](https://au.mathworks.com/help/matlab/ref/polyshape.html) to define the regions in the space where we statistically infer good algorithm performance. The polyshapes are then pruned to remove those sections for which the evidence, as defined by a minimum purity value, is poor or non-existing.
+The toolkit uses TRACE3, an algorithm based on MATLAB's [```alphaShape```](https://au.mathworks.com/help/matlab/ref/alphashape.html) to define the regions in the space where we statistically infer good algorithm performance, applicable to both 2D and 3D instance spaces. TRACE3 always reuses PYTHIA's predicted labels for the good-performance region (`Zu = {z_i : yhat_i=1 AND ybin_i=1}`) rather than retraining its own classifier — this coupling is unconditional and not configurable. When ```opts.pythia.skip = true```, TRACE falls back to the true labels only (`Zu = {z_i : ybin_i=1}`), with a warning.
 
--	```opts.trace.usesim``` makes use of the actual (set as ```FALSE```) or simulated data from the SVM results (set as ```TRUE```) to produce the footprints.
--	```opts.trace.PI``` minimum purity required for a section of a footprint.
+- ```opts.trace.method``` selects ```'trace3'``` (default, above) or ```'legacy'``` (the pre-refactor DBSCAN + alpha-shape triangulation method, 2D only).
+- ```opts.trace.PI``` minimum purity required for a section of a footprint.
+
+**Removed option**: ```opts.trace.usesim``` — the PYTHIA/TRACE coupling described above is now unconditional, so there is no "simulated vs. actual data" switch to configure.
 
 ### Automatic data bounding and scaling
 

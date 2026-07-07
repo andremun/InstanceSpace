@@ -37,15 +37,12 @@ opts.cloister.pval = 0.05;
 opts.cloister.cthres = 0.7;
 
 opts.pythia.flag = true;
-opts.pythia.useknn = true;
+opts.pythia.classifier = 'knn';      % Registry name: 'knn','svm','tree','nb','linear','ensemble'
 opts.pythia.cvfolds = 5;
 opts.pythia.ispolykrnl = false;
 opts.pythia.useweights = false;
-opts.pythia.uselibsvm = false;
 
-opts.trace.usesim = true;           % Use the actual or simulated data to calculate the footprints
 opts.trace.PI = 0.55;               % Purity threshold
-opts.trace.Trace2 = false;
 
 opts.outputs.csv = true;            %
 opts.outputs.web = false;            % NOTE: MAKE THIS FALSE IF YOU ARE USING THIS CODE LOCALY - This flag is only useful if the system is being used 'online' through matilda.unimelb.edu.au

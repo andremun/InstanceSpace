@@ -58,6 +58,7 @@ end
 % -------------------------------------------------------------------------
 % Validate classifier name early (gives clean error before any work).
 [~, p1label, p2label] = ISAgetClassifierFcn(opts.classifier);
+hasP2 = ~strcmp(p2label, 'N/A');  % tree/nb/linear have only one tunable parameter
 
 fprintf('[PYTHIA] Initializing PYTHIA.\n');
 [Znorm, out.mu, out.sigma] = zscore(Z);
@@ -95,13 +96,23 @@ else
 end
 
 nIter = opts.nTuningIter;
+% Single-param classifiers (tree/nb/linear) only need one column; forcing a
+% throwaway second column onto opts.params would be a needless API wart.
+nParams = 1 + hasP2;
 precalcparams = ~isempty(opts.params) && isnumeric(opts.params) && ...
-                size(opts.params,1)==nalgos && size(opts.params,2)==2;
+                size(opts.params,1)==nalgos && size(opts.params,2)==nParams;
 if strcmp(opts.tuning, 'none') && ~precalcparams
+    if hasP2
+        paramDesc = sprintf('%s, %s', p1label, p2label);
+    else
+        paramDesc = p1label;
+    end
     error('ISA:PYTHIA:noParamsForNoneTuning', ...
-        ['opts.tuning=''none'' requires opts.params to be a valid [%d x 2] numeric ' ...
-         'matrix of pre-calculated hyperparameters. ' ...
-         'Either supply opts.params or change opts.tuning to ''sobol''.'], nalgos);
+        ['opts.tuning=''none'' requires opts.params to be a valid [%d x %d] numeric ' ...
+         'matrix of pre-calculated hyperparameters (opts.classifier=''%s'' has %d ' ...
+         'tunable parameter(s): %s). ' ...
+         'Either supply opts.params or change opts.tuning to ''sobol''.'], ...
+        nalgos, nParams, classifierType, nParams, paramDesc);
 end
 
 fprintf('[PYTHIA] Classifier: %s | Tuning: %s (%d evals) | CV: %d-fold.\n', ...
@@ -133,7 +144,11 @@ for i = 1:nalgos
 
     if precalcparams
         p1_best = opts.params(i,1);
-        p2_best = opts.params(i,2);
+        if hasP2
+            p2_best = opts.params(i,2);
+        else
+            p2_best = 1;  % placeholder; ignored by fitOneClassifier for single-param classifiers
+        end
         % CV predictions with the pre-supplied params.
         [out.Ysub(:,i), out.Pr0sub(:,i)] = crossValPredict( ...
             classifierType, Znorm, Ybin(:,i), W(:,i), out.cp{i}, ...

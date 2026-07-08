@@ -52,7 +52,7 @@ nalgos = size(Y, 2);
 % performance (the algorithm has a performance that is similar to the
 % best algorithm minus a percentage).
 fprintf('[PRELIM] Calculating the binary measure of performance\n');
-msg = 'An algorithm is good if its performace is ';
+msg = 'An algorithm is good if its performance is ';
 if opts.MaxPerf
     Yaux = Y;
     Yaux(isnan(Yaux)) = -Inf;

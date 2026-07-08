@@ -63,7 +63,7 @@ for i=1:nalgos
                               strrep(container.data.algolabels{i},'_',' '));
         print(gcf,'-dpng',[rootdir 'binary_svm_' container.data.algolabels{i} '.png']);
     catch
-        fprintf('[OUTPUT] No SVM model has been trained.\n');
+        fprintf('[OUTPUT] No classifier predictions are available.\n');
     end
     % Drawing the footprints for good and bad performance acording to the
     % binary measure 

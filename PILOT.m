@@ -48,7 +48,7 @@ if opts.analytic
     % [Xtilde;Y][Xtilde;Y]' (spec §5.1.1); d=2 and d=3 share the same
     % derivation, only the eigenvector count differs.
     d = 2 + opts.ISA3D;
-    fprintf('[PILOT] PILOT is solving analyticaly the projection problem.\n');
+    fprintf('[PILOT] PILOT is solving analytically the projection problem.\n');
     fprintf('[PILOT] This won''t take long.\n');
     XbarT = Xbar';           % (m x ninst): features+performance as rows
     Xt    = X';              % (n x ninst): features as rows

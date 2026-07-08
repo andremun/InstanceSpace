@@ -232,4 +232,44 @@ save([rootdir 'workspace_test.mat']); % Save the full workspace for debugging
 fprintf('[EXPLORE] Completed in %.1f s.\n', toc(startProcess));
 fprintf('EOF:SUCCESS\n');
 end
+
+% =========================================================================
+%  SUBFUNCTIONS
+% =========================================================================
+
+function [X, Y, out] = autoNormalize(X, Y)
+% autoNormalize  Fit and apply Box-Cox + Z-score normalisation to X and Y.
+%
+% Used only for algorithms present in the test metadata but absent from
+% the training model (out.data.Y columns modelalgos+1:nalgos): those
+% columns have no pre-fit model.prelim.lambdaY/muY/sigmaY to reuse, so a
+% fresh normalisation is fit directly on the test data for them.
+nfeats = size(X, 2);
+nalgos = size(Y, 2);
+out.minX = min(X, [], 1);
+X = bsxfun(@minus, X, out.minX) + 1;
+out.lambdaX = zeros(1, nfeats);
+out.muX = zeros(1, nfeats);
+out.sigmaX = zeros(1, nfeats);
+for i = 1:nfeats
+    aux = X(:,i);
+    idx = isnan(aux);
+    [aux, out.lambdaX(i)] = boxcox(aux(~idx));
+    [aux, out.muX(i), out.sigmaX(i)] = zscore(aux);
+    X(~idx,i) = aux;
+end
+
+out.minY = min(Y(:));
+Y = (Y - out.minY) + eps;
+out.lambdaY = zeros(1, nalgos);
+out.muY = zeros(1, nalgos);
+out.sigmaY = zeros(1, nalgos);
+for i = 1:nalgos
+    aux = Y(:,i);
+    idx = isnan(aux);
+    [aux, out.lambdaY(i)] = boxcox(aux(~idx));
+    [aux, out.muY(i), out.sigmaY(i)] = zscore(aux);
+    Y(~idx,i) = aux;
+end
+end
 % =========================================================================

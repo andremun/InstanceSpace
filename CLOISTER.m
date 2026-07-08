@@ -69,7 +69,7 @@ try
     out.Zecorr = Zecorr(Kecorr,:);
 catch
     fprintf('[CLOISTER] The acceptable correlation threshold was too strict.\n');
-    fprintf('[CLOISTER] The features are weakely correlated.\n');
+    fprintf('[CLOISTER] The features are weakly correlated.\n');
     fprintf('[CLOISTER] Please consider increasing it.\n');
     out.Zecorr = out.Zedge;
 end

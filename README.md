@@ -62,7 +62,7 @@ The script ```example.m``` constructs a structure that contains all the settings
 -	```opts.perf.epsilon``` corresponds to the threshold used to calculate good performance. It must be of the type "Double".
 -	```opts.general.betaThreshold``` corresponds to the fraction of algorithms in the portfolio that must have good performance in the instance, for it to be considered an **easy** instance. It must be a value between 0 and 1.
 - ```opts.general.parallel``` determines whether parallel processing will be available (set as ```TRUE```), or not (set as ```FALSE```). The toolkit makes use of MATLAB's [```parpool```](https://au.mathworks.com/help/parallel-computing/parpool.html) functionality to create a multisession environment in the local machine.
-- ```opts.general.ncores``` number of available cores for parallel procesing.
+- ```opts.general.ncores``` number of available cores for parallel processing.
 -	```opts.selvars.smallscaleflag``` by setting this flag as ```TRUE```, you can carry out a small scale experiment using a randomly selected fraction of the original data. This is useful if you have a large dataset with more than 1000 instances, and you want to explore the parameters of the model.
 -	```opts.selvars.smallscale``` fraction taken from the original data on the small scale experiment.
 -	```opts.selvars.fileidxflag``` by setting this flag as ```TRUE```, you can carry out a small scale experiment. This time you must provide a ```.csv``` file that contains in one column the indices of the instances to be taken. This may be useful if you want to make a more controlled experiment than just randomly selecting instances.

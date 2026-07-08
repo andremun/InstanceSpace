@@ -133,8 +133,11 @@ out.param2Label    = cell(1, nalgos);  % human-readable param2 (distance name fo
 
 % Save global RNG state so downstream code (TRACE, user scripts) is unaffected.
 % Per-algorithm seeding inside the loop keeps each classifier's training
-% reproducible without permanently mutating the session RNG.
+% reproducible without permanently mutating the session RNG. onCleanup
+% guarantees the restore runs even if training errors out partway through,
+% not just on the normal-return path.
 prevRNG = rng;
+rngGuard = onCleanup(@() rng(prevRNG)); %#ok<NASGU>
 t = tic;
 for i = 1:nalgos
     tic;
@@ -206,8 +209,6 @@ fprintf('[PYTHIA] PYTHIA training complete.\n');
 fprintf('[PYTHIA] Average CV precision: %.1f%%\n', 100.*nanmean(out.precision));
 fprintf('[PYTHIA] Average CV accuracy : %.1f%%\n', 100.*nanmean(out.accuracy));
 fprintf('[PYTHIA] Completed in %.1f s.\n', toc(t));
-
-rng(prevRNG);  % restore global RNG so downstream code is unaffected
 
 out = computeSelection(out, nalgos, Ybin);
 out.summary = buildSummary(out, algolabels, nalgos, ninst, ...

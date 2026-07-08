@@ -120,12 +120,17 @@ model.data.algolabels = strrep(model.data.algolabels,'algo_','');
 % -------------------------------------------------------------------------
 % Running PRELIM as to pre-process the data, including scaling and bounding
 fprintf('[PRELIM] Calling PRELIM for data pre-processing.\n');
-iqrMultiplier = opts.prelim.iqrMultiplier;  % capture before opts.prelim is rebuilt below
+% Capture before opts.prelim is rebuilt below, so both survive into the
+% saved model.opts (previously nanThreshold was silently dropped, leaving
+% the persisted opts unable to reproduce this run's feature-dropping step).
+iqrMultiplier = opts.prelim.iqrMultiplier;
+nanThreshold  = opts.prelim.nanThreshold;
 opts.prelim = opts.perf;
 opts.prelim.auto = opts.auto.preproc;
 opts.prelim.bound = opts.bound.flag;
 opts.prelim.norm = opts.norm.flag;
 opts.prelim.iqrMultiplier = iqrMultiplier;
+opts.prelim.nanThreshold  = nanThreshold;
 [model.data.X, model.data.Y, model.prelim] = PRELIM(model.data.X, model.data.Y, opts.prelim);
 model.data.Ybest        = model.prelim.Ybest;
 model.data.Ybin         = model.prelim.Ybin;

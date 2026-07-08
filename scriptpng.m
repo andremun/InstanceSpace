@@ -56,12 +56,12 @@ for i=1:nalgos
     catch
         fprintf('[OUTPUT] No binary performance has been calculated.\n');
     end
-    % Drawing the SVM's predictions of good performance
+    % Drawing the classifier's predictions of good performance
     try
         clf;
         drawBinaryPerformance(container.pilot.Z, container.pythia.Yhat(:,i), ...
                               strrep(container.data.algolabels{i},'_',' '));
-        print(gcf,'-dpng',[rootdir 'binary_svm_' container.data.algolabels{i} '.png']);
+        print(gcf,'-dpng',[rootdir 'binary_classifier_' container.data.algolabels{i} '.png']);
     catch
         fprintf('[OUTPUT] No classifier predictions are available.\n');
     end

@@ -246,7 +246,7 @@ function [X, Y, out] = autoNormalize(X, Y)
 % fresh normalisation is fit directly on the test data for them.
 nfeats = size(X, 2);
 nalgos = size(Y, 2);
-out.minX = min(X, [], 1);
+out.minX = min(X, [], 1, 'omitnan');
 X = bsxfun(@minus, X, out.minX) + 1;
 out.lambdaX = zeros(1, nfeats);
 out.muX = zeros(1, nfeats);
@@ -259,7 +259,7 @@ for i = 1:nfeats
     X(~idx,i) = aux;
 end
 
-out.minY = min(Y(:));
+out.minY = min(Y(:), [], 'omitnan');
 Y = (Y - out.minY) + eps;
 out.lambdaY = zeros(1, nalgos);
 out.muY = zeros(1, nalgos);

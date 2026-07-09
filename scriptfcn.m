@@ -53,6 +53,7 @@ if any(bad)
     lbound(bad) = 0;
 end
 lims = reshape([lbound-1; ubound+1], 1, []);
+end
 % =========================================================================
 function labelAxes(is3D)
 % Common z1/z2(/z3) axis labelling, so each drawing function doesn't repeat

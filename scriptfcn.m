@@ -39,50 +39,76 @@ end
 % =========================================================================
 % SUBFUNCTIONS
 % =========================================================================
+function lims = axisLimits(Z)
+% Interleaved [xmin xmax ymin ymax (zmin zmax)] for axis(...), sized to
+% match Z's actual dimensionality (2D or 3D) instead of assuming 2D.
+ubound = ceil(max(Z,[],1));
+lbound = floor(min(Z,[],1));
+lims = reshape([lbound-1; ubound+1], 1, []);
+end
+% =========================================================================
+function labelAxes(is3D)
+% Common z1/z2(/z3) axis labelling, so each drawing function doesn't repeat
+% the is3D branch just to add zlabel.
+xlabel('z_{1}'); ylabel('z_{2}');
+if is3D; zlabel('z_{3}'); end
+end
+% =========================================================================
+function plotLine(Z, idx, varargin)
+% line(...) dispatches to a 3D plot when given a Z argument; branch once
+% here instead of in every caller.
+if size(Z,2) == 3
+    line(Z(idx,1), Z(idx,2), Z(idx,3), varargin{:});
+else
+    line(Z(idx,1), Z(idx,2), varargin{:});
+end
+end
+% =========================================================================
 function handle = drawSources(Z, S)
 
-ubound = ceil(max(Z));
-lbound = floor(min(Z));
+is3D = size(Z,2) == 3;
 sourcelabels = cellstr(unique(S));
 nsources = length(sourcelabels);
 clrs = flipud(lines(nsources));
 handle = zeros(nsources,1);
 for i=nsources:-1:1
-    line(Z(S==sourcelabels{i},1), ...
-         Z(S==sourcelabels{i},2), ...
-         'LineStyle', 'none', ...
-         'Marker', '.', ...
-         'Color', clrs(i,:), ...
-         'MarkerFaceColor', clrs(i,:), ...
-         'MarkerSize', 8);
+    plotLine(Z, S==sourcelabels{i}, 'LineStyle', 'none', ...
+             'Marker', '.', ...
+             'Color', clrs(i,:), ...
+             'MarkerFaceColor', clrs(i,:), ...
+             'MarkerSize', 8);
     handle(i) = patch([0 0],[0 0], clrs(i,:), 'EdgeColor','none');
 end
-xlabel('z_{1}'); ylabel('z_{2}'); title('Sources');
+labelAxes(is3D); title('Sources');
 legend(handle, sourcelabels, 'Location', 'NorthEastOutside');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
-axis square; axis([lbound(1)-1 ubound(1)+1 lbound(2)-1 ubound(2)+1]);
+axis square; axis(axisLimits(Z));
+if is3D; view(3); end
 
 end
 % =========================================================================
 function handle = drawScatter(Z, X, titlelabel)
 
-ubound = ceil(max(Z));
-lbound = floor(min(Z));
-handle = scatter(Z(:,1), Z(:,2), 8, X, 'filled');
+is3D = size(Z,2) == 3;
+if is3D
+    handle = scatter3(Z(:,1), Z(:,2), Z(:,3), 8, X, 'filled');
+else
+    handle = scatter(Z(:,1), Z(:,2), 8, X, 'filled');
+end
 caxis([0,1])
-xlabel('z_{1}'); ylabel('z_{2}'); title(titlelabel);
+labelAxes(is3D); title(titlelabel);
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
-axis square; axis([lbound(1)-1 ubound(1)+1 lbound(2)-1 ubound(2)+1]);
+axis square; axis(axisLimits(Z));
+if is3D; view(3); end
 colorbar('EastOutside');
 
 end
 % =========================================================================
 function drawPortfolioSelections(Z, P, algolabels, titlelabel)
 
-ubound = ceil(max(Z));
-lbound = floor(min(Z));
+is3D = size(Z,2) == 3;
 nalgos = length(algolabels);
 algolbls = cell(1,nalgos+1);
 h = zeros(1,nalgos+1);
@@ -92,11 +118,11 @@ for i=0:nalgos
     if ~isworthy(i+1)
         continue;
     end
-    line(Z(P==i,1), Z(P==i,2), 'LineStyle', 'none', ...
-                               'Marker', '.', ...
-                               'Color', clr(i+1,:), ...
-                               'MarkerFaceColor', clr(i+1,:), ...
-                               'MarkerSize', 4);
+    plotLine(Z, P==i, 'LineStyle', 'none', ...
+                       'Marker', '.', ...
+                       'Color', clr(i+1,:), ...
+                       'MarkerFaceColor', clr(i+1,:), ...
+                       'MarkerSize', 4);
     h(i+1) = patch([0 0],[0 0], clr(i+1,:), 'EdgeColor','none');
     if i==0
         algolbls{i+1} = 'None';
@@ -104,19 +130,18 @@ for i=0:nalgos
         algolbls{i+1} = strrep(algolabels{i},'_',' ');
     end
 end
-xlabel('z_{1}'); ylabel('z_{2}'); title(titlelabel);
+labelAxes(is3D); title(titlelabel);
 legend(h(isworthy), algolbls(isworthy), 'Location', 'NorthEastOutside');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
-axis square; axis([lbound(1)-1 ubound(1)+1 lbound(2)-1 ubound(2)+1]);
+axis square; axis(axisLimits(Z));
+if is3D; view(3); end
 
 end
 % =========================================================================
 function h = drawPortfolioFootprint(Z, best, P, algolabels)
 
-% Color definitions
-ubound = ceil(max(Z));
-lbound = floor(min(Z));
+is3D = size(Z,2) == 3;
 nalgos = length(algolabels);
 algolbls = cell(1,nalgos+1);
 isworthy = sum(bsxfun(@eq, P, 0:nalgos))~=0;
@@ -126,11 +151,11 @@ for i=0:nalgos
     if ~isworthy(i+1)
         continue;
     end
-    line(Z(P==i,1), Z(P==i,2), 'LineStyle', 'none', ...
-                               'Marker', '.', ...
-                               'Color', clr(i+1,:), ...
-                               'MarkerFaceColor', clr(i+1,:), ...
-                               'MarkerSize', 4);
+    plotLine(Z, P==i, 'LineStyle', 'none', ...
+                       'Marker', '.', ...
+                       'Color', clr(i+1,:), ...
+                       'MarkerFaceColor', clr(i+1,:), ...
+                       'MarkerSize', 4);
     h(i+1) = patch([0 0],[0 0], clr(i+1,:), 'EdgeColor','none');
     if i==0
         algolbls{i+1} = 'None';
@@ -139,50 +164,53 @@ for i=0:nalgos
         algolbls{i+1} = strrep(algolabels{i},'_',' ');
     end
 end
-xlabel('z_{1}'); ylabel('z_{2}'); title('Portfolio footprints');
+labelAxes(is3D); title('Portfolio footprints');
 legend(h(isworthy), algolbls(isworthy), 'Location', 'NorthEastOutside');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
-axis square; axis([lbound(1)-1 ubound(1)+1 lbound(2)-1 ubound(2)+1]);
+axis square; axis(axisLimits(Z));
+if is3D; view(3); end
 
 end
 % =========================================================================
 function h = drawGoodBadFootprint(Z, good, Ybin, titlelabel)
 
-ubound = ceil(max(Z));
-lbound = floor(min(Z));
+is3D = size(Z,2) == 3;
 orange = [1.0 0.6471 0.0];
 blue = [0.0 0.0 1.0];
 lbls = {'GOOD','BAD'};
 h = zeros(1,2);
 if any(~Ybin)
     % drawFootprint(bad, orange, 0.2);
-    line(Z(~Ybin,1), Z(~Ybin,2), 'LineStyle', 'none', ...
-                                 'Marker', '.', ...
-                                 'Color', orange, ...
-                                 'MarkerFaceColor', orange, ...
-                                 'MarkerSize', 4);
+    plotLine(Z, ~Ybin, 'LineStyle', 'none', ...
+                        'Marker', '.', ...
+                        'Color', orange, ...
+                        'MarkerFaceColor', orange, ...
+                        'MarkerSize', 4);
     h(2) = patch([0 0],[0 0], orange, 'EdgeColor','none');
 end
 if any(Ybin)
-    line(Z(Ybin,1), Z(Ybin,2), 'LineStyle', 'none', ...
-                               'Marker', '.', ...
-                               'Color', blue, ...
-                               'MarkerFaceColor', blue, ...
-                               'MarkerSize', 4);
+    plotLine(Z, Ybin, 'LineStyle', 'none', ...
+                       'Marker', '.', ...
+                       'Color', blue, ...
+                       'MarkerFaceColor', blue, ...
+                       'MarkerSize', 4);
     h(1) = patch([0 0],[0 0], blue, 'EdgeColor','none');
     drawFootprint(good, blue, 0.3);
 end
-xlabel('z_{1}'); ylabel('z_{2}'); title([titlelabel ' Footprints']);
+labelAxes(is3D); title([titlelabel ' Footprints']);
 legend(h(h~=0), lbls(h~=0), 'Location', 'NorthEastOutside');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
-axis square; axis([lbound(1)-1 ubound(1)+1 lbound(2)-1 ubound(2)+1]);
+axis square; axis(axisLimits(Z));
+if is3D; view(3); end
 
 end
 % =========================================================================
 function handle = drawFootprint(footprint, color, alpha)
-% 
+% plot() dispatches on footprint.polygon's class: polyshape (2D) or
+% alphaShape (3D) both accept FaceColor/EdgeColor/FaceAlpha, so no
+% dimension branch is needed here.
 hold on;
 if isempty(footprint) || isempty(footprint.polygon)
     handle = patch([0 0],[0 0], color, 'EdgeColor','none');
@@ -196,33 +224,33 @@ end
 % =========================================================================
 function h = drawBinaryPerformance(Z, Ybin, titlelabel)
 
-ubound = ceil(max(Z));
-lbound = floor(min(Z));
+is3D = size(Z,2) == 3;
 orange = [1.0 0.6471 0.0];
 blue = [0.0 0.0 1.0];
 lbls = {'GOOD','BAD'};
 h = zeros(1,2);
 if any(~Ybin)
     h(2) = patch([0 0],[0 0], orange, 'EdgeColor','none');
-    line(Z(~Ybin,1), Z(~Ybin,2), 'LineStyle', 'none', ...
-                                 'Marker', '.', ...
-                                 'Color', orange, ...
-                                 'MarkerFaceColor', orange, ...
-                                 'MarkerSize', 4);
+    plotLine(Z, ~Ybin, 'LineStyle', 'none', ...
+                        'Marker', '.', ...
+                        'Color', orange, ...
+                        'MarkerFaceColor', orange, ...
+                        'MarkerSize', 4);
 end
 if any(Ybin)
     h(1) = patch([0 0],[0 0], blue, 'EdgeColor','none');
-    line(Z(Ybin,1), Z(Ybin,2), 'LineStyle', 'none', ...
-                               'Marker', '.', ...
-                               'Color', blue, ...
-                               'MarkerFaceColor', blue, ...
-                               'MarkerSize', 4);
+    plotLine(Z, Ybin, 'LineStyle', 'none', ...
+                       'Marker', '.', ...
+                       'Color', blue, ...
+                       'MarkerFaceColor', blue, ...
+                       'MarkerSize', 4);
 end
-xlabel('z_{1}'); ylabel('z_{2}'); title(titlelabel);
+labelAxes(is3D); title(titlelabel);
 legend(h(h~=0), lbls(h~=0), 'Location', 'NorthEastOutside');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
-axis square; axis([lbound(1)-1 ubound(1)+1 lbound(2)-1 ubound(2)+1]);
+axis square; axis(axisLimits(Z));
+if is3D; view(3); end
 
 end
 % =========================================================================

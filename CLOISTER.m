@@ -17,7 +17,13 @@ nfeats = size(X,2);
 [rho,pval] = corr(X);
 rho = rho.*(pval<opts.pval);
 
-Xbnds = [min(X); max(X)];
+% omitnan: a feature column can still carry sparse NaNs here (buildIS only
+% drops instances where every feature is NaN, and features whose NaN
+% fraction exceeds opts.prelim.nanThreshold -- a column under that
+% threshold keeps its remaining NaN entries through PRELIM/SIFTED/PILOT).
+% Without omitnan, min/max would return NaN for that column and propagate
+% through Xedge/Zedge into convhull, which errors on NaN input.
+Xbnds = [min(X,[],1,'omitnan'); max(X,[],1,'omitnan')];
 % Guard: if too many features, the bit-matrix enumeration below would
 % produce an intractable matrix. Use convex hull of Z as a safe fallback.
 if ~isfield(opts, 'maxFeatures'), opts.maxFeatures = 20; end

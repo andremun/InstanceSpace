@@ -232,8 +232,13 @@ model.pythia = PYTHIA(model.pilot.Z, model.data.Yraw, model.data.Ybin, model.dat
 % -------------------------------------------------------------------------
 % Calculating the algorithm footprints.
 fprintf('[TRACE] Calling TRACE to perform the footprint analysis.\n');
-opts.trace.pythiaSkip = opts.pythia.skip;  % Yhat is a full-size logical false(...) array when skipped, not empty
-model.trace = TRACE(model.pilot.Z, model.data.Ybin, model.pythia.Yhat, model.data.P, model.data.beta, model.data.algolabels, opts.trace);
+% Local copy: pythiaSkip is an internal signal for TRACE's skip-mode
+% detection (Yhat is a full-size logical false(...) array when skipped,
+% not empty), not a documented opts field -- must not leak into opts.trace
+% itself, since that gets persisted verbatim into model.opts/options.json.
+traceOpts = opts.trace;
+traceOpts.pythiaSkip = opts.pythia.skip;
+model.trace = TRACE(model.pilot.Z, model.data.Ybin, model.pythia.Yhat, model.data.P, model.data.beta, model.data.algolabels, traceOpts);
 
 if opts.general.parallel
     fprintf('[BUILD] Closing parallel processing pool.\n');

@@ -160,7 +160,7 @@ for i = 1:nalgos
         % MATLAB bayesopt (Gaussian-process surrogate) over the same
         % classifier/CV-fold evaluation used by 'sobol'.
         [out.Ysub(:,i), out.Pr0sub(:,i), p1_best, p2_best] = ...
-            bayesSearch(classifierType, Znorm, Ybin(:,i), W(:,i), out.cp{i}, opts);
+            bayesSearch(classifierType, Znorm, Ybin(:,i), W(:,i), out.cp{i}, opts, opts.seed + i);
     else
         % Scrambled Sobol search.
         ss = sobolset(2, 'Skip', 1, 'Scramble', 'MatousekAffineOwen');
@@ -341,21 +341,23 @@ p2_best = P2(best);
 end
 
 % -------------------------------------------------------------------------
-function [Ysub, Psub, p1_best, p2_best] = bayesSearch(type, Z, Ybin, W, cp, opts)
+function [Ysub, Psub, p1_best, p2_best] = bayesSearch(type, Z, Ybin, W, cp, opts, baseSeed)
 % Bayesian-optimisation hyperparameter search (opts.tuning='bayes').
 % Uses MATLAB's bayesopt (Gaussian process surrogate) over the same
 % per-candidate k-fold CV evaluator as sobolSearch (crossValPredict), so
 % 'bayes' and 'sobol' are directly comparable tuning strategies over the
 % same classifier/search-space contract.
+if nargin < 7; baseSeed = opts.seed; end
 vars  = classifierBayesVars(type);
 hasP2 = numel(vars) == 2;
+callIdx = 0;  % mutated by the nested objective below on every bayesopt call
 
-objFcn = @(tbl) bayesObjective(type, Z, Ybin, W, cp, tbl, hasP2, opts);
+objFcn = @bayesObjective;
 
-% UseParallel is left false: bayesopt's sequential GP-driven search does not
-% parallelise across candidates the way Sobol's space-filling grid does, and
-% running serially lets it inherit the ambient RNG already seeded by the
-% caller (rng(opts.seed+i,'twister')) without needing per-worker reseeding.
+% UseParallel is left false: bayesopt's GP-driven search evaluates
+% candidates sequentially and its own next-candidate choice depends on
+% every prior objective value, so parallelising across candidates isn't
+% meaningful here the way Sobol's space-filling grid is.
 results = bayesopt(objFcn, vars, ...
     'MaxObjectiveEvaluations', opts.nTuningIter, ...
     'AcquisitionFunctionName', 'expected-improvement-plus', ...
@@ -368,6 +370,35 @@ else
     p2_best = 1;
 end
 [Ysub, Psub] = crossValPredict(type, Z, Ybin, W, cp, p1_best, p2_best, opts);
+
+    function err = bayesObjective(tbl)
+    % Nested (not a plain subfunction) so it can mutate callIdx in
+    % bayesSearch's workspace. Each candidate evaluation is reseeded from
+    % a fixed, call-index-derived seed rather than inheriting whatever RNG
+    % state earlier candidates left behind: without this, a stochastic
+    % learner (e.g. fitcensemble bagging) inside the objective would make
+    % each candidate's score depend on how many random draws every
+    % previously-evaluated candidate consumed, not just on (p1,p2) --
+    % coupling the "optimum" bayesopt finds to evaluation order.
+    callIdx = callIdx + 1;
+    rng(baseSeed*1e5 + callIdx, 'twister');
+    p1 = double(tbl.p1);
+    if hasP2
+        p2 = bayesVarToNumeric(tbl.p2);
+    else
+        p2 = 1;
+    end
+    [Ysub_cand, Psub_cand] = crossValPredict(type, Z, Ybin, W, cp, p1, p2, opts);
+    if any(isnan(Psub_cand))
+        % At least one fold failed to train this candidate (see
+        % evalFoldClassifier); report the worst possible error so bayesopt
+        % steers away from it, mirroring sobolSearch's errs(...)=Inf
+        % invalidation of NaN-probability candidates.
+        err = 1;
+    else
+        err = mean(Ysub_cand ~= logical(Ybin));
+    end
+    end
 end
 
 % -------------------------------------------------------------------------
@@ -403,26 +434,6 @@ if iscategorical(p2raw)
     p2num = find(strcmp(distOpts, char(p2raw)));
 else
     p2num = double(p2raw);
-end
-end
-
-% -------------------------------------------------------------------------
-function err = bayesObjective(type, Z, Ybin, W, cp, tbl, hasP2, opts)
-% bayesopt objective: k-fold CV misclassification rate for one candidate row.
-p1 = double(tbl.p1);
-if hasP2
-    p2 = bayesVarToNumeric(tbl.p2);
-else
-    p2 = 1;
-end
-[Ysub, Psub] = crossValPredict(type, Z, Ybin, W, cp, p1, p2, opts);
-if any(isnan(Psub))
-    % At least one fold failed to train this candidate (see evalFoldClassifier);
-    % report the worst possible error so bayesopt steers away from it, mirroring
-    % sobolSearch's errs(...)=Inf invalidation of NaN-probability candidates.
-    err = 1;
-else
-    err = mean(Ysub ~= logical(Ybin));
 end
 end
 

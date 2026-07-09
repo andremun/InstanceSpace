@@ -239,7 +239,7 @@ opts.trace.method = 'trace3';
 opts.trace.PI = 0.55;               % Purity threshold
 
 opts.outputs.csv = true;
-opts.outputs.web = false;           % NOTE: MAKE THIS FALSE IF YOU ARE USING THIS CODE LOCALY - This flag is only useful if the system is being used 'online' through matilda.unimelb.edu.au
+opts.outputs.web = false;           % NOTE: MAKE THIS FALSE IF YOU ARE USING THIS CODE LOCALLY - This flag is only useful if the system is being used 'online' through matilda.unimelb.edu.au
 opts.outputs.png = true;
 end
 

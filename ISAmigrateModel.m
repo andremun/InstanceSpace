@@ -50,7 +50,12 @@ end
 % =========================================================================
 function model = migrateFromRootdir(rootdir, varargin)
 p = inputParser;
-addParameter(p, 'backupSuffix', '_legacy', @(x) ischar(x) || isstring(x));
+% Must be a non-empty scalar string/char: an empty suffix would make
+% backupfile identical to modelfile below, so copyfile(modelfile,backupfile)
+% would silently no-op (or error) instead of actually preserving a backup.
+isNonEmptyText = @(x) (ischar(x) && ~isempty(x)) || ...
+                      (isstring(x) && isscalar(x) && strlength(x) > 0);
+addParameter(p, 'backupSuffix', '_legacy', isNonEmptyText);
 parse(p, varargin{:});
 backupSuffix = char(p.Results.backupSuffix);
 
@@ -65,6 +70,11 @@ model = migrateModelStruct(model);
 
 [dir, base, ext] = fileparts(modelfile);
 backupfile = fullfile(dir, [base backupSuffix ext]);
+if strcmp(backupfile, modelfile)
+    error('ISA:ISAmigrateModel:badBackupSuffix', ...
+        '''backupSuffix'' (''%s'') must produce a backup filename different from model.mat.', ...
+        backupSuffix);
+end
 copyfile(modelfile, backupfile);
 save(modelfile, '-struct', 'model');
 fprintf('ISAmigrateModel: migrated model written to ''%s''; original backed up to ''%s''.\n', ...

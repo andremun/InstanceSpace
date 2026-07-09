@@ -40,6 +40,11 @@ end
 % SUBFUNCTIONS
 % =========================================================================
 function lims = axisLimits(Z)
+% Interleaved [xmin xmax ymin ymax (zmin zmax)] for axis(...), sized to
+% match Z's actual dimensionality (2D or 3D) instead of assuming 2D.
+% 'omitnan' guards against instances with an unprojected/missing
+% coordinate; without it, a single NaN in Z makes min/max return NaN and
+% axis(...) errors instead of just excluding that instance from the bounds.
 ubound = ceil(max(Z,[],1,'omitnan'));
 lbound = floor(min(Z,[],1,'omitnan'));
 lims = reshape([lbound-1; ubound+1], 1, []);

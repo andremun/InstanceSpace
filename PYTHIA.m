@@ -711,7 +711,7 @@ if ~isempty(p1label)
         % All other classifiers: use the numeric param2 value directly so the
         % summary/CSV cell contains a number, not a string representation.
         if strcmpi(out.classifierType, 'knn') && isfield(out, 'param2Label') ...
-                && ~isempty(out.param2Label{1})
+                && any(~cellfun(@isempty, out.param2Label))
             summary(2:end-2, 11) = out.param2Label(:);
         else
             summary(2:end-2, 11) = num2cell(round(out.param2(:), 3));

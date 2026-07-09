@@ -175,13 +175,19 @@ for i = 1:nalgos
             warning('ISA:PYTHIA:degenerateLabel', ...
                 ['Algorithm ''%s'' is %s for every instance; skipping cross-' ...
                  'validation/tuning and using a constant prediction instead. ' ...
-                 'No classifier is stored for this algorithm (exploreIS/PYTHIA ' ...
-                 'eval mode will predict false for it).'], algolabels{i}, labelWord);
+                 'A constant-classifier sentinel is stored for this algorithm ' ...
+                 '(see PYTHIAevalMode) so exploreIS/PYTHIA eval mode reproduces ' ...
+                 'the same constant prediction.'], algolabels{i}, labelWord);
         end
         out.cp{i}          = [];
         out.Ysub(:,i)       = yi(1);
         out.Pr0sub(:,i)     = double(yi(1));
-        out.classifiers{i}  = [];
+        % Sentinel (not a real classifier object or a legacy LIBSVM struct):
+        % PYTHIAevalMode checks the 'constant' field before its isstruct/LIBSVM
+        % dispatch, so a degenerate-label algorithm still predicts correctly
+        % (rather than silently falling back to false via the isempty(clf)
+        % skip) without requiring a fitted model.
+        out.classifiers{i}  = struct('constant', true, 'value', yi(1));
         out.Yhat(:,i)       = yi(1);
         out.Pr0hat(:,i)     = double(yi(1));
         p1_best = NaN;
@@ -301,7 +307,14 @@ for ii = 1:nalgos
     if isempty(clf)
         continue;
     end
-    if isstruct(clf)
+    if isstruct(clf) && isfield(clf, 'constant') && clf.constant
+        % Degenerate-label sentinel from training mode (every training
+        % instance had the same label, so no real classifier was fit).
+        % Must be checked before the LIBSVM isstruct dispatch below, or
+        % this would be misinterpreted as a LIBSVM model struct.
+        out.Yhat(:,ii)   = clf.value;
+        out.Pr0hat(:,ii) = double(clf.value);
+    elseif isstruct(clf)
         % Legacy LIBSVM struct.
         Yin = double(Ybin(:,ii)) + 1;
         [aux, ~, out.Pr0hat(:,ii)] = svmpredict(Yin, Znorm, clf, '-q');

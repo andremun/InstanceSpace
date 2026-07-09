@@ -47,8 +47,12 @@ function lims = axisLimits(Z)
 % axis(...) errors instead of just excluding that instance from the bounds.
 ubound = ceil(max(Z,[],1,'omitnan'));
 lbound = floor(min(Z,[],1,'omitnan'));
-lims = reshape([lbound-1; ubound+1], 1, []);
+bad = isnan(ubound) | isnan(lbound);
+if any(bad)
+    ubound(bad) = 0;
+    lbound(bad) = 0;
 end
+lims = reshape([lbound-1; ubound+1], 1, []);
 % =========================================================================
 function labelAxes(is3D)
 % Common z1/z2(/z3) axis labelling, so each drawing function doesn't repeat

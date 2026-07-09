@@ -181,7 +181,12 @@ for i = 1:nalgos
         end
         out.cp{i}          = [];
         out.Ysub(:,i)       = yi(1);
-        out.Pr0sub(:,i)     = double(yi(1));
+        % Pr0sub/Pr0hat are P(class 0 = false = "bad"), matching
+        % predictClassifier's aux(:,1) convention elsewhere in this file
+        % (MATLAB orders binary class columns ascending: false, then true) --
+        % NOT "probability of the observed label". 1 when always-bad, 0 when
+        % always-good.
+        out.Pr0sub(:,i)     = double(~yi(1));
         % Sentinel (not a real classifier object or a legacy LIBSVM struct):
         % PYTHIAevalMode checks the 'constant' field before its isstruct/LIBSVM
         % dispatch, so a degenerate-label algorithm still predicts correctly
@@ -189,7 +194,7 @@ for i = 1:nalgos
         % skip) without requiring a fitted model.
         out.classifiers{i}  = struct('constant', true, 'value', yi(1));
         out.Yhat(:,i)       = yi(1);
-        out.Pr0hat(:,i)     = double(yi(1));
+        out.Pr0hat(:,i)     = double(~yi(1));
         p1_best = NaN;
         p2_best = NaN;
     else
@@ -313,7 +318,9 @@ for ii = 1:nalgos
         % Must be checked before the LIBSVM isstruct dispatch below, or
         % this would be misinterpreted as a LIBSVM model struct.
         out.Yhat(:,ii)   = clf.value;
-        out.Pr0hat(:,ii) = double(clf.value);
+        % Pr0hat is P(class 0 = false = "bad"); see the matching comment in
+        % the training-mode degenerate-label branch above.
+        out.Pr0hat(:,ii) = double(~clf.value);
     elseif isstruct(clf)
         % Legacy LIBSVM struct.
         Yin = double(Ybin(:,ii)) + 1;
@@ -409,9 +416,8 @@ function [Ysub, Psub, p1_best, p2_best] = bayesSearch(type, Z, Ybin, W, cp, opts
 if nargin < 7; baseSeed = opts.seed; end
 vars  = classifierBayesVars(type);
 hasP2 = numel(vars) == 2;
-callIdx = 0;  % mutated by the nested objective below on every bayesopt call
 
-objFcn = @bayesObjective;
+objFcn = @(tbl) bayesObjective(type, Z, Ybin, W, cp, tbl, hasP2, opts, baseSeed);
 
 % UseParallel is left false: bayesopt's GP-driven search evaluates
 % candidates sequentially and its own next-candidate choice depends on
@@ -429,35 +435,34 @@ else
     p2_best = 1;
 end
 [Ysub, Psub] = crossValPredict(type, Z, Ybin, W, cp, p1_best, p2_best, opts);
+end
 
-    function err = bayesObjective(tbl)
-    % Nested (not a plain subfunction) so it can mutate callIdx in
-    % bayesSearch's workspace. Each candidate evaluation is reseeded from
-    % a fixed, call-index-derived seed rather than inheriting whatever RNG
-    % state earlier candidates left behind: without this, a stochastic
-    % learner (e.g. fitcensemble bagging) inside the objective would make
-    % each candidate's score depend on how many random draws every
-    % previously-evaluated candidate consumed, not just on (p1,p2) --
-    % coupling the "optimum" bayesopt finds to evaluation order.
-    callIdx = callIdx + 1;
-    rng(baseSeed*1e5 + callIdx, 'twister');
-    p1 = double(tbl.p1);
-    if hasP2
-        p2 = bayesVarToNumeric(tbl.p2);
-    else
-        p2 = 1;
-    end
-    [Ysub_cand, Psub_cand] = crossValPredict(type, Z, Ybin, W, cp, p1, p2, opts);
-    if any(isnan(Psub_cand))
-        % At least one fold failed to train this candidate (see
-        % evalFoldClassifier); report the worst possible error so bayesopt
-        % steers away from it, mirroring sobolSearch's errs(...)=Inf
-        % invalidation of NaN-probability candidates.
-        err = 1;
-    else
-        err = mean(Ysub_cand ~= logical(Ybin));
-    end
-    end
+% -------------------------------------------------------------------------
+function err = bayesObjective(type, Z, Ybin, W, cp, tbl, hasP2, opts, baseSeed)
+% Reseed to the SAME fixed baseSeed before every candidate ("common random
+% numbers"): a stochastic learner (e.g. fitcensemble bagging) then trains
+% on identical bootstrap draws/internal randomness across candidates, so
+% differences in the CV score reflect the hyperparameters (p1,p2) being
+% compared, not incidental seed-to-seed noise -- which would otherwise
+% both mislead bayesopt's GP surrogate and make results depend on
+% evaluation order (a fresh seed per call has neither property).
+rng(baseSeed, 'twister');
+p1 = double(tbl.p1);
+if hasP2
+    p2 = bayesVarToNumeric(tbl.p2);
+else
+    p2 = 1;
+end
+[Ysub_cand, Psub_cand] = crossValPredict(type, Z, Ybin, W, cp, p1, p2, opts);
+if any(isnan(Psub_cand))
+    % At least one fold failed to train this candidate (see
+    % evalFoldClassifier); report the worst possible error so bayesopt
+    % steers away from it, mirroring sobolSearch's errs(...)=Inf
+    % invalidation of NaN-probability candidates.
+    err = 1;
+else
+    err = mean(Ysub_cand ~= logical(Ybin));
+end
 end
 
 % -------------------------------------------------------------------------

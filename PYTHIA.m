@@ -640,6 +640,7 @@ end
 function out = computeSelection(out, nalgos, Ybin, trainPrecision)
 % Compute algorithm selection vectors using CV-precision-weighted voting.
 if nargin < 4; trainPrecision = out.precision; end
+trainPrecision = trainPrecision(:);
 % Replace NaN precision (tp+fp==0) with 0 so max() never returns NaN.
 trainPrecision(isnan(trainPrecision)) = 0;
 if nalgos > 1

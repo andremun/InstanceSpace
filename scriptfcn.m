@@ -40,10 +40,8 @@ end
 % SUBFUNCTIONS
 % =========================================================================
 function lims = axisLimits(Z)
-% Interleaved [xmin xmax ymin ymax (zmin zmax)] for axis(...), sized to
-% match Z's actual dimensionality (2D or 3D) instead of assuming 2D.
-ubound = ceil(max(Z,[],1));
-lbound = floor(min(Z,[],1));
+ubound = ceil(max(Z,[],1,'omitnan'));
+lbound = floor(min(Z,[],1,'omitnan'));
 lims = reshape([lbound-1; ubound+1], 1, []);
 end
 % =========================================================================

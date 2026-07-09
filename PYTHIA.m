@@ -158,47 +158,78 @@ for i = 1:nalgos
     tic;
     % Per-algorithm reproducible seed: opts.seed + i (per spec §6.2).
     rng(opts.seed + i, 'twister');
-    out.cp{i} = cvpartition(Ybin(:,i), 'Kfold', opts.kFold, 'Stratify', true);
 
-    if precalcparams
-        p1_best = opts.params(i,1);
-        if hasP2
-            p2_best = opts.params(i,2);
-        else
-            p2_best = 1;  % placeholder; ignored by fitOneClassifier for single-param classifiers
+    yi = logical(Ybin(:,i));
+    degenerateLabel = all(yi) || all(~yi);
+
+    if degenerateLabel
+        % cvpartition(...,'Stratify',true) cannot stratify a single-class
+        % label and throws immediately -- aborting training for every other
+        % algorithm too, not just this one. This is a legitimate case (e.g.
+        % an algorithm that is always "good" under an absolute threshold),
+        % so short-circuit to a constant prediction instead of calling
+        % cvpartition/fitc* at all: there is nothing to cross-validate or
+        % tune when every instance has the same label.
+        if yi(1); labelWord = 'good'; else; labelWord = 'bad'; end
+        if opts.verbose
+            warning('ISA:PYTHIA:degenerateLabel', ...
+                ['Algorithm ''%s'' is %s for every instance; skipping cross-' ...
+                 'validation/tuning and using a constant prediction instead. ' ...
+                 'No classifier is stored for this algorithm (exploreIS/PYTHIA ' ...
+                 'eval mode will predict false for it).'], algolabels{i}, labelWord);
         end
-        % CV predictions with the pre-supplied params.
-        [out.Ysub(:,i), out.Pr0sub(:,i)] = crossValPredict( ...
-            classifierType, Znorm, Ybin(:,i), W(:,i), out.cp{i}, ...
-            p1_best, p2_best, opts);
-    elseif strcmp(opts.tuning, 'bayes')
-        % MATLAB bayesopt (Gaussian-process surrogate) over the same
-        % classifier/CV-fold evaluation used by 'sobol'.
-        [out.Ysub(:,i), out.Pr0sub(:,i), p1_best, p2_best] = ...
-            bayesSearch(classifierType, Znorm, Ybin(:,i), W(:,i), out.cp{i}, opts, opts.seed + i);
+        out.cp{i}          = [];
+        out.Ysub(:,i)       = yi(1);
+        out.Pr0sub(:,i)     = double(yi(1));
+        out.classifiers{i}  = [];
+        out.Yhat(:,i)       = yi(1);
+        out.Pr0hat(:,i)     = double(yi(1));
+        p1_best = NaN;
+        p2_best = NaN;
     else
-        % Scrambled Sobol search.
-        ss = sobolset(2, 'Skip', 1, 'Scramble', 'MatousekAffineOwen');
-        X  = net(ss, nIter);
-        [P1, P2] = sobolToParams(classifierType, X);
+        out.cp{i} = cvpartition(yi, 'Kfold', opts.kFold, 'Stratify', true);
 
-        [out.Ysub(:,i), out.Pr0sub(:,i), p1_best, p2_best] = ...
-            sobolSearch(classifierType, Znorm, Ybin(:,i), W(:,i), ...
-                        out.cp{i}, P1, P2, opts, opts.seed + i);
+        if precalcparams
+            p1_best = opts.params(i,1);
+            if hasP2
+                p2_best = opts.params(i,2);
+            else
+                p2_best = 1;  % placeholder; ignored by fitOneClassifier for single-param classifiers
+            end
+            % CV predictions with the pre-supplied params.
+            [out.Ysub(:,i), out.Pr0sub(:,i)] = crossValPredict( ...
+                classifierType, Znorm, yi, W(:,i), out.cp{i}, ...
+                p1_best, p2_best, opts);
+        elseif strcmp(opts.tuning, 'bayes')
+            % MATLAB bayesopt (Gaussian-process surrogate) over the same
+            % classifier/CV-fold evaluation used by 'sobol'.
+            [out.Ysub(:,i), out.Pr0sub(:,i), p1_best, p2_best] = ...
+                bayesSearch(classifierType, Znorm, yi, W(:,i), out.cp{i}, opts, opts.seed + i);
+        else
+            % Scrambled Sobol search.
+            ss = sobolset(2, 'Skip', 1, 'Scramble', 'MatousekAffineOwen');
+            X  = net(ss, nIter);
+            [P1, P2] = sobolToParams(classifierType, X);
+
+            [out.Ysub(:,i), out.Pr0sub(:,i), p1_best, p2_best] = ...
+                sobolSearch(classifierType, Znorm, yi, W(:,i), ...
+                            out.cp{i}, P1, P2, opts, opts.seed + i);
+        end
+
+        [out.classifiers{i}, out.Yhat(:,i), out.Pr0hat(:,i)] = ...
+            trainFinalClassifier(classifierType, Znorm, yi, W(:,i), ...
+                                 p1_best, p2_best, opts);
     end
 
-    [out.classifiers{i}, out.Yhat(:,i), out.Pr0hat(:,i)] = ...
-        trainFinalClassifier(classifierType, Znorm, logical(Ybin(:,i)), W(:,i), ...
-                             p1_best, p2_best, opts);
     out.param1(i) = p1_best;
     out.param2(i) = p2_best;
-    if strcmpi(classifierType, 'knn')
+    if ~degenerateLabel && strcmpi(classifierType, 'knn')
         distOpts = {'euclidean','cityblock','cosine','correlation'};
         out.param2Label{i} = distOpts{min(4,max(1,round(p2_best)))};
     end
     % Non-KNN classifiers: param2 is already numeric; param2Label left empty.
 
-    cm = confusionmat(logical(Ybin(:,i)), out.Ysub(:,i), 'Order', [false true]);
+    cm = confusionmat(yi, out.Ysub(:,i), 'Order', [false true]);
     out.cvcmat(i,:) = cm(:)';
 
     if opts.verbose

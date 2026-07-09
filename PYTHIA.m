@@ -101,6 +101,21 @@ nIter = opts.nTuningIter;
 nParams = 1 + hasP2;
 precalcparams = ~isempty(opts.params) && isnumeric(opts.params) && ...
                 size(opts.params,1)==nalgos && size(opts.params,2)==nParams;
+% nIter is only ever consumed by the Sobol/bayesopt search paths below
+% (precalcparams bypasses tuning entirely); validate it there so a bad
+% value (0, NaN, negative, non-integer) fails clearly here instead of as
+% an obscure indexing/bayesopt error deep inside sobolSearch/bayesSearch.
+if ~precalcparams && (~isnumeric(nIter) || ~isscalar(nIter) || ...
+        ~isfinite(nIter) || nIter < 1 || nIter ~= round(nIter))
+    if isnumeric(nIter) && isscalar(nIter)
+        gotStr = num2str(nIter);
+    else
+        gotStr = class(nIter);
+    end
+    error('ISA:PYTHIA:invalidNTuningIter', ...
+        ['opts.nTuningIter must be a positive integer scalar (it is the Sobol/' ...
+         'bayesopt evaluation budget); got %s.'], gotStr);
+end
 if strcmp(opts.tuning, 'none') && ~precalcparams
     if hasP2
         paramDesc = sprintf('%s, %s', p1label, p2label);

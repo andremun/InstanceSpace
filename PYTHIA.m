@@ -378,11 +378,19 @@ for fold = 1:cp.NumTestSets
 
     Yfold = false(ntest, nsobol);
     Pfold = zeros(ntest, nsobol);
-    % Deterministic per-(fold,candidate) seed so parfor workers — which do not
-    % inherit the client's RNG stream — reproduce the same result every run.
-    foldSeeds = baseSeed*1e5 + fold*1e3 + (1:nsobol);
+    % Same fixed seed for every candidate within this fold ("common random
+    % numbers", matching bayesSearch's treatment): parfor workers don't
+    % inherit the client's RNG stream, so each still needs an explicit seed
+    % to be deterministic at all, but giving every candidate j a *different*
+    % seed would let a stochastic learner's (e.g. fitcensemble bagging) own
+    % randomness confound the comparison between candidates -- differences
+    % in Yfold/Pfold would partly reflect seed-to-seed noise, not just
+    % (P1(j),P2(j)). Varying the seed by fold (not by candidate) is still
+    % wanted: folds are supposed to differ, only candidates within a fold
+    % should be compared on identical random substrate.
+    foldSeed = baseSeed*1e5 + fold*1e3;
     parfor (j = 1:nsobol, nworkers)
-        rng(foldSeeds(j), 'twister');
+        rng(foldSeed, 'twister');
         [Yfold(:,j), Pfold(:,j)] = evalFoldClassifier( ...
             type, Ztrain, Ytrain, Wtrain, Ztest, P1(j), P2(j), opts);
     end

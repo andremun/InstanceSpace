@@ -227,6 +227,17 @@ for i = 1:nalgos
                             out.cp{i}, P1, P2, opts, opts.seed + i);
         end
 
+        % Re-seed immediately before final training: crossValPredict
+        % (precalcparams) runs its fold loop sequentially in the client
+        % process, and bayesSearch's objective repeatedly reseeds/consumes
+        % the client's global RNG inside bayesopt, so by this point the RNG
+        % state is no longer reliably opts.seed+i for either path -- only
+        % sobolSearch is immune, since its candidate evaluation happens
+        % inside parfor-isolated workers that never touch the client's RNG.
+        % Without this, trainFinalClassifier's own randomness (e.g.
+        % fitcensemble bagging) would depend on which tuning strategy ran,
+        % not just on opts.seed.
+        rng(opts.seed + i, 'twister');
         [out.classifiers{i}, out.Yhat(:,i), out.Pr0hat(:,i)] = ...
             trainFinalClassifier(classifierType, Znorm, yi, W(:,i), ...
                                  p1_best, p2_best, opts);

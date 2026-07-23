@@ -15,8 +15,13 @@ if ~isfield(opts, 'verbose'), opts.verbose = true; end
 if isfield(opts, 'ISA3D') && ~isfield(opts, 'dims')
     opts.dims = 2 + double(logical(opts.ISA3D));
 end
-if ~isfield(opts, 'dims'),  opts.dims  = 2;   end
-if ~isfield(opts, 'alpha'), opts.alpha = 1.0; end % performance-reconstruction cost weight (spec 5.4)
+if ~isfield(opts, 'dims'),   opts.dims   = 2;          end
+if ~isfield(opts, 'alpha'),  opts.alpha  = 1.0;        end % performance-reconstruction cost weight (spec 5.4), 'standard' method only
+if ~isfield(opts, 'method'), opts.method = 'standard'; end % 'standard' (BFGS/analytic) or 'pls' (spec 5.3)
+if ~ismember(lower(opts.method), {'standard','pls'})
+    error('ISA:PILOT:invalidMethod', ...
+        'opts.method must be ''standard'' or ''pls'' (got ''%s'').', opts.method);
+end
 d = opts.dims;
 costWeight = opts.alpha;
 
@@ -35,13 +40,30 @@ else
     nworkers = 0;
 end
 
-if opts.analytic && rank(X) < size(X,2)
+if strcmpi(opts.method, 'standard') && opts.analytic && rank(X) < size(X,2)
     warning('ISA:PILOT:rankDeficient', ...
         'Feature matrix rank-deficient; falling back to numerical solution.');
     opts.analytic = false;
 end
 
-if opts.analytic
+if strcmpi(opts.method, 'pls')
+    % Partial Least Squares alternative (spec §5.3, previously PBLDR).
+    % All three projection matrices are natively available from
+    % plsregress: the X-weight matrix W gives Ar, the X-loading matrix P
+    % gives Br directly, and the Y-loading matrix Q gives Cr. Unlike the
+    % standard method, PLS does not require X to be full column rank, and
+    % opts.alpha (spec §5.4) does not apply -- plsregress maximises
+    % covariance rather than minimising a weighted reconstruction cost.
+    fprintf('[PILOT] PILOT is using partial least squares (opts.pilot.method=''pls'').\n');
+    [XL, YL, ~, ~, ~, ~, ~, stats] = plsregress(X, Y, d);
+    out.A = stats.W';  % Ar = W' (d x n)
+    out.B = XL;          % Br = P (n x d)
+    out.C = YL';          % Cr = Q' (d x q)
+    out.Z = X*out.A';
+    Xhat = out.Z*[out.B; out.C']';
+    out.error = sum(sum((Xbar-Xhat).^2,2));
+    out.R2 = diag(corr(Xbar,Xhat)).^2;
+elseif opts.analytic
     % Generalises to 2D or 3D by taking the top d eigenvectors of
     % [Xtilde;Y][Xtilde;Y]' (spec §5.1.1). The performance-reconstruction
     % cost weight (spec §5.4) is folded in via weighted PCA: the Y block is

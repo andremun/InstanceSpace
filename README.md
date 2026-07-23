@@ -74,8 +74,14 @@ The script ```example.m``` constructs a structure that contains all the settings
 
 The toolkit uses PILOT as a dimensionality reduction method, with [BFGS](https://en.wikipedia.org/wiki/Broyden-Fletcher-Goldfarb-Shanno_algorithm) as numerical solver. Technical details about it can be found [here](https://doi.org/10.1007/s10994-017-5629-5).
 
--	```opts.pilot.analytic``` determines whether the analytic (set as ```TRUE```) or the numerical (set as ```FALSE```) solution to the dimensionality reduction problem should be used. We recommend to leave this setting as ```FALSE```, due to the instability of the analytical solution due to possible poor-conditioning.
+-	```opts.pilot.analytic``` determines whether the analytic (set as ```TRUE```) or the numerical (set as ```FALSE```) solution to the dimensionality reduction problem should be used. We recommend to leave this setting as ```FALSE```, due to the instability of the analytical solution due to possible poor-conditioning. Only applies when ```opts.pilot.method = 'standard'```.
 -	```opts.pilot.ntries``` number of iterations that the numerical solution is attempted.
+-	```opts.pilot.dims``` projection dimensionality, ```2``` (default) or ```3```. Replaces the legacy boolean ```opts.pilot.ISA3D```, which is still accepted as an alias (```ISA3D = true``` maps to ```dims = 3```). A 3D projection lets you additionally call ```PILOTviewpoint``` to find the best 2D camera angle(s) onto it (see below).
+-	```opts.pilot.method``` selects the projection algorithm: ```'standard'``` (default) is the BFGS/analytic method described above; ```'pls'``` uses Partial Least Squares ([```plsregress```](https://au.mathworks.com/help/stats/plsregress.html)) instead, which maximises covariance between the projection and the performance matrix and does not require the feature matrix to be full column rank. Both methods work at 2D or 3D via ```opts.pilot.dims```.
+-	```opts.pilot.alpha``` (default ```1.0```) scales the performance-reconstruction term of PILOT's cost function relative to the feature-reconstruction term, for ```opts.pilot.method = 'standard'``` only: `min ||F̃-BrZ||² + α||Y-CrZ||²`. Increase it to emphasise performance trends over feature trends in the projection.
+-	```opts.pilot.topoWeight``` (default ```0```, disabled) is reserved for future experimental use and has no effect in the current version.
+
+When ```opts.pilot.dims = 3```, ```buildIS``` automatically calls ```PILOTviewpoint(Z, Y, opts.pilot)``` to find the best 2D camera viewpoint(s) of the 3D projection, storing the result in ```model.pilot.viewpoint```. By default one viewpoint is found across all algorithms; ```opts.pilot.viewGroups``` (a cell array of algorithm index vectors, e.g. ```{[1 2 3], [4 5 6]}```) requests one viewpoint per group instead, useful for inspecting a subset of algorithms in isolation.
 
 ### Empirical bound estimation settings.
 

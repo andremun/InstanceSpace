@@ -49,8 +49,14 @@ if size(Z,1) ~= size(Y,1)
 end
 if ~isfield(opts, 'viewGroups') || isempty(opts.viewGroups)
     groups = {1:size(Y,2)};
-else
+elseif iscell(opts.viewGroups)
     groups = opts.viewGroups;
+else
+    % jsondecode collapses a JSON array of equal-length arrays into a
+    % plain numeric matrix instead of a cell array, so opts.viewGroups
+    % may arrive this way after an options.json round-trip. Treat each
+    % row as one group.
+    groups = num2cell(opts.viewGroups, 2);
 end
 
 LAMBDA = 0.2; % paper-calibrated orthogonality penalty weight (spec 5.2)

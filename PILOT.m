@@ -1,5 +1,6 @@
 function out = PILOT(X, Y, featlabels, opts)
 if ~isfield(opts, 'verbose'), opts.verbose = true; end
+if ~isfield(opts, 'ISA3D'),   opts.ISA3D   = false; end
 % -------------------------------------------------------------------------
 % PILOT.m
 % -------------------------------------------------------------------------
@@ -42,53 +43,58 @@ if opts.analytic && rank(X) < size(X,2)
     opts.analytic = false;
 end
 
-if opts.analytic && ~opts.ISA3D
-    fprintf('  -> PILOT is solving analyticaly the projection problem.\n');
-    fprintf('  -> This won''t take long.\n');
-    Xbar = Xbar';
-    X = X';
-    [V,D] = eig(Xbar*Xbar');
+if opts.analytic
+    % Generalises to 2D or 3D by taking the top d eigenvectors of
+    % [Xtilde;Y][Xtilde;Y]' (spec §5.1.1); d=2 and d=3 share the same
+    % derivation, only the eigenvector count differs.
+    d = 2 + opts.ISA3D;
+    fprintf('[PILOT] PILOT is solving analytically the projection problem.\n');
+    fprintf('[PILOT] This won''t take long.\n');
+    XbarT = Xbar';           % (m x ninst): features+performance as rows
+    Xt    = X';              % (n x ninst): features as rows
+    [V,D] = eig(XbarT*XbarT');
     [~,idx] = sort(abs(diag(D)),'descend');
-    V = V(:,idx(1:2));
-    out.B = V(1:n,:);
-    out.C = V(n+1:m,:)';
-    Xr = X'/(X*X');
-    out.A = V'*Xbar*Xr;
-    out.Z = out.A*X;
-    Xhat = [out.B*out.Z; out.C'*out.Z];
-    out.error = sum(sum((Xbar-Xhat).^2,2));
-    out.R2 = diag(corr(Xbar',Xhat')).^2;
+    V = V(:,idx(1:d));        % top-d eigenvectors, (m x d)
+    out.B = V(1:n,:);          % (n x d)
+    out.C = V(n+1:m,:)';       % (d x q)
+    Xr = Xt'/(Xt*Xt');          % pseudo-inverse of Xt (rank-checked above), (ninst x n)
+    out.A = V'*XbarT*Xr;         % (d x n)
+    Zt = out.A*Xt;                % (d x ninst)
+    out.Z = Zt';                  % (ninst x d) -- matches the numerical branch's convention
+    Xhat = [out.B*Zt; out.C'*Zt]; % (m x ninst), same orientation as XbarT
+    out.error = sum(sum((XbarT-Xhat).^2,2));
+    out.R2 = diag(corr(XbarT',Xhat')).^2;
 else
     if isfield(opts,'alpha') && isnumeric(opts.alpha) && ...
                 size(opts.alpha,1)==2*m+2*n && size(opts.alpha,2)==1
-        fprintf('  -> PILOT is using a pre-calculated solution.\n');
+        fprintf('[PILOT] PILOT is using a pre-calculated solution.\n');
         idx = 1;
         out.alpha = opts.alpha;
     elseif isfield(opts,'alpha') && isnumeric(opts.alpha) && opts.ISA3D && ...
                 size(opts.alpha,1)==3*m+3*n && size(opts.alpha,2)==1
-        fprintf('  -> PILOT3D is using a pre-calculated solution.\n');
+        fprintf('[PILOT] PILOT3D is using a pre-calculated solution.\n');
         idx = 1;
         out.alpha = opts.alpha; 
     else
         if isfield(opts,'X0') && isnumeric(opts.X0) && ...
                 size(opts.X0,1)==2*m+2*n && size(opts.X0,2)>=1
-            fprintf('  -> PILOT is using a user defined starting points for BFGS.\n');
+            fprintf('[PILOT] PILOT is using a user defined starting points for BFGS.\n');
             X0 = opts.X0;
             opts.ntries = size(opts.X0,2);
         elseif isfield(opts,'X0') && isnumeric(opts.X0) && opts.ISA3D && ...
                 size(opts.X0,1)==3*m+3*n && size(opts.X0,2)>=1
-            fprintf('  -> PILOT3D is using a user defined starting points for BFGS.\n');
+            fprintf('[PILOT] PILOT3D is using a user defined starting points for BFGS.\n');
             X0 = opts.X0;
             opts.ntries = size(opts.X0,2);
         else
             if opts.ISA3D
-                fprintf('  -> PILOT3D is using a random starting points for BFGS.\n');
+                fprintf('[PILOT] PILOT3D is using a random starting points for BFGS.\n');
                 state = rng;
                 rng('default');
                 X0 = 2*rand(3*m+3*n, opts.ntries)-1;
                 rng(state);
             else
-                fprintf('  -> PILOT is using a random starting points for BFGS.\n');
+                fprintf('[PILOT] PILOT is using a random starting points for BFGS.\n');
                 state = rng;
                 rng('default');
                 X0 = 2*rand(2*m+2*n, opts.ntries)-1;
@@ -102,10 +108,8 @@ else
         end
         eoptim = zeros(1, opts.ntries);
         perf = zeros(1, opts.ntries);
-        fprintf('-------------------------------------------------------------------------\n');
-        fprintf('  -> PILOT is solving numerically the projection problem.\n');
-        fprintf('  -> This may take a while. Trials will not be run sequentially.\n');
-        fprintf('-------------------------------------------------------------------------\n');
+        fprintf('[PILOT] PILOT is solving numerically the projection problem.\n');
+        fprintf('[PILOT] This may take a while. Trials will not be run sequentially.\n');
         parfor (i=1:opts.ntries,nworkers)
             [alpha(:,i),eoptim(i)] = fminunc(errorfcn, X0(:,i), ...
                                              optimoptions('fminunc','Algorithm','quasi-newton',...
@@ -121,7 +125,7 @@ else
             Z = X*A';
             perf(i) = corr(Hd,pdist(Z)');
             if opts.verbose
-                fprintf('    -> PILOT has completed trial %d\n', i);
+                fprintf('[PILOT] PILOT has completed trial %d\n', i);
             end
         end
         out.X0 = X0;
@@ -151,8 +155,7 @@ else
     end
 end
 
-fprintf('-------------------------------------------------------------------------\n');
-fprintf('  -> PILOT has completed. The projection matrix A is:\n');
+fprintf('[PILOT] PILOT has completed. The projection matrix A is:\n');
 if opts.ISA3D 
     out.summary = cell(4, n+1);
     out.summary(2:end,1) = {'Z_{1}','Z_{2}','Z_{3}'};
@@ -161,7 +164,6 @@ else
     out.summary(2:end,1) = {'Z_{1}','Z_{2}'};
 end
 out.summary(1,2:end) = featlabels;
-% out.summary(2:end,1) = {'Z_{1}','Z_{2}'};
 out.summary(2:end,2:end) = num2cell(round(out.A,4));
 fprintf('\n');
 disp(out.summary);

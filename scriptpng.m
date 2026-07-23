@@ -24,8 +24,7 @@ Yglb = (Yglb-min(Yglb(:)))./range(Yglb(:));
 Yfoot = container.data.Ybin;
 Pfoot = container.data.P;
 % -------------------------------------------------------------------------
-fprintf('=========================================================================\n');
-fprintf('-> Producing the plots.\n');
+fprintf('[OUTPUT] Producing the plots.\n');
 % -------------------------------------------------------------------------
 % Drawing feature plots
 for i=1:nfeats
@@ -55,16 +54,16 @@ for i=1:nalgos
                               strrep(container.data.algolabels{i},'_',' '));
         print(gcf,'-dpng',[rootdir 'binary_performance_' container.data.algolabels{i} '.png']);
     catch
-        fprintf('No binary performance has been calculated.\n');
+        fprintf('[OUTPUT] No binary performance has been calculated.\n');
     end
-    % Drawing the SVM's predictions of good performance
+    % Drawing the classifier's predictions of good performance
     try
         clf;
         drawBinaryPerformance(container.pilot.Z, container.pythia.Yhat(:,i), ...
                               strrep(container.data.algolabels{i},'_',' '));
-        print(gcf,'-dpng',[rootdir 'binary_svm_' container.data.algolabels{i} '.png']);
+        print(gcf,'-dpng',[rootdir 'binary_classifier_' container.data.algolabels{i} '.png']);
     catch
-        fprintf('No SVM model has been trained.\n');
+        fprintf('[OUTPUT] No classifier predictions are available.\n');
     end
     % Drawing the footprints for good and bad performance acording to the
     % binary measure 
@@ -76,7 +75,7 @@ for i=1:nalgos
                              strrep(container.data.algolabels{i},'_',' '));
         print(gcf,'-dpng',[rootdir 'footprint_' container.data.algolabels{i} '.png']);
     catch
-        fprintf('No Footprint has been calculated.\n');
+        fprintf('[OUTPUT] No Footprint has been calculated.\n');
     end
 end
 % ---------------------------------------------------------------------

@@ -19,10 +19,12 @@ function out = TRACE(Z, Ybin, Yhat, P, beta, algolabels, opts, trainedTrace)
 %     opts       - struct with fields (see ISAdefaults for defaults):
 %                    method        'trace3' (default) or 'legacy'
 %                    PI            minimum purity threshold (0.6)
-%                    nn            (unused; reserved for future KNN fallback)
-%                    prior         (unused; reserved for future KNN fallback)
-%                  Note: in TRACE3, if Yhat is empty, Zu = {yi=1} directly;
-%                  there is no KNN fallback in this version.
+%                  Note: PYTHIA always runs before TRACE in this pipeline (mandatory
+%                  coupling, spec §4.5), so TRACE never trains its own KNN classifier
+%                  (spec §4.3 steps 1-2 describe that as the general algorithm, but it
+%                  is superseded whenever PYTHIA has already produced predictions,
+%                  which is always). If Yhat is empty/skipped, Zu = {yi=1} directly
+%                  with a warning; there is no KNN-training fallback in this version.
 %                    minInstances  minimum instances for a valid footprint (4)
 %                    minAreaFrac   footprint must exceed this fraction of space (0.01)
 %                    contra        contradiction removal; legacy only; default true
@@ -57,7 +59,11 @@ if useLegacy && is3D
         'Legacy TRACE does not support 3D instance spaces; switching to TRACE3.');
     useLegacy = false;
 end
-pythiaAvailable = ~isempty(Yhat);
+% opts.pythiaSkip is set by buildIS.m when opts.pythia.skip=true. It must be
+% checked explicitly: PYTHIA's skip-mode Yhat is a full-shape false(...)
+% placeholder (not []), so isempty(Yhat) alone never detects the skip case.
+pythiaSkipped   = isfield(opts, 'pythiaSkip') && opts.pythiaSkip;
+pythiaAvailable = ~isempty(Yhat) && ~pythiaSkipped;
 
 % -------------------------------------------------------------------------
 % Space measure from convex hull of all instances (computed once).
@@ -73,7 +79,7 @@ if is3D; measureLabel = 'Volume'; else; measureLabel = 'Area'; end
 % EVALUATION MODE: re-score trained footprints on new instances
 % =========================================================================
 if isEvalMode
-    fprintf('  -> TRACE is evaluating trained footprints on new instances.\n');
+    fprintf('[TRACE] TRACE is evaluating trained footprints on new instances.\n');
     out = trainedTrace;
     % Normalise backward-compat: old models stored .area instead of .measure
     if ~isfield(trainedTrace.space, 'measure')
@@ -100,7 +106,7 @@ if isEvalMode
     end
     out.hard    = TRACErescore(trainedTrace.hard, Z, ~beta, is3D);
     out.summary = TRACEsummaryTable(out.good, out.best, algolabels, trainedTrace.space);
-    fprintf('  -> Evaluation complete.\n');
+    fprintf('[TRACE] Evaluation complete.\n');
     return;
 end
 
@@ -108,14 +114,13 @@ end
 % TRAINING MODE — LEGACY
 % =========================================================================
 if useLegacy
-    fprintf('-------------------------------------------------------------------------\n');
-    fprintf('  -> TRACE (legacy) is building footprints.\n');
+    fprintf('[TRACE] TRACE (legacy) is building footprints.\n');
     % Contradiction removal defaults to true for legacy (spec 4.1)
     useContra = ~isfield(opts, 'contra') || opts.contra;
     out = TRACE_legacy(Z, Ybin, P, beta, algolabels, opts, useContra);
     out = normalizeLegacyOut(out, measureLabel, nalgos);
     out.summary = TRACEsummaryTable(out.good, out.best, algolabels, out.space);
-    fprintf('  -> TRACE (legacy) has completed. Footprint analysis results:\n\n');
+    fprintf('[TRACE] TRACE (legacy) has completed. Footprint analysis results:\n\n');
     disp(out.summary);
     return;
 end
@@ -123,15 +128,14 @@ end
 % =========================================================================
 % TRAINING MODE — TRACE3 (default)
 % =========================================================================
-fprintf('-------------------------------------------------------------------------\n');
-fprintf('  -> TRACE3 is calculating the space %s and density.\n', lower(measureLabel));
+fprintf('[TRACE] TRACE3 is calculating the space %s and density.\n', lower(measureLabel));
 out.space.measure      = spaceArea;
 out.space.measureLabel = measureLabel;
 out.space.elements     = size(Z, 1);
 out.space.density      = out.space.elements / spaceArea;
 out.space.purity       = 1;
 out.space.polygon      = [];
-fprintf('    -> Space %s: %s | Space density: %s\n', ...
+fprintf('[TRACE] Space %s: %s | Space density: %s\n', ...
     measureLabel, num2str(spaceArea), num2str(out.space.density));
 
 if ~pythiaAvailable
@@ -147,31 +151,28 @@ else
     nworkers = 0;
 end
 
-fprintf('-------------------------------------------------------------------------\n');
-fprintf('  -> TRACE3 is calculating the algorithm footprints.\n');
+fprintf('[TRACE] TRACE3 is calculating the algorithm footprints.\n');
 good = cell(1, nalgos);
 best = cell(1, nalgos);
 parfor (i = 1:nalgos, nworkers)
     t = tic;
     yhat_i = [];
     if pythiaAvailable, yhat_i = Yhat(:,i); end
-    fprintf('    -> Good performance footprint for ''%s''\n', algolabels{i});
+    fprintf('[TRACE] Good performance footprint for ''%s''\n', algolabels{i});
     good{i} = TRACEbuild3(Z, Ybin(:,i), yhat_i, spaceArea, opts);
-    fprintf('    -> Best performance footprint for ''%s''\n', algolabels{i});
+    fprintf('[TRACE] Best performance footprint for ''%s''\n', algolabels{i});
     best{i} = TRACEbuild3(Z, P==i, yhat_i, spaceArea, opts);
-    fprintf('    -> Algorithm ''%s'' completed. Elapsed time: %.2fs\n', algolabels{i}, toc(t));
+    fprintf('[TRACE] Algorithm ''%s'' completed. Elapsed time: %.2fs\n', algolabels{i}, toc(t));
 end
 out.good = good;
 out.best = best;
 
-fprintf('-------------------------------------------------------------------------\n');
-fprintf('  -> TRACE3 is calculating the beta-footprint.\n');
+fprintf('[TRACE] TRACE3 is calculating the beta-footprint.\n');
 out.hard = TRACEbuild3(Z, ~beta, [], spaceArea, opts);
 
-fprintf('-------------------------------------------------------------------------\n');
-fprintf('  -> Preparing the summary table.\n');
+fprintf('[TRACE] Preparing the summary table.\n');
 out.summary = TRACEsummaryTable(out.good, out.best, algolabels, out.space);
-fprintf('  -> TRACE3 has completed. Footprint analysis results:\n\n');
+fprintf('[TRACE] TRACE3 has completed. Footprint analysis results:\n\n');
 disp(out.summary);
 
 end
@@ -273,7 +274,7 @@ end
 
 % =========================================================================
 function footprint = TRACEthrow3(is3D)
-fprintf('        -> There are not enough instances to calculate a footprint.\n');
+fprintf('[TRACE] There are not enough instances to calculate a footprint.\n');
 footprint.polygon      = [];
 footprint.measure      = 0;
 footprint.measureLabel = 'Area';

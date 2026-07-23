@@ -11,16 +11,23 @@ function out = CLOISTER(X, A, opts)
 %
 % -------------------------------------------------------------------------
 
-fprintf('  -> CLOISTER is using correlation to estimate a boundary for the space.\n');
+fprintf('[CLOISTER] CLOISTER is using correlation to estimate a boundary for the space.\n');
 
 nfeats = size(X,2);
 [rho,pval] = corr(X);
 rho = rho.*(pval<opts.pval);
 
-Xbnds = [min(X); max(X)];
-% Guard: if too many features, de2bi would produce an intractable matrix.
-% Use convex hull of Z as a safe fallback.
-MAX_FEATS = 20;
+% omitnan: a feature column can still carry sparse NaNs here (buildIS only
+% drops instances where every feature is NaN, and features whose NaN
+% fraction exceeds opts.prelim.nanThreshold -- a column under that
+% threshold keeps its remaining NaN entries through PRELIM/SIFTED/PILOT).
+% Without omitnan, min/max would return NaN for that column and propagate
+% through Xedge/Zedge into convhull, which errors on NaN input.
+Xbnds = [min(X,[],1,'omitnan'); max(X,[],1,'omitnan')];
+% Guard: if too many features, the bit-matrix enumeration below would
+% produce an intractable matrix. Use convex hull of Z as a safe fallback.
+if ~isfield(opts, 'maxFeatures'), opts.maxFeatures = 20; end
+MAX_FEATS = opts.maxFeatures;
 if nfeats > MAX_FEATS
     warning('ISA:CLOISTER:tooManyFeatures', ...
         'CLOISTER skipped: %d features exceeds limit of %d. Using convex hull as boundary.', ...
@@ -29,7 +36,7 @@ if nfeats > MAX_FEATS
     Kedge = convhull(Zall(:,1), Zall(:,2));
     out.Zedge  = Zall(Kedge,:);
     out.Zecorr = out.Zedge;
-    fprintf('  -> CLOISTER has completed.\n');
+    fprintf('[CLOISTER] CLOISTER has completed.\n');
     return;
 end
 % Pure-MATLAB replacement for de2bi (no Communications Toolbox required)
@@ -43,9 +50,9 @@ for i=1:ncomb
    for j=1:nfeats
        for k=j+1:nfeats
            % Check for valid points give the correlation trend
-           if rho(j,k)>opts.cthres && sign(Xedge(i,j))~=sign(Xedge(i,k))
+           if rho(j,k)>opts.corrThreshold && sign(Xedge(i,j))~=sign(Xedge(i,k))
                remove(i) = true;
-           elseif rho(j,k)<-opts.cthres && sign(Xedge(i,j))==sign(Xedge(i,k))
+           elseif rho(j,k)<-opts.corrThreshold && sign(Xedge(i,j))==sign(Xedge(i,k))
                remove(i) = true;
            end
            if remove(i)
@@ -67,10 +74,9 @@ try
     Kecorr = convhull(Zecorr(:,1),Zecorr(:,2));
     out.Zecorr = Zecorr(Kecorr,:);
 catch
-    fprintf('  -> The acceptable correlation threshold was too strict.\n');
-    fprintf('  -> The features are weakely correlated.\n');
-    fprintf('  -> Please consider increasing it.\n');
+    fprintf('[CLOISTER] The acceptable correlation threshold was too strict.\n');
+    fprintf('[CLOISTER] The features are weakly correlated.\n');
+    fprintf('[CLOISTER] Please consider increasing it.\n');
     out.Zecorr = out.Zedge;
 end
-fprintf('-------------------------------------------------------------------------\n');
-fprintf('  -> CLOISTER has completed.\n');
+fprintf('[CLOISTER] CLOISTER has completed.\n');

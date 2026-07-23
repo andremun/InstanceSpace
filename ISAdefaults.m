@@ -9,6 +9,17 @@ function opts = ISAdefaults(opts)
 if ~isfield(opts, 'general'),           opts.general           = struct; end
 if ~isfield(opts.general, 'seed'),      opts.general.seed      = 42;    end
 if ~isfield(opts.general, 'verbose'),   opts.general.verbose   = true;  end
+% Legacy: top-level opts.parallel.flag/.ncores -> opts.general.parallel/.ncores.
+if isfield(opts, 'parallel')
+    if isfield(opts.parallel, 'flag') && ~isfield(opts.general, 'parallel')
+        opts.general.parallel = opts.parallel.flag;
+    end
+    if isfield(opts.parallel, 'ncores') && ~isfield(opts.general, 'ncores')
+        opts.general.ncores = opts.parallel.ncores;
+    end
+end
+if ~isfield(opts.general, 'parallel'),  opts.general.parallel  = false; end  % conservative default; spec Appendix A default is true
+if ~isfield(opts.general, 'ncores'),    opts.general.ncores    = 18;    end
 
 % perf
 if ~isfield(opts, 'perf'),                  opts.perf                  = struct; end
@@ -16,6 +27,12 @@ if ~isfield(opts.perf, 'MaxPerf'),          opts.perf.MaxPerf          = false; 
 if ~isfield(opts.perf, 'AbsPerf'),          opts.perf.AbsPerf          = false;  end
 if ~isfield(opts.perf, 'epsilon'),          opts.perf.epsilon          = 0.05;   end
 if ~isfield(opts.perf, 'betaThreshold'),    opts.perf.betaThreshold    = 0.55;   end
+
+% prelim (buildIS-level pre-processing config; iqrMultiplier is also passed
+% into PRELIM itself, nanThreshold is read directly by buildIS beforehand)
+if ~isfield(opts, 'prelim'),                 opts.prelim                 = struct; end
+if ~isfield(opts.prelim, 'iqrMultiplier'),   opts.prelim.iqrMultiplier   = 5;      end
+if ~isfield(opts.prelim, 'nanThreshold'),    opts.prelim.nanThreshold    = 0.20;   end
 
 % auto
 if ~isfield(opts, 'auto'),              opts.auto              = struct; end
@@ -57,38 +74,59 @@ if ~isfield(opts.pilot, 'ISA3D'),       opts.pilot.ISA3D       = false;  end
 if ~isfield(opts.pilot, 'verbose'),     opts.pilot.verbose     = opts.general.verbose; end
 
 % cloister
-if ~isfield(opts, 'cloister'),          opts.cloister          = struct; end
-if ~isfield(opts.cloister, 'pval'),     opts.cloister.pval     = 0.05;   end
-if ~isfield(opts.cloister, 'cthres'),   opts.cloister.cthres   = 0.70;   end
+if ~isfield(opts, 'cloister'),              opts.cloister              = struct; end
+if ~isfield(opts.cloister, 'pval'),         opts.cloister.pval         = 0.05;   end
+% Legacy: opts.cloister.cthres -> opts.cloister.corrThreshold.
+if isfield(opts.cloister, 'cthres') && ~isfield(opts.cloister, 'corrThreshold')
+    opts.cloister.corrThreshold = opts.cloister.cthres;
+end
+if ~isfield(opts.cloister, 'corrThreshold'),opts.cloister.corrThreshold= 0.70;   end
+if ~isfield(opts.cloister, 'maxFeatures'),  opts.cloister.maxFeatures  = 20;     end
 
 % pythia
-if ~isfield(opts, 'pythia'),                opts.pythia                = struct; end
-if ~isfield(opts.pythia, 'flag'),           opts.pythia.flag           = true;   end
-if ~isfield(opts.pythia, 'useknn'),         opts.pythia.useknn         = false;  end
-if ~isfield(opts.pythia, 'cvfolds'),        opts.pythia.cvfolds        = 5;      end
-if ~isfield(opts.pythia, 'ispolykrnl'),     opts.pythia.ispolykrnl     = false;  end
-if ~isfield(opts.pythia, 'useweights'),     opts.pythia.useweights     = false;  end
-if ~isfield(opts.pythia, 'uselibsvm'),      opts.pythia.uselibsvm      = false;  end
-if ~isfield(opts.pythia, 'verbose'),        opts.pythia.verbose        = opts.general.verbose; end
+if ~isfield(opts, 'pythia'),                   opts.pythia                   = struct;                   end
+if ~isfield(opts.pythia, 'flag'),              opts.pythia.flag              = true;                    end
+% Legacy: opts.pythia.cvfolds -> opts.pythia.kFold.
+if isfield(opts.pythia, 'cvfolds') && ~isfield(opts.pythia, 'kFold')
+    opts.pythia.kFold = opts.pythia.cvfolds;
+end
+if ~isfield(opts.pythia, 'kFold'),             opts.pythia.kFold             = 5;                      end
+if ~isfield(opts.pythia, 'tuning'),            opts.pythia.tuning            = 'sobol';                 end
+if ~isfield(opts.pythia, 'nTuningIter'),       opts.pythia.nTuningIter       = 20;                     end
+if ~isfield(opts.pythia, 'params'),            opts.pythia.params            = [];                     end
+if ~isfield(opts.pythia, 'skip'),              opts.pythia.skip              = false;                   end
+if ~isfield(opts.pythia, 'ispolykrnl'),        opts.pythia.ispolykrnl        = false;                  end
+if ~isfield(opts.pythia, 'useweights'),        opts.pythia.useweights        = false;                  end
+if ~isfield(opts.pythia, 'ensembleMethod'),    opts.pythia.ensembleMethod    = 'Bag';                  end
+if ~isfield(opts.pythia, 'verbose'),           opts.pythia.verbose           = opts.general.verbose;   end
+if ~isfield(opts.pythia, 'seed'),              opts.pythia.seed              = opts.general.seed;      end
+% classifier: registry name ('knn' default). Honour legacy useknn flag.
+if ~isfield(opts.pythia, 'classifier')
+    if isfield(opts.pythia, 'useknn') && ~opts.pythia.useknn
+        opts.pythia.classifier = 'svm';
+    else
+        opts.pythia.classifier = 'knn';
+    end
+end
 
 % trace
+% Note: no nn/prior fields. PYTHIA always runs before TRACE (mandatory coupling,
+% spec §4.5), so TRACE never trains its own KNN classifier; a per-algorithm
+% opts.trace.nn/prior configuration for that purpose would never be read.
 if ~isfield(opts, 'trace'),                     opts.trace                     = struct;    end
 if ~isfield(opts.trace, 'method'),              opts.trace.method              = 'trace3';  end
 if ~isfield(opts.trace, 'PI'),                  opts.trace.PI                  = 0.6;       end
-if ~isfield(opts.trace, 'nn'),                  opts.trace.nn                  = 50;        end  % legacy only
-if ~isfield(opts.trace, 'prior'),               opts.trace.prior               = [0.6,0.4]; end  % legacy only
 if ~isfield(opts.trace, 'minInstances'),        opts.trace.minInstances        = 4;         end
 if ~isfield(opts.trace, 'minAreaFrac'),         opts.trace.minAreaFrac         = 0.01;      end
+if ~isfield(opts.trace, 'contra')
+    % Contradiction removal defaults to true only for the legacy method (spec §4.1).
+    opts.trace.contra = strcmpi(opts.trace.method, 'legacy');
+end
 
 % outputs
 if ~isfield(opts, 'outputs'),           opts.outputs           = struct; end
 if ~isfield(opts.outputs, 'csv'),       opts.outputs.csv       = true;   end
 if ~isfield(opts.outputs, 'png'),       opts.outputs.png       = true;   end
 if ~isfield(opts.outputs, 'web'),       opts.outputs.web       = false;  end
-
-% parallel
-if ~isfield(opts, 'parallel'),          opts.parallel          = struct; end
-if ~isfield(opts.parallel, 'flag'),     opts.parallel.flag     = false;  end
-if ~isfield(opts.parallel, 'ncores'),   opts.parallel.ncores   = 18;     end
 
 end

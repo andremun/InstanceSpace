@@ -32,11 +32,13 @@ Or if you specifically use [MATILDA](http://matilda.unimelb.edu.au/matilda/), pl
 
 ## Installation Instructions
 
-The main requirement for the software to run is to have a current version of [MATLAB](http://www.mathworks.com), with the [Communications](https://au.mathworks.com/products/communications.html), [Financial](https://au.mathworks.com/products/finance.html), [Global Optimization](https://au.mathworks.com/help/gads/index.html), [Parallel Computing](https://www.mathworks.com/products/parallel-computing.html), [Optimization](https://au.mathworks.com/products/optimization.html), and [Statistics and Machine Learning](https://au.mathworks.com/help/stats/index.html) toolboxes installed. It has been tested and known to work properly in Windows 10 with MATLAB version r2018b. Earlier versions of MATLAB may fail to support several functions being used. Although compiled MEX-files for external libraries, such as [LIBSVM](https://www.csie.ntu.edu.tw/~cjlin/libsvm/), are being provided for Windows, these must be downloaded and compiled for the appropriate environment.
+The main requirement for the software to run is to have MATLAB R2025a or later, with the [Global Optimization](https://au.mathworks.com/help/gads/index.html), [Parallel Computing](https://www.mathworks.com/products/parallel-computing.html), [Optimization](https://au.mathworks.com/products/optimization.html), and [Statistics and Machine Learning](https://au.mathworks.com/help/stats/index.html) toolboxes installed. The Communications and Financial toolboxes are **not** required (an earlier version used the Communications Toolbox's `de2bi`; it has since been replaced with a pure-MATLAB equivalent). LIBSVM support is deprecated: new runs always use MATLAB's native classifier registry (```opts.pythia.classifier```), so the LIBSVM MEX-files are only needed to load and migrate models saved by a pre-v1.7 version of the toolkit (see `ISAmigrateModel`).
 
 ## Working with the code
 
-The main interfase is the script ```example.m``` which provides the path for the ```metadata.csv``` file, and constructs the ```options.json``` file. The path provided will also be the location of all the software outputs, such as images (in ```.png``` format), tables (in ```.csv``` format) and raw intermediate data (in ```.mat``` format).
+The main interface is the script ```example.m```, which runs a suite of pipeline configurations (different classifiers, tuning strategies, 2D/3D projection, feature selection on/off, etc.) against the reference dataset in ```test/data/```. Each configuration gets its own subdirectory (e.g. ```test/data/classifier_svm/```), which becomes the location of that run's software outputs: images (```.png```), tables (```.csv```), and raw intermediate data (```.mat```).
+
+**```options.json``` is a generated artifact, not a source file.** Each test case in ```example.m``` writes its own ```options.json``` into its output subdirectory from the ```opts``` struct built in MATLAB, every time the script runs. Hand-editing an ```options.json``` file has no lasting effect — the next run of ```example.m``` silently overwrites it. To change what gets run, edit ```example.m``` (the ```defaultOpts()``` local function for shared settings, or a specific test case's ```override``` function).
 
 ## The metadata file
 
@@ -49,6 +51,8 @@ The ```metadata.csv``` file should contain a table where each row corresponds to
 
 Moreover, empty cells, NaN or null values are allowed but **not recommended**. We expect you to handle missing values in your data before processing. You may use [this file](https://matilda.unimelb.edu.au/matilda/matildadata/graph_coloring_problem/metadata/metadata.csv) as reference.
 
+**Common data-preparation mistake**: using `NA` instead of `NaN`, or leaving Excel error codes (`#REF!`, `#NULL!`, `#DIV/0!`) or empty rows in the sheet. Any of these cause `readtable` to infer a column as text (`string`/`cell`) instead of numeric (`double`), which will crash the pipeline downstream rather than failing with a clear error at load time.
+
 ## Options
 
 The script ```example.m``` constructs a structure that contains all the settings used by the code. Broadly, there are settings required for the analysis itself, settings for the pre-processing of the data, and output settings. For the first these are divided into general, dimensionality reduction, bound estimation, algorithm selection and footprint construction settings. For the second, the toolkit has routines for bounding outliers, scale the data and select features.
@@ -58,9 +62,9 @@ The script ```example.m``` constructs a structure that contains all the settings
 -	```opts.perf.MaxPerf``` determines whether the algorithm performance values provided are **efficiency** measures that should be maximised (set as ```TRUE```), or **cost** measures that should be minimised (set as ```FALSE```).
 -	```opts.perf.AbsPerf``` determines whether good performance is defined absolutely, e.g., misclassification error is lower than a 20%, (set as ```TRUE```), or if it is defined relatively to the best performing algorithm, e.g., misclassification error is within at least 5% of the best algorithm, (set as ```FALSE```).
 -	```opts.perf.epsilon``` corresponds to the threshold used to calculate good performance. It must be of the type "Double".
--	```opts.general.betaThreshold``` corresponds to the fraction of algorithms in the portfolio that must have good performance in the instance, for it to be considered an **easy** instance. It must be a value between 0 and 1.
-- ```opts.parallel.flag``` determines whether parallel processing will be available (set as ```TRUE```), or not (set as ```FALSE```). The toolkit makes use of MATLAB's [```parpool```](https://au.mathworks.com/help/parallel-computing/parpool.html) functionality to create a multisession environment in the local machine.
-- ```opts.parallel.ncores``` number of available cores for parallel procesing.
+-	```opts.perf.betaThreshold``` corresponds to the fraction of algorithms in the portfolio that must have good performance in the instance, for it to be considered an **easy** instance. It must be a value between 0 and 1.
+- ```opts.general.parallel``` determines whether parallel processing will be available (set as ```TRUE```), or not (set as ```FALSE```). The toolkit makes use of MATLAB's [```parpool```](https://au.mathworks.com/help/parallel-computing/parpool.html) functionality to create a multisession environment in the local machine.
+- ```opts.general.ncores``` number of available cores for parallel processing.
 -	```opts.selvars.smallscaleflag``` by setting this flag as ```TRUE```, you can carry out a small scale experiment using a randomly selected fraction of the original data. This is useful if you have a large dataset with more than 1000 instances, and you want to explore the parameters of the model.
 -	```opts.selvars.smallscale``` fraction taken from the original data on the small scale experiment.
 -	```opts.selvars.fileidxflag``` by setting this flag as ```TRUE```, you can carry out a small scale experiment. This time you must provide a ```.csv``` file that contains in one column the indices of the instances to be taken. This may be useful if you want to make a more controlled experiment than just randomly selecting instances.
@@ -77,32 +81,41 @@ The toolkit uses PILOT as a dimensionality reduction method, with [BFGS](https:/
 
 The toolkit uses CLOISTER, an algorithm based on correlation to detect the empirical bounds of the Instance Space.
 
-- ```opts.cloister.cthres``` Determines the maximum [Pearson correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) that would indicate non-correlated variables. The lower this value is, the more stringent is the algorithm; hence, it would be less likely to produce a good bound.
+- ```opts.cloister.corrThreshold``` Determines the maximum [Pearson correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) that would indicate non-correlated variables. The lower this value is, the more stringent is the algorithm; hence, it would be less likely to produce a good bound.
 - ```opts.cloister.pval``` Determines the p-value of the Pearson correlation coefficient that indicates no correlation.
 
 ###  Algorithm selection settings
 
-The toolkit uses SVMs with radial basis kernels as algorithm selection models, through MATLAB's Statistics and Machine Learning Toolbox or [LIBSVM](https://www.csie.ntu.edu.tw/~cjlin/libsvm/).
+The toolkit selects one binary classifier per algorithm (good/not-good performance) from a registry of MATLAB-native classifiers, resolved via `ISAgetClassifierFcn`. **LIBSVM is deprecated for new runs**: `buildIS` never dispatches to it. `ISAmigrateModel` (see below) only renames legacy field names on an old model (e.g. `.svm`/`.knn` → `.classifiers`) — it does **not** retrain anything. A migrated model whose classifiers are still legacy LIBSVM structs can still be evaluated through `exploreIS`/`PYTHIA` eval mode (which dispatches to `svmpredict` when it detects a struct instead of a MATLAB classifier object), but this requires the LIBSVM MEX-files to be present; retrain from scratch with `buildIS` if you want to drop that dependency entirely.
 
-- ```opts.pythia.uselibsvm``` determines whether to use LIBSVM (set as ```TRUE```) or MATLAB's implementation of an SVM, depending on which a different method is used to fine tune the parameters. For the former, tuning is achieved using 30 iterations of the random search algorithm, usinga Latin Hyper-cube design bounded between <img src="https://render.githubusercontent.com/render/math?math=\left[2^{-10},\ 2^{4}\right]"> as sample points, withk-fold stratified cross-validation (CV), and using model error as the loss function. On the other hand, for the latter, tuning is achieved using 30 iterations of the Bayesian Optimization algorithm bounded between <img src="https://render.githubusercontent.com/render/math?math=\left[2^{-10},\ 2^{4}\right]">, with k-fold stratified CV.
--	```opts.pythia.cvfolds``` number of folds of the CV experiment.
--	```opts.pythia.ispolykrnl``` determines whether to use a polynomial (set as ```TRUE```) or Gaussian (set as ```FALSE```) kernel. Usually, the latter one is significantly faster to calculate and more accurate; however, it also has the disadvantage of producing discontinuous areas of good performance which may look overfitted. We tend to recommend a polynomial kernel if the dataset is higher than 1000 instances.
+- ```opts.pythia.classifier``` selects the classifier: ```'knn'``` (default, via `fitcknn`), ```'svm'``` (`fitcsvm`), ```'tree'``` (`fitctree`), ```'nb'``` (Naive Bayes, `fitcnb`), ```'linear'``` (`fitclinear`), or ```'ensemble'``` (`fitcensemble`; see ```opts.pythia.ensembleMethod```, default ```'Bag'```). All algorithms in the portfolio use the same classifier.
+- ```opts.pythia.tuning``` selects the hyperparameter search strategy: ```'sobol'``` (default; a scrambled Sobol quasi-random sequence, ```opts.pythia.nTuningIter``` evaluations with k-fold CV), ```'bayes'``` (MATLAB `bayesopt`, Gaussian-process surrogate, same evaluation budget and CV), or ```'none'``` (use ```opts.pythia.params``` directly, skipping tuning).
+- ```opts.pythia.nTuningIter``` number of Sobol/Bayes evaluations (default 20).
+- ```opts.pythia.kFold``` number of folds of the CV experiment.
+- ```opts.pythia.params``` pre-calculated hyperparameters; required when ```opts.pythia.tuning = 'none'```, and always takes precedence over tuning when supplied. Shape depends on ```opts.pythia.classifier```: ```[nalgos x 1]``` for the single-parameter classifiers (```'tree'```, ```'nb'```, ```'linear'```), or ```[nalgos x 2]``` for the two-parameter ones (```'knn'```, ```'svm'```, ```'ensemble'```).
+- ```opts.pythia.skip``` bypasses classifier training entirely (TRACE then falls back to the true labels directly, with a warning).
+- ```opts.pythia.ispolykrnl``` (SVM only) determines whether to use a polynomial (set as ```TRUE```) or Gaussian (set as ```FALSE```) kernel. Usually, the latter one is significantly faster to calculate and more accurate; however, it also has the disadvantage of producing discontinuous areas of good performance which may look overfitted. We tend to recommend a polynomial kernel if the dataset is higher than 1000 instances.
 - ```opts.pythia.useweights``` determines whether weighted (set as ```TRUE```) or unweighted (set as ```FALSE```) classification is performed. The weights are calculated as <img src="https://render.githubusercontent.com/render/math?math=\left|y_{\text{best}}-y\right|">.
+
+**Removed options** (no longer read by the toolkit; kept here only so old ```options.json```/```example.m``` files can be understood): ```opts.pythia.uselibsvm``` and ```opts.pythia.useknn``` — superseded by ```opts.pythia.classifier```. Existing ```model.mat``` files using the old fields can be updated with `ISAmigrateModel`.
 
 ### Footprint construction settings
 
-The toolkit uses TRACE, an algorithm based on MATLAB's [```polyshapes```](https://au.mathworks.com/help/matlab/ref/polyshape.html) to define the regions in the space where we statistically infer good algorithm performance. The polyshapes are then pruned to remove those sections for which the evidence, as defined by a minimum purity value, is poor or non-existing.
+The toolkit uses TRACE3, an algorithm based on MATLAB's [```alphaShape```](https://au.mathworks.com/help/matlab/ref/alphashape.html) to define the regions in the space where we statistically infer good algorithm performance, applicable to both 2D and 3D instance spaces. TRACE3 always reuses PYTHIA's predicted labels for the good-performance region (`Zu = {z_i : yhat_i=1 AND ybin_i=1}`) rather than retraining its own classifier — this coupling is unconditional and not configurable. When ```opts.pythia.skip = true```, TRACE falls back to the true labels only (`Zu = {z_i : ybin_i=1}`), with a warning.
 
--	```opts.trace.usesim``` makes use of the actual (set as ```FALSE```) or simulated data from the SVM results (set as ```TRUE```) to produce the footprints.
--	```opts.trace.PI``` minimum purity required for a section of a footprint.
+- ```opts.trace.method``` selects ```'trace3'``` (default, above) or ```'legacy'``` (the pre-refactor DBSCAN + alpha-shape triangulation method, 2D only).
+- ```opts.trace.PI``` minimum purity required for a section of a footprint.
+
+**Removed option**: ```opts.trace.usesim``` — the PYTHIA/TRACE coupling described above is now unconditional, so there is no "simulated vs. actual data" switch to configure.
 
 ### Automatic data bounding and scaling
 
 The toolkit implements simple routines to bound outliers and scale the data. **These routines are by no means perfect, and users should pre-process their data independently if preferred**. However, the automatic bounding and scaling routines should give some idea of the kind of results may be achieved. In general, we recommend that the data is transformed to become **close to normally distributed** due to the linear nature of PILOT's optimal projection algorithm.
 
 - ```opts.auto.preproc``` turns on (set as ```TRUE```) the automatic pre-processing.
-- ```opts.bound.flag``` turns on (set as ```TRUE```) data bounding. This sub-routine calculates the median and the interquartile range ([IQR](https://en.wikipedia.org/wiki/Interquartile_range)) of each feature and performance measure, and bounds the data to the median plus or minus five times the IQR.
+- ```opts.bound.flag``` turns on (set as ```TRUE```) data bounding. This sub-routine calculates the median and the interquartile range ([IQR](https://en.wikipedia.org/wiki/Interquartile_range)) of each feature and performance measure, and bounds the data to the median plus or minus ```opts.prelim.iqrMultiplier``` (default 5) times the IQR. **Warning**: this sub-routine often has issues with features that have low value diversity (e.g. most instances share the exact same value), since the IQR can collapse to zero. Consider either removing such features or setting ```opts.bound.flag = false```.
 - ```opts.norm.flag``` turns on (set as ```TRUE```) scalling. This sub-routine scales into a positive range each feature and performance measure. Then it calculates a [box-cox transformation](https://en.wikipedia.org/wiki/Power_transform#Box%E2%80%93Cox_transformation) to stabilise the variance, and a [Z-transformation](https://en.wikipedia.org/wiki/Standard_score) to standarise the data. The result are features and performance measures that are close to normally distributed.
+- ```opts.prelim.nanThreshold``` (default 0.20) maximum fraction of missing (```NaN```) values allowed for a feature before it is dropped entirely.
 
 ### Automatic feature selection
 

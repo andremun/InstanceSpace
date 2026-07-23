@@ -15,25 +15,24 @@ startProcess = tic;
 scriptdisc('exploreIS.m');
 % -------------------------------------------------------------------------
 % Collect all the data from the files
-fprintf('Root Directory: %s\n', rootdir);
+fprintf('[EXPLORE] Root directory: %s\n', rootdir);
 modelfile = [rootdir 'model.mat'];
 datafile = [rootdir 'metadata_test.csv'];
 if ~isfile(modelfile) || ~isfile(datafile)
     error(['Please place the datafiles in the directory ''' rootdir '''']);
 end
 model = load(modelfile);
-model.opts = ISAdefaults(model.opts);
+model = ISAmigrateModel(model);        % migrate opts.oracle->pythia, svm/knn->classifiers, etc.
+model.opts = ISAdefaults(model.opts);  % fill in any defaults absent from the saved model
 if model.opts.general.verbose
-    fprintf('-------------------------------------------------------------------------\n');
-    fprintf('Listing options used:\n');
+    fprintf('[EXPLORE] Listing options in use:\n');
     optfields = fieldnames(model.opts);
     for i = 1:length(optfields)
         fprintf('%s\n', optfields{i});
         disp(model.opts.(optfields{i}));
     end
 end
-fprintf('-------------------------------------------------------------------------\n');
-fprintf('-> Loading the data\n');
+fprintf('[EXPLORE] Loading metadata_test.csv.\n');
 Xbar = readtable(datafile);
 varlabels = Xbar.Properties.VariableNames;
 isname = strcmpi(varlabels,'instances');
@@ -92,9 +91,8 @@ out.data.Yraw = out.data.Y;
 % algorithm has a performance better than the threshold) or a relative
 % performance (the algorithm has a performance that is similar that the
 % best algorithm minus a percentage).
-fprintf('-------------------------------------------------------------------------\n');
-fprintf('-> Calculating the binary measure of performance\n');
-msg = '-> An algorithm is good if its performace is ';
+fprintf('[EXPLORE] Calculating the binary measure of performance.\n');
+msg = 'An algorithm is good if its performance is ';
 MaxPerf = false;
 if isfield(model.opts.perf, 'MaxPerf')
     MaxPerf = model.opts.perf.MaxPerf;
@@ -136,15 +134,14 @@ else
         msg = [msg 'within ' num2str(round(100.*model.opts.perf.epsilon)) '% of the best.'];
     end
 end
-fprintf('%s\n', msg);
+fprintf('[EXPLORE] %s\n', msg);
 out.data.numGoodAlgos = sum(out.data.Ybin,2);
 out.data.beta = out.data.numGoodAlgos>model.opts.perf.betaThreshold*nalgos;
 % ---------------------------------------------------------------------
 % Automated pre-processing
 if model.opts.auto.preproc && model.opts.bound.flag
-    fprintf('-------------------------------------------------------------------------\n');
-    fprintf('-> Auto-pre-processing. Bounding outliers, scaling and normalizing the data.\n');
-    fprintf('-> Removing extreme outliers from the feature values.\n');
+    fprintf('[EXPLORE] Auto-pre-processing. Bounding outliers, scaling and normalizing the data.\n');
+    fprintf('[EXPLORE] Removing extreme outliers from the feature values.\n');
     himask = bsxfun(@gt, out.data.X, model.prelim.hibound);
     lomask = bsxfun(@lt, out.data.X, model.prelim.lobound);
     out.data.X = out.data.X.*~(himask | lomask) + bsxfun(@times, himask, model.prelim.hibound) + ...
@@ -152,7 +149,7 @@ if model.opts.auto.preproc && model.opts.bound.flag
 end
 
 if model.opts.auto.preproc && model.opts.norm.flag
-    fprintf('-> Auto-normalizing the data.\n');
+    fprintf('[EXPLORE] Auto-normalizing the data.\n');
     out.data.X = bsxfun(@minus, out.data.X, model.prelim.minX) + 1;
     out.data.X(~isnan(out.data.X) & out.data.X < 1) = 1;  % clamp to training minimum
     for ii = 1:length(model.prelim.lambdaX)
@@ -206,9 +203,11 @@ out.pilot.Z = out.data.X*model.pilot.A';
 % -------------------------------------------------------------------------
 % Algorithm selection. Fit a model that would separate the space into
 % classes of good and bad performance.
-out.pythia = PYTHIAtest(model.pythia, out.pilot.Z, out.data.Yraw, ...
-                        out.data.Ybin, out.data.Ybest, ...
-                        out.data.algolabels);
+% model.opts.pythia is guaranteed here: ISAmigrateModel (line 25) has already
+% renamed opts.oracle->opts.pythia for pre-v1.7 models, and ISAdefaults (line 26)
+% fills in any missing pythia sub-fields, so this call is always safe.
+out.pythia = PYTHIA(out.pilot.Z, out.data.Yraw, out.data.Ybin, out.data.Ybest, ...
+                    out.data.algolabels, model.opts.pythia, model.pythia);
 % -------------------------------------------------------------------------
 % Validating the footprints (evaluation mode: polygons from training reused)
 out.trace = TRACE(out.pilot.Z, out.data.Ybin, out.pythia.Yhat, out.data.P, ...
@@ -228,10 +227,49 @@ if model.opts.outputs.png
     scriptpng(out,rootdir);
 end
 
-fprintf('-------------------------------------------------------------------------\n');
-fprintf('-> Storing the raw MATLAB results for post-processing and/or debugging.\n');
+fprintf('[EXPLORE] Storing the raw MATLAB results for post-processing and/or debugging.\n');
 save([rootdir 'workspace_test.mat']); % Save the full workspace for debugging
-fprintf('-> Completed! Elapsed time: %ss\n', num2str(toc(startProcess)));
+fprintf('[EXPLORE] Completed in %.1f s.\n', toc(startProcess));
 fprintf('EOF:SUCCESS\n');
+end
+
+% =========================================================================
+%  SUBFUNCTIONS
+% =========================================================================
+
+function [X, Y, out] = autoNormalize(X, Y)
+% autoNormalize  Fit and apply Box-Cox + Z-score normalisation to X and Y.
+%
+% Used only for algorithms present in the test metadata but absent from
+% the training model (out.data.Y columns modelalgos+1:nalgos): those
+% columns have no pre-fit model.prelim.lambdaY/muY/sigmaY to reuse, so a
+% fresh normalisation is fit directly on the test data for them.
+nfeats = size(X, 2);
+nalgos = size(Y, 2);
+out.minX = min(X, [], 1, 'omitnan');
+X = bsxfun(@minus, X, out.minX) + 1;
+out.lambdaX = zeros(1, nfeats);
+out.muX = zeros(1, nfeats);
+out.sigmaX = zeros(1, nfeats);
+for i = 1:nfeats
+    aux = X(:,i);
+    idx = isnan(aux);
+    [aux, out.lambdaX(i)] = boxcox(aux(~idx));
+    [aux, out.muX(i), out.sigmaX(i)] = zscore(aux);
+    X(~idx,i) = aux;
+end
+
+out.minY = min(Y(:), [], 'omitnan');
+Y = (Y - out.minY) + eps;
+out.lambdaY = zeros(1, nalgos);
+out.muY = zeros(1, nalgos);
+out.sigmaY = zeros(1, nalgos);
+for i = 1:nalgos
+    aux = Y(:,i);
+    idx = isnan(aux);
+    [aux, out.lambdaY(i)] = boxcox(aux(~idx));
+    [aux, out.muY(i), out.sigmaY(i)] = zscore(aux);
+    Y(~idx,i) = aux;
+end
 end
 % =========================================================================

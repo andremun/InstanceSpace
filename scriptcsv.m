@@ -14,8 +14,7 @@ function scriptcsv(container,rootdir)
 scriptfcn;
 
 nalgos = size(container.data.Y,2);
-fprintf('=========================================================================\n');
-fprintf('-> Writing the data on CSV files for posterior analysis.\n');
+fprintf('[OUTPUT] Writing the data on CSV files for posterior analysis.\n');
 % -------------------------------------------------------------------------
 % Determine dimensionality
 ndim = size(container.pilot.Z, 2);
@@ -99,7 +98,7 @@ end
 writeCell2CSV(container.pythia.summary(2:end,2:end), ...
               container.pythia.summary(1,2:end), ...
               container.pythia.summary(2:end,1), ...
-              [rootdir 'svm_table.csv']);
+              [rootdir 'classifier_table.csv']);
 end
 
 % =========================================================================

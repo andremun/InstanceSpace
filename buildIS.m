@@ -222,6 +222,10 @@ end
 % projection using the PILOT algorithm (Munoz et al. Mach Learn 2018)
 fprintf('[PILOT] Calling PILOT to find the optimal projection.\n');
 model.pilot = PILOT(model.data.X, model.data.Y, model.data.featlabels, opts.pilot);
+if opts.pilot.dims == 3
+    fprintf('[PILOT] Finding the optimal 2D viewpoint(s) of the 3D projection.\n');
+    model.pilot.viewpoint = PILOTviewpoint(model.pilot.Z, model.data.Y, opts.pilot);
+end
 % -------------------------------------------------------------------------
 % Finding the empirical bounds based on the ranges of the features and the
 % correlations of the different edges.

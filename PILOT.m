@@ -1,6 +1,4 @@
 function out = PILOT(X, Y, featlabels, opts)
-if ~isfield(opts, 'verbose'), opts.verbose = true; end
-if ~isfield(opts, 'ISA3D'),   opts.ISA3D   = false; end
 % -------------------------------------------------------------------------
 % PILOT.m
 % -------------------------------------------------------------------------
@@ -12,15 +10,15 @@ if ~isfield(opts, 'ISA3D'),   opts.ISA3D   = false; end
 %     2020
 %
 % -------------------------------------------------------------------------
-if ~opts.ISA3D
-    errorfcn = @(alpha,Xbar,n,m) nanmean(nanmean((Xbar-(reshape(alpha((2*n)+1:end),m,2)*... % B,C
-                                                    reshape(alpha(1:2*n),2,n)...        % A
-                                                   *Xbar(:,1:n)')').^2,1),2);
-else
-    errorfcn = @(alpha,Xbar,n,m) nanmean(nanmean(nanmean((Xbar-(reshape(alpha((3*n)+1:end),m,3)*... % B,C
-                                                    reshape(alpha(1:3*n),3,n)...        % A
-                                                   *Xbar(:,1:n)')').^2,1),2),3);
+if ~isfield(opts, 'verbose'), opts.verbose = true; end
+% Legacy: opts.ISA3D (boolean) -> opts.dims (2|3, spec Appendix A).
+if isfield(opts, 'ISA3D') && ~isfield(opts, 'dims')
+    opts.dims = 2 + double(logical(opts.ISA3D));
 end
+if ~isfield(opts, 'dims'),  opts.dims  = 2;   end
+if ~isfield(opts, 'alpha'), opts.alpha = 1.0; end % performance-reconstruction cost weight (spec 5.4)
+d = opts.dims;
+costWeight = opts.alpha;
 
 n = size(X, 2); % Number of features
 Xbar = [X Y];
@@ -45,67 +43,52 @@ end
 
 if opts.analytic
     % Generalises to 2D or 3D by taking the top d eigenvectors of
-    % [Xtilde;Y][Xtilde;Y]' (spec §5.1.1); d=2 and d=3 share the same
-    % derivation, only the eigenvector count differs.
-    d = 2 + opts.ISA3D;
+    % [Xtilde;Y][Xtilde;Y]' (spec §5.1.1). The performance-reconstruction
+    % cost weight (spec §5.4) is folded in via weighted PCA: the Y block is
+    % scaled by sqrt(costWeight) before the eigendecomposition, then C is
+    % rescaled back so it reconstructs Y in its true (unweighted) units.
+    % costWeight=1 reproduces the original unweighted derivation exactly.
     fprintf('[PILOT] PILOT is solving analytically the projection problem.\n');
     fprintf('[PILOT] This won''t take long.\n');
-    XbarT = Xbar';           % (m x ninst): features+performance as rows
-    Xt    = X';              % (n x ninst): features as rows
-    [V,D] = eig(XbarT*XbarT');
+    Xbarw = Xbar;
+    Xbarw(:,n+1:m) = sqrt(costWeight) * Xbarw(:,n+1:m);
+    XbarwT = Xbarw';          % (m x ninst): weighted features+performance as rows
+    XbarT  = Xbar';            % (m x ninst): true (unweighted) features+performance as rows
+    Xt     = X';               % (n x ninst): features as rows
+    [V,D] = eig(XbarwT*XbarwT');
     [~,idx] = sort(abs(diag(D)),'descend');
-    V = V(:,idx(1:d));        % top-d eigenvectors, (m x d)
-    out.B = V(1:n,:);          % (n x d)
-    out.C = V(n+1:m,:)';       % (d x q)
-    Xr = Xt'/(Xt*Xt');          % pseudo-inverse of Xt (rank-checked above), (ninst x n)
-    out.A = V'*XbarT*Xr;         % (d x n)
-    Zt = out.A*Xt;                % (d x ninst)
-    out.Z = Zt';                  % (ninst x d) -- matches the numerical branch's convention
-    Xhat = [out.B*Zt; out.C'*Zt]; % (m x ninst), same orientation as XbarT
+    V = V(:,idx(1:d));         % top-d eigenvectors, (m x d)
+    out.B = V(1:n,:);           % (n x d)
+    out.C = V(n+1:m,:)'./sqrt(costWeight); % (d x q), rescaled back to true Y units
+    Xr = Xt'/(Xt*Xt');           % pseudo-inverse of Xt (rank-checked above), (ninst x n)
+    out.A = V'*XbarwT*Xr;         % (d x n)
+    Zt = out.A*Xt;                 % (d x ninst)
+    out.Z = Zt';                   % (ninst x d) -- matches the numerical branch's convention
+    Xhat = [out.B*Zt; out.C'*Zt];  % (m x ninst), same orientation as XbarT
     out.error = sum(sum((XbarT-Xhat).^2,2));
     out.R2 = diag(corr(XbarT',Xhat')).^2;
 else
-    if isfield(opts,'alpha') && isnumeric(opts.alpha) && ...
-                size(opts.alpha,1)==2*m+2*n && size(opts.alpha,2)==1
+    errorfcn = @(theta,Xbar,n,m) pilotErrorFcn(theta,Xbar,n,m,d,costWeight);
+
+    if isfield(opts,'precalcAlpha') && isnumeric(opts.precalcAlpha) && ...
+                size(opts.precalcAlpha,1)==d*m+d*n && size(opts.precalcAlpha,2)==1
         fprintf('[PILOT] PILOT is using a pre-calculated solution.\n');
         idx = 1;
-        out.alpha = opts.alpha;
-    elseif isfield(opts,'alpha') && isnumeric(opts.alpha) && opts.ISA3D && ...
-                size(opts.alpha,1)==3*m+3*n && size(opts.alpha,2)==1
-        fprintf('[PILOT] PILOT3D is using a pre-calculated solution.\n');
-        idx = 1;
-        out.alpha = opts.alpha; 
+        out.alpha = opts.precalcAlpha;
     else
         if isfield(opts,'X0') && isnumeric(opts.X0) && ...
-                size(opts.X0,1)==2*m+2*n && size(opts.X0,2)>=1
+                size(opts.X0,1)==d*m+d*n && size(opts.X0,2)>=1
             fprintf('[PILOT] PILOT is using a user defined starting points for BFGS.\n');
             X0 = opts.X0;
             opts.ntries = size(opts.X0,2);
-        elseif isfield(opts,'X0') && isnumeric(opts.X0) && opts.ISA3D && ...
-                size(opts.X0,1)==3*m+3*n && size(opts.X0,2)>=1
-            fprintf('[PILOT] PILOT3D is using a user defined starting points for BFGS.\n');
-            X0 = opts.X0;
-            opts.ntries = size(opts.X0,2);
         else
-            if opts.ISA3D
-                fprintf('[PILOT] PILOT3D is using a random starting points for BFGS.\n');
-                state = rng;
-                rng('default');
-                X0 = 2*rand(3*m+3*n, opts.ntries)-1;
-                rng(state);
-            else
-                fprintf('[PILOT] PILOT is using a random starting points for BFGS.\n');
-                state = rng;
-                rng('default');
-                X0 = 2*rand(2*m+2*n, opts.ntries)-1;
-                rng(state);
-            end
+            fprintf('[PILOT] PILOT is using a random starting points for BFGS.\n');
+            state = rng;
+            rng('default');
+            X0 = 2*rand(d*m+d*n, opts.ntries)-1;
+            rng(state);
         end
-        if opts.ISA3D
-            alpha = zeros(3*m+3*n, opts.ntries);
-        else
-            alpha = zeros(2*m+2*n, opts.ntries);
-        end
+        alpha = zeros(d*m+d*n, opts.ntries);
         eoptim = zeros(1, opts.ntries);
         perf = zeros(1, opts.ntries);
         fprintf('[PILOT] PILOT is solving numerically the projection problem.\n');
@@ -116,12 +99,7 @@ else
                                                                     'Display','off',...
                                                                     'UseParallel',false),...
                                              Xbar, n, m);
-            aux = alpha(:,i);
-            if opts.ISA3D
-                A = reshape(aux(1:3*n),3,n);
-            else
-                A = reshape(aux(1:2*n),2,n);
-            end
+            A = reshape(alpha(1:d*n,i),d,n);
             Z = X*A';
             perf(i) = corr(Hd,pdist(Z)');
             if opts.verbose
@@ -134,38 +112,37 @@ else
         out.perf = perf;
         [~,idx] = max(out.perf);
     end
-    if opts.ISA3D
-        out.A = reshape(out.alpha(1:3*n,idx),3,n);
-        out.Z = X*out.A';
-        B = reshape(out.alpha((3*n)+1:end,idx),m,3);
-        Xhat = out.Z*B';
-        out.C = B(n+1:m,:)';
-        out.B = B(1:n,:);
-        out.error = sum(sum((Xbar-Xhat).^2,2));
-        out.R2 = diag(corr(Xbar,Xhat)).^2;
-    else
-        out.A = reshape(out.alpha(1:2*n,idx),2,n);
-        out.Z = X*out.A';
-        B = reshape(out.alpha((2*n)+1:end,idx),m,2);
-        Xhat = out.Z*B';
-        out.C = B(n+1:m,:)';
-        out.B = B(1:n,:);
-        out.error = sum(sum((Xbar-Xhat).^2,2));
-        out.R2 = diag(corr(Xbar,Xhat)).^2;
-    end
+    out.A = reshape(out.alpha(1:d*n,idx),d,n);
+    out.Z = X*out.A';
+    B = reshape(out.alpha((d*n)+1:end,idx),m,d);
+    Xhat = out.Z*B';
+    out.C = B(n+1:m,:)';
+    out.B = B(1:n,:);
+    out.error = sum(sum((Xbar-Xhat).^2,2));
+    out.R2 = diag(corr(Xbar,Xhat)).^2;
 end
 
 fprintf('[PILOT] PILOT has completed. The projection matrix A is:\n');
-if opts.ISA3D 
-    out.summary = cell(4, n+1);
-    out.summary(2:end,1) = {'Z_{1}','Z_{2}','Z_{3}'};
-else
-    out.summary = cell(3, n+1);
-    out.summary(2:end,1) = {'Z_{1}','Z_{2}'};
-end
+out.summary = cell(d+1, n+1);
+out.summary(2:end,1) = arrayfun(@(k) sprintf('Z_{%d}',k), 1:d, 'UniformOutput', false);
 out.summary(1,2:end) = featlabels;
 out.summary(2:end,2:end) = num2cell(round(out.A,4));
 fprintf('\n');
 disp(out.summary);
 
+end
+% =========================================================================
+function err = pilotErrorFcn(theta, Xbar, n, m, d, costWeight)
+% Feature+performance reconstruction cost (spec §5.4):
+%   ||Ftilde - Br*Z||^2_F + costWeight*||Y - Cr*Z||^2_F
+% Xbar columns 1:n are the feature block (Ftilde), n+1:m the performance
+% block (Y); costWeight scales only the latter. costWeight=1 reduces to a
+% plain nanmean over all m columns, matching the pre-refactor loss exactly.
+B = reshape(theta((d*n)+1:end),m,d);
+A = reshape(theta(1:d*n),d,n);
+Xhat = (B*A*Xbar(:,1:n)')';
+sqErr = (Xbar-Xhat).^2;
+w = ones(1,m);
+w(n+1:m) = costWeight;
+err = nanmean(nanmean(bsxfun(@times, sqErr, w), 1), 2);
 end

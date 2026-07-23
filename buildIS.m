@@ -198,6 +198,9 @@ nfeats = size(model.data.X,2);
 model.featsel.idx = 1:nfeats;
 if opts.sifted.flag
     fprintf('[SIFTED] Calling SIFTED for automated feature selection.\n');
+    % Match the outer pipeline's final projection dimensionality (spec §5.5)
+    % so feature-subset evaluation is consistent with the chosen dims.
+    opts.sifted.dims = opts.pilot.dims;
     [model.data.X, model.sifted] = SIFTED2(model.data.X, model.data.Y, model.data.Ybin, model.data.featlabels, opts.sifted);
     model.data.featlabels = model.data.featlabels(model.sifted.selvars);
     model.featsel.idx = model.featsel.idx(model.sifted.selvars);

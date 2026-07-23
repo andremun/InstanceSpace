@@ -70,7 +70,15 @@ if ~isfield(opts.sifted, 'Replicates'),     opts.sifted.Replicates     = 100;   
 if ~isfield(opts, 'pilot'),             opts.pilot             = struct; end
 if ~isfield(opts.pilot, 'analytic'),    opts.pilot.analytic    = false;  end
 if ~isfield(opts.pilot, 'ntries'),      opts.pilot.ntries      = 10;     end
-if ~isfield(opts.pilot, 'ISA3D'),       opts.pilot.ISA3D       = false;  end
+% Legacy: opts.pilot.ISA3D (boolean) -> opts.pilot.dims (2|3, spec Appendix A).
+if isfield(opts.pilot, 'ISA3D') && ~isfield(opts.pilot, 'dims')
+    opts.pilot.dims = 2 + double(logical(opts.pilot.ISA3D));
+end
+if ~isfield(opts.pilot, 'dims'),        opts.pilot.dims        = 2;      end
+if ~isfield(opts.pilot, 'method'),      opts.pilot.method      = 'standard'; end
+if ~isfield(opts.pilot, 'alpha'),       opts.pilot.alpha       = 1.0;    end
+if ~isfield(opts.pilot, 'viewGroups'),  opts.pilot.viewGroups  = {};     end
+if ~isfield(opts.pilot, 'topoWeight'),  opts.pilot.topoWeight  = 0;      end
 if ~isfield(opts.pilot, 'verbose'),     opts.pilot.verbose     = opts.general.verbose; end
 
 % cloister

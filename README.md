@@ -42,7 +42,7 @@ example.m, test_integration.m             getting-started / regression suite
 startup.m                                 adds the folders below to the MATLAB path
 core/                                     PRELIM, SIFTED, PILOT, PILOTviewpoint,
                                           CLOISTER, PYTHIA, TRACE, TRACE_legacy, FILTER
-output/                                   scriptcsv, scriptpng, scriptweb, scriptfcn, scriptdisc
+output/                                   scriptcsv, scriptpng, scriptweb, scriptfcn
 utils/                                    ISAdefaults, ISAgetClassifierFcn,
                                           ISAmigrateModel, ISAsubsetData
 deprecated/                               PYTHIA2, PYTHIAtest, SIFTED2 (warn-and-forward

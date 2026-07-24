@@ -12,7 +12,6 @@ function out = exploreIS(rootdir)
 % -------------------------------------------------------------------------
 
 startProcess = tic;
-scriptdisc('exploreIS.m');
 % -------------------------------------------------------------------------
 % Collect all the data from the files
 fprintf('[EXPLORE] Root directory: %s\n', rootdir);
@@ -26,11 +25,7 @@ model = ISAmigrateModel(model);        % migrate opts.oracle->pythia, svm/knn->c
 model.opts = ISAdefaults(model.opts);  % fill in any defaults absent from the saved model
 if model.opts.general.verbose
     fprintf('[EXPLORE] Listing options in use:\n');
-    optfields = fieldnames(model.opts);
-    for i = 1:length(optfields)
-        fprintf('%s\n', optfields{i});
-        disp(model.opts.(optfields{i}));
-    end
+    printOptions(model.opts);
 end
 fprintf('[EXPLORE] Loading metadata_test.csv.\n');
 Xbar = readtable(datafile);

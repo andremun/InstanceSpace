@@ -15,19 +15,19 @@ disp('-------------------------------------------------------------------------'
 disp(' ');
 disp([' ''' filename ''' ']);
 disp(' ');
-disp(' Code by: Mario Andres Muñoz Acosta');
+disp(' Code by: Mario Andres Munoz Acosta');
 disp('          School of Mathematics and Statistics');
 disp('          The University of Melbourne');
 disp('          Australia');
 disp('          2019');
 disp(' ');
-disp(' Copyright: Mario A. Muñoz');
+disp(' Copyright: Mario Andres Munoz Acosta');
 disp(' ');
 disp('-------------------------------------------------------------------------');
 disp(' ');
 disp(' If using this software, please cite as: ');
 disp(' ');
-disp([' Mario Andrés Muñoz, & Kate Smith-Miles. ' ...
+disp([' Mario Andres Munoz, & Kate Smith-Miles. ' ...
       ' andremun/InstanceSpace: February 2021 Update (Version v0.2-beta). '...
       ' Zenodo. http://doi.org/10.5281/zenodo.4521336']);
 disp(' ');

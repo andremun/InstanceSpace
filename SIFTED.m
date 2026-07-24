@@ -206,7 +206,11 @@ function y = costfcn(ind, X, Y, Ybin, clust, cvpart, featlabels, dims)
         y = values(mymap, {key});
         y = y{1};
     else
-        out = PILOT(X(:,idx), Y, featlabels(idx), struct('analytic', analytic, 'ntries', ntries, 'dims', dims));
+        % verbose=false: this fitness function runs once per GA candidate
+        % (dozens to hundreds of times per SIFTED call), so PILOT's normal
+        % per-run status/summary output would flood the console.
+        out = PILOT(X(:,idx), Y, featlabels(idx), ...
+            struct('analytic', analytic, 'ntries', ntries, 'dims', dims, 'verbose', false));
         Z = out.Z;
         y = -Inf;
         % Plain loop, not parfor: costfcn is itself called in parallel by

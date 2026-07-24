@@ -12,7 +12,6 @@ function model = buildIS(rootdir)
 % -------------------------------------------------------------------------
 
 startProcess = tic;
-scriptdisc('buildIS.m');
 % -------------------------------------------------------------------------
 % Collect all the data from the files
 fprintf('[BUILD] Root directory: %s\n', rootdir);
@@ -26,11 +25,7 @@ opts = ISAdefaults(opts);
 rng(opts.general.seed, 'twister');
 if opts.general.verbose
     fprintf('[BUILD] Listing options in use:\n');
-    optfields = fieldnames(opts);
-    for i = 1:length(optfields)
-        fprintf('%s\n', optfields{i});
-        disp(opts.(optfields{i}));
-    end
+    printOptions(opts);
 end
 if opts.general.parallel
     fprintf('[BUILD] Starting parallel processing pool.\n');

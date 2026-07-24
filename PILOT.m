@@ -79,7 +79,9 @@ if strcmpi(opts.method, 'pls')
     % inv(P'*W) correction applies), but reading XS straight from
     % plsregress guarantees out.Z is consistent with XL/YL by
     % construction regardless of that algorithmic detail.
-    fprintf('[PILOT] PILOT is using partial least squares (opts.pilot.method=''pls'').\n');
+    if opts.verbose
+        fprintf('[PILOT] PILOT is using partial least squares (opts.pilot.method=''pls'').\n');
+    end
     Xmean = mean(X, 1);
     Ymean = mean(Y, 1);
     [XL, YL, XS, ~, ~, ~, ~, stats] = plsregress(X, Y, d);
@@ -97,8 +99,10 @@ elseif opts.analytic
     % scaled by sqrt(costWeight) before the eigendecomposition, then C is
     % rescaled back so it reconstructs Y in its true (unweighted) units.
     % costWeight=1 reproduces the original unweighted derivation exactly.
-    fprintf('[PILOT] PILOT is solving analytically the projection problem.\n');
-    fprintf('[PILOT] This won''t take long.\n');
+    if opts.verbose
+        fprintf('[PILOT] PILOT is solving analytically the projection problem.\n');
+        fprintf('[PILOT] This won''t take long.\n');
+    end
     Xbarw = Xbar;
     Xbarw(:,n+1:m) = sqrt(costWeight) * Xbarw(:,n+1:m);
     XbarwT = Xbarw';          % (m x ninst): weighted features+performance as rows
@@ -121,17 +125,23 @@ else
 
     if isfield(opts,'precalcAlpha') && isnumeric(opts.precalcAlpha) && ...
                 size(opts.precalcAlpha,1)==d*m+d*n && size(opts.precalcAlpha,2)==1
-        fprintf('[PILOT] PILOT is using a pre-calculated solution.\n');
+        if opts.verbose
+            fprintf('[PILOT] PILOT is using a pre-calculated solution.\n');
+        end
         idx = 1;
         out.alpha = opts.precalcAlpha;
     else
         if isfield(opts,'X0') && isnumeric(opts.X0) && ...
                 size(opts.X0,1)==d*m+d*n && size(opts.X0,2)>=1
-            fprintf('[PILOT] PILOT is using a user defined starting points for BFGS.\n');
+            if opts.verbose
+                fprintf('[PILOT] PILOT is using a user defined starting points for BFGS.\n');
+            end
             X0 = opts.X0;
             opts.ntries = size(opts.X0,2);
         else
-            fprintf('[PILOT] PILOT is using a random starting points for BFGS.\n');
+            if opts.verbose
+                fprintf('[PILOT] PILOT is using a random starting points for BFGS.\n');
+            end
             state = rng;
             rng('default');
             X0 = 2*rand(d*m+d*n, opts.ntries)-1;
@@ -140,8 +150,10 @@ else
         alpha = zeros(d*m+d*n, opts.ntries);
         eoptim = zeros(1, opts.ntries);
         perf = zeros(1, opts.ntries);
-        fprintf('[PILOT] PILOT is solving numerically the projection problem.\n');
-        fprintf('[PILOT] This may take a while. Trials will not be run sequentially.\n');
+        if opts.verbose
+            fprintf('[PILOT] PILOT is solving numerically the projection problem.\n');
+            fprintf('[PILOT] This may take a while. Trials will not be run sequentially.\n');
+        end
         parfor (i=1:opts.ntries,nworkers)
             [alphaCol,eoptim(i)] = fminunc(errorfcn, X0(:,i), ...
                                              optimoptions('fminunc','Algorithm','quasi-newton',...
@@ -178,13 +190,14 @@ else
     out.R2 = diag(corr(Xbar,Xhat)).^2;
 end
 
-fprintf('[PILOT] PILOT has completed. The projection matrix A is:\n');
 out.summary = cell(d+1, n+1);
 out.summary(2:end,1) = arrayfun(@(k) sprintf('Z_{%d}',k), 1:d, 'UniformOutput', false);
 out.summary(1,2:end) = featlabels;
 out.summary(2:end,2:end) = num2cell(round(out.A,4));
-fprintf('\n');
-disp(out.summary);
+if opts.verbose
+    fprintf('[PILOT] PILOT has completed. The projection matrix A is:\n\n');
+    disp(out.summary);
+end
 
 end
 % =========================================================================

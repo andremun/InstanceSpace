@@ -124,7 +124,14 @@ end
 % validated here.
 
 function v = getf(opts, sub, field)
-if isfield(opts, sub) && isfield(opts.(sub), field)
+if ~isfield(opts, sub)
+    v = [];
+    return;
+end
+if ~isstruct(opts.(sub))
+    error('ISA:ISAvalidateOpts:notStruct', 'opts.%s must be a struct; got %s.', sub, describe(opts.(sub)));
+end
+if isfield(opts.(sub), field)
     v = opts.(sub).(field);
 else
     v = [];
@@ -190,13 +197,13 @@ function checkMember(name, v, validSet)
 if isempty(v), return; end
 if iscell(validSet) && ischar(validSet{1})
     ok = (ischar(v) || (isstring(v) && isscalar(v))) && any(strcmpi(char(v), validSet));
-    optionsStr = strjoin(validSet, ''', ''');
+    optionsStr = ['{''' strjoin(validSet, ''', ''') '''}'];
 else
     ok = isnumeric(v) && isscalar(v) && any(cellfun(@(x) isequal(v, x), validSet));
-    optionsStr = strjoin(cellfun(@num2str, validSet, 'UniformOutput', false), ', ');
+    optionsStr = ['{' strjoin(cellfun(@num2str, validSet, 'UniformOutput', false), ', ') '}'];
 end
 if ~ok
-    error('ISA:ISAvalidateOpts:notMember', 'opts.%s must be one of {''%s''}; got %s.', ...
+    error('ISA:ISAvalidateOpts:notMember', 'opts.%s must be one of %s; got %s.', ...
         name, optionsStr, describe(v));
 end
 end

@@ -323,7 +323,10 @@ if isfield(model, 'opts') && isfield(model.opts, 'pythia')
     pyOpts = model.opts.pythia;
 end
 validClassifiers = {'knn','svm','tree','nb','linear','ensemble'};
-if ~isfield(pyOpts, 'classifier') || ~any(strcmp(pyOpts.classifier, validClassifiers))
+if isfield(pyOpts, 'classifier') && ischar(pyOpts.classifier) && ...
+        any(strcmpi(pyOpts.classifier, validClassifiers))
+    pyOpts.classifier = lower(pyOpts.classifier); % preserve valid intent regardless of case
+else
     pyOpts.classifier = 'knn'; % spec §1.2 default for LIBSVM migration
 end
 full = ISAdefaults(struct('pythia', pyOpts));

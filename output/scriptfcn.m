@@ -133,7 +133,12 @@ armLen  = 0.15 * max([lims(2)-lims(1), lims(4)-lims(3), lims(6)-lims(5)]);
 axColors = [0.85 0.10 0.10; 0.10 0.60 0.10; 0.10 0.40 0.85]; % z1/z2/z3
 axLabels = {'z_{1}', 'z_{2}', 'z_{3}'};
 dirs = eye(3);
-hold on;
+% Preserve/restore the caller's hold state rather than forcing it off:
+% these helpers are injected into other workspaces via scriptfcn and may
+% be composed with further overlays that rely on hold already being on.
+ax = gca;
+wasHeld = ishold(ax);
+hold(ax, 'on');
 for i = 1:3
     tip = anchor + armLen * dirs(i,:);
     line([anchor(1) tip(1)], [anchor(2) tip(2)], [anchor(3) tip(3)], ...
@@ -141,7 +146,9 @@ for i = 1:3
     text(tip(1), tip(2), tip(3), axLabels{i}, 'Color', axColors(i,:), ...
         'FontWeight', 'bold', 'FontSize', 10);
 end
-hold off;
+if ~wasHeld
+    hold(ax, 'off');
+end
 end
 % =========================================================================
 function viewAngle = resolveViewAngle(viewpoint, algoIdx)

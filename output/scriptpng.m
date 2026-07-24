@@ -116,6 +116,13 @@ globalView = resolveViewAngle(viewpoint, []); % feature/portfolio-level plots
 % preserved when a .fig file is saved/reopened. Set once: UserData is a
 % figure-level property, so it survives every clf below without needing
 % to be reapplied (same reasoning as fig.Theme above).
+% fig.UserData defaults to [] on a fresh figure, and [].isaViewpoint = ...
+% is not guaranteed to auto-vivify into a struct through a graphics
+% property's dot-assignment chain -- initialise it explicitly first,
+% preserving any existing struct fields rather than clobbering them.
+if ~isstruct(fig.UserData)
+    fig.UserData = struct();
+end
 fig.UserData.isaViewpoint = viewpoint;
 % One .fig file per footprint (spec §8), for interactive rotation --
 % meaningful for 3D projections specifically; opts.outputs.fig (default

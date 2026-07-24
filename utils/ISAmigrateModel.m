@@ -323,9 +323,17 @@ if isfield(model, 'opts') && isfield(model.opts, 'pythia')
     pyOpts = model.opts.pythia;
 end
 validClassifiers = {'knn','svm','tree','nb','linear','ensemble'};
-if isfield(pyOpts, 'classifier') && ischar(pyOpts.classifier) && ...
-        any(strcmpi(pyOpts.classifier, validClassifiers))
-    pyOpts.classifier = lower(pyOpts.classifier); % preserve valid intent regardless of case
+% Accept char or scalar string (ISAvalidateOpts and the rest of the opts
+% schema allow both for text fields), not char only -- a valid
+% opts.pythia.classifier supplied as a string would otherwise be silently
+% discarded and replaced with the 'knn' fallback below. isfield() is
+% checked first: pyOpts.classifier would error on a struct that doesn't
+% have the field at all.
+hasClassifier = isfield(pyOpts, 'classifier');
+isTextClassifier = hasClassifier && (ischar(pyOpts.classifier) || ...
+    (isstring(pyOpts.classifier) && isscalar(pyOpts.classifier)));
+if isTextClassifier && any(strcmpi(char(pyOpts.classifier), validClassifiers))
+    pyOpts.classifier = lower(char(pyOpts.classifier)); % preserve valid intent regardless of case/type
 else
     pyOpts.classifier = 'knn'; % spec §1.2 default for LIBSVM migration
 end

@@ -72,9 +72,18 @@ if isempty(viewAngle)
         'Could not resolve a stored viewpoint for the requested algorithm group.');
 end
 
+% findall(...,'Type','axes') also returns the internal axes MATLAB uses
+% to implement legends/colorbars (Tag 'legend'/'Colorbar'), not just the
+% main plot axes; applying view() to one of those instead would leave the
+% actual footprint plot unrotated. Exclude them and apply the view to
+% every remaining (real, data) axes rather than assuming there's only one.
 ax = findall(fig, 'Type', 'axes');
+tags = arrayfun(@(a) string(get(a, 'Tag')), ax);
+ax = ax(~ismember(tags, ["legend", "Colorbar"]));
 if isempty(ax)
-    error('ISA:ISArecallView:noAxes', 'fig has no axes to apply the view to.');
+    error('ISA:ISArecallView:noAxes', 'fig has no plot axes to apply the view to.');
 end
-view(ax(1), viewAngle(1), viewAngle(2));
+for i = 1:numel(ax)
+    view(ax(i), viewAngle(1), viewAngle(2));
+end
 end

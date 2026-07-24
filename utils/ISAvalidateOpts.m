@@ -9,10 +9,16 @@ function opts = ISAvalidateOpts(opts)
 %   Deliberately validates only fields that ARE present: this runs before
 %   ISAdefaults (spec §7.2), so most fields are still absent at this point
 %   and are not this function's concern -- ISAdefaults supplies known-valid
-%   defaults for anything missing. opts is returned unmodified; this
-%   function only ever errors or passes through, it never rewrites values
-%   (renaming/migrating legacy field names is ISAmigrateModel's job, not
-%   this one's).
+%   defaults for anything missing. "Present" is tracked explicitly (getf()
+%   returns a presence flag alongside the value), not inferred from
+%   isempty(v): a field explicitly supplied as opts.general.parallel = []
+%   IS present and must be rejected as invalid, not silently skipped as if
+%   absent -- ISAdefaults only checks isfield(), so it would never replace
+%   that [] with the proper default, and later code expecting a logical
+%   scalar would fail far from the actual mistake. opts is returned
+%   unmodified; this function only ever errors or passes through, it
+%   never rewrites values (renaming/migrating legacy field names is
+%   ISAmigrateModel's job, not this one's).
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit
@@ -41,91 +47,96 @@ if ~isstruct(opts)
     error('ISA:ISAvalidateOpts:notStruct', 'opts must be a struct; got a %s.', class(opts));
 end
 
-checkLogical('general.verbose',    getf(opts, 'general', 'verbose'));
-checkLogical('general.parallel',   getf(opts, 'general', 'parallel'));
-checkPosInt('general.seed',        getf(opts, 'general', 'seed'), true); % 0 allowed
-% general.ncores is deliberately not type-checked to numeric here:
-% InstanceSpace.ensurePool() branches on isnumeric(opts.general.ncores) and
-% treats a non-numeric value (e.g. left as a placeholder, or intentionally
-% not a number) as "let parpool choose its own default pool size" -- a
-% supported configuration, not a misconfiguration. Only validate the range
-% when it IS numeric.
-ncores = getf(opts, 'general', 'ncores');
-if ~isempty(ncores) && isnumeric(ncores)
-    checkPosInt('general.ncores', ncores, false);
+checkLogical(opts, 'general', 'verbose');
+checkLogical(opts, 'general', 'parallel');
+checkPosInt(opts, 'general', 'seed', true); % 0 allowed
+% general.ncores is deliberately not type-checked to numeric via the
+% checkPosInt wrapper: InstanceSpace.ensurePool() branches on
+% isnumeric(opts.general.ncores) and treats a non-numeric value as "let
+% parpool choose its own default pool size" -- a supported configuration,
+% not a misconfiguration. Only validate the range when it IS numeric.
+[ncores, ncoresPresent] = getf(opts, 'general', 'ncores');
+if ncoresPresent && isnumeric(ncores)
+    checkPosIntValue('general.ncores', ncores, false);
 end
 
-checkLogical('perf.MaxPerf',       getf(opts, 'perf', 'MaxPerf'));
-checkLogical('perf.AbsPerf',       getf(opts, 'perf', 'AbsPerf'));
-checkUnitRange('perf.epsilon',        getf(opts, 'perf', 'epsilon'));
-checkUnitRange('perf.betaThreshold',  getf(opts, 'perf', 'betaThreshold'));
+checkLogical(opts, 'perf', 'MaxPerf');
+checkLogical(opts, 'perf', 'AbsPerf');
+checkUnitRange(opts, 'perf', 'epsilon');
+checkUnitRange(opts, 'perf', 'betaThreshold');
 
-checkPositive('prelim.iqrMultiplier', getf(opts, 'prelim', 'iqrMultiplier'));
-checkUnitRange('prelim.nanThreshold', getf(opts, 'prelim', 'nanThreshold'));
+checkPositive(opts, 'prelim', 'iqrMultiplier');
+checkUnitRange(opts, 'prelim', 'nanThreshold');
 
-checkLogical('auto.preproc',       getf(opts, 'auto', 'preproc'));
-checkLogical('bound.flag',         getf(opts, 'bound', 'flag'));
-checkLogical('norm.flag',          getf(opts, 'norm', 'flag'));
+checkLogical(opts, 'auto', 'preproc');
+checkLogical(opts, 'bound', 'flag');
+checkLogical(opts, 'norm', 'flag');
 
-checkLogical('selvars.smallscaleflag', getf(opts, 'selvars', 'smallscaleflag'));
-checkUnitRange('selvars.smallscale',   getf(opts, 'selvars', 'smallscale'));
-checkLogical('selvars.fileidxflag',    getf(opts, 'selvars', 'fileidxflag'));
-checkText('selvars.fileidx',           getf(opts, 'selvars', 'fileidx'));
-checkLogical('selvars.densityflag',    getf(opts, 'selvars', 'densityflag'));
-checkPositive('selvars.mindistance',   getf(opts, 'selvars', 'mindistance'));
-checkMember('selvars.type', getf(opts, 'selvars', 'type'), ...
-    {'Ftr','Ftr&AP','Ftr&Good','Ftr&AP&Good'});
-checkCellOfText('selvars.feats',       getf(opts, 'selvars', 'feats'));
-checkCellOfText('selvars.algos',       getf(opts, 'selvars', 'algos'));
+checkLogical(opts, 'selvars', 'smallscaleflag');
+checkUnitRange(opts, 'selvars', 'smallscale');
+checkLogical(opts, 'selvars', 'fileidxflag');
+checkText(opts, 'selvars', 'fileidx');
+checkLogical(opts, 'selvars', 'densityflag');
+checkPositive(opts, 'selvars', 'mindistance');
+checkMember(opts, 'selvars', 'type', {'Ftr','Ftr&AP','Ftr&Good','Ftr&AP&Good'});
+checkCellOfText(opts, 'selvars', 'feats');
+checkCellOfText(opts, 'selvars', 'algos');
 
-checkLogical('sifted.flag',        getf(opts, 'sifted', 'flag'));
-checkUnitRange('sifted.rho',       getf(opts, 'sifted', 'rho'));
-checkUnitRange('sifted.pval',      getf(opts, 'sifted', 'pval'));
-checkPosInt('sifted.K',            getf(opts, 'sifted', 'K'), false);
-checkPosInt('sifted.MaxIter',      getf(opts, 'sifted', 'MaxIter'), false);
-checkPosInt('sifted.Replicates',   getf(opts, 'sifted', 'Replicates'), false);
+checkLogical(opts, 'sifted', 'flag');
+checkUnitRange(opts, 'sifted', 'rho');
+checkUnitRange(opts, 'sifted', 'pval');
+checkPosInt(opts, 'sifted', 'K', false);
+checkPosInt(opts, 'sifted', 'MaxIter', false);
+checkPosInt(opts, 'sifted', 'Replicates', false);
 
-checkMember('pilot.method', getf(opts, 'pilot', 'method'), {'standard','pls'});
-checkMember('pilot.dims',   getf(opts, 'pilot', 'dims'), {2,3});
-checkLogical('pilot.analytic',     getf(opts, 'pilot', 'analytic'));
-checkPosInt('pilot.ntries',        getf(opts, 'pilot', 'ntries'), false);
-checkPositive('pilot.alpha',       getf(opts, 'pilot', 'alpha'));
-checkPositive('pilot.topoWeight',  getf(opts, 'pilot', 'topoWeight'), true); % 0 allowed
-checkViewGroups(getf(opts, 'pilot', 'viewGroups'));
+checkMember(opts, 'pilot', 'method', {'standard','pls'});
+checkMember(opts, 'pilot', 'dims', {2,3});
+checkLogical(opts, 'pilot', 'analytic');
+checkPosInt(opts, 'pilot', 'ntries', false);
+checkPositive(opts, 'pilot', 'alpha');
+checkPositive(opts, 'pilot', 'topoWeight', true); % 0 allowed
+checkViewGroups(opts, 'pilot', 'viewGroups');
 
-checkUnitRange('cloister.pval',            getf(opts, 'cloister', 'pval'));
-checkUnitRange('cloister.corrThreshold',   getf(opts, 'cloister', 'corrThreshold'));
-checkPosInt('cloister.maxFeatures',        getf(opts, 'cloister', 'maxFeatures'), false);
+checkUnitRange(opts, 'cloister', 'pval');
+checkUnitRange(opts, 'cloister', 'corrThreshold');
+checkPosInt(opts, 'cloister', 'maxFeatures', false);
 
-checkLogical('pythia.flag',        getf(opts, 'pythia', 'flag'));
-checkMember('pythia.classifier', getf(opts, 'pythia', 'classifier'), ...
-    {'knn','svm','tree','nb','linear','ensemble'});
-checkMember('pythia.tuning', getf(opts, 'pythia', 'tuning'), {'sobol','bayes','none'});
-checkPosInt('pythia.nTuningIter',  getf(opts, 'pythia', 'nTuningIter'), false);
-checkPosInt('pythia.kFold',        getf(opts, 'pythia', 'kFold'), false);
-checkLogical('pythia.skip',        getf(opts, 'pythia', 'skip'));
-checkText('pythia.ensembleMethod', getf(opts, 'pythia', 'ensembleMethod'));
+checkLogical(opts, 'pythia', 'flag');
+checkMember(opts, 'pythia', 'classifier', {'knn','svm','tree','nb','linear','ensemble'});
+checkMember(opts, 'pythia', 'tuning', {'sobol','bayes','none'});
+checkPosInt(opts, 'pythia', 'nTuningIter', false);
+checkPosInt(opts, 'pythia', 'kFold', false);
+checkLogical(opts, 'pythia', 'skip');
+checkText(opts, 'pythia', 'ensembleMethod');
 
-checkMember('trace.method', getf(opts, 'trace', 'method'), {'trace3','legacy'});
-checkUnitRange('trace.PI',             getf(opts, 'trace', 'PI'));
-checkPosInt('trace.minInstances',      getf(opts, 'trace', 'minInstances'), false);
-checkUnitRange('trace.minAreaFrac',    getf(opts, 'trace', 'minAreaFrac'));
-checkLogical('trace.contra',           getf(opts, 'trace', 'contra'));
+checkMember(opts, 'trace', 'method', {'trace3','legacy'});
+checkUnitRange(opts, 'trace', 'PI');
+checkPosInt(opts, 'trace', 'minInstances', false);
+checkUnitRange(opts, 'trace', 'minAreaFrac');
+checkLogical(opts, 'trace', 'contra');
 
-checkLogical('outputs.csv',        getf(opts, 'outputs', 'csv'));
-checkLogical('outputs.png',        getf(opts, 'outputs', 'png'));
-checkLogical('outputs.fig',        getf(opts, 'outputs', 'fig'));
-checkLogical('outputs.web',        getf(opts, 'outputs', 'web'));
+checkLogical(opts, 'outputs', 'csv');
+checkLogical(opts, 'outputs', 'png');
+checkLogical(opts, 'outputs', 'fig');
+checkLogical(opts, 'outputs', 'web');
 end
 
 % =========================================================================
-% Helpers. Every checkX() is a no-op when passed [] (getf's sentinel for
-% "field not present"), since only fields the caller actually supplied are
-% validated here.
+% Helpers.
+%
+% getf() returns [value, present]: present distinguishes "field absent"
+% from "field present with an empty/invalid value" -- the two are NOT the
+% same thing, so every checkX() wrapper below gates on present, never on
+% isempty(v). The wrappers do the opts.(sub).(field) lookup and presence
+% gating; the matching checkXValue() functions do the actual type/range
+% check on an already-known-present value and are reused directly (e.g.
+% general.ncores above) wherever a wrapper's all-or-nothing gating isn't
+% quite right.
 
-function v = getf(opts, sub, field)
+function [v, present] = getf(opts, sub, field)
 if ~isfield(opts, sub)
     v = [];
+    present = false;
     return;
 end
 if ~isstruct(opts.(sub))
@@ -133,37 +144,60 @@ if ~isstruct(opts.(sub))
 end
 if isfield(opts.(sub), field)
     v = opts.(sub).(field);
+    present = true;
 else
     v = [];
+    present = false;
 end
 end
 
-function checkLogical(name, v)
-if isempty(v), return; end
+function checkLogical(opts, sub, field)
+[v, present] = getf(opts, sub, field);
+if ~present, return; end
+checkLogicalValue([sub '.' field], v);
+end
+
+function checkLogicalValue(name, v)
 if ~(islogical(v) && isscalar(v))
     error('ISA:ISAvalidateOpts:notLogical', 'opts.%s must be a logical scalar (true/false); got %s.', ...
         name, describe(v));
 end
 end
 
-function checkText(name, v)
-if isempty(v), return; end
+function checkText(opts, sub, field)
+[v, present] = getf(opts, sub, field);
+if ~present, return; end
+checkTextValue([sub '.' field], v);
+end
+
+function checkTextValue(name, v)
 if ~((ischar(v)) || (isstring(v) && isscalar(v)))
     error('ISA:ISAvalidateOpts:notText', 'opts.%s must be a char or scalar string; got %s.', ...
         name, describe(v));
 end
 end
 
-function checkCellOfText(name, v)
-if isempty(v), return; end
+function checkCellOfText(opts, sub, field)
+[v, present] = getf(opts, sub, field);
+if ~present, return; end
+checkCellOfTextValue([sub '.' field], v);
+end
+
+function checkCellOfTextValue(name, v)
 if ~(iscell(v) && all(cellfun(@(x) ischar(x) || (isstring(x) && isscalar(x)), v)))
     error('ISA:ISAvalidateOpts:notCellOfText', ...
         'opts.%s must be a cell array of char/string names; got %s.', name, describe(v));
 end
 end
 
-function checkPositive(name, v, zeroAllowed)
-if isempty(v), return; end
+function checkPositive(opts, sub, field, zeroAllowed)
+if nargin < 4, zeroAllowed = false; end
+[v, present] = getf(opts, sub, field);
+if ~present, return; end
+checkPositiveValue([sub '.' field], v, zeroAllowed);
+end
+
+function checkPositiveValue(name, v, zeroAllowed)
 if nargin < 3, zeroAllowed = false; end
 if ~(isnumeric(v) && isscalar(v) && isreal(v) && ~isnan(v) && (v > 0 || (zeroAllowed && v == 0)))
     if zeroAllowed
@@ -176,25 +210,41 @@ if ~(isnumeric(v) && isscalar(v) && isreal(v) && ~isnan(v) && (v > 0 || (zeroAll
 end
 end
 
-function checkPosInt(name, v, zeroAllowed)
-if isempty(v), return; end
+function checkPosInt(opts, sub, field, zeroAllowed)
+if nargin < 4, zeroAllowed = false; end
+[v, present] = getf(opts, sub, field);
+if ~present, return; end
+checkPosIntValue([sub '.' field], v, zeroAllowed);
+end
+
+function checkPosIntValue(name, v, zeroAllowed)
 if nargin < 3, zeroAllowed = false; end
-checkPositive(name, v, zeroAllowed);
-if ~isempty(v) && v ~= floor(v)
+checkPositiveValue(name, v, zeroAllowed);
+if v ~= floor(v)
     error('ISA:ISAvalidateOpts:notInteger', 'opts.%s must be an integer; got %s.', name, describe(v));
 end
 end
 
-function checkUnitRange(name, v)
-if isempty(v), return; end
+function checkUnitRange(opts, sub, field)
+[v, present] = getf(opts, sub, field);
+if ~present, return; end
+checkUnitRangeValue([sub '.' field], v);
+end
+
+function checkUnitRangeValue(name, v)
 if ~(isnumeric(v) && isscalar(v) && isreal(v) && ~isnan(v) && v >= 0 && v <= 1)
     error('ISA:ISAvalidateOpts:notInUnitRange', ...
         'opts.%s must be a numeric scalar in [0, 1]; got %s.', name, describe(v));
 end
 end
 
-function checkMember(name, v, validSet)
-if isempty(v), return; end
+function checkMember(opts, sub, field, validSet)
+[v, present] = getf(opts, sub, field);
+if ~present, return; end
+checkMemberValue([sub '.' field], v, validSet);
+end
+
+function checkMemberValue(name, v, validSet)
 if iscell(validSet) && ischar(validSet{1})
     ok = (ischar(v) || (isstring(v) && isscalar(v))) && any(strcmpi(char(v), validSet));
     optionsStr = ['{''' strjoin(validSet, ''', ''') '''}'];
@@ -208,8 +258,9 @@ if ~ok
 end
 end
 
-function checkViewGroups(v)
-if isempty(v), return; end
+function checkViewGroups(opts, sub, field)
+[v, present] = getf(opts, sub, field);
+if ~present, return; end
 if ~iscell(v)
     error('ISA:ISAvalidateOpts:badViewGroups', ...
         'opts.pilot.viewGroups must be a cell array of algorithm index vectors; got %s.', describe(v));

@@ -378,11 +378,19 @@ try
         'model.pilot.A without B/C should raise an ISA:ISAmigrateModel:incompletePilot warning.');
 
     % LIBSVM retraining and legacy TRACE recompute need real trained
-    % Z/Y/Ybin/etc.: reuse the already-built ''obj'' from the class_api
-    % case above instead of re-running build() from scratch.
-    assert(exist('obj', 'var') == 1 && isfield(obj.model, 'trace'), ...
-        'Expected a fully-built ''obj'' from the class_api case to reuse for the LIBSVM/TRACE migration checks.');
-    baseModel = obj.model;
+    % Z/Y/Ybin/etc. Reuse the already-built ''obj'' from the class_api
+    % case above when it's usable (cheaper than rebuilding); otherwise
+    % build a small fresh model here so this case stays self-contained --
+    % a class_api failure (or running just this block on its own)
+    % shouldn't cause a second, unrelated-looking assertion failure here
+    % that hides the real one.
+    if exist('obj', 'var') == 1 && isa(obj, 'InstanceSpace') && isfield(obj.model, 'trace')
+        baseModel = obj.model;
+    else
+        fprintf('[TEST] No usable ''obj'' from class_api; building a fresh model for the LIBSVM/TRACE migration checks.\n');
+        migrateObj = InstanceSpace(classCaseDir, baseOpts).build();
+        baseModel = migrateObj.model;
+    end
 
     % LIBSVM struct: a plain struct (no predict() method) under the old
     % 'svm' field name, as svmtrain() would have produced. NOTE: assigned

@@ -69,18 +69,24 @@ if strcmpi(opts.method, 'pls')
     %
     % plsregress always mean-centres X and Y internally regardless of
     % whether PRELIM already did so; its scores/loadings are defined in
-    % terms of the CENTRED data. Ar/Br/Cr are reused as-is, but out.Z and
-    % the reconstruction Xhat must centre/uncentre explicitly, or they'd
-    % silently pick up a constant offset error whenever X/Y aren't
-    % already zero-mean (e.g. opts.norm.flag=false upstream).
+    % terms of the CENTRED data, so out.error/out.R2 (computed against
+    % the true Xbar) must add the means back on reconstruction.
+    %
+    % out.Z uses plsregress's own XS output directly rather than
+    % recomputing (X-Xmean)*stats.W': for the SIMPLS algorithm MATLAB
+    % uses, the scores satisfy XS = X0*W directly (SIMPLS deflates the
+    % cross-covariance, not X itself, unlike NIPALS -- so no further
+    % inv(P'*W) correction applies), but reading XS straight from
+    % plsregress guarantees out.Z is consistent with XL/YL by
+    % construction regardless of that algorithmic detail.
     fprintf('[PILOT] PILOT is using partial least squares (opts.pilot.method=''pls'').\n');
     Xmean = mean(X, 1);
     Ymean = mean(Y, 1);
-    [XL, YL, ~, ~, ~, ~, ~, stats] = plsregress(X, Y, d);
-    out.A = stats.W';  % Ar = W' (d x n)
+    [XL, YL, XS, ~, ~, ~, ~, stats] = plsregress(X, Y, d);
+    out.A = stats.W';  % Ar = W' (d x n) -- used by exploreIS to reproject new instances via Z=X*A'
     out.B = XL;          % Br = P (n x d)
     out.C = YL';          % Cr = Q' (d x q)
-    out.Z = (X - Xmean)*out.A';
+    out.Z = XS;
     Xhat = out.Z*[out.B; out.C']' + [Xmean Ymean];
     out.error = sum(sum((Xbar-Xhat).^2,2));
     out.R2 = diag(corr(Xbar,Xhat)).^2;

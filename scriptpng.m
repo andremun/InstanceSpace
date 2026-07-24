@@ -25,8 +25,9 @@ Yfoot = container.data.Ybin;
 Pfoot = container.data.P;
 % -------------------------------------------------------------------------
 % Optimised 3D camera viewpoint(s) (spec §5.2), if computed. Absent for 2D
-% projections, in which case resolveViewAngle/applyView fall back to the
-% default view(3).
+% projections; resolveViewAngle then returns [] and applyView is a no-op
+% in 2D (it only calls the default view(3) as a fallback for a 3D plot
+% that has no computed viewpoint to use).
 if isfield(container.pilot,'viewpoint')
     viewpoint = container.pilot.viewpoint;
 else

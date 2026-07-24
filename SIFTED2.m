@@ -51,6 +51,10 @@ if size(X,2) ~= length(featlabels)
 end
 if ~isfield(opts, 'pval'), opts.pval = 0.05; end
 if ~isfield(opts, 'dims'), opts.dims = 2;    end
+if ~(isnumeric(opts.dims) && isscalar(opts.dims) && ismember(opts.dims, [2 3]))
+    error('ISA:SIFTED2:invalidDims', ...
+        'opts.dims must be 2 or 3 (got %s).', mat2str(opts.dims));
+end
 
 % -------------------------------------------------------------------------
 % GA and clustering parameters (fixed internal constants; not user-facing

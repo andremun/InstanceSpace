@@ -230,9 +230,11 @@ function clearCache()
 % a stale fitness value cached under the same feature-selection bitmask
 % key from a previous, unrelated SIFTED call on different data.
     clear costfcn
-    mypool = gcp('nocreate');
-    if ~isempty(mypool)
-        wait(parfevalOnAll(mypool, @() clear('costfcn'), 0));
+    if exist('gcp','file')==2
+        mypool = gcp('nocreate');
+        if ~isempty(mypool)
+            wait(parfevalOnAll(mypool, @() clear('costfcn'), 0));
+        end
     end
 end
 % =========================================================================

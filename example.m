@@ -30,6 +30,10 @@ dims       = 2;        % opts.pilot.dims: 2 (default) or 3
 siftedFlag = true;     % opts.sifted.flag: automated feature selection on/off
 % -----------------------------------------------------------------------
 
+% Starts from a clean struct so a stale opts variable left in the base
+% workspace by a previous script (e.g. test_integration.m) in the same
+% MATLAB session can't leak unrelated fields into this run's options.json.
+opts = struct();
 opts.pythia.classifier = classifier;
 opts.pythia.tuning     = tuning;
 opts.pilot.dims        = dims;

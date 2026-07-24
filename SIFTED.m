@@ -233,7 +233,8 @@ function clearCache()
     if exist('gcp','file')==2
         mypool = gcp('nocreate');
         if ~isempty(mypool)
-            wait(parfevalOnAll(mypool, @() clear('costfcn'), 0));
+            % Clear the parent function so local-function persistent state (incl. costfcn) is reset on workers.
+            wait(parfevalOnAll(mypool, @() clear('SIFTED'), 0));
         end
     end
 end

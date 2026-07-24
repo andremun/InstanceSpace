@@ -34,6 +34,7 @@ assignin('caller','drawGoodBadFootprint',@drawGoodBadFootprint);
 assignin('caller','drawFootprint',@drawFootprint);
 assignin('caller','drawBinaryPerformance',@drawBinaryPerformance);
 assignin('caller','getPolygonPoints',@getPolygonPoints);
+assignin('caller','resolveViewAngle',@resolveViewAngle);
 
 end
 % =========================================================================
@@ -72,8 +73,46 @@ else
 end
 end
 % =========================================================================
-function handle = drawSources(Z, S)
-
+function applyView(is3D, viewAngle)
+% Applies the optimised camera viewpoint (spec §5.2) if one was supplied,
+% otherwise falls back to MATLAB's default isometric 3D view. No-op in 2D.
+if ~is3D, return; end
+if isempty(viewAngle)
+    view(3);
+else
+    view(viewAngle(1), viewAngle(2));
+end
+end
+% =========================================================================
+function viewAngle = resolveViewAngle(viewpoint, algoIdx)
+% Resolves the [azimuth elevation] (degrees, for view(az,el)) to use for a
+% plot, given a model.pilot.viewpoint struct (PILOTviewpoint's output) and
+% the algorithm column index the plot is about (or [] for plots that
+% aren't tied to a single algorithm, e.g. feature distributions).
+%
+% Returns [] (meaning: fall back to view(3)) when no viewpoint is
+% available, i.e. a 2D projection where PILOTviewpoint was never called.
+%
+% algoIdx is matched against viewpoint.groups (opts.pilot.viewGroups, or
+% the single default group spanning every algorithm); an algorithm not
+% covered by any group -- or a plot with no specific algorithm -- falls
+% back to the first computed viewpoint.
+if isempty(viewpoint)
+    viewAngle = [];
+    return;
+end
+g = [];
+if ~isempty(algoIdx)
+    g = find(cellfun(@(grp) any(grp == algoIdx), viewpoint.groups), 1);
+end
+if isempty(g)
+    g = 1;
+end
+viewAngle = rad2deg([viewpoint.azimuth(g), viewpoint.elevation(g)]);
+end
+% =========================================================================
+function handle = drawSources(Z, S, viewAngle)
+if nargin < 3, viewAngle = []; end
 is3D = size(Z,2) == 3;
 sourcelabels = cellstr(unique(S));
 nsources = length(sourcelabels);
@@ -92,12 +131,12 @@ legend(handle, sourcelabels, 'Location', 'NorthEastOutside');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 axis square; axis(axisLimits(Z));
-if is3D; view(3); end
+applyView(is3D, viewAngle);
 
 end
 % =========================================================================
-function handle = drawScatter(Z, X, titlelabel)
-
+function handle = drawScatter(Z, X, titlelabel, viewAngle)
+if nargin < 4, viewAngle = []; end
 is3D = size(Z,2) == 3;
 if is3D
     handle = scatter3(Z(:,1), Z(:,2), Z(:,3), 8, X, 'filled');
@@ -109,13 +148,13 @@ labelAxes(is3D); title(titlelabel);
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 axis square; axis(axisLimits(Z));
-if is3D; view(3); end
+applyView(is3D, viewAngle);
 colorbar('EastOutside');
 
 end
 % =========================================================================
-function drawPortfolioSelections(Z, P, algolabels, titlelabel)
-
+function drawPortfolioSelections(Z, P, algolabels, titlelabel, viewAngle)
+if nargin < 5, viewAngle = []; end
 is3D = size(Z,2) == 3;
 nalgos = length(algolabels);
 algolbls = cell(1,nalgos+1);
@@ -143,12 +182,12 @@ legend(h(isworthy), algolbls(isworthy), 'Location', 'NorthEastOutside');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 axis square; axis(axisLimits(Z));
-if is3D; view(3); end
+applyView(is3D, viewAngle);
 
 end
 % =========================================================================
-function h = drawPortfolioFootprint(Z, best, P, algolabels)
-
+function h = drawPortfolioFootprint(Z, best, P, algolabels, viewAngle)
+if nargin < 5, viewAngle = []; end
 is3D = size(Z,2) == 3;
 nalgos = length(algolabels);
 algolbls = cell(1,nalgos+1);
@@ -177,12 +216,12 @@ legend(h(isworthy), algolbls(isworthy), 'Location', 'NorthEastOutside');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 axis square; axis(axisLimits(Z));
-if is3D; view(3); end
+applyView(is3D, viewAngle);
 
 end
 % =========================================================================
-function h = drawGoodBadFootprint(Z, good, Ybin, titlelabel)
-
+function h = drawGoodBadFootprint(Z, good, Ybin, titlelabel, viewAngle)
+if nargin < 5, viewAngle = []; end
 is3D = size(Z,2) == 3;
 orange = [1.0 0.6471 0.0];
 blue = [0.0 0.0 1.0];
@@ -211,7 +250,7 @@ legend(h(h~=0), lbls(h~=0), 'Location', 'NorthEastOutside');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 axis square; axis(axisLimits(Z));
-if is3D; view(3); end
+applyView(is3D, viewAngle);
 
 end
 % =========================================================================
@@ -230,8 +269,8 @@ hold off;
 
 end
 % =========================================================================
-function h = drawBinaryPerformance(Z, Ybin, titlelabel)
-
+function h = drawBinaryPerformance(Z, Ybin, titlelabel, viewAngle)
+if nargin < 4, viewAngle = []; end
 is3D = size(Z,2) == 3;
 orange = [1.0 0.6471 0.0];
 blue = [0.0 0.0 1.0];
@@ -258,7 +297,7 @@ legend(h(h~=0), lbls(h~=0), 'Location', 'NorthEastOutside');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 axis square; axis(axisLimits(Z));
-if is3D; view(3); end
+applyView(is3D, viewAngle);
 
 end
 % =========================================================================

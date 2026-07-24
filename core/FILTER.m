@@ -72,77 +72,105 @@ subsetIndex = false(ninst,1);
 isDissimilar = true(ninst,1);
 isVISA = false(ninst,1);
 gamma = sqrt(nalgos/nfeats)*opts.mindistance;
+needsAP = any(strcmp(opts.type, {'Ftr&AP','Ftr&AP&Good'}));
 
-% Precompute every pairwise feature/performance distance once instead of
-% calling pdist2 per pair inside the O(ninst^2) loop below (that call
-% overhead, repeated up to ninst^2 times, was FILTER's dominant cost).
-% O(ninst^2) memory; fine up to a few thousand instances -- a KD-tree
-% (knnsearch) would be needed to scale further.
-Dx = squareform(pdist(X));
-% Dy is only read below for opts.type == 'Ftr&AP'/'Ftr&AP&Good'; skip the
-% O(ninst^2) time/memory cost entirely for 'Ftr'/'Ftr&Good', where it's
-% never accessed.
-if any(strcmp(opts.type, {'Ftr&AP','Ftr&AP&Good'}))
-    Dy = squareform(pdist(Y));
-end
 % Db(i,j) = all(Ybin(i,:) & Ybin(j,:)), which -- since all(A&B) is true
 % iff all(A) and all(B) are both true -- reduces to "both i and j are
 % good on every algorithm", a per-instance property rather than a real
 % pairwise one. isGood(ii) && isGood(jj) below is that, computed once.
 isGood = all(Ybin, 2);
 
-% The elimination itself stays a sequential double loop, not just the
-% distance lookups: which instances end up marked redundant depends on
-% the running state of subsetIndex (an instance already marked redundant
-% is skipped as both a future ii and jj), so this greedy process isn't
-% safe to vectorise away without changing which instances get kept.
-for ii=1:ninst
-    if ~subsetIndex(ii)
-        for jj=ii+1:ninst
-            if ~subsetIndex(jj) && Dx(ii,jj) <= opts.mindistance
-                isDissimilar(jj) = false;
-                Db = isGood(ii) && isGood(jj);
-                switch opts.type
-                    case 'Ftr'
-                        subsetIndex(jj) = true;
-                    case 'Ftr&AP'
-                        if Dy(ii,jj) <= gamma
-                            subsetIndex(jj) = true;
-                            isVISA(jj) = false;
-                        else
-                            isVISA(jj) = true;
-                        end
-                    case 'Ftr&Good'
-                        if Db
-                            subsetIndex(jj) = true;
-                            isVISA(jj) = false;
-                        else
-                            isVISA(jj) = true;
-                        end
-                    case 'Ftr&AP&Good'
-                        if Db
-                            if Dy(ii,jj) <= gamma
-                                subsetIndex(jj) = true;
-                                isVISA(jj) = false;
-                            else
-                                isVISA(jj) = true;
-                            end
-                        else
-                            isVISA(jj) = true;
-                        end
-                    otherwise
-                        disp('Invalid flag!')
+% FILTER only ever needs the pairs closer than opts.mindistance, which is
+% exactly what a spatial index answers directly: rangesearch builds a
+% KD-tree over X once -- O(ninst log ninst) on average for the modest
+% feature counts this pipeline typically has -- and returns, for every
+% instance, only its neighbours within opts.mindistance. That avoids the
+% O(ninst^2) time and memory of computing and storing a full pairwise
+% distance matrix, which matters in practice: at ninst ~ 20000 a dense
+% Dx alone needs ~3GB, doubling to ~6GB with a second matrix (Dy) for the
+% 'Ftr&AP'/'Ftr&AP&Good' types.
+neighbours = rangesearch(X, X, opts.mindistance);
+
+% The elimination itself stays sequential, not just the neighbour lookup:
+% which instances end up marked redundant depends on the running state of
+% subsetIndex (an instance already marked redundant is skipped as both a
+% future ii and jj), so this greedy process isn't safe to vectorise away
+% without changing which instances get kept. Processing order among the
+% jj's for a fixed ii doesn't matter -- each jj's assignments below are
+% independent of every other jj considered for the same ii -- only the
+% outer ii order (1..ninst) does.
+for ii = 1:ninst
+    if subsetIndex(ii)
+        continue;
+    end
+    jjList = neighbours{ii};
+    jjList = jjList(jjList > ii);
+    if isempty(jjList)
+        continue;
+    end
+    % Only compute algorithm-performance distances for the (typically
+    % small) set of instances already known to be feature-close to ii,
+    % instead of a full O(ninst^2) Dy -- Dy is never read for any pair
+    % farther apart than opts.mindistance.
+    if needsAP
+        Dy_ii = pdist2(Y(ii,:), Y(jjList,:));
+    end
+    for k = 1:numel(jjList)
+        jj = jjList(k);
+        if subsetIndex(jj)
+            continue;
+        end
+        isDissimilar(jj) = false;
+        Db = isGood(ii) && isGood(jj);
+        switch opts.type
+            case 'Ftr'
+                subsetIndex(jj) = true;
+            case 'Ftr&AP'
+                if Dy_ii(k) <= gamma
+                    subsetIndex(jj) = true;
+                    isVISA(jj) = false;
+                else
+                    isVISA(jj) = true;
                 end
-            end
+            case 'Ftr&Good'
+                if Db
+                    subsetIndex(jj) = true;
+                    isVISA(jj) = false;
+                else
+                    isVISA(jj) = true;
+                end
+            case 'Ftr&AP&Good'
+                if Db
+                    if Dy_ii(k) <= gamma
+                        subsetIndex(jj) = true;
+                        isVISA(jj) = false;
+                    else
+                        isVISA(jj) = true;
+                    end
+                else
+                    isVISA(jj) = true;
+                end
+            otherwise
+                disp('Invalid flag!')
         end
     end
 end
 
-% Assess the uniformity of the retained (non-redundant) subset, reusing
-% the already-computed Dx submatrix instead of a second pdist call.
-Dkept = Dx(~subsetIndex, ~subsetIndex);
-Dkept(1:size(Dkept,1)+1:end) = NaN; % diagonal -> NaN, excludes self-distance from min
-nearest = min(Dkept,[],2,'omitnan');
+% Assess the uniformity of the retained (non-redundant) subset. As above,
+% avoid an O(ninst^2) distance matrix: knnsearch's KD-tree finds each kept
+% instance's nearest OTHER kept instance directly. K=2 because the
+% nearest match to any point in its own reference set is always itself,
+% at distance 0, so the second column is the nearest-OTHER-neighbour
+% distance the original Dkept-based loop computed.
+kept = ~subsetIndex;
+nkept = sum(kept);
+if nkept < 2
+    nearest = [];
+else
+    Xkept = X(kept, :);
+    [~, D] = knnsearch(Xkept, Xkept, 'K', 2);
+    nearest = D(:,2);
+end
 % Uniformity is undefined when there are too few retained instances to
 % have a nearest-neighbour distance at all, or when every retained
 % instance coincides in feature space (mean distance of 0, which would

@@ -52,6 +52,13 @@ if size(Z,1) ~= size(Y,1)
         'Z and Y must have the same number of rows (got %d vs %d).', ...
         size(Z,1), size(Y,1));
 end
+if size(Z,2) ~= 3
+    % cross(v1,v2)/cart2sph below are only meaningful for a 3D viewing
+    % direction; fail fast here instead of an index-out-of-bounds on
+    % viewdir(3) once a trial has already been fitted.
+    error('ISA:PILOTviewpoint:not3D', ...
+        'Z must be a (ninst x 3) 3D PILOT projection (got %d columns).', size(Z,2));
+end
 if ~isfield(opts, 'ntries'), opts.ntries = 10; end
 if ~isfield(opts, 'viewGroups') || isempty(opts.viewGroups)
     groups = {1:size(Y,2)};
@@ -113,8 +120,8 @@ for g = 1:ngroups
                                                  'MaxIterations',30000,...
                                                  'FunctionTolerance',1e-20));
         A = reshape(thetai(1:2*n), 2, n);
-        A(1,:) = A(1,:) / norm(A(1,:));
-        A(2,:) = A(2,:) / norm(A(2,:));
+        A(1,:) = A(1,:) / max(norm(A(1,:)), eps);
+        A(2,:) = A(2,:) / max(norm(A(2,:)), eps);
         thetai(1:2*n) = A(:);
         theta(:,i) = thetai;
         perf(i) = corr(Hd, pdist(Z*A')');

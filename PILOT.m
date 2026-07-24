@@ -22,6 +22,18 @@ if ~ismember(lower(opts.method), {'standard','pls'})
     error('ISA:PILOT:invalidMethod', ...
         'opts.method must be ''standard'' or ''pls'' (got ''%s'').', opts.method);
 end
+if ~(isnumeric(opts.dims) && isscalar(opts.dims) && ismember(opts.dims, [2 3]))
+    error('ISA:PILOT:invalidDims', ...
+        'opts.dims must be 2 or 3 (got %s).', mat2str(opts.dims));
+end
+% costWeight must stay strictly positive: the analytic branch divides by
+% sqrt(costWeight) to unscale C back to true Y units (Inf/NaN at 0,
+% complex for negative values), and alpha<=0 has no sensible meaning for
+% the numerical branch's weighted loss either.
+if ~(isnumeric(opts.alpha) && isscalar(opts.alpha) && isfinite(opts.alpha) && opts.alpha > 0)
+    error('ISA:PILOT:invalidAlpha', ...
+        'opts.alpha must be a finite, positive scalar (got %s).', mat2str(opts.alpha));
+end
 d = opts.dims;
 costWeight = opts.alpha;
 

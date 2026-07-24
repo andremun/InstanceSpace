@@ -39,13 +39,28 @@ function scriptpng(container,rootdir)
 % Preliminaries
 scriptfcn;
 % Figures created in headless/batch MATLAB (-nodisplay, common for
-% automated runs) otherwise inherit a black root default Color, which
-% exportgraphics then bakes into the PNG as a black background. Export
-% via exportgraphics rather than print(...,'-dpng',...): print warns
-% ("Ignoring 'InvertHardCopy' property...") whenever Color has been set
-% explicitly, which it always has been here since the line above.
+% automated runs) otherwise inherit a black background. Two distinct
+% causes, both handled here:
+%  1) MATLAB R2025a+ figures pick up a light/dark Theme from the desktop
+%     appearance setting, which in headless runs frequently defaults to
+%     dark; dark theme drives each new axes' background even when the
+%     *figure* Color has been set explicitly, so set(gcf,'Color','w')
+%     alone is not enough. Forcing Theme='light' is the fix MathWorks
+%     documents for this, and -- because Theme is inherited by axes
+%     created afterwards -- it survives every clf/redraw in the loops
+%     below without needing to be reapplied. Guarded with isprop since
+%     Theme does not exist before R2025a.
+%  2) Pre-R2025a MATLAB has no such theme system, but a black root
+%     default Color can still leak in; set(0,'defaultFigureColor','w')
+%     plus set(gcf,'Color','w') covers that case directly.
+% Export via exportgraphics rather than print(...,'-dpng',...): print
+% warns ("Ignoring 'InvertHardCopy' property...") whenever Color has
+% been set explicitly, which it now always is.
 set(0, 'defaultFigureColor', 'w');
 set(gcf, 'Color', 'w');
+if isprop(gcf, 'Theme')
+    gcf.Theme = 'light';
+end
 colormap('parula');
 nfeats = size(container.data.X,2);
 nalgos = size(container.data.Y,2);

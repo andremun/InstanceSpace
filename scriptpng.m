@@ -37,6 +37,12 @@ set(gcf, 'Color', 'w');
 if isprop(gcf, 'Theme')
     gcf.Theme = 'light';
 end
+% New axes show an interactive toolbar (camera/zoom/pan icons) the
+% first time they're rendered in a session; exportgraphics then warns
+% ("Exported image displays axes toolbar...") and bakes that overlay
+% into the PNG. Disabling it as the new default for axes created from
+% here on avoids both, for every plot in this file.
+set(groot, 'defaultAxesToolbarVisible', 'off');
 colormap('parula');
 nfeats = size(container.data.X,2);
 nalgos = size(container.data.Y,2);

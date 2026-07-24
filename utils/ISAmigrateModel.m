@@ -22,12 +22,29 @@ function modelOut = ISAmigrateModel(input, varargin)
 %
 %        model = ISAmigrateModel(model);
 %
-% Both paths apply the identical field migrations:
+% Both paths apply the complete legacy migration table from spec §6.4:
 %
-%   model.pythia.svm{i}  / .knn{i}   -> model.pythia.classifiers{i}  (note: plural)
-%   model.pythia.boxcosnt             -> model.pythia.param1
-%   model.pythia.kscale               -> model.pythia.param2
-%   opts.oracle                       -> opts.pythia  (very old models)
+%   opts struct renames  opts.oracle/opts.pbldr/opts.sbound/opts.footprint
+%                         -> opts.pythia/opts.pilot/opts.cloister/opts.trace
+%   opts merges           opts.corr.flag/.threshold and opts.clust.flag
+%                         merged into opts.sifted
+%   opts.perf.MaxMin      -> opts.perf.MaxPerf
+%   model.data.bestPerformace (typo) -> model.data.Ybest
+%   model.pilot.A without B/C -> warning only (not expected; not auto-fixable)
+%   model.pythia.svm{i} / .knn{i}   -> model.pythia.classifiers{i}
+%   model.pythia.boxcosnt / .kscale -> model.pythia.param1 / .param2
+%   LIBSVM struct in model.pythia   -> retrained via the current classifier
+%                                      registry (opts.pythia.classifier,
+%                                      default 'knn'); a LIBSVM struct has no
+%                                      predict() method, so unlike the plain
+%                                      field renames above it cannot simply
+%                                      be relabelled
+%   model.trace in the pre-refactor DBSCAN+polyshape triangulation format
+%                         -> recomputed fresh via TRACE3, using
+%                            model.pythia.Yhat when available (else
+%                            model.data.Ybin, per spec §6.4)
+%   missing model.completedStages -> inferred from which sub-structs are
+%                         present and populated
 %
 % After migration the model can be passed to PYTHIA eval mode and scriptcsv.
 %
@@ -119,21 +136,134 @@ if ~isstruct(model)
     return;
 end
 
-% ------------------------------------------------------------------
-% Migrate very old opts layout: opts.oracle -> opts.pythia
-if isfield(model, 'opts') && isfield(model.opts, 'oracle') && ...
-        ~isfield(model.opts, 'pythia')
-    model.opts.pythia = model.opts.oracle;
-    model.opts = rmfield(model.opts, 'oracle');
-    fprintf('ISAmigrateModel: renamed opts.oracle -> opts.pythia.\n');
+% Each migration below is independent of the others (guarded on its own
+% isfield checks), so -- unlike an early-return chain -- a model missing
+% one sub-struct (e.g. no model.pythia) still gets every other applicable
+% migration instead of silently skipping the rest of the table.
+model = migrateOptsRenames(model);
+model = migrateOptsMerges(model);
+model = migrateDataFieldNames(model);
+model = migratePilotFields(model);
+model = migratePythiaFields(model);
+model = migrateTraceFields(model);
+model = inferCompletedStages(model);
 end
 
-% ------------------------------------------------------------------
-% Migrate pythia struct fields.
+% =========================================================================
+function model = migrateOptsRenames(model)
+% Very old top-level opts struct renames, predating the current opts schema.
+if ~isfield(model, 'opts')
+    return;
+end
+renamePairs = {
+    'oracle',    'pythia'
+    'pbldr',     'pilot'
+    'sbound',    'cloister'
+    'footprint', 'trace'
+};
+for i = 1:size(renamePairs, 1)
+    oldName = renamePairs{i,1};
+    newName = renamePairs{i,2};
+    if isfield(model.opts, oldName) && ~isfield(model.opts, newName)
+        model.opts.(newName) = model.opts.(oldName);
+        model.opts = rmfield(model.opts, oldName);
+        fprintf('ISAmigrateModel: renamed opts.%s -> opts.%s.\n', oldName, newName);
+    end
+end
+end
+
+% =========================================================================
+function model = migrateOptsMerges(model)
+if ~isfield(model, 'opts')
+    return;
+end
+% opts.corr.flag / opts.corr.threshold -> merged into opts.sifted. The
+% correlation-selection threshold in the current schema is opts.sifted.rho
+% (SIFTED.m's selection logic reads opts.rho; see ISAdefaults.m). Spec
+% Section 6.4 refers to the migration target as "opts.sifted.corrThreshold",
+% but no field by that literal name exists in this codebase -- rho is what
+% it actually maps to.
+if isfield(model.opts, 'corr')
+    if ~isfield(model.opts, 'sifted')
+        model.opts.sifted = struct();
+    end
+    if isfield(model.opts.corr, 'threshold') && ~isfield(model.opts.sifted, 'rho')
+        model.opts.sifted.rho = model.opts.corr.threshold;
+    end
+    if isfield(model.opts.corr, 'flag') && ~model.opts.corr.flag && ...
+            ~isfield(model.opts.sifted, 'flag')
+        % opts.corr.flag=false meant "skip correlation-based selection",
+        % which has no standalone equivalent now that correlation
+        % filtering is one internal step of SIFTED rather than a separate
+        % stage; disabling SIFTED entirely is the closest approximation.
+        model.opts.sifted.flag = false;
+    end
+    model.opts = rmfield(model.opts, 'corr');
+    fprintf('ISAmigrateModel: merged opts.corr into opts.sifted.\n');
+end
+% opts.clust.flag -> merged into opts.sifted; no direct equivalent, so a
+% false flag is approximated the same way as opts.corr.flag above.
+if isfield(model.opts, 'clust')
+    if ~isfield(model.opts, 'sifted')
+        model.opts.sifted = struct();
+    end
+    if isfield(model.opts.clust, 'flag') && ~model.opts.clust.flag && ...
+            ~isfield(model.opts.sifted, 'flag')
+        model.opts.sifted.flag = false;
+    end
+    model.opts = rmfield(model.opts, 'clust');
+    fprintf('ISAmigrateModel: merged opts.clust into opts.sifted.\n');
+end
+% opts.perf.MaxMin -> opts.perf.MaxPerf
+if isfield(model.opts, 'perf') && isfield(model.opts.perf, 'MaxMin') && ...
+        ~isfield(model.opts.perf, 'MaxPerf')
+    model.opts.perf.MaxPerf = model.opts.perf.MaxMin;
+    model.opts.perf = rmfield(model.opts.perf, 'MaxMin');
+    fprintf('ISAmigrateModel: renamed opts.perf.MaxMin -> opts.perf.MaxPerf.\n');
+end
+end
+
+% =========================================================================
+function model = migrateDataFieldNames(model)
+if isfield(model, 'data') && isfield(model.data, 'bestPerformace') && ...
+        ~isfield(model.data, 'Ybest')
+    model.data.Ybest = model.data.bestPerformace;
+    model.data = rmfield(model.data, 'bestPerformace');
+    fprintf('ISAmigrateModel: renamed model.data.bestPerformace -> model.data.Ybest.\n');
+end
+end
+
+% =========================================================================
+function model = migratePilotFields(model)
+% model.pilot.A without B/C is not expected in any production model -- B
+% and C are always assigned in the same code block as A -- so there is no
+% automatic fix, only a warning that the model may be corrupted or from an
+% unsupported version (spec §6.4).
+if isfield(model, 'pilot') && isfield(model.pilot, 'A') && ...
+        (~isfield(model.pilot, 'B') || ~isfield(model.pilot, 'C'))
+    warning('ISA:ISAmigrateModel:incompletePilot', ...
+        ['model.pilot.A is present without B and/or C. PILOT always assigns all three ' ...
+         'together, so this is unexpected; the model may be corrupted or from an ' ...
+         'unsupported version. No automatic fix applied.']);
+end
+end
+
+% =========================================================================
+function model = migratePythiaFields(model)
 if ~isfield(model, 'pythia')
     return;
 end
 p = model.pythia;
+
+% LIBSVM-era classifiers are plain structs returned by svmtrain() (no
+% predict() method), fundamentally incompatible with the new registry's
+% ClassificationSVM objects -- unlike the old-field-name-but-already-native
+% case below, these cannot simply be relabelled and must be retrained.
+if isfield(p, 'svm') && ~isfield(p, 'classifiers') && ...
+        iscell(p.svm) && ~isempty(p.svm) && isstruct(p.svm{1})
+    model = retrainLibsvmPythia(model);
+    p = model.pythia;
+end
 
 % Rename legacy classifier cell array to 'classifiers' (plural).
 if isfield(p, 'svm') && ~isfield(p, 'classifiers')
@@ -175,4 +305,101 @@ if ~isfield(p, 'mu') || ~isfield(p, 'sigma')
 end
 
 model.pythia = p;
+end
+
+% =========================================================================
+function model = retrainLibsvmPythia(model)
+if ~isfield(model, 'pilot') || ~isfield(model.pilot, 'Z') || ...
+        ~isfield(model, 'data') || ~all(isfield(model.data, {'Y','Ybin','Ybest','algolabels'}))
+    warning('ISA:ISAmigrateModel:cannotRetrainPythia', ...
+        ['model.pythia holds LIBSVM-format classifiers, which have no predict() method ' ...
+         'and cannot simply be renamed -- but the fields needed to retrain them ' ...
+         '(model.pilot.Z and model.data.Y/Ybin/Ybest/algolabels) are missing. Leaving ' ...
+         'model.pythia unmigrated; re-run build() to retrain with the current registry.']);
+    return;
+end
+pyOpts = struct();
+if isfield(model, 'opts') && isfield(model.opts, 'pythia')
+    pyOpts = model.opts.pythia;
+end
+validClassifiers = {'knn','svm','tree','nb','linear','ensemble'};
+if ~isfield(pyOpts, 'classifier') || ~any(strcmp(pyOpts.classifier, validClassifiers))
+    pyOpts.classifier = 'knn'; % spec §1.2 default for LIBSVM migration
+end
+full = ISAdefaults(struct('pythia', pyOpts));
+pyOpts = full.pythia;
+fprintf(['ISAmigrateModel: retraining LIBSVM-era pythia classifiers using the native ' ...
+    '''%s'' registry entry (opts.pythia.classifier).\n'], pyOpts.classifier);
+model.pythia = PYTHIA(model.pilot.Z, model.data.Y, model.data.Ybin, model.data.Ybest, ...
+    model.data.algolabels, pyOpts);
+end
+
+% =========================================================================
+function model = migrateTraceFields(model)
+if ~isfield(model, 'trace') || ~isTraceLegacyFormat(model.trace)
+    return;
+end
+if ~isfield(model, 'pilot') || ~isfield(model.pilot, 'Z') || ...
+        ~isfield(model, 'data') || ~all(isfield(model.data, {'Ybin','P','beta','algolabels'}))
+    warning('ISA:ISAmigrateModel:cannotRecomputeTrace', ...
+        ['model.trace is in the pre-refactor DBSCAN+polyshape triangulation format, but ' ...
+         'the fields needed to recompute it via TRACE3 (model.pilot.Z and model.data.' ...
+         'Ybin/P/beta/algolabels) are missing. Leaving model.trace unmigrated; re-run ' ...
+         'build() to produce current-format footprints.']);
+    return;
+end
+if isfield(model, 'pythia') && isfield(model.pythia, 'Yhat')
+    Yhat = model.pythia.Yhat;
+else
+    % Spec §6.4 fallback: no PYTHIA predictions available to filter by, so
+    % TRACE (via its own pythiaAvailable check) falls back to true labels.
+    Yhat = [];
+end
+traceOpts = struct();
+if isfield(model, 'opts') && isfield(model.opts, 'trace')
+    traceOpts = model.opts.trace;
+end
+traceOpts.method = 'trace3';
+full = ISAdefaults(struct('trace', traceOpts));
+traceOpts = full.trace;
+fprintf(['ISAmigrateModel: recomputing model.trace footprints via TRACE3 ' ...
+    '(was pre-refactor DBSCAN+polyshape triangulation format).\n']);
+model.trace = TRACE(model.pilot.Z, model.data.Ybin, Yhat, model.data.P, model.data.beta, ...
+    model.data.algolabels, traceOpts);
+end
+
+function tf = isTraceLegacyFormat(traceStruct)
+% Old format (TRACE_legacy.m's TRACEbuild): footprint.space.area, no
+% .measure. model.trace.space is always populated (built over every
+% instance, never a degenerate "throw" case), unlike individual
+% good{i}/best{i} entries which can be empty for algorithms with too few
+% good instances -- so space is the more reliable format signal.
+tf = isfield(traceStruct, 'space') && isstruct(traceStruct.space) && ...
+    isfield(traceStruct.space, 'area') && ~isfield(traceStruct.space, 'measure');
+end
+
+% =========================================================================
+function model = inferCompletedStages(model)
+if isfield(model, 'completedStages')
+    return;
+end
+% Mirrors InstanceSpace.load()'s own stage-name -> model-field-name mapping
+% (identity for every stage except 'cloister', whose output is stored under
+% the shorter model.cloist -- matching the pre-refactor buildIS.m's field
+% name). Duplicated here rather than shared because ISAmigrateModel.m
+% operates on plain structs, with no dependency on the InstanceSpace class.
+stageOrder = {'prelim','sifted','pilot','cloister','pythia','trace'};
+stageField = struct('prelim',   'prelim', ...
+                     'sifted',   'sifted', ...
+                     'pilot',    'pilot', ...
+                     'cloister', 'cloist', ...
+                     'pythia',   'pythia', ...
+                     'trace',    'trace');
+present = false(1, numel(stageOrder));
+for i = 1:numel(stageOrder)
+    present(i) = isfield(model, stageField.(stageOrder{i}));
+end
+model.completedStages = stageOrder(present);
+fprintf('ISAmigrateModel: inferred completedStages = {%s} from present model sub-structs.\n', ...
+    strjoin(model.completedStages, ', '));
 end

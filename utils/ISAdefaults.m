@@ -157,6 +157,7 @@ end
 if ~isfield(opts, 'outputs'),           opts.outputs           = struct; end
 if ~isfield(opts.outputs, 'csv'),       opts.outputs.csv       = true;   end
 if ~isfield(opts.outputs, 'png'),       opts.outputs.png       = true;   end
+if ~isfield(opts.outputs, 'fig'),       opts.outputs.fig       = true;   end
 if ~isfield(opts.outputs, 'web'),       opts.outputs.web       = false;  end
 
 end

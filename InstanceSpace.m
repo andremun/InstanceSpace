@@ -124,6 +124,7 @@ classdef InstanceSpace
                     opts = struct();
                 end
             end
+            opts = ISAvalidateOpts(opts);
             obj.opts             = ISAdefaults(opts);
             obj.model             = struct();
             % cell(1,0), not {}: {} is 0x0, and (1,:) property validation

@@ -116,6 +116,32 @@ if isempty(viewAngle)
 else
     view(viewAngle(1), viewAngle(2));
 end
+drawCompass(is3D);
+end
+% =========================================================================
+function drawCompass(is3D)
+% Coloured z1/z2/z3 axis-direction overlay (spec §8; Figure 5 of Simpson
+% et al., 2025), called from applyView so every 3D plot gets it uniformly.
+% Anchored at a corner of the current axis limits (already set by the
+% caller via axis(axisLimits(Z)) before applyView runs) and drawn in the
+% same 3D data coordinates as the scatter/footprint, so it rotates
+% together with the rest of the plot instead of staying screen-fixed.
+if ~is3D, return; end
+lims = axis;
+anchor  = [lims(1), lims(3), lims(5)];
+armLen  = 0.15 * max([lims(2)-lims(1), lims(4)-lims(3), lims(6)-lims(5)]);
+axColors = [0.85 0.10 0.10; 0.10 0.60 0.10; 0.10 0.40 0.85]; % z1/z2/z3
+axLabels = {'z_{1}', 'z_{2}', 'z_{3}'};
+dirs = eye(3);
+hold on;
+for i = 1:3
+    tip = anchor + armLen * dirs(i,:);
+    line([anchor(1) tip(1)], [anchor(2) tip(2)], [anchor(3) tip(3)], ...
+        'Color', axColors(i,:), 'LineWidth', 2);
+    text(tip(1), tip(2), tip(3), axLabels{i}, 'Color', axColors(i,:), ...
+        'FontWeight', 'bold', 'FontSize', 10);
+end
+hold off;
 end
 % =========================================================================
 function viewAngle = resolveViewAngle(viewpoint, algoIdx)

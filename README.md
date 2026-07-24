@@ -40,10 +40,13 @@ The main requirement for the software to run is to have MATLAB R2025a or later, 
 InstanceSpace.m, buildIS.m, exploreIS.m   entry points (see below)
 example.m, test_integration.m             getting-started / regression suite
 startup.m                                 adds the folders below to the MATLAB path
+Contents.m                                MATLAB Central File Exchange version/date metadata
+CITATION.cff                              machine-readable citation metadata
 core/                                     PRELIM, SIFTED, PILOT, PILOTviewpoint,
                                           CLOISTER, PYTHIA, TRACE, TRACE_legacy, FILTER
-output/                                   scriptcsv, scriptpng, scriptweb, scriptfcn
-utils/                                    ISAdefaults, ISAgetClassifierFcn,
+output/                                   scriptcsv, scriptpng, scriptweb, scriptfcn,
+                                          ISArecallView
+utils/                                    ISAdefaults, ISAvalidateOpts, ISAgetClassifierFcn,
                                           ISAmigrateModel, ISAsubsetData
 deprecated/                               PYTHIA2, PYTHIAtest, SIFTED2 (warn-and-forward
                                           shims kept for backward compatibility)
@@ -200,6 +203,7 @@ These settings result in more information being stored in files or presented in 
 
 - ```opts.outputs.csv``` This flag produces the output CSV files for post-processing and analysis. It is recommended to leave this setting as ```TRUE```.
 - ```opts.outputs.png``` This flag produces the output figures files for post-processing and analysis. It is recommended to leave this setting as ```TRUE```.
+- ```opts.outputs.fig``` For 3D projections, this flag also writes a ```.fig``` file alongside each footprint PNG for interactive rotation in MATLAB (see ```ISArecallView``` to snap a reopened figure back to its optimised viewpoint). No effect for 2D projections.
 - ```opts.outputs.web``` This flag produces the output files employed to draw the figures in MATILDA's web tools (click [here](https://matilda.unimelb.edu.au/matilda/newuser) to open an account). It is recommended to leave this setting as ```FALSE```.
 
 ## Contact

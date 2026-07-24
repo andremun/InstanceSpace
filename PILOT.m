@@ -143,12 +143,19 @@ else
         fprintf('[PILOT] PILOT is solving numerically the projection problem.\n');
         fprintf('[PILOT] This may take a while. Trials will not be run sequentially.\n');
         parfor (i=1:opts.ntries,nworkers)
-            [alpha(:,i),eoptim(i)] = fminunc(errorfcn, X0(:,i), ...
+            [alphaCol,eoptim(i)] = fminunc(errorfcn, X0(:,i), ...
                                              optimoptions('fminunc','Algorithm','quasi-newton',...
                                                                     'Display','off',...
                                                                     'UseParallel',false),...
                                              Xbar, n, m);
-            A = reshape(alpha(1:d*n,i),d,n);
+            % alpha(:,i) is a parfor sliced-output variable: it must only
+            % ever be written (never read back) with a consistent (:,i)
+            % pattern, so A is reshaped from the plain local alphaCol
+            % instead of alpha(1:d*n,i) -- that mismatched a :-sliced
+            % write against a 1:d*n-ranged read of the same variable,
+            % which MATLAB's parfor classifier rejects outright.
+            alpha(:,i) = alphaCol;
+            A = reshape(alphaCol(1:d*n),d,n);
             Z = X*A';
             perf(i) = corr(Hd,pdist(Z)');
             if opts.verbose

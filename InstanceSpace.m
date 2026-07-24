@@ -483,7 +483,7 @@ classdef InstanceSpace
                 subsetIndex(aux) = true;
             elseif bydensity
                 fprintf('[BUILD] Creating a small scale experiment for validation based on density.\n');
-                subsetIndex = FILTER(data.X, data.Y, data.Ybin, obj.opts.selvars);
+                [subsetIndex, ~, ~, densityUnif] = FILTER(data.X, data.Y, data.Ybin, obj.opts.selvars);
                 subsetIndex = ~subsetIndex;
                 fprintf('[BUILD] Percentage of instances retained: %s%%\n', ...
                     num2str(round(100.*mean(subsetIndex), 2)));
@@ -502,6 +502,9 @@ classdef InstanceSpace
             end
             model_.prelim = prelimOut;
             model_.prelim.bydensity = bydensity; % needed by the sifted stage's re-subsetting step
+            if bydensity
+                model_.prelim.unif = densityUnif; % feature-space uniformity of the retained subset
+            end
             model_.featsel.idx = 1:size(model_.data.X, 2);
 
             obj.model = model_;
@@ -522,7 +525,7 @@ classdef InstanceSpace
 
                 if isfield(obj.model.prelim, 'bydensity') && obj.model.prelim.bydensity
                     fprintf('[SIFTED] Creating a small scale experiment for validation based on density.\n');
-                    subsetIndex = FILTER(obj.model.data_dense.X(:,obj.model.featsel.idx), ...
+                    [subsetIndex, ~, ~, obj.model.sifted.unif] = FILTER(obj.model.data_dense.X(:,obj.model.featsel.idx), ...
                                          obj.model.data_dense.Y, ...
                                          obj.model.data_dense.Ybin, ...
                                          obj.opts.selvars);

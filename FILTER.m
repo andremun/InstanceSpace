@@ -20,10 +20,10 @@
 %   Algorithm Testing. ACM Computing Surveys, 55(12), Article 255.
 %   https://doi.org/10.1145/3572895
 % -------------------------------------------------------------------------
-function [subsetIndex,isDissimilar,isVISA] = FILTER(X,Y,Ybin,opts)
+function [subsetIndex,isDissimilar,isVISA,unif] = FILTER(X,Y,Ybin,opts)
 % FILTER  Density-based instance subsetting for small-scale experiments.
 %
-%   [subsetIndex,isDissimilar,isVISA] = FILTER(X,Y,Ybin,opts)
+%   [subsetIndex,isDissimilar,isVISA,unif] = FILTER(X,Y,Ybin,opts)
 %
 %   For every pair of instances closer than opts.mindistance in feature
 %   space, the second is marked redundant according to opts.type (see
@@ -56,9 +56,13 @@ function [subsetIndex,isDissimilar,isVISA] = FILTER(X,Y,Ybin,opts)
 %                    condition, so neither was marked redundant despite
 %                    the proximity ("visually important, but not
 %                    subsetted away")
-%
-%   Note: this also prints the feature-space uniformity of the retained
-%   subset (of the instances NOT marked redundant) to the console.
+%     unif         - feature-space uniformity of the retained (non-
+%                    redundant) subset: 1 minus the coefficient of
+%                    variation of nearest-neighbour distances (closer to 1
+%                    = more evenly spread, closer to 0 = clustered).
+%                    Previously computed but assigned to an undefined
+%                    workspace variable (model.data.unif) and discarded;
+%                    now a real output.
 
 [ninst,nalgos] = size(Y);
 nfeats = size(X,2);
@@ -68,58 +72,72 @@ isDissimilar = true(ninst,1);
 isVISA = false(ninst,1);
 gamma = sqrt(nalgos/nfeats)*opts.mindistance;
 
+% Precompute every pairwise feature/performance distance once instead of
+% calling pdist2 per pair inside the O(ninst^2) loop below (that call
+% overhead, repeated up to ninst^2 times, was FILTER's dominant cost).
+% O(ninst^2) memory; fine up to a few thousand instances -- a KD-tree
+% (knnsearch) would be needed to scale further.
+Dx = squareform(pdist(X));
+Dy = squareform(pdist(Y));
+% Db(i,j) = all(Ybin(i,:) & Ybin(j,:)), which -- since all(A&B) is true
+% iff all(A) and all(B) are both true -- reduces to "both i and j are
+% good on every algorithm", a per-instance property rather than a real
+% pairwise one. isGood(ii) && isGood(jj) below is that, computed once.
+isGood = all(Ybin, 2);
+
+% The elimination itself stays a sequential double loop, not just the
+% distance lookups: which instances end up marked redundant depends on
+% the running state of subsetIndex (an instance already marked redundant
+% is skipped as both a future ii and jj), so this greedy process isn't
+% safe to vectorise away without changing which instances get kept.
 for ii=1:ninst
     if ~subsetIndex(ii)
         for jj=ii+1:ninst
-            if ~subsetIndex(jj)
-                Dx = pdist2(X(ii,:),X(jj,:));
-                Dy = pdist2(Y(ii,:),Y(jj,:));
-                Db = all(Ybin(ii,:) & Ybin(jj,:));
-                if  Dx <= opts.mindistance
-                    isDissimilar(jj) = false;
-                    switch opts.type
-                        case 'Ftr'
+            if ~subsetIndex(jj) && Dx(ii,jj) <= opts.mindistance
+                isDissimilar(jj) = false;
+                Db = isGood(ii) && isGood(jj);
+                switch opts.type
+                    case 'Ftr'
+                        subsetIndex(jj) = true;
+                    case 'Ftr&AP'
+                        if Dy(ii,jj) <= gamma
                             subsetIndex(jj) = true;
-                        case 'Ftr&AP'
-                            if Dy <= gamma
+                            isVISA(jj) = false;
+                        else
+                            isVISA(jj) = true;
+                        end
+                    case 'Ftr&Good'
+                        if Db
+                            subsetIndex(jj) = true;
+                            isVISA(jj) = false;
+                        else
+                            isVISA(jj) = true;
+                        end
+                    case 'Ftr&AP&Good'
+                        if Db
+                            if Dy(ii,jj) <= gamma
                                 subsetIndex(jj) = true;
                                 isVISA(jj) = false;
                             else
                                 isVISA(jj) = true;
                             end
-                        case 'Ftr&Good'
-                            if Db
-                                subsetIndex(jj) = true;
-                                isVISA(jj) = false;
-                            else
-                                isVISA(jj) = true;
-                            end
-                        case 'Ftr&AP&Good'
-                            if Db
-                                if Dy <= gamma
-                                    subsetIndex(jj) = true;
-                                    isVISA(jj) = false;
-                                else
-                                    isVISA(jj) = true;
-                                end
-                            else
-                                isVISA(jj) = true;
-                            end
-                        otherwise
-                            disp('Invalid flag!')
-                    end
+                        else
+                            isVISA(jj) = true;
+                        end
+                    otherwise
+                        disp('Invalid flag!')
                 end
             end
         end
     end
 end
 
-% Assess the uniformity of the data
-D = squareform(pdist(X(~subsetIndex,:)));
-ninst = size(D,1);
-D(eye(ninst,'logical')) = NaN;
-nearest = min(D,[],2,'omitnan');
-model.data.unif = 1-(std(nearest)./mean(nearest));
-disp(['Uniformity of the instance subset: ' num2str(model.data.unif,4)]);
+% Assess the uniformity of the retained (non-redundant) subset, reusing
+% the already-computed Dx submatrix instead of a second pdist call.
+Dkept = Dx(~subsetIndex, ~subsetIndex);
+Dkept(1:size(Dkept,1)+1:end) = NaN; % diagonal -> NaN, excludes self-distance from min
+nearest = min(Dkept,[],2,'omitnan');
+unif = 1-(std(nearest)./mean(nearest));
+fprintf('[FILTER] Uniformity of the instance subset: %.4g\n', unif);
 
 end

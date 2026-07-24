@@ -229,8 +229,14 @@ for i = 1:nalgos
             [out.Ysub(:,i), out.Pr0sub(:,i), p1_best, p2_best] = ...
                 bayesSearch(classifierType, Znorm, yi, W(:,i), out.cp{i}, opts, opts.seed + i);
         else
-            % Scrambled Sobol search.
-            ss = sobolset(2, 'Skip', 1, 'Scramble', 'MatousekAffineOwen');
+            % Scrambled Sobol search. Scrambling must be applied via the
+            % scramble() object function -- sobolset's constructor only
+            % recognises 'Skip'/'Leap' as name-value pairs, and passing
+            % 'Scramble' there partial-matches the ScrambleMethod property
+            % and assigns it the raw string, which fails validation since
+            % ScrambleMethod expects a struct with 'Type'/'Options' fields.
+            ss = sobolset(2, 'Skip', 1);
+            ss = scramble(ss, 'MatousekAffineOwen');
             X  = net(ss, nIter);
             [P1, P2] = sobolToParams(classifierType, X);
 

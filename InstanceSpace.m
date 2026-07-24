@@ -129,11 +129,7 @@ classdef InstanceSpace
             rng(obj.opts.general.seed, 'twister');
             if obj.opts.general.verbose
                 fprintf('[BUILD] Listing options in use:\n');
-                optfields = fieldnames(obj.opts);
-                for i = 1:length(optfields)
-                    fprintf('%s\n', optfields{i});
-                    disp(obj.opts.(optfields{i}));
-                end
+                InstanceSpace.printOptions(obj.opts);
             end
             [mypool, poolOpenedHere] = obj.ensurePool();
 
@@ -599,6 +595,47 @@ classdef InstanceSpace
                 end
             end
             done = true;
+        end
+
+        function printOptions(opts, prefix)
+            % Compact one-line-per-setting options dump, replacing the raw
+            % fieldnames()+disp() loop that used to print each top-level
+            % opts section as MATLAB's verbose default struct display
+            % (~80+ lines for a full options.json). Recurses into nested
+            % option structs (e.g. opts.pilot, opts.sifted) so every leaf
+            % setting is shown as "section.field = value".
+            if nargin < 2, prefix = ''; end
+            fields = fieldnames(opts);
+            for i = 1:numel(fields)
+                f = fields{i};
+                v = opts.(f);
+                key = [prefix f];
+                if isstruct(v) && isscalar(v)
+                    InstanceSpace.printOptions(v, [key '.']);
+                else
+                    fprintf('  %-28s %s\n', key, InstanceSpace.formatOptionValue(v));
+                end
+            end
+        end
+
+        function s = formatOptionValue(v)
+            if ischar(v)
+                s = ['''' v ''''];
+            elseif isstring(v) && isscalar(v)
+                s = ['''' char(v) ''''];
+            elseif iscell(v) && all(cellfun(@ischar, v))
+                s = ['{' strjoin(v, ', ') '}'];
+            elseif islogical(v) && isscalar(v)
+                s = mat2str(v);
+            elseif isnumeric(v) && isempty(v)
+                s = '[]';
+            elseif isnumeric(v) && isscalar(v)
+                s = num2str(v);
+            elseif isnumeric(v)
+                s = mat2str(v);
+            else
+                s = class(v);
+            end
         end
 
         function out = evaluateTestSet(model, datafile)

@@ -38,6 +38,11 @@ function scriptpng(container,rootdir)
 % -------------------------------------------------------------------------
 % Preliminaries
 scriptfcn;
+% Figures created in headless/batch MATLAB (-nodisplay, common for
+% automated runs) otherwise inherit a black root default Color, which
+% print(...,'-dpng',...) then bakes into the PNG as a black background.
+set(0, 'defaultFigureColor', 'w');
+set(gcf, 'Color', 'w', 'InvertHardcopy', 'on');
 colormap('parula');
 nfeats = size(container.data.X,2);
 nalgos = size(container.data.Y,2);

@@ -29,6 +29,7 @@ if nargin < 3
     data.X = data.X(subsetIndex, :);
 else
     data.X = data.X(subsetIndex, featIdx);
+    data.featlabels = data.featlabels(featIdx);
 end
 data.Y            = data.Y(subsetIndex, :);
 data.Xraw         = data.Xraw(subsetIndex, :);

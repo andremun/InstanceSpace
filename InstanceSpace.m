@@ -317,7 +317,16 @@ classdef InstanceSpace
 
             obj = InstanceSpace(rootdir, model.opts);
             obj.model = model;
-            obj.completedStages = InstanceSpace.StageOrder;
+            % Infer completedStages from which stage sub-structs are
+            % actually present, rather than assuming every stage ran:
+            % save() is public, so a model saved after a partial
+            % build('stages',{...}) call must not come back from load()
+            % claiming later stages (e.g. pythia/trace) are done when
+            % their fields don't exist -- that would let checkPrereq wave
+            % through a build()/explore() call that then crashes deep
+            % inside the missing stage instead of at the prereq check.
+            obj.completedStages = InstanceSpace.StageOrder(...
+                cellfun(@(s) isfield(model, s), InstanceSpace.StageOrder));
         end
     end
 

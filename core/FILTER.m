@@ -78,7 +78,12 @@ gamma = sqrt(nalgos/nfeats)*opts.mindistance;
 % O(ninst^2) memory; fine up to a few thousand instances -- a KD-tree
 % (knnsearch) would be needed to scale further.
 Dx = squareform(pdist(X));
-Dy = squareform(pdist(Y));
+% Dy is only read below for opts.type == 'Ftr&AP'/'Ftr&AP&Good'; skip the
+% O(ninst^2) time/memory cost entirely for 'Ftr'/'Ftr&Good', where it's
+% never accessed.
+if any(strcmp(opts.type, {'Ftr&AP','Ftr&AP&Good'}))
+    Dy = squareform(pdist(Y));
+end
 % Db(i,j) = all(Ybin(i,:) & Ybin(j,:)), which -- since all(A&B) is true
 % iff all(A) and all(B) are both true -- reduces to "both i and j are
 % good on every algorithm", a per-instance property rather than a real

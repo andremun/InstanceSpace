@@ -66,13 +66,22 @@ if strcmpi(opts.method, 'pls')
     % standard method, PLS does not require X to be full column rank, and
     % opts.alpha (spec §5.4) does not apply -- plsregress maximises
     % covariance rather than minimising a weighted reconstruction cost.
+    %
+    % plsregress always mean-centres X and Y internally regardless of
+    % whether PRELIM already did so; its scores/loadings are defined in
+    % terms of the CENTRED data. Ar/Br/Cr are reused as-is, but out.Z and
+    % the reconstruction Xhat must centre/uncentre explicitly, or they'd
+    % silently pick up a constant offset error whenever X/Y aren't
+    % already zero-mean (e.g. opts.norm.flag=false upstream).
     fprintf('[PILOT] PILOT is using partial least squares (opts.pilot.method=''pls'').\n');
+    Xmean = mean(X, 1);
+    Ymean = mean(Y, 1);
     [XL, YL, ~, ~, ~, ~, ~, stats] = plsregress(X, Y, d);
     out.A = stats.W';  % Ar = W' (d x n)
     out.B = XL;          % Br = P (n x d)
     out.C = YL';          % Cr = Q' (d x q)
-    out.Z = X*out.A';
-    Xhat = out.Z*[out.B; out.C']';
+    out.Z = (X - Xmean)*out.A';
+    Xhat = out.Z*[out.B; out.C']' + [Xmean Ymean];
     out.error = sum(sum((Xbar-Xhat).^2,2));
     out.R2 = diag(corr(Xbar,Xhat)).^2;
 elseif opts.analytic

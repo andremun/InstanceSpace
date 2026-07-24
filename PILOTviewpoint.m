@@ -138,11 +138,18 @@ end
 function err = pilotViewErrorFcn(theta, Z, Y, n, n2, lambda)
 % Joint view (A, 2xn) + performance-reconstruction (C, n2x2) cost:
 %   ||Y - (C*A*Z')'||_F^2 + lambda*|dot(v1,v2)|
-% where v1=A(1,:), v2=A(2,:). Matches PILOTANGLE.m's reference cost
-% exactly, less the dead trailing "+ (0-1)" additive constant (has no
-% effect on the argmin BFGS solves for).
+% where v1,v2 are A's rows RESCALED TO UNIT NORM. The reconstruction term
+% C*A*Z' is invariant to rescaling A's rows while inversely rescaling C's
+% columns, so penalising the raw (unnormalised) dot product -- as
+% PILOTANGLE.m's reference does -- lets the optimiser shrink the penalty
+% toward 0 just by shrinking A, without the two directions actually
+% becoming orthogonal; normalising only inside the penalty (not the
+% reconstruction term) keeps it a true orthogonality measure regardless
+% of how BFGS happens to split scale between A and C.
 A = reshape(theta(1:2*n), 2, n);
 C = reshape(theta((2*n)+1:end), n2, 2);
 Yhat = (C*A*Z')';
-err = nanmean(nanmean((Y-Yhat).^2,1),2) + lambda*abs(dot(A(1,:),A(2,:)));
+v1 = A(1,:) / max(norm(A(1,:)), eps);
+v2 = A(2,:) / max(norm(A(2,:)), eps);
+err = nanmean(nanmean((Y-Yhat).^2,1),2) + lambda*abs(dot(v1,v2));
 end

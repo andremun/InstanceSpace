@@ -83,16 +83,25 @@ classdef InstanceSpace
     end
 
     methods (Access = public)
-        function obj = InstanceSpace(rootdir, opts)
+        function obj = InstanceSpace(rootdir, opts, requireData)
             % Reads metadata.csv presence and fills opts defaults; runs
-            % no computation (spec §7.2).
+            % no computation (spec §7.2). requireData (default true) is
+            % an internal flag -- not part of the public two-argument
+            % constructor call -- that InstanceSpace.load() sets false:
+            % explore()-only usage (the legacy exploreIS.m flow) only
+            % ever needed model.mat + metadata_test.csv on disk, so
+            % load() must not depend on the original training
+            % metadata.csv still being present in rootdir.
             InstanceSpace.ensurePathSetup();
-            narginchk(1, 2);
+            narginchk(1, 3);
+            if nargin < 3 || isempty(requireData)
+                requireData = true;
+            end
             if ~(endsWith(rootdir, '/') || endsWith(rootdir, '\'))
                 rootdir = [rootdir '/'];
             end
             obj.rootdir = rootdir;
-            if ~isfile([rootdir 'metadata.csv'])
+            if requireData && ~isfile([rootdir 'metadata.csv'])
                 error('ISA:InstanceSpace:missingData', ...
                     'metadata.csv not found in ''%s''.', rootdir);
             end
@@ -315,7 +324,7 @@ classdef InstanceSpace
             model = ISAmigrateModel(model);
             model.opts = ISAdefaults(model.opts);
 
-            obj = InstanceSpace(rootdir, model.opts);
+            obj = InstanceSpace(rootdir, model.opts, false);
             obj.model = model;
             % Infer completedStages from which stage sub-structs are
             % actually present, rather than assuming every stage ran:
@@ -325,8 +334,14 @@ classdef InstanceSpace
             % their fields don't exist -- that would let checkPrereq wave
             % through a build()/explore() call that then crashes deep
             % inside the missing stage instead of at the prereq check.
+            % Stage name == model field name for every stage except
+            % 'cloister', whose output runCloister() stores under the
+            % shorter obj.model.cloist (matching the pre-refactor
+            % buildIS.m's field name).
+            stageFields = InstanceSpace.StageOrder;
+            stageFields(strcmp(stageFields, 'cloister')) = {'cloist'};
             obj.completedStages = InstanceSpace.StageOrder(...
-                cellfun(@(s) isfield(model, s), InstanceSpace.StageOrder));
+                cellfun(@(f) isfield(model, f), stageFields));
         end
     end
 

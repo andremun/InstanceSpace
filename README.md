@@ -34,6 +34,23 @@ Or if you specifically use [MATILDA](http://matilda.unimelb.edu.au/matilda/), pl
 
 The main requirement for the software to run is to have MATLAB R2025a or later, with the [Global Optimization](https://au.mathworks.com/help/gads/index.html), [Parallel Computing](https://www.mathworks.com/products/parallel-computing.html), [Optimization](https://au.mathworks.com/products/optimization.html), and [Statistics and Machine Learning](https://au.mathworks.com/help/stats/index.html) toolboxes installed. The Communications and Financial toolboxes are **not** required (an earlier version used the Communications Toolbox's `de2bi`; it has since been replaced with a pure-MATLAB equivalent). LIBSVM support is deprecated: new runs always use MATLAB's native classifier registry (```opts.pythia.classifier```), so the LIBSVM MEX-files are only needed to load and migrate models saved by a pre-v1.7 version of the toolkit (see `ISAmigrateModel`).
 
+## Repository layout
+
+```
+InstanceSpace.m, buildIS.m, exploreIS.m   entry points (see below)
+example.m, test_integration.m             getting-started / regression suite
+startup.m                                 adds the folders below to the MATLAB path
+core/                                     PRELIM, SIFTED, PILOT, PILOTviewpoint,
+                                          CLOISTER, PYTHIA, TRACE, TRACE_legacy, FILTER
+output/                                   scriptcsv, scriptpng, scriptweb, scriptfcn, scriptdisc
+utils/                                    ISAdefaults, ISAgetClassifierFcn,
+                                          ISAmigrateModel, ISAsubsetData
+deprecated/                               PYTHIA2, PYTHIAtest, SIFTED2 (warn-and-forward
+                                          shims kept for backward compatibility)
+```
+
+```InstanceSpace.m```/```buildIS.m```/```exploreIS.m``` add ```core/```, ```output/```, ```utils/```, and ```deprecated/``` to the MATLAB path automatically the first time any of them is used in a session — ```example.m```, ```test_integration.m```, and any script that starts with ```buildIS```/```exploreIS```/```InstanceSpace``` need no extra setup. If you want to call a function from one of those folders directly (```PILOT```, ```SIFTED```, ...) without going through one of those three first, run ```startup.m``` (e.g. ```run('startup.m')```, or just ```startup``` with the repo root as your current folder) at the start of your session.
+
 ## Working with the code
 
 Start with ```example.m```: it runs the full pipeline (```buildIS``` + ```exploreIS```) once, on the bundled reference dataset, with sensible defaults and just a handful of commonly-adjusted settings (classifier, tuning strategy, projection dimensionality, feature selection on/off) exposed as plain variables near the top. Outputs — images (```.png```), tables (```.csv```), and raw intermediate data (```.mat```) — land in ```test/data/example/```. To analyse your own data, point it at a folder containing your ```metadata.csv``` instead (see "The metadata file" below), and revisit the performance-metric settings, which are tuned for the bundled dataset's error-rate semantics.

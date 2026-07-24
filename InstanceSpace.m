@@ -86,6 +86,7 @@ classdef InstanceSpace
         function obj = InstanceSpace(rootdir, opts)
             % Reads metadata.csv presence and fills opts defaults; runs
             % no computation (spec §7.2).
+            InstanceSpace.ensurePathSetup();
             narginchk(1, 2);
             if ~(endsWith(rootdir, '/') || endsWith(rootdir, '\'))
                 rootdir = [rootdir '/'];
@@ -299,6 +300,8 @@ classdef InstanceSpace
             % obj = InstanceSpace.load(rootdir) reads rootdir/model.mat,
             % migrates legacy field names (ISAmigrateModel) and fills any
             % option defaults absent from the saved model (ISAdefaults).
+            InstanceSpace.ensurePathSetup(); % load() calls ISAmigrateModel/ISAdefaults
+            % (both in utils/) directly, before the constructor call below.
             if ~(endsWith(rootdir, '/') || endsWith(rootdir, '\'))
                 rootdir = [rootdir '/'];
             end
@@ -573,6 +576,31 @@ classdef InstanceSpace
     end
 
     methods (Static, Access = private)
+        function ensurePathSetup()
+            % Adds this toolkit's core/output/utils/deprecated
+            % subdirectories to the MATLAB path if they aren't already
+            % there, so PRELIM/SIFTED/PILOT/etc. resolve regardless of
+            % how the caller reached InstanceSpace -- covers buildIS,
+            % exploreIS, and InstanceSpace/InstanceSpace.load used
+            % directly, without requiring the caller to have run
+            % startup.m first. Standalone calls to core/output/utils
+            % functions themselves (bypassing InstanceSpace entirely)
+            % still need startup.m -- see the note in that file.
+            persistent done
+            if isequal(done, true)
+                return;
+            end
+            root = fileparts(mfilename('fullpath'));
+            subdirs = {'core', 'output', 'utils', 'deprecated'};
+            for i = 1:numel(subdirs)
+                d = fullfile(root, subdirs{i});
+                if isfolder(d)
+                    addpath(d);
+                end
+            end
+            done = true;
+        end
+
         function out = evaluateTestSet(model, datafile)
             % Ported from exploreIS.m, operating on an in-memory trained
             % model (no model.mat re-read: the caller already has it).

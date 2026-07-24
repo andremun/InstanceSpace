@@ -101,7 +101,6 @@ if isEvalMode
     % Normalise backward-compat: old models stored .area instead of .measure
     if ~isfield(trainedTrace.space, 'measure')
         trainedTrace.space.measure  = trainedTrace.space.area;
-        trainedTrace.space.density  = trainedTrace.space.density;
     end
     if ~isfield(trainedTrace.space, 'measureLabel')
         trainedTrace.space.measureLabel = measureLabel;

@@ -183,7 +183,9 @@ The toolkit selects one binary classifier per algorithm (good/not-good performan
 - ```opts.pythia.seed``` RNG seed for classifier training/tuning; defaults to ```opts.general.seed``` and rarely needs to be set independently.
 - ```opts.pythia.verbose``` per-classifier training progress and tuning output; defaults to ```opts.general.verbose```.
 
-**Removed options** (no longer read by the toolkit; kept here only so old ```options.json```/```example.m``` files can be understood): ```opts.pythia.uselibsvm``` and ```opts.pythia.useknn``` — superseded by ```opts.pythia.classifier```. Existing ```model.mat``` files using the old fields can be updated with `ISAmigrateModel`.
+**Removed option**: ```opts.pythia.uselibsvm``` — no longer read by the toolkit (kept here only so old ```options.json```/```example.m``` files can be understood); superseded by ```opts.pythia.classifier```. Existing ```model.mat``` files with LIBSVM-format classifiers can be updated with `ISAmigrateModel`.
+
+**Legacy option, still honoured**: ```opts.pythia.useknn``` — superseded by ```opts.pythia.classifier```, but still read as a fallback: if ```opts.pythia.classifier``` isn't set and ```opts.pythia.useknn = false```, ```ISAdefaults``` sets the classifier to ```'svm'``` instead of the ```'knn'``` default. New code should set ```opts.pythia.classifier``` directly instead.
 
 ### Footprint construction settings
 

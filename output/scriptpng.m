@@ -142,7 +142,6 @@ for i=1:nfeats
     clf;
     drawScatter(container.pilot.Z, Xaux(:,i),...
                 strrep(container.data.featlabels{i},'_',' '), globalView);
-    % line(model.cloist.Zedge(:,1), model.cloist.Zedge(:,2), 'LineStyle', '-', 'Color', 'r');
     exportgraphics(fig, [rootdir 'distribution_feature_' container.data.featlabels{i} '.png']);
 end
 % -------------------------------------------------------------------------

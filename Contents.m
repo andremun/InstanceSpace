@@ -8,7 +8,10 @@
 %   CLOISTER    - Empirical bound estimation
 %   PYTHIA      - Algorithm selection (classifier training/prediction)
 %   TRACE       - Footprint construction (TRACE3 algorithm)
+%   TRACE_legacy - Pre-refactor DBSCAN + alpha-shape footprint algorithm
+%                  (opts.trace.method = 'legacy', 2D only)
 %   FILTER      - Density-based instance subsetting for small-scale experiments
+%   PILOTviewpoint - Optimal 2D camera viewpoint(s) of a 3D PILOT projection
 %
 % Class interface
 %   InstanceSpace - Full pipeline wrapper class (build/explore/save/load)

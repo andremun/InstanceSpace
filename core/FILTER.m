@@ -137,7 +137,19 @@ end
 Dkept = Dx(~subsetIndex, ~subsetIndex);
 Dkept(1:size(Dkept,1)+1:end) = NaN; % diagonal -> NaN, excludes self-distance from min
 nearest = min(Dkept,[],2,'omitnan');
-unif = 1-(std(nearest)./mean(nearest));
+% Uniformity is undefined when there are too few retained instances to
+% have a nearest-neighbour distance at all, or when every retained
+% instance coincides in feature space (mean distance of 0, which would
+% otherwise divide-by-zero into Inf/NaN). Guard both explicitly rather
+% than let 1-std/mean silently produce a confusing value.
+if numel(nearest) < 2 || all(isnan(nearest)) || mean(nearest,'omitnan') == 0
+    unif = NaN;
+    warning('ISA:FILTER:degenerateUniformity', ...
+        ['Uniformity is undefined for the retained instance subset (fewer than 2 ' ...
+         'instances, or all retained instances coincide in feature space); returning NaN.']);
+else
+    unif = 1-(std(nearest,'omitnan')./mean(nearest,'omitnan'));
+end
 fprintf('[FILTER] Uniformity of the instance subset: %.4g\n', unif);
 
 end

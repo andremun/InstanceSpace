@@ -680,6 +680,23 @@ classdef InstanceSpace
                 out.data.X = out.data.X(:,isselfeat);
                 featlabelsAll = featlabelsAll(isselfeat);
             end
+            % Validate against model.prelim.lambdaX (one Box-Cox lambda per
+            % feature PRELIM actually fit at training time, i.e. after both
+            % opts.selvars.feats AND any opts.prelim.nanThreshold-triggered
+            % column drops -- the latter isn't mirrored above, since which
+            % columns those were isn't retained anywhere in the model). A
+            % count mismatch here means metadata_test.csv doesn't match the
+            % training feature set, and would otherwise surface many rows
+            % down as an opaque bsxfun dimension-mismatch error.
+            if numel(featlabelsAll) ~= numel(model.prelim.lambdaX)
+                error('ISA:InstanceSpace:featureCountMismatch', ...
+                    ['metadata_test.csv has %d feature column(s) after applying ' ...
+                     'opts.selvars.feats, but the trained model expects %d ' ...
+                     '(some training features may have been dropped for exceeding ' ...
+                     'opts.prelim.nanThreshold). Check that metadata_test.csv has the ' ...
+                     'same feature_ columns as metadata.csv.'], ...
+                    numel(featlabelsAll), numel(model.prelim.lambdaX));
+            end
 
             % Reconcile test algorithms against the trained model's: known
             % algorithms line up by name, unseen ones are appended as new

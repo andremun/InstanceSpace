@@ -75,8 +75,14 @@ end
 % first time they're rendered in a session; exportgraphics then warns
 % ("Exported image displays axes toolbar...") and bakes that overlay
 % into the PNG. Disabling it as the new default for axes created from
-% here on avoids both, for every plot in this file.
-set(groot, 'defaultAxesToolbarVisible', 'off');
+% here on avoids both, for every plot in this file. Axes toolbars are an
+% R2018b+ feature; guarded with try/catch (isprop doesn't reliably
+% recognise groot's dynamic "default*" pseudo-properties) so a MATLAB
+% configuration without it doesn't hard-error output generation.
+try
+    set(groot, 'defaultAxesToolbarVisible', 'off');
+catch
+end
 colormap('parula');
 nfeats = size(container.data.X,2);
 nalgos = size(container.data.Y,2);

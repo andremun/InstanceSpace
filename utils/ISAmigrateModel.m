@@ -44,7 +44,8 @@ function modelOut = ISAmigrateModel(input, varargin)
 %                            model.pythia.Yhat when available (else
 %                            model.data.Ybin, per spec §6.4)
 %   missing model.completedStages -> inferred from which sub-structs are
-%                         present and populated
+%                         present (isfield only, same approach as
+%                         InstanceSpace.load())
 %
 % After migration the model can be passed to PYTHIA eval mode and scriptcsv.
 %

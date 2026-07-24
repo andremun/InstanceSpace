@@ -199,7 +199,7 @@ end
 
 function checkPositiveValue(name, v, zeroAllowed)
 if nargin < 3, zeroAllowed = false; end
-if ~(isnumeric(v) && isscalar(v) && isreal(v) && ~isnan(v) && (v > 0 || (zeroAllowed && v == 0)))
+if ~(isnumeric(v) && isscalar(v) && isreal(v) && isfinite(v) && (v > 0 || (zeroAllowed && v == 0)))
     if zeroAllowed
         error('ISA:ISAvalidateOpts:notPositive', 'opts.%s must be a non-negative numeric scalar; got %s.', ...
             name, describe(v));
@@ -267,7 +267,7 @@ if ~iscell(v)
 end
 for i = 1:numel(v)
     g = v{i};
-    if ~(isnumeric(g) && isvector(g) && isreal(g) && all(g > 0) && all(g == floor(g)))
+    if ~(isnumeric(g) && isvector(g) && isreal(g) && all(isfinite(g)) && all(g > 0) && all(g == floor(g)))
         error('ISA:ISAvalidateOpts:badViewGroups', ...
             'opts.pilot.viewGroups{%d} must be a vector of positive integer algorithm indices; got %s.', ...
             i, describe(g));

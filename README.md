@@ -59,16 +59,22 @@ The script ```example.m``` constructs a structure that contains all the settings
 
 ### General settings
 
+-	```opts.general.seed``` master RNG seed (default ```42```). Governs every stochastic stage of the pipeline (PILOT's BFGS random starts, PYTHIA's Sobol/Bayes tuning, SIFTED's GA, etc.), so a run with the same seed and inputs is reproducible.
+-	```opts.general.verbose``` turns on (```TRUE```, default) or off (```FALSE```) the detailed, stage-level console output (per-trial/per-iteration progress, hyperparameter results, projection matrix display). One-line stage start/complete messages are always printed regardless of this setting. ```opts.pilot.verbose``` and ```opts.pythia.verbose``` inherit this value by default and can be overridden independently if needed.
+- ```opts.general.parallel``` determines whether parallel processing will be available (set as ```TRUE```), or not (set as ```FALSE```). The toolkit makes use of MATLAB's [```parpool```](https://au.mathworks.com/help/parallel-computing/parpool.html) functionality to create a multisession environment in the local machine.
+- ```opts.general.ncores``` number of available cores for parallel processing.
 -	```opts.perf.MaxPerf``` determines whether the algorithm performance values provided are **efficiency** measures that should be maximised (set as ```TRUE```), or **cost** measures that should be minimised (set as ```FALSE```).
 -	```opts.perf.AbsPerf``` determines whether good performance is defined absolutely, e.g., misclassification error is lower than a 20%, (set as ```TRUE```), or if it is defined relatively to the best performing algorithm, e.g., misclassification error is within at least 5% of the best algorithm, (set as ```FALSE```).
 -	```opts.perf.epsilon``` corresponds to the threshold used to calculate good performance. It must be of the type "Double".
 -	```opts.perf.betaThreshold``` corresponds to the fraction of algorithms in the portfolio that must have good performance in the instance, for it to be considered an **easy** instance. It must be a value between 0 and 1.
-- ```opts.general.parallel``` determines whether parallel processing will be available (set as ```TRUE```), or not (set as ```FALSE```). The toolkit makes use of MATLAB's [```parpool```](https://au.mathworks.com/help/parallel-computing/parpool.html) functionality to create a multisession environment in the local machine.
-- ```opts.general.ncores``` number of available cores for parallel processing.
+-	```opts.selvars.feats``` / ```opts.selvars.algos``` optional cell arrays of feature/algorithm names to restrict the analysis to a hand-picked subset, matching the ```metadata.csv``` column headers **with** their ```feature_```/```algo_``` prefix (e.g. ```{'feature_density', 'feature_diameter'}```, not ```{'density', 'diameter'}```). Omit either field to use all available features/algorithms.
 -	```opts.selvars.smallscaleflag``` by setting this flag as ```TRUE```, you can carry out a small scale experiment using a randomly selected fraction of the original data. This is useful if you have a large dataset with more than 1000 instances, and you want to explore the parameters of the model.
 -	```opts.selvars.smallscale``` fraction taken from the original data on the small scale experiment.
 -	```opts.selvars.fileidxflag``` by setting this flag as ```TRUE```, you can carry out a small scale experiment. This time you must provide a ```.csv``` file that contains in one column the indices of the instances to be taken. This may be useful if you want to make a more controlled experiment than just randomly selecting instances.
 -	```opts.selvars.fileidx``` name of the file containing the indexes of the instances.
+-	```opts.selvars.densityflag``` by setting this flag as ```TRUE```, instances are subset by feature-space density via ```FILTER``` instead of the small-scale/file-index options above: pairs of instances closer than ```opts.selvars.mindistance``` in feature space are treated as redundant, and one of each such pair is dropped, keeping a representative spread rather than a uniform random sample.
+-	```opts.selvars.mindistance``` feature-space distance threshold below which two instances are considered too close (redundant) for the density-based filter.
+-	```opts.selvars.type``` selects which extra condition, on top of feature-space closeness, ```FILTER``` requires before treating an instance as redundant and dropping it: ```'Ftr'``` (feature-space closeness alone), ```'Ftr&AP'``` (also requires similar algorithm performance), ```'Ftr&Good'``` (default; also requires both instances to be uniformly good across the whole portfolio), or ```'Ftr&AP&Good'``` (all of the above).
 
 ### Dimensionality reduction settings
 
@@ -89,6 +95,7 @@ The toolkit uses CLOISTER, an algorithm based on correlation to detect the empir
 
 - ```opts.cloister.corrThreshold``` Determines the maximum [Pearson correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) that would indicate non-correlated variables. The lower this value is, the more stringent is the algorithm; hence, it would be less likely to produce a good bound.
 - ```opts.cloister.pval``` Determines the p-value of the Pearson correlation coefficient that indicates no correlation.
+- ```opts.cloister.maxFeatures``` (default ```20```) guard on the number of features CLOISTER's correlation-based bit-matrix enumeration will process; above this count it would become intractable, so CLOISTER instead falls back to a plain convex hull of the projected instances as the boundary, with a warning.
 
 ###  Algorithm selection settings
 
@@ -102,6 +109,8 @@ The toolkit selects one binary classifier per algorithm (good/not-good performan
 - ```opts.pythia.skip``` bypasses classifier training entirely (TRACE then falls back to the true labels directly, with a warning).
 - ```opts.pythia.ispolykrnl``` (SVM only) determines whether to use a polynomial (set as ```TRUE```) or Gaussian (set as ```FALSE```) kernel. Usually, the latter one is significantly faster to calculate and more accurate; however, it also has the disadvantage of producing discontinuous areas of good performance which may look overfitted. We tend to recommend a polynomial kernel if the dataset is higher than 1000 instances.
 - ```opts.pythia.useweights``` determines whether weighted (set as ```TRUE```) or unweighted (set as ```FALSE```) classification is performed. The weights are calculated as <img src="https://render.githubusercontent.com/render/math?math=\left|y_{\text{best}}-y\right|">.
+- ```opts.pythia.seed``` RNG seed for classifier training/tuning; defaults to ```opts.general.seed``` and rarely needs to be set independently.
+- ```opts.pythia.verbose``` per-classifier training progress and tuning output; defaults to ```opts.general.verbose```.
 
 **Removed options** (no longer read by the toolkit; kept here only so old ```options.json```/```example.m``` files can be understood): ```opts.pythia.uselibsvm``` and ```opts.pythia.useknn``` — superseded by ```opts.pythia.classifier```. Existing ```model.mat``` files using the old fields can be updated with `ISAmigrateModel`.
 
@@ -111,6 +120,9 @@ The toolkit uses TRACE3, an algorithm based on MATLAB's [```alphaShape```](https
 
 - ```opts.trace.method``` selects ```'trace3'``` (default, above) or ```'legacy'``` (the pre-refactor DBSCAN + alpha-shape triangulation method, 2D only).
 - ```opts.trace.PI``` minimum purity required for a section of a footprint.
+- ```opts.trace.minInstances``` (default ```4```) minimum number of instances a candidate footprint must contain to be considered valid.
+- ```opts.trace.minAreaFrac``` (default ```0.01```) minimum footprint size, as a fraction of the total instance-space area/volume, for a candidate footprint to be kept.
+- ```opts.trace.contra``` (```'legacy'``` method only, defaults to ```TRUE``` there) turns on contradiction removal — trimming overlapping sections of two algorithms' footprints where the evidence is weak. Not read by the default ```'trace3'``` method.
 
 **Removed option**: ```opts.trace.usesim``` — the PYTHIA/TRACE coupling described above is now unconditional, so there is no "simulated vs. actual data" switch to configure.
 
@@ -125,14 +137,18 @@ The toolkit implements simple routines to bound outliers and scale the data. **T
 
 ### Automatic feature selection
 
-The toolkit implements SIFTED, a routine to select features, given their cross-correlation and correlation to performance. Ideally, we want the smallest number of orthogonal and predictive features. **This routine are by no means perfect, and users should pre-process their data independently if preferred**.  In general, we recommend **using no more than 10 features** as input to PILOT's optimal projection algorithm, due to the numerical nature of its solution and issues in identifying meaningful linear trends.
+The toolkit implements SIFTED (```SIFTED.m```; ```SIFTED2``` is a deprecated alias kept for backward compatibility), a routine to select features, given their cross-correlation and correlation to performance. Ideally, we want the smallest number of orthogonal and predictive features. **This routine is by no means perfect, and users should pre-process their data independently if preferred**. In general, we recommend **using no more than 10 features** as input to PILOT's optimal projection algorithm, due to the numerical nature of its solution and issues in identifying meaningful linear trends.
 
-- ```opts.sifted.flag``` turns on (set as ```TRUE```) the automatic feature selection. SIFTED is composed of two sub-processes. On the first one, SIFTED calculates the [Pearson correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) between the features and the performance. Then it takes its absolute value, and sorts them from largest to lowest. Then, it takes all features that have a correlation above the threshold. It automatically bounds itself to a minimum of 3 features. Then, SIFTED uses the [Pearson correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) as a dissimilarity metric between features. Then, [k-means clustering](https://en.wikipedia.org/wiki/K-means_clustering) is used to identify groups of similar features. To select one feature per group, the algorithm first projects the subset of selected featurs into two dimensions using Principal Components Analysis ([PCA](https://en.wikipedia.org/wiki/Principal_component_analysis)) and then [Random Forests](https://en.wikipedia.org/wiki/Random_forest) to predict whether an instance is easy or not for a given algorithm. Then, the subset of features that gives the most accurate models is selected. This section of the routine is **potentially very expensive computationally** due to the multiple layer training process. However, it is our current recommended approach to select the most relevant features. This routine tests all possible combinations if they are less than 1000, or uses the combination of a [Genetic Algorithm](https://en.wikipedia.org/wiki/Genetic_algorithm) and a Look-up table otherwise.
+- ```opts.sifted.flag``` turns on (set as ```TRUE```) the automatic feature selection. SIFTED runs in two stages:
+	1. **Correlation filter.** SIFTED calculates the [Pearson correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) between each feature and each algorithm's performance, keeping the single most-correlated feature for every algorithm unconditionally, plus any other feature whose absolute correlation with any algorithm exceeds ```opts.sifted.rho``` at significance ```opts.sifted.pval```. If 3 or fewer features remain at this point (or arrive with 3 or fewer to begin with), SIFTED stops here.
+	2. **Correlation clustering + GA.** The Pearson correlation coefficient is used as a dissimilarity metric between the surviving features, and [k-means clustering](https://en.wikipedia.org/wiki/K-means_clustering) (```opts.sifted.K``` clusters, ```opts.sifted.MaxIter```/```opts.sifted.Replicates``` controlling convergence) groups similar features together. A [Genetic Algorithm](https://en.wikipedia.org/wiki/Genetic_algorithm) then searches for the best one-feature-per-cluster combination: each candidate combination is scored by projecting it with PILOT's analytic branch (a single closed-form solve, no restarts needed) at the same dimensionality as the outer pipeline's ```opts.pilot.dims```, then taking the worst-case (maximum) k-fold cross-validated KNN classification loss across all algorithms — lower is better. Previously-evaluated combinations are cached for the duration of the call. This stage is skipped if 3 or fewer features survive the correlation filter, or if there are no more features than ```opts.sifted.K```.
 - ```opts.sifted.rho``` correlation threshold indicating the lowest acceptable absolute correlation between a feature and performance. It should be a value between 0 and 1.
+- ```opts.sifted.pval``` significance level for the correlation filter; a feature/algorithm correlation is only counted if its p-value is at or below this threshold.
 - ```opts.sifted.K``` number of clusters which corresponds to the final number of features returned. The routine assumes at least 3 clusters and no more than the number of features. Ideally it **should not** be a value larger than 10.
-- ```opts.sifted.NTREES``` number of threes used by the Random Forest models. Usually, this setting does not need tuning.
 - ```opts.sifted.MaxIter``` number of iterations used to converge the k-means algorithm. Usually, this setting does not need tuning.
 - ```opts.sifted.Replicates``` number of repeats carried out of the k-means algorithm. Usually, this setting does not need tuning.
+
+**Removed option**: ```opts.sifted.NTREES``` — a leftover from an earlier, since-replaced Random-Forest-based feature-cluster scoring step; the current GA+KNN fitness function (above) doesn't use it.
 
 ### Output settings
 

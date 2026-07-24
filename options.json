@@ -8,7 +8,7 @@
   "selvars":  {"smallscaleflag": false, "smallscale": 0.3,
                "fileidxflag": false, "fileidx": "",
                "densityflag": false, "mindistance": 0.1, "type": "Ftr&Good"},
-  "sifted":   {"flag": true, "rho": 0.1, "pval": 0.05, "K": 10, "NTREES": 50,
+  "sifted":   {"flag": true, "rho": 0.1, "pval": 0.05, "K": 10,
                "MaxIter": 1000, "Replicates": 100},
   "pilot":    {"analytic": false, "ntries": 10, "dims": 2, "method": "standard", "alpha": 1.0},
   "cloister": {"pval": 0.05, "corrThreshold": 0.7},

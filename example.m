@@ -250,7 +250,6 @@ opts.sifted.rho = 0.1;              % Minimum correlation value acceptable betwe
 % instead (spec §12.1 testing guidance: "SIFTED may be tested with
 % opts.sifted.K = 5 or 6").
 opts.sifted.K = 5;
-opts.sifted.NTREES = 50;
 opts.sifted.MaxIter = 1000;
 opts.sifted.Replicates = 100;
 

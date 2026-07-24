@@ -1,33 +1,53 @@
+% -------------------------------------------------------------------------
+% Instance Space Analysis (ISA) Toolkit
+% Copyright (c) 2026 Mario Andres Munoz Acosta and contributors
+% School of Computing and Information Systems
+% The University of Melbourne, Australia
+%
+% SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
+% License: https://polyformproject.org/licenses/noncommercial/1.0.0/
+%
+% You may use, modify, and redistribute this software for non-commercial
+% research and educational purposes only. Commercial use requires prior
+% written permission. See the LICENSE file for full terms.
+%
+% Reference:
+%   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
+%   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
+%   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
+%
+%   Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for
+%   Algorithm Testing. ACM Computing Surveys, 55(12), Article 255.
+%   https://doi.org/10.1145/3572895
+% -------------------------------------------------------------------------
 function scriptdisc(filename)
-% -------------------------------------------------------------------------
-% scriptdisc.m
-% -------------------------------------------------------------------------
+% scriptdisc  Print a console disclaimer/citation notice for filename.
 %
-% By: Mario Andres Munoz Acosta
-%     School of Mathematics and Statistics
-%     The University of Melbourne
-%     Australia
-%     2020
+%   scriptdisc(filename)
 %
-% -------------------------------------------------------------------------
+%   Not called by InstanceSpace.build()/explore() or the buildIS/exploreIS
+%   wrappers as of the Phase 7 refactor; kept for any external callers
+%   still invoking it directly. Superseded by the LICENSE file and the
+%   per-file SPDX headers (spec Section 11); slated for retirement in a
+%   future repository-hygiene pass (spec Phase 10).
 
 disp('-------------------------------------------------------------------------');
 disp(' ');
 disp([' ''' filename ''' ']);
 disp(' ');
-disp(' Code by: Mario Andres Muñoz Acosta');
+disp(' Code by: Mario Andres Muï¿½oz Acosta');
 disp('          School of Mathematics and Statistics');
 disp('          The University of Melbourne');
 disp('          Australia');
 disp('          2019');
 disp(' ');
-disp(' Copyright: Mario A. Muñoz');
+disp(' Copyright: Mario A. Muï¿½oz');
 disp(' ');
 disp('-------------------------------------------------------------------------');
 disp(' ');
 disp(' If using this software, please cite as: ');
 disp(' ');
-disp([' Mario Andrés Muñoz, & Kate Smith-Miles. ' ...
+disp([' Mario Andrï¿½s Muï¿½oz, & Kate Smith-Miles. ' ...
       ' andremun/InstanceSpace: February 2021 Update (Version v0.2-beta). '...
       ' Zenodo. http://doi.org/10.5281/zenodo.4521336']);
 disp(' ');

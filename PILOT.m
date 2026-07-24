@@ -1,15 +1,70 @@
+% -------------------------------------------------------------------------
+% Instance Space Analysis (ISA) Toolkit
+% Copyright (c) 2026 Mario Andres Munoz Acosta and contributors
+% School of Computing and Information Systems
+% The University of Melbourne, Australia
+%
+% SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
+% License: https://polyformproject.org/licenses/noncommercial/1.0.0/
+%
+% You may use, modify, and redistribute this software for non-commercial
+% research and educational purposes only. Commercial use requires prior
+% written permission. See the LICENSE file for full terms.
+%
+% Reference:
+%   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
+%   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
+%   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
+%
+%   Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for
+%   Algorithm Testing. ACM Computing Surveys, 55(12), Article 255.
+%   https://doi.org/10.1145/3572895
+% -------------------------------------------------------------------------
 function out = PILOT(X, Y, featlabels, opts)
-% -------------------------------------------------------------------------
-% PILOT.m
-% -------------------------------------------------------------------------
+% PILOT  Project features onto a 2D or 3D instance space (Munoz et al.,
+% Mach Learn 2018), finding A/B/C such that Z=X*A' and [X Y] is
+% reconstructed from Z as closely as possible.
 %
-% By: Mario Andres Munoz Acosta
-%     School of Mathematics and Statistics
-%     The University of Melbourne
-%     Australia
-%     2020
+%   out = PILOT(X, Y, featlabels, opts)
 %
-% -------------------------------------------------------------------------
+%   Inputs
+%     X          - (ninst x nfeats) feature matrix
+%     Y          - (ninst x nalgos) performance matrix
+%     featlabels - (1 x nfeats) cell array of feature name strings
+%     opts       - struct with fields (see ISAdefaults for defaults):
+%                    dims      int    projection dimensionality, 2 or 3
+%                    method    char   'standard' (BFGS/analytic, below) or
+%                                     'pls' (Partial Least Squares via
+%                                     plsregress; opts.alpha does not apply)
+%                    analytic  logical use the closed-form eigenvector
+%                                     solution (method='standard' only);
+%                                     falls back to numerical if X is
+%                                     rank-deficient
+%                    ntries    int    BFGS multi-start restarts (numerical
+%                                     branch only)
+%                    alpha     double performance-reconstruction cost
+%                                     weight (method='standard' only, spec
+%                                     §5.4): min ||Xtilde-BrZ||^2 +
+%                                     alpha*||Y-CrZ||^2
+%                    topoWeight double reserved for future use; not wired
+%                                     into the cost function (spec §5.4.1)
+%                    verbose   logical per-trial progress output
+%                    precalcAlpha (optional) pre-computed full BFGS
+%                                     solution vector, skips optimisation
+%                    X0        (optional) user-supplied BFGS starting points
+%
+%   Outputs
+%     out  - struct with fields:
+%              A       (dims x nfeats) projection matrix, Z = X*A'
+%              B, C    reconstruction matrices for the feature/performance
+%                      blocks of [X Y] from Z
+%              Z       (ninst x dims) projected instance coordinates
+%              error   sum of squared reconstruction error
+%              R2      per-column R^2 of the reconstruction
+%              summary cell array display of A with feature labels
+%              alpha, X0, eoptim, perf  (numerical branch only) raw BFGS
+%                      trial results, used to pick the best of opts.ntries
+
 if ~isfield(opts, 'verbose'), opts.verbose = true; end
 % Legacy: opts.ISA3D (boolean) -> opts.dims (2|3, spec Appendix A).
 if isfield(opts, 'ISA3D') && ~isfield(opts, 'dims')

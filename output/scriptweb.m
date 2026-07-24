@@ -1,3 +1,15 @@
+function scriptweb(container,rootdir)
+% scriptweb  Write colour-scaled CSV data for MATILDA's web tools to rootdir.
+%
+%   scriptweb(container,rootdir)
+%
+%   container - model struct from buildIS/InstanceSpace.build(), or a
+%               testResults entry from exploreIS/InstanceSpace.explore()
+%   rootdir   - destination directory (trailing slash required)
+%
+%   Only useful when opts.outputs.web=true, i.e. results will be served
+%   through matilda.unimelb.edu.au; not needed for local/offline use.
+
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit
 % Copyright (c) 2026 Mario Andres Munoz Acosta and contributors
@@ -12,25 +24,14 @@
 % written permission. See the LICENSE file for full terms.
 %
 % Reference:
-%   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
-%   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
-%   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
-%
 %   Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for
 %   Algorithm Testing. ACM Computing Surveys, 55(12), Article 255.
 %   https://doi.org/10.1145/3572895
+%
+%   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
+%   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
+%   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
 % -------------------------------------------------------------------------
-function scriptweb(container,rootdir)
-% scriptweb  Write colour-scaled CSV data for MATILDA's web tools to rootdir.
-%
-%   scriptweb(container,rootdir)
-%
-%   container - model struct from buildIS/InstanceSpace.build(), or a
-%               testResults entry from exploreIS/InstanceSpace.explore()
-%   rootdir   - destination directory (trailing slash required)
-%
-%   Only useful when opts.outputs.web=true, i.e. results will be served
-%   through matilda.unimelb.edu.au; not needed for local/offline use.
 
 scriptfcn;
 

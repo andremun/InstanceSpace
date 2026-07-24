@@ -1,3 +1,16 @@
+function out = TRACE_legacy(Z, Ybin, P, beta, algolabels, opts, useContra)
+% TRACE_legacy  Legacy DBSCAN+polyshape footprint algorithm.
+%
+%   out = TRACE_legacy(Z, Ybin, P, beta, algolabels, opts, useContra)
+%
+%   Selectable via opts.trace.method = 'legacy' in TRACE.m. Uses DBSCAN
+%   clustering followed by boundary/polyshape construction per cluster.
+%   Contradiction removal between best-algorithm footprints is applied when
+%   useContra = true (the default for legacy mode; see spec section 4.1).
+%
+%   Inputs / outputs mirror the old TRACE.m interface. Footprint structs use
+%   .area (not .measure); TRACE.m normalises naming after calling this function.
+
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit
 % Copyright (c) 2026 Mario Andres Munoz Acosta and contributors
@@ -12,26 +25,14 @@
 % written permission. See the LICENSE file for full terms.
 %
 % Reference:
-%   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
-%   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
-%   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
-%
 %   Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for
 %   Algorithm Testing. ACM Computing Surveys, 55(12), Article 255.
 %   https://doi.org/10.1145/3572895
+%
+%   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
+%   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
+%   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
 % -------------------------------------------------------------------------
-function out = TRACE_legacy(Z, Ybin, P, beta, algolabels, opts, useContra)
-% TRACE_legacy  Legacy DBSCAN+polyshape footprint algorithm.
-%
-%   out = TRACE_legacy(Z, Ybin, P, beta, algolabels, opts, useContra)
-%
-%   Selectable via opts.trace.method = 'legacy' in TRACE.m. Uses DBSCAN
-%   clustering followed by boundary/polyshape construction per cluster.
-%   Contradiction removal between best-algorithm footprints is applied when
-%   useContra = true (the default for legacy mode; see spec section 4.1).
-%
-%   Inputs / outputs mirror the old TRACE.m interface. Footprint structs use
-%   .area (not .measure); TRACE.m normalises naming after calling this function.
 
 if nargin < 7, useContra = true; end
 

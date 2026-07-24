@@ -72,6 +72,17 @@ subsetIndex = false(ninst,1);
 isDissimilar = true(ninst,1);
 isVISA = false(ninst,1);
 gamma = sqrt(nalgos/nfeats)*opts.mindistance;
+% Validated once, up front: the switch below only runs for pairs
+% actually found within opts.mindistance, so an invalid opts.type would
+% otherwise go undetected whenever a dataset happens to have no close
+% pairs at all -- silently returning an un-subsetted dataset instead of
+% failing on the misconfiguration.
+validTypes = {'Ftr','Ftr&AP','Ftr&Good','Ftr&AP&Good'};
+if ~any(strcmp(opts.type, validTypes))
+    error('ISA:FILTER:invalidType', ...
+        'opts.type must be one of ''%s''; got ''%s''.', ...
+        strjoin(validTypes, ''', '''), opts.type);
+end
 needsAP = any(strcmp(opts.type, {'Ftr&AP','Ftr&AP&Good'}));
 
 % Db(i,j) = all(Ybin(i,:) & Ybin(j,:)), which -- since all(A&B) is true
@@ -151,7 +162,11 @@ for ii = 1:ninst
                     isVISA(jj) = true;
                 end
             otherwise
-                disp('Invalid flag!')
+                % Unreachable: opts.type is validated above. Kept as a
+                % defensive backstop rather than removed outright.
+                error('ISA:FILTER:invalidType', ...
+                    'opts.type must be one of ''%s''; got ''%s''.', ...
+                    strjoin(validTypes, ''', '''), opts.type);
         end
     end
 end

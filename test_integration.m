@@ -290,6 +290,18 @@ try
     % Complete the pipeline again before the save()/load()/explore() checks below.
     obj = obj.build('stages', {'cloister', 'pythia', 'trace'});
 
+    % Re-running 'cloister' must NOT invalidate 'pythia'/'trace': per
+    % StagePrereq neither depends on cloister's output (both depend on
+    % 'pilot'/'pythia' instead), even though both appear later than
+    % 'cloister' in canonical StageOrder.
+    pythiaBefore = obj.model.pythia;
+    traceBefore = obj.model.trace;
+    obj = obj.build('stages', {'cloister'});
+    assert(all(ismember({'cloister', 'pythia', 'trace'}, obj.completedStages)), ...
+        're-running cloister should not invalidate pythia/trace in completedStages.');
+    assert(isequal(obj.model.pythia, pythiaBefore) && isequal(obj.model.trace, traceBefore), ...
+        're-running cloister should not recompute/discard the still-valid pythia/trace results.');
+
     % A genuinely missing prerequisite must error clearly, not crash deep
     % inside the requested stage.
     prereqEnforced = false;

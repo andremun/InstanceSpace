@@ -370,16 +370,40 @@ classdef InstanceSpace
 
     methods (Access = private)
         function obj = invalidateDownstream(obj, stage)
-            % Drops every stage strictly AFTER `stage` in StageOrder from
-            % completedStages and removes its obj.model field, so a
-            % re-run of an earlier stage can't leave stale later-stage
-            % results (computed from the OLD upstream output) looking
-            % valid. Called after every stage in build()'s loop; a no-op
-            % when none of the later stages had actually completed yet.
-            idx = find(strcmp(InstanceSpace.StageOrder, stage));
-            downstream = InstanceSpace.StageOrder(idx+1:end);
-            for i = 1:numel(downstream)
-                ds = downstream{i};
+            % Drops every stage that transitively DEPENDS ON `stage` (per
+            % StagePrereq), not simply every stage later in StageOrder,
+            % from completedStages, and removes its obj.model field --
+            % so a re-run of an earlier stage can't leave stale
+            % dependent-stage results (computed from the OLD upstream
+            % output) looking valid. Called after every stage in
+            % build()'s loop; a no-op when none of its dependents had
+            % actually completed yet.
+            %
+            % StageOrder is a valid topological order but not a chain --
+            % 'cloister' and 'pythia' both branch off 'pilot' and neither
+            % depends on the other -- so re-running 'cloister' must NOT
+            % invalidate 'pythia'/'trace' (they only depend on
+            % 'pilot'/'pythia'), even though both appear later in
+            % StageOrder. Found via breadth-first search over
+            % StagePrereq instead of a StageOrder slice.
+            dependents = {};
+            frontier = {stage};
+            while ~isempty(frontier)
+                newFrontier = {};
+                for i = 1:numel(InstanceSpace.StageOrder)
+                    candidate = InstanceSpace.StageOrder{i};
+                    if ismember(candidate, dependents) || ismember(candidate, frontier)
+                        continue;
+                    end
+                    if any(ismember(InstanceSpace.StagePrereq.(candidate), frontier))
+                        newFrontier{end+1} = candidate; %#ok<AGROW>
+                    end
+                end
+                dependents = [dependents, newFrontier]; %#ok<AGROW>
+                frontier = newFrontier;
+            end
+            for i = 1:numel(dependents)
+                ds = dependents{i};
                 obj.completedStages = obj.completedStages(~strcmp(obj.completedStages, ds));
                 f = InstanceSpace.StageModelField.(ds);
                 if isfield(obj.model, f)

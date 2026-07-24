@@ -1,13 +1,8 @@
-function model = buildIS(rootdir)
-% buildIS  Thin backward-compatibility wrapper around InstanceSpace (spec §7.5).
+function out = PYTHIAtest(model, Z, Y, Ybin, Ybest, algolabels)
+% PYTHIAtest  Deprecated. Use PYTHIA with a trained model (7-arg eval mode).
 %
-% Preserves the pre-Phase-7 buildIS(rootdir) calling convention (a plain
-% function taking a directory and returning the in-memory model struct)
-% for callers -- notably the MATILDA web platform -- that invoke this
-% entry point directly. New code should use InstanceSpace directly:
-%
-%   obj = InstanceSpace(rootdir);
-%   obj = obj.build();
+%   This function exists only for backward compatibility. All new code that
+%   calls exploreIS will use PYTHIA eval mode directly.
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit
@@ -31,17 +26,9 @@ function model = buildIS(rootdir)
 %   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
 %   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
 % -------------------------------------------------------------------------
-
-if ~(endsWith(rootdir, '/') || endsWith(rootdir, '\'))
-    rootdir = [rootdir '/'];
-end
-if ~isfile([rootdir 'metadata.csv']) || ~isfile([rootdir 'options.json'])
-    error(['Please place the datafiles in the directory ''' rootdir '''']);
-end
-
-obj = InstanceSpace(rootdir);
-obj = obj.build();
-model = obj.model;
-
-fprintf('EOF:SUCCESS\n');
+warning('ISA:PYTHIAtest:deprecated', ...
+    ['PYTHIAtest is deprecated and will be removed in a future release. ' ...
+     'Use PYTHIA(Z, Y, Ybin, Ybest, algolabels, opts, trainedPythia) instead.']);
+opts = struct('verbose', true);
+out = PYTHIA(Z, Y, Ybin, Ybest, algolabels, opts, model);
 end

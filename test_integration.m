@@ -29,6 +29,29 @@
 % buildIS.m/exploreIS.m (so any automation scraping for that string still
 % works against this script).
 
+% -------------------------------------------------------------------------
+% Instance Space Analysis (ISA) Toolkit
+% Copyright (c) 2026 Mario Andres Munoz Acosta and contributors
+% School of Computing and Information Systems
+% The University of Melbourne, Australia
+%
+% SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
+% License: https://polyformproject.org/licenses/noncommercial/1.0.0/
+%
+% You may use, modify, and redistribute this software for non-commercial
+% research and educational purposes only. Commercial use requires prior
+% written permission. See the LICENSE file for full terms.
+%
+% Reference:
+%   Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for
+%   Algorithm Testing. ACM Computing Surveys, 55(12), Article 255.
+%   https://doi.org/10.1145/3572895
+%
+%   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
+%   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
+%   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
+% -------------------------------------------------------------------------
+
 rootdir  = './test/data/';
 srcfiles = {'metadata.csv', 'metadata_test.csv'};
 
@@ -211,6 +234,104 @@ for i = 1:nCases
         fprintf('[TEST] Case ''%s'' FAILED: %s\n', tc.name, ME.message);
     end
 end
+
+% ---- InstanceSpace class API coverage (spec Phase 7) -----------------
+% The cases above only exercise InstanceSpace indirectly, through the
+% buildIS/exploreIS backward-compatibility wrappers (each of which always
+% runs every stage in one shot). This drives the class directly: staged
+% build() with an option change between stages, out-of-order stage
+% requests, the missing-prerequisite error path, a save()/load()
+% round-trip, and explore() without going through exploreIS.m.
+fprintf('\n[TEST] === Class API: staged build + save/load + explore ===\n');
+classCaseDir = [rootdir 'class_api/'];
+if ~isfolder(classCaseDir), mkdir(classCaseDir); end
+for f = 1:numel(srcfiles)
+    copyfile([rootdir srcfiles{f}], [classCaseDir srcfiles{f}]);
+end
+results(end+1).name = 'class_api';
+try
+    obj = InstanceSpace(classCaseDir, baseOpts);
+
+    obj = obj.build('stages', {'prelim', 'sifted', 'pilot'});
+    assert(isequal(obj.completedStages, {'prelim', 'sifted', 'pilot'}), ...
+        'completedStages mismatch after a partial build().');
+
+    obj.opts.pilot.alpha = 2.0;
+    obj = obj.build('stages', {'pilot'}); % re-run just PILOT with the new weight
+    assert(isequal(obj.completedStages, {'prelim', 'sifted', 'pilot'}), ...
+        're-running an already-completed stage should not duplicate it in completedStages.');
+
+    % Requested out of canonical order: build() must still run them
+    % prelim->...->trace internally regardless of the order listed here.
+    obj = obj.build('stages', {'trace', 'cloister', 'pythia'});
+    assert(all(ismember({'cloister', 'pythia', 'trace'}, obj.completedStages)), ...
+        'cloister/pythia/trace did not complete.');
+
+    % Re-running an EARLIER stage after later ones have already completed
+    % must invalidate cloister/pythia/trace, not leave them looking valid
+    % alongside a freshly re-run pilot.
+    obj.opts.pilot.alpha = 3.0;
+    obj = obj.build('stages', {'pilot'});
+    assert(isequal(obj.completedStages, {'prelim', 'sifted', 'pilot'}), ...
+        're-running pilot after cloister/pythia/trace completed should invalidate them in completedStages.');
+    assert(~isfield(obj.model, 'cloist') && ~isfield(obj.model, 'pythia') && ~isfield(obj.model, 'trace'), ...
+        're-running pilot should remove the now-stale cloister/pythia/trace model fields.');
+
+    % explore() must refuse a model left partially invalidated like this,
+    % rather than crash deep inside evaluateTestSet on a missing field.
+    notBuiltEnforced = false;
+    try
+        obj.explore(classCaseDir);
+    catch notBuiltErr
+        notBuiltEnforced = strcmp(notBuiltErr.identifier, 'ISA:InstanceSpace:notBuilt');
+    end
+    assert(notBuiltEnforced, 'explore() on a partially-invalidated model should raise ISA:InstanceSpace:notBuilt.');
+
+    % Complete the pipeline again before the save()/load()/explore() checks below.
+    obj = obj.build('stages', {'cloister', 'pythia', 'trace'});
+
+    % Re-running 'cloister' must NOT invalidate 'pythia'/'trace': per
+    % StagePrereq neither depends on cloister's output (both depend on
+    % 'pilot'/'pythia' instead), even though both appear later than
+    % 'cloister' in canonical StageOrder.
+    pythiaBefore = obj.model.pythia;
+    traceBefore = obj.model.trace;
+    obj = obj.build('stages', {'cloister'});
+    assert(all(ismember({'cloister', 'pythia', 'trace'}, obj.completedStages)), ...
+        're-running cloister should not invalidate pythia/trace in completedStages.');
+    assert(isequal(obj.model.pythia, pythiaBefore) && isequal(obj.model.trace, traceBefore), ...
+        're-running cloister should not recompute/discard the still-valid pythia/trace results.');
+
+    % A genuinely missing prerequisite must error clearly, not crash deep
+    % inside the requested stage.
+    prereqEnforced = false;
+    try
+        InstanceSpace(classCaseDir, baseOpts).build('stages', {'pilot'});
+    catch prereqErr
+        prereqEnforced = strcmp(prereqErr.identifier, 'ISA:InstanceSpace:missingPrereq');
+    end
+    assert(prereqEnforced, 'build(''stages'',{''pilot''}) on a fresh object should raise ISA:InstanceSpace:missingPrereq.');
+
+    % save()/load() round-trip.
+    obj.save();
+    loaded = InstanceSpace.load(classCaseDir);
+    assert(isequal(loaded.model.pilot.A, obj.model.pilot.A), 'save()/load() round-trip changed model.pilot.A.');
+
+    % explore() directly through the class, not via exploreIS.m.
+    loaded = loaded.explore(classCaseDir);
+    assert(numel(loaded.testResults) == 1 && strcmp(loaded.testDirs{1}, classCaseDir), ...
+        'explore() did not record testResults/testDirs correctly.');
+    assert(isfield(loaded.getResults(1), 'trace'), 'getResults(1) is missing the trace field.');
+
+    results(end).passed  = true;
+    results(end).message = 'OK';
+    fprintf('[TEST] Case ''class_api'' PASSED.\n');
+catch ME
+    results(end).passed  = false;
+    results(end).message = ME.message;
+    fprintf('[TEST] Case ''class_api'' FAILED: %s\n', ME.message);
+end
+nCases = numel(results);
 
 % ---- Summary ----------------------------------------------------------
 fprintf('\n[TEST] ================= Summary =================\n');

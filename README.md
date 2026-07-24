@@ -34,6 +34,23 @@ Or if you specifically use [MATILDA](http://matilda.unimelb.edu.au/matilda/), pl
 
 The main requirement for the software to run is to have MATLAB R2025a or later, with the [Global Optimization](https://au.mathworks.com/help/gads/index.html), [Parallel Computing](https://www.mathworks.com/products/parallel-computing.html), [Optimization](https://au.mathworks.com/products/optimization.html), and [Statistics and Machine Learning](https://au.mathworks.com/help/stats/index.html) toolboxes installed. The Communications and Financial toolboxes are **not** required (an earlier version used the Communications Toolbox's `de2bi`; it has since been replaced with a pure-MATLAB equivalent). LIBSVM support is deprecated: new runs always use MATLAB's native classifier registry (```opts.pythia.classifier```), so the LIBSVM MEX-files are only needed to load and migrate models saved by a pre-v1.7 version of the toolkit (see `ISAmigrateModel`).
 
+## Repository layout
+
+```
+InstanceSpace.m, buildIS.m, exploreIS.m   entry points (see below)
+example.m, test_integration.m             getting-started / regression suite
+startup.m                                 adds the folders below to the MATLAB path
+core/                                     PRELIM, SIFTED, PILOT, PILOTviewpoint,
+                                          CLOISTER, PYTHIA, TRACE, TRACE_legacy, FILTER
+output/                                   scriptcsv, scriptpng, scriptweb, scriptfcn
+utils/                                    ISAdefaults, ISAgetClassifierFcn,
+                                          ISAmigrateModel, ISAsubsetData
+deprecated/                               PYTHIA2, PYTHIAtest, SIFTED2 (warn-and-forward
+                                          shims kept for backward compatibility)
+```
+
+```InstanceSpace.m```/```buildIS.m```/```exploreIS.m``` add ```core/```, ```output/```, ```utils/```, and ```deprecated/``` to the MATLAB path automatically the first time any of them is used in a session — ```example.m```, ```test_integration.m```, and any script that starts with ```buildIS```/```exploreIS```/```InstanceSpace``` need no extra setup. If you want to call a function from one of those folders directly (```PILOT```, ```SIFTED```, ...) without going through one of those three first, run ```startup.m``` (e.g. ```run('startup.m')```, or just ```startup``` with the repo root as your current folder) at the start of your session.
+
 ## Working with the code
 
 Start with ```example.m```: it runs the full pipeline (```buildIS``` + ```exploreIS```) once, on the bundled reference dataset, with sensible defaults and just a handful of commonly-adjusted settings (classifier, tuning strategy, projection dimensionality, feature selection on/off) exposed as plain variables near the top. Outputs — images (```.png```), tables (```.csv```), and raw intermediate data (```.mat```) — land in ```test/data/example/```. To analyse your own data, point it at a folder containing your ```metadata.csv``` instead (see "The metadata file" below), and revisit the performance-metric settings, which are tuned for the bundled dataset's error-rate semantics.
@@ -41,6 +58,31 @@ Start with ```example.m```: it runs the full pipeline (```buildIS``` + ```explor
 ```test_integration.m``` is the exhaustive option-coverage regression suite used during development — every classifier, tuning strategy, 2D/3D, PLS, viewpoint groups, and more, each in its own subdirectory under ```test/data/``` (e.g. ```test/data/classifier_svm/```) so no run overwrites another's outputs. It's a good reference for how a given option is meant to be used, but not the place to start.
 
 **```options.json``` is a generated artifact, not a source file**, for both scripts above. Each run writes its own ```options.json``` from the ```opts``` struct built in MATLAB. Hand-editing an ```options.json``` file has no lasting effect — the next run silently overwrites it. To change what gets run, edit the MATLAB script instead (```example.m``` directly, or for ```test_integration.m```, the ```defaultOpts()``` local function for shared settings and a specific test case's ```override``` function for that case only).
+
+### The InstanceSpace class
+
+```buildIS```/```exploreIS``` are thin backward-compatibility wrappers (kept for callers like the MATILDA web platform that invoke them directly) around the ```InstanceSpace``` class, which is the recommended interface for new code:
+
+```matlab
+obj = InstanceSpace(rootdir);              % reads options.json if present, else defaults
+obj = obj.build();                          % run the full pipeline
+obj = obj.explore(testRootDir);              % evaluate a trained model on new data
+results = obj.getResults();                  % training results (== obj.model)
+obj.save();                                  % write rootdir/model.mat
+obj = InstanceSpace.load(rootdir);           % read it back
+```
+
+Options can be changed between individual pipeline stages, and only the stages that need to re-run do:
+
+```matlab
+obj = InstanceSpace(rootdir);
+obj = obj.build('stages', {'prelim', 'sifted', 'pilot'});
+obj.opts.pilot.alpha = 2.0;                  % adjust after inspecting the projection
+obj = obj.build('stages', {'pilot'});         % re-runs PILOT only; sifted output is reused
+obj = obj.build('stages', {'cloister', 'pythia', 'trace'});
+```
+
+See the class's own help text (```help InstanceSpace```) for the full method list, including ```plot()``` and ```getResults(idx)``` for accessing a specific ```explore()``` call's results.
 
 ## The metadata file
 

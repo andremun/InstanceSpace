@@ -39,12 +39,29 @@ function out = PILOTviewpoint(Z, Y, opts)
 %   topological-preservation scoring and the stored solution), replacing
 %   the original PILOTANGLE.m reference's redundant and axis-wrong
 %   sum(A.^2') row-normalisation applied twice.
+
+% -------------------------------------------------------------------------
+% Instance Space Analysis (ISA) Toolkit
+% Copyright (c) 2026 Mario Andres Munoz Acosta and contributors
+% School of Computing and Information Systems
+% The University of Melbourne, Australia
 %
-%   By: Mario Andres Munoz Acosta
-%       School of Mathematics and Statistics
-%       The University of Melbourne
-%       Australia
-%       2026
+% SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
+% License: https://polyformproject.org/licenses/noncommercial/1.0.0/
+%
+% You may use, modify, and redistribute this software for non-commercial
+% research and educational purposes only. Commercial use requires prior
+% written permission. See the LICENSE file for full terms.
+%
+% Reference:
+%   Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for
+%   Algorithm Testing. ACM Computing Surveys, 55(12), Article 255.
+%   https://doi.org/10.1145/3572895
+%
+%   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
+%   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
+%   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
+% -------------------------------------------------------------------------
 
 narginchk(3, 3);
 if size(Z,1) ~= size(Y,1)

@@ -1,13 +1,8 @@
-function model = buildIS(rootdir)
-% buildIS  Thin backward-compatibility wrapper around InstanceSpace (spec §7.5).
+function out = PYTHIA2(Z, Y, Ybin, Ybest, algolabels, opts)
+% PYTHIA2  Deprecated. Use PYTHIA with opts.classifier = 'knn'.
 %
-% Preserves the pre-Phase-7 buildIS(rootdir) calling convention (a plain
-% function taking a directory and returning the in-memory model struct)
-% for callers -- notably the MATILDA web platform -- that invoke this
-% entry point directly. New code should use InstanceSpace directly:
-%
-%   obj = InstanceSpace(rootdir);
-%   obj = obj.build();
+% This wrapper exists for backward compatibility. All new code should call
+% PYTHIA directly with the desired classifier type set in opts.classifier.
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit
@@ -31,17 +26,9 @@ function model = buildIS(rootdir)
 %   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
 %   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
 % -------------------------------------------------------------------------
-
-if ~(endsWith(rootdir, '/') || endsWith(rootdir, '\'))
-    rootdir = [rootdir '/'];
-end
-if ~isfile([rootdir 'metadata.csv']) || ~isfile([rootdir 'options.json'])
-    error(['Please place the datafiles in the directory ''' rootdir '''']);
-end
-
-obj = InstanceSpace(rootdir);
-obj = obj.build();
-model = obj.model;
-
-fprintf('EOF:SUCCESS\n');
+warning('ISA:PYTHIA2:deprecated', ...
+    ['PYTHIA2 is deprecated and will be removed in a future release. ' ...
+     'Call PYTHIA with opts.classifier = ''knn'' instead.']);
+opts.classifier = 'knn';
+out = PYTHIA(Z, Y, Ybin, Ybest, algolabels, opts);
 end

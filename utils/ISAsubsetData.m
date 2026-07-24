@@ -1,13 +1,8 @@
-function model = buildIS(rootdir)
-% buildIS  Thin backward-compatibility wrapper around InstanceSpace (spec §7.5).
-%
-% Preserves the pre-Phase-7 buildIS(rootdir) calling convention (a plain
-% function taking a directory and returning the in-memory model struct)
-% for callers -- notably the MATILDA web platform -- that invoke this
-% entry point directly. New code should use InstanceSpace directly:
-%
-%   obj = InstanceSpace(rootdir);
-%   obj = obj.build();
+function data = ISAsubsetData(data, subsetIndex, featIdx)
+% ISAsubsetData  Subset rows (and optionally feature columns) of a data struct.
+%   data = ISAsubsetData(data, subsetIndex) subsets all row-indexed fields.
+%   data = ISAsubsetData(data, subsetIndex, featIdx) also selects feature
+%   columns featIdx from data.X (used in the post-SIFTED density path).
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit
@@ -31,17 +26,22 @@ function model = buildIS(rootdir)
 %   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
 %   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
 % -------------------------------------------------------------------------
-
-if ~(endsWith(rootdir, '/') || endsWith(rootdir, '\'))
-    rootdir = [rootdir '/'];
+if nargin < 3
+    data.X = data.X(subsetIndex, :);
+else
+    data.X = data.X(subsetIndex, featIdx);
+    data.featlabels = data.featlabels(featIdx);
 end
-if ~isfile([rootdir 'metadata.csv']) || ~isfile([rootdir 'options.json'])
-    error(['Please place the datafiles in the directory ''' rootdir '''']);
+data.Y            = data.Y(subsetIndex, :);
+data.Xraw         = data.Xraw(subsetIndex, :);
+data.Yraw         = data.Yraw(subsetIndex, :);
+data.Ybin         = data.Ybin(subsetIndex, :);
+data.beta         = data.beta(subsetIndex);
+data.numGoodAlgos = data.numGoodAlgos(subsetIndex);
+data.Ybest        = data.Ybest(subsetIndex);
+data.P            = data.P(subsetIndex);
+data.instlabels   = data.instlabels(subsetIndex);
+if isfield(data, 'S')
+    data.S = data.S(subsetIndex);
 end
-
-obj = InstanceSpace(rootdir);
-obj = obj.build();
-model = obj.model;
-
-fprintf('EOF:SUCCESS\n');
 end

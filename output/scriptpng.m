@@ -1,14 +1,39 @@
 function scriptpng(container,rootdir)
-% -------------------------------------------------------------------------
-% pgnscript.m
-% -------------------------------------------------------------------------
+% scriptpng  Write a model or explore() result to PNG figures in rootdir.
 %
-% By: Mario Andres Munoz Acosta
-%     School of Mathematics and Statistics
-%     The University of Melbourne
-%     Australia
-%     2020
+%   scriptpng(container,rootdir)
 %
+%   container - model struct from buildIS/InstanceSpace.build(), or a
+%               testResults entry from exploreIS/InstanceSpace.explore()
+%   rootdir   - destination directory (trailing slash required)
+%
+%   Produces per-feature and per-algorithm distribution plots, portfolio
+%   selection and footprint plots, using scriptfcn.m's drawing helpers.
+%   Renders in 3D and applies the optimised camera viewpoint
+%   (container.pilot.viewpoint, see PILOTviewpoint.m) when the projection
+%   is 3D and one was computed.
+
+% -------------------------------------------------------------------------
+% Instance Space Analysis (ISA) Toolkit
+% Copyright (c) 2026 Mario Andres Munoz Acosta and contributors
+% School of Computing and Information Systems
+% The University of Melbourne, Australia
+%
+% SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
+% License: https://polyformproject.org/licenses/noncommercial/1.0.0/
+%
+% You may use, modify, and redistribute this software for non-commercial
+% research and educational purposes only. Commercial use requires prior
+% written permission. See the LICENSE file for full terms.
+%
+% Reference:
+%   Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for
+%   Algorithm Testing. ACM Computing Surveys, 55(12), Article 255.
+%   https://doi.org/10.1145/3572895
+%
+%   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
+%   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
+%   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
 % -------------------------------------------------------------------------
 
 % -------------------------------------------------------------------------
@@ -32,7 +57,6 @@ scriptfcn;
 % Export via exportgraphics rather than print(...,'-dpng',...): print
 % warns ("Ignoring 'InvertHardCopy' property...") whenever Color has
 % been set explicitly, which it now always is.
-%
 % fig captures the figure handle once and is used everywhere below
 % instead of the bare word gcf: MATLAB classifies an identifier as a
 % variable or a function for a function's ENTIRE body at parse time,
@@ -52,8 +76,14 @@ end
 % first time they're rendered in a session; exportgraphics then warns
 % ("Exported image displays axes toolbar...") and bakes that overlay
 % into the PNG. Disabling it as the new default for axes created from
-% here on avoids both, for every plot in this file.
-set(groot, 'defaultAxesToolbarVisible', 'off');
+% here on avoids both, for every plot in this file. Axes toolbars are an
+% R2018b+ feature; guarded with try/catch (isprop doesn't reliably
+% recognise groot's dynamic "default*" pseudo-properties) so a MATLAB
+% configuration without it doesn't hard-error output generation.
+try
+    set(groot, 'defaultAxesToolbarVisible', 'off');
+catch
+end
 colormap('parula');
 nfeats = size(container.data.X,2);
 nalgos = size(container.data.Y,2);

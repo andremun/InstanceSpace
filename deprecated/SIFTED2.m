@@ -1,13 +1,9 @@
-function model = buildIS(rootdir)
-% buildIS  Thin backward-compatibility wrapper around InstanceSpace (spec §7.5).
+function [X, out] = SIFTED2(X, Y, Ybin, featlabels, opts)
+% SIFTED2  Deprecated. Use SIFTED instead.
 %
-% Preserves the pre-Phase-7 buildIS(rootdir) calling convention (a plain
-% function taking a directory and returning the in-memory model struct)
-% for callers -- notably the MATILDA web platform -- that invoke this
-% entry point directly. New code should use InstanceSpace directly:
-%
-%   obj = InstanceSpace(rootdir);
-%   obj = obj.build();
+% This wrapper exists for backward compatibility. All new code should call
+% SIFTED directly; SIFTED2 was promoted and renamed as part of the v1.7
+% refactor (spec Phase 6).
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit
@@ -31,17 +27,7 @@ function model = buildIS(rootdir)
 %   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
 %   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
 % -------------------------------------------------------------------------
-
-if ~(endsWith(rootdir, '/') || endsWith(rootdir, '\'))
-    rootdir = [rootdir '/'];
-end
-if ~isfile([rootdir 'metadata.csv']) || ~isfile([rootdir 'options.json'])
-    error(['Please place the datafiles in the directory ''' rootdir '''']);
-end
-
-obj = InstanceSpace(rootdir);
-obj = obj.build();
-model = obj.model;
-
-fprintf('EOF:SUCCESS\n');
+warning('ISA:SIFTED2:deprecated', ...
+    'SIFTED2 is deprecated and will be removed in a future release. Call SIFTED instead.');
+[X, out] = SIFTED(X, Y, Ybin, featlabels, opts);
 end

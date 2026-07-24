@@ -42,12 +42,29 @@ function out = TRACE(Z, Ybin, Yhat, P, beta, algolabels, opts, trainedTrace)
 %
 %   TRACE3 reference
 %     Simpson, D. et al. (2025). [TRACE3 paper citation.]
+
+% -------------------------------------------------------------------------
+% Instance Space Analysis (ISA) Toolkit
+% Copyright (c) 2026 Mario Andres Munoz Acosta and contributors
+% School of Computing and Information Systems
+% The University of Melbourne, Australia
 %
-%   By: Mario Andres Munoz Acosta
-%       School of Mathematics and Statistics
-%       The University of Melbourne
-%       Australia
-%       2020 (TRACE3 refactor 2025)
+% SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
+% License: https://polyformproject.org/licenses/noncommercial/1.0.0/
+%
+% You may use, modify, and redistribute this software for non-commercial
+% research and educational purposes only. Commercial use requires prior
+% written permission. See the LICENSE file for full terms.
+%
+% Reference:
+%   Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for
+%   Algorithm Testing. ACM Computing Surveys, 55(12), Article 255.
+%   https://doi.org/10.1145/3572895
+%
+%   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
+%   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
+%   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
+% -------------------------------------------------------------------------
 
 narginchk(7, 8);
 isEvalMode = nargin == 8;

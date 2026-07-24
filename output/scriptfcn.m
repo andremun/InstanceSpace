@@ -1,14 +1,39 @@
 function scriptfcn
-% -------------------------------------------------------------------------
-% scriptfcn.m
-% -------------------------------------------------------------------------
+% scriptfcn  Inject shared CSV-writing/colour-scaling lambdas and plotting
+% helpers into the caller's workspace via assignin.
 %
-% By: Mario Andres Munoz Acosta
-%     School of Mathematics and Statistics
-%     The University of Melbourne
-%     Australia
-%     2020
+%   scriptfcn;
 %
+%   Called at the top of scriptcsv.m/scriptpng.m/scriptweb.m so they can
+%   use writeArray2CSV, writeCell2CSV, makeBndLabels, colorscale,
+%   colorscaleg, and the draw*/getPolygonPoints functions defined below as
+%   if they were local functions, without duplicating them in each file.
+%   See the individual subfunctions below (axisLimits, applyView,
+%   resolveViewAngle, drawSources, drawScatter, drawPortfolioSelections,
+%   drawPortfolioFootprint, drawGoodBadFootprint, drawFootprint,
+%   drawBinaryPerformance, getPolygonPoints) for what each does.
+
+% -------------------------------------------------------------------------
+% Instance Space Analysis (ISA) Toolkit
+% Copyright (c) 2026 Mario Andres Munoz Acosta and contributors
+% School of Computing and Information Systems
+% The University of Melbourne, Australia
+%
+% SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
+% License: https://polyformproject.org/licenses/noncommercial/1.0.0/
+%
+% You may use, modify, and redistribute this software for non-commercial
+% research and educational purposes only. Commercial use requires prior
+% written permission. See the LICENSE file for full terms.
+%
+% Reference:
+%   Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for
+%   Algorithm Testing. ACM Computing Surveys, 55(12), Article 255.
+%   https://doi.org/10.1145/3572895
+%
+%   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
+%   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
+%   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
 % -------------------------------------------------------------------------
 
 writeArray2CSV = @(data,colnames,rownames,filename) writetable(array2table(data,'VariableNames',colnames,...

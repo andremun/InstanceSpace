@@ -1,13 +1,15 @@
-function model = buildIS(rootdir)
-% buildIS  Thin backward-compatibility wrapper around InstanceSpace (spec §7.5).
+% startup.m - Add the ISA Toolkit's function directories to the MATLAB path.
 %
-% Preserves the pre-Phase-7 buildIS(rootdir) calling convention (a plain
-% function taking a directory and returning the in-memory model struct)
-% for callers -- notably the MATILDA web platform -- that invoke this
-% entry point directly. New code should use InstanceSpace directly:
+% Run this once per MATLAB session (e.g. `run('startup.m')`, or just
+% `startup` if the repo root is your current folder) before calling any
+% toolkit function directly -- PILOT, SIFTED, PRELIM, CLOISTER, PYTHIA,
+% TRACE, FILTER, the output writers, etc. -- without going through
+% buildIS, exploreIS, or InstanceSpace. Those three already add the
+% subdirectories to the path automatically the first time one is used
+% in a session, so example.m and test_integration.m need no separate
+% startup.m step.
 %
-%   obj = InstanceSpace(rootdir);
-%   obj = obj.build();
+% Safe to run more than once.
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit
@@ -32,16 +34,14 @@ function model = buildIS(rootdir)
 %   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
 % -------------------------------------------------------------------------
 
-if ~(endsWith(rootdir, '/') || endsWith(rootdir, '\'))
-    rootdir = [rootdir '/'];
+root = fileparts(mfilename('fullpath'));
+subdirs = {'core', 'output', 'utils', 'deprecated'};
+for i = 1:numel(subdirs)
+    d = fullfile(root, subdirs{i});
+    if isfolder(d)
+        addpath(d);
+    end
 end
-if ~isfile([rootdir 'metadata.csv']) || ~isfile([rootdir 'options.json'])
-    error(['Please place the datafiles in the directory ''' rootdir '''']);
-end
+clear root subdirs d i
 
-obj = InstanceSpace(rootdir);
-obj = obj.build();
-model = obj.model;
-
-fprintf('EOF:SUCCESS\n');
-end
+fprintf('[STARTUP] ISA Toolkit function directories added to the MATLAB path.\n');

@@ -45,6 +45,24 @@ end
 out.data.X = Xbar{:,isfeat};
 out.data.Y = Xbar{:,isalgo};
 [ninst,nalgos] = size(out.data.Y);
+
+% Mirror buildIS.m's opts.selvars.feats restriction (applied at build
+% time, before PRELIM computed model.prelim.hibound/lobound/minX/etc,
+% all of which are sized to the RESTRICTED feature count): without
+% this, out.data.X keeps every raw feature_ column from
+% metadata_test.csv, and the bound-clipping below fails with a
+% dimension mismatch against those restricted-size arrays -- or, if it
+% happened not to error, model.featsel.idx would silently select the
+% wrong columns positionally instead of the intended named features.
+featlabelsAll = varlabels(isfeat);
+if isfield(model.opts, 'selvars') && isfield(model.opts.selvars, 'feats')
+    isselfeat = false(1, length(featlabelsAll));
+    for i = 1:length(model.opts.selvars.feats)
+        isselfeat = isselfeat | strcmp(featlabelsAll, model.opts.selvars.feats{i});
+    end
+    out.data.X = out.data.X(:,isselfeat);
+    featlabelsAll = featlabelsAll(isselfeat);
+end
 % -------------------------------------------------------------------------
 % HERE CHECK IF THE NUMBER OF ALGORITHMS IS THE SAME AS IN THE MODEL. IF
 % NOT, CHECK IF THE NAMES OF THE ALGORITHMS ARE THE SAME, IF NOT, MOVE THE
@@ -189,7 +207,7 @@ end
 % This is the final subset of features.
 out.featsel.idx = model.featsel.idx;
 out.data.X = out.data.X(:,out.featsel.idx);
-out.data.featlabels = strrep(varlabels(isfeat),'feature_','');
+out.data.featlabels = strrep(featlabelsAll,'feature_','');
 out.data.featlabels = out.data.featlabels(model.featsel.idx);
 % ---------------------------------------------------------------------
 %  Calculate the two dimensional projection using the PBLDR algorithm

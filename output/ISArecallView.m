@@ -17,8 +17,8 @@ function ISArecallView(fig, groupIdx)
 %              plots use).
 %
 %   Useful after manually rotating a 3D footprint .fig while exploring it
-%   interactively, to return to the optimised viewpoint (spec §5.2)
-%   without having to recompute or look it up by hand.
+%   interactively, to return to the optimised viewpoint without having to
+%   recompute or look it up by hand.
 %
 %   Example:
 %     fig = openfig('footprint_KNN.fig');

@@ -1,6 +1,6 @@
 function out = PILOTviewpoint(Z, Y, opts)
 % PILOTviewpoint  Find the optimal 2D camera viewpoint(s) of a 3D PILOT
-% projection (spec §5.2; Equation 2 of Simpson et al., 2025).
+% projection (Equation 2 of Simpson et al., 2025).
 %
 %   out = PILOTviewpoint(Z, Y, opts)
 %
@@ -34,7 +34,7 @@ function out = PILOTviewpoint(Z, Y, opts)
 %   topological-preservation trial-selection scheme as PILOT.m's
 %   numerical branch (Hd = pdist(Z), best trial = highest corr(Hd,
 %   pdist(Z*A'))). LAMBDA=0.2 is the paper-calibrated orthogonality
-%   penalty weight (not user-exposed, per spec §5.2). v1 and v2 are
+%   penalty weight (not user-exposed). v1 and v2 are
 %   rescaled to unit magnitude once per trial (both for the
 %   topological-preservation scoring and the stored solution), replacing
 %   the original PILOTANGLE.m reference's redundant and axis-wrong

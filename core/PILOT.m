@@ -21,11 +21,11 @@ function out = PILOT(X, Y, featlabels, opts)
 %                    ntries    int    BFGS multi-start restarts (numerical
 %                                     branch only)
 %                    alpha     double performance-reconstruction cost
-%                                     weight (method='standard' only, spec
-%                                     §5.4): min ||Xtilde-BrZ||^2 +
+%                                     weight (method='standard' only):
+%                                     min ||Xtilde-BrZ||^2 +
 %                                     alpha*||Y-CrZ||^2
 %                    topoWeight double reserved for future use; not wired
-%                                     into the cost function (spec §5.4.1)
+%                                     into the cost function
 %                    verbose   logical per-trial progress output
 %                    precalcAlpha (optional) pre-computed full BFGS
 %                                     solution vector, skips optimisation

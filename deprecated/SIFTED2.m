@@ -2,8 +2,8 @@ function [X, out] = SIFTED2(X, Y, Ybin, featlabels, opts)
 % SIFTED2  Deprecated. Use SIFTED instead.
 %
 % This wrapper exists for backward compatibility. All new code should call
-% SIFTED directly; SIFTED2 was promoted and renamed as part of the v1.7
-% refactor (spec Phase 6).
+% SIFTED directly; SIFTED2 was renamed to SIFTED, with this thin alias
+% kept in its place.
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit

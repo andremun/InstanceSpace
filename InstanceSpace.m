@@ -1,5 +1,5 @@
 classdef InstanceSpace
-% InstanceSpace  Value-class wrapper around the ISA pipeline (spec §7).
+% InstanceSpace  Value-class wrapper around the ISA pipeline.
 %
 %   obj = InstanceSpace(rootdir)
 %   obj = InstanceSpace(rootdir, opts)
@@ -32,8 +32,7 @@ classdef InstanceSpace
 %     obj = InstanceSpace.load(rootdir);   % reads it back
 %
 %   buildIS.m and exploreIS.m are thin backward-compatibility wrappers
-%   around this class (spec §7.5); new code should prefer the class
-%   directly.
+%   around this class; new code should prefer the class directly.
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit

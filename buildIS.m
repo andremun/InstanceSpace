@@ -1,7 +1,7 @@
 function model = buildIS(rootdir)
-% buildIS  Thin backward-compatibility wrapper around InstanceSpace (spec §7.5).
+% buildIS  Thin backward-compatibility wrapper around InstanceSpace.
 %
-% Preserves the pre-Phase-7 buildIS(rootdir) calling convention (a plain
+% Preserves the original buildIS(rootdir) calling convention (a plain
 % function taking a directory and returning the in-memory model struct)
 % for callers -- notably the MATILDA web platform -- that invoke this
 % entry point directly. New code should use InstanceSpace directly:

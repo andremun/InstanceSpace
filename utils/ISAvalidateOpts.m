@@ -7,7 +7,7 @@ function opts = ISAvalidateOpts(opts)
 %   PRELIM/PILOT/PYTHIA/etc.
 %
 %   Deliberately validates only fields that ARE present: this runs before
-%   ISAdefaults (spec §7.2), so most fields are still absent at this point
+%   ISAdefaults, so most fields are still absent at this point
 %   and are not this function's concern -- ISAdefaults supplies known-valid
 %   defaults for anything missing. "Present" is tracked explicitly (getf()
 %   returns a presence flag alongside the value), not inferred from

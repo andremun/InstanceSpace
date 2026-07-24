@@ -1,13 +1,11 @@
-% test_integration.m - ISA Toolkit full-pipeline regression suite (spec
-% Section 12.2: "Full pipeline on reference dataset; numerical regression").
+% test_integration.m - ISA Toolkit full-pipeline regression suite: runs the
+% full pipeline on the reference dataset and checks for numerical regressions.
 %
 % This is the exhaustive option-coverage suite, not a getting-started
 % example -- for that, see example.m, which runs a single bare-bones
 % configuration with a short guide to the handful of settings most users
 % adjust first. This file exists to catch regressions across the option
-% surface: new features and bug fixes should get a case here (see
-% docs/tech/isa_refactor_plan_v1.7.pdf, "Each phase is complete when... any
-% new feature has a test case").
+% surface: new features and bug fixes should get a case here.
 %
 % Runs buildIS() + exploreIS() across a set of option configurations
 % against the reference dataset (Munoz et al. 2018 classification study,

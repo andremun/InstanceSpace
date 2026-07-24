@@ -6,7 +6,7 @@ function out = TRACE_legacy(Z, Ybin, P, beta, algolabels, opts, useContra)
 %   Selectable via opts.trace.method = 'legacy' in TRACE.m. Uses DBSCAN
 %   clustering followed by boundary/polyshape construction per cluster.
 %   Contradiction removal between best-algorithm footprints is applied when
-%   useContra = true (the default for legacy mode; see spec section 4.1).
+%   useContra = true (the default for legacy mode).
 %
 %   Inputs / outputs mirror the old TRACE.m interface. Footprint structs use
 %   .area (not .measure); TRACE.m normalises naming after calling this function.

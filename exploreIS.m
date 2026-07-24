@@ -1,8 +1,8 @@
 function out = exploreIS(rootdir)
-% exploreIS  Thin backward-compatibility wrapper around InstanceSpace (spec §7.5).
+% exploreIS  Thin backward-compatibility wrapper around InstanceSpace.
 %
 % Requires model.mat to already exist in rootdir (written by buildIS).
-% Preserves the pre-Phase-7 exploreIS(rootdir) calling convention for
+% Preserves the original exploreIS(rootdir) calling convention for
 % callers -- notably the MATILDA web platform -- that invoke this entry
 % point directly. New code should use InstanceSpace directly:
 %

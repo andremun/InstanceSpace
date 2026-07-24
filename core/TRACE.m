@@ -19,12 +19,14 @@ function out = TRACE(Z, Ybin, Yhat, P, beta, algolabels, opts, trainedTrace)
 %     opts       - struct with fields (see ISAdefaults for defaults):
 %                    method        'trace3' (default) or 'legacy'
 %                    PI            minimum purity threshold (0.6)
-%                  Note: PYTHIA always runs before TRACE in this pipeline (mandatory
-%                  coupling, spec §4.5), so TRACE never trains its own KNN classifier
-%                  (spec §4.3 steps 1-2 describe that as the general algorithm, but it
-%                  is superseded whenever PYTHIA has already produced predictions,
-%                  which is always). If Yhat is empty/skipped, Zu = {yi=1} directly
-%                  with a warning; there is no KNN-training fallback in this version.
+%                  Note: PYTHIA always runs before TRACE in this pipeline
+%                  (mandatory coupling), so TRACE never trains its own KNN
+%                  classifier -- that would be the fallback algorithm when
+%                  no PYTHIA predictions are available, but it is
+%                  superseded whenever PYTHIA has already produced
+%                  predictions, which is always. If Yhat is empty/skipped,
+%                  Zu = {yi=1} directly with a warning; there is no
+%                  KNN-training fallback in this version.
 %                    minInstances  minimum instances for a valid footprint (4)
 %                    minAreaFrac   footprint must exceed this fraction of space (0.01)
 %                    contra        contradiction removal; legacy only; default true

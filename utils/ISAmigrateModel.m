@@ -1,9 +1,9 @@
 function modelOut = ISAmigrateModel(input, varargin)
-% ISAmigrateModel  Migrate a pre-v1.7 ISA model to the current field layout.
+% ISAmigrateModel  Migrate a legacy ISA model to the current field layout.
 %
 % Two calling conventions, dispatched on the type of the first argument:
 %
-%   1) File-based (spec §6.4, the primary/recommended form): pass a rootdir
+%   1) File-based (the primary/recommended form): pass a rootdir
 %      containing model.mat. The original file is backed up alongside it
 %      (default name: model_legacy.mat) and the migrated model is written
 %      back to model.mat in the same directory.
@@ -22,7 +22,7 @@ function modelOut = ISAmigrateModel(input, varargin)
 %
 %        model = ISAmigrateModel(model);
 %
-% Both paths apply the complete legacy migration table from spec §6.4:
+% Both paths apply the complete legacy migration table below:
 %
 %   opts struct renames  opts.oracle/opts.pbldr/opts.sbound/opts.footprint
 %                         -> opts.pythia/opts.pilot/opts.cloister/opts.trace
@@ -42,7 +42,7 @@ function modelOut = ISAmigrateModel(input, varargin)
 %   model.trace in the pre-refactor DBSCAN+polyshape triangulation format
 %                         -> recomputed fresh via TRACE3, using
 %                            model.pythia.Yhat when available (else
-%                            model.data.Ybin, per spec §6.4)
+%                            model.data.Ybin)
 %   missing model.completedStages -> inferred from which sub-structs are
 %                         present (isfield only, same approach as
 %                         InstanceSpace.load())

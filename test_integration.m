@@ -206,8 +206,8 @@ results = struct('name', cell(1,nCases), 'passed', cell(1,nCases), 'message', ce
 
 for i = 1:nCases
     tc = testCases{i};
-    fprintf('\n[EXAMPLE] === Case %d/%d: %s ===\n', i, nCases, tc.name);
-    fprintf('[EXAMPLE] %s\n', tc.desc);
+    fprintf('\n[TEST] === Case %d/%d: %s ===\n', i, nCases, tc.name);
+    fprintf('[TEST] %s\n', tc.desc);
 
     caseDir = [rootdir tc.name '/'];
     if ~isfolder(caseDir), mkdir(caseDir); end
@@ -226,11 +226,11 @@ for i = 1:nCases
         out = exploreIS(caseDir); %#ok<NASGU>
         results(i).passed  = true;
         results(i).message = 'OK';
-        fprintf('[EXAMPLE] Case ''%s'' PASSED.\n', tc.name);
+        fprintf('[TEST] Case ''%s'' PASSED.\n', tc.name);
     catch ME
         results(i).passed  = false;
         results(i).message = ME.message;
-        fprintf('[EXAMPLE] Case ''%s'' FAILED: %s\n', tc.name, ME.message);
+        fprintf('[TEST] Case ''%s'' FAILED: %s\n', tc.name, ME.message);
     end
 end
 
@@ -241,7 +241,7 @@ end
 % build() with an option change between stages, out-of-order stage
 % requests, the missing-prerequisite error path, a save()/load()
 % round-trip, and explore() without going through exploreIS.m.
-fprintf('\n[EXAMPLE] === Class API: staged build + save/load + explore ===\n');
+fprintf('\n[TEST] === Class API: staged build + save/load + explore ===\n');
 classCaseDir = [rootdir 'class_api/'];
 if ~isfolder(classCaseDir), mkdir(classCaseDir); end
 for f = 1:numel(srcfiles)
@@ -289,16 +289,16 @@ try
 
     results(end).passed  = true;
     results(end).message = 'OK';
-    fprintf('[EXAMPLE] Case ''class_api'' PASSED.\n');
+    fprintf('[TEST] Case ''class_api'' PASSED.\n');
 catch ME
     results(end).passed  = false;
     results(end).message = ME.message;
-    fprintf('[EXAMPLE] Case ''class_api'' FAILED: %s\n', ME.message);
+    fprintf('[TEST] Case ''class_api'' FAILED: %s\n', ME.message);
 end
 nCases = numel(results);
 
 % ---- Summary ----------------------------------------------------------
-fprintf('\n[EXAMPLE] ================= Summary =================\n');
+fprintf('\n[TEST] ================= Summary =================\n');
 nPassed = 0;
 for i = 1:nCases
     if results(i).passed
@@ -307,9 +307,9 @@ for i = 1:nCases
     else
         status = 'FAIL';
     end
-    fprintf('[EXAMPLE] [%s] %s\n', status, results(i).name);
+    fprintf('[TEST] [%s] %s\n', status, results(i).name);
 end
-fprintf('[EXAMPLE] %d/%d cases passed.\n', nPassed, nCases);
+fprintf('[TEST] %d/%d cases passed.\n', nPassed, nCases);
 
 if nPassed == nCases
     fprintf('EOF:SUCCESS\n');

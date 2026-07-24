@@ -266,6 +266,29 @@ try
     assert(all(ismember({'cloister', 'pythia', 'trace'}, obj.completedStages)), ...
         'cloister/pythia/trace did not complete.');
 
+    % Re-running an EARLIER stage after later ones have already completed
+    % must invalidate cloister/pythia/trace, not leave them looking valid
+    % alongside a freshly re-run pilot.
+    obj.opts.pilot.alpha = 3.0;
+    obj = obj.build('stages', {'pilot'});
+    assert(isequal(obj.completedStages, {'prelim', 'sifted', 'pilot'}), ...
+        're-running pilot after cloister/pythia/trace completed should invalidate them in completedStages.');
+    assert(~isfield(obj.model, 'cloist') && ~isfield(obj.model, 'pythia') && ~isfield(obj.model, 'trace'), ...
+        're-running pilot should remove the now-stale cloister/pythia/trace model fields.');
+
+    % explore() must refuse a model left partially invalidated like this,
+    % rather than crash deep inside evaluateTestSet on a missing field.
+    notBuiltEnforced = false;
+    try
+        obj.explore(classCaseDir);
+    catch notBuiltErr
+        notBuiltEnforced = strcmp(notBuiltErr.identifier, 'ISA:InstanceSpace:notBuilt');
+    end
+    assert(notBuiltEnforced, 'explore() on a partially-invalidated model should raise ISA:InstanceSpace:notBuilt.');
+
+    % Complete the pipeline again before the save()/load()/explore() checks below.
+    obj = obj.build('stages', {'cloister', 'pythia', 'trace'});
+
     % A genuinely missing prerequisite must error clearly, not crash deep
     % inside the requested stage.
     prereqEnforced = false;

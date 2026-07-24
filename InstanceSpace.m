@@ -80,6 +80,16 @@ classdef InstanceSpace
                               'cloister', {{'pilot'}}, ...
                               'pythia',   {{'pilot'}}, ...
                               'trace',    {{'pythia'}});
+        % obj.model field name for each stage's output. Identity for
+        % every stage except 'cloister', whose output runCloister()
+        % stores under the shorter obj.model.cloist (matching the
+        % pre-refactor buildIS.m's field name).
+        StageModelField = struct('prelim',   'prelim', ...
+                                  'sifted',   'sifted', ...
+                                  'pilot',    'pilot', ...
+                                  'cloister', 'cloist', ...
+                                  'pythia',   'pythia', ...
+                                  'trace',    'trace');
     end
 
     methods (Access = public)
@@ -156,6 +166,17 @@ classdef InstanceSpace
                 if ~ismember(stage, obj.completedStages)
                     obj.completedStages = [obj.completedStages, {stage}];
                 end
+                % Re-running an earlier stage invalidates every LATER
+                % stage's output (e.g. re-running 'pilot' changes Z, so
+                % any already-computed pythia/trace results were derived
+                % from the OLD Z): drop them from completedStages and
+                % remove their model fields so save()/explore()/output
+                % writers can't silently operate on a model that mixes
+                % the freshly (re-)run stage with stale downstream
+                % results. Stages later in toRun that legitimately need
+                % re-running are unaffected -- they just get re-added a
+                % few iterations later, same as any other stage.
+                obj = obj.invalidateDownstream(stage);
             end
 
             if poolOpenedHere
@@ -195,9 +216,16 @@ classdef InstanceSpace
             if ~(endsWith(testRootDir, '/') || endsWith(testRootDir, '\'))
                 testRootDir = [testRootDir '/'];
             end
-            if isempty(fieldnames(obj.model)) || ~isfield(obj.model, 'pilot')
+            if isempty(fieldnames(obj.model)) || ...
+                    ~all(ismember(InstanceSpace.StageOrder, obj.completedStages))
+                % Checking obj.model.pilot alone let a partially-built
+                % object (e.g. only prelim/sifted/pilot run) reach
+                % evaluateTestSet, which then fails deep inside on a
+                % missing model.opts/model.pythia/model.trace field
+                % instead of with a clear message here.
                 error('ISA:InstanceSpace:notBuilt', ...
-                    'No trained model to explore -- call build() (or load an existing one) first.');
+                    ['No fully trained model to explore -- call build() with every stage ' ...
+                     '(or load a fully-built model) first.']);
             end
             datafile = [testRootDir 'metadata_test.csv'];
             if ~isfile(datafile)
@@ -334,18 +362,31 @@ classdef InstanceSpace
             % their fields don't exist -- that would let checkPrereq wave
             % through a build()/explore() call that then crashes deep
             % inside the missing stage instead of at the prereq check.
-            % Stage name == model field name for every stage except
-            % 'cloister', whose output runCloister() stores under the
-            % shorter obj.model.cloist (matching the pre-refactor
-            % buildIS.m's field name).
-            stageFields = InstanceSpace.StageOrder;
-            stageFields(strcmp(stageFields, 'cloister')) = {'cloist'};
-            obj.completedStages = InstanceSpace.StageOrder(...
-                cellfun(@(f) isfield(model, f), stageFields));
+            obj.completedStages = InstanceSpace.StageOrder(cellfun(...
+                @(s) isfield(model, InstanceSpace.StageModelField.(s)), InstanceSpace.StageOrder));
         end
     end
 
     methods (Access = private)
+        function obj = invalidateDownstream(obj, stage)
+            % Drops every stage strictly AFTER `stage` in StageOrder from
+            % completedStages and removes its obj.model field, so a
+            % re-run of an earlier stage can't leave stale later-stage
+            % results (computed from the OLD upstream output) looking
+            % valid. Called after every stage in build()'s loop; a no-op
+            % when none of the later stages had actually completed yet.
+            idx = find(strcmp(InstanceSpace.StageOrder, stage));
+            downstream = InstanceSpace.StageOrder(idx+1:end);
+            for i = 1:numel(downstream)
+                ds = downstream{i};
+                obj.completedStages = obj.completedStages(~strcmp(obj.completedStages, ds));
+                f = InstanceSpace.StageModelField.(ds);
+                if isfield(obj.model, f)
+                    obj.model = rmfield(obj.model, f);
+                end
+            end
+        end
+
         function checkPrereq(obj, stage)
             needed = InstanceSpace.StagePrereq.(stage);
             for i = 1:numel(needed)

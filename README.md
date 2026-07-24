@@ -36,9 +36,11 @@ The main requirement for the software to run is to have MATLAB R2025a or later, 
 
 ## Working with the code
 
-The main interface is the script ```example.m```, which runs a suite of pipeline configurations (different classifiers, tuning strategies, 2D/3D projection, feature selection on/off, etc.) against the reference dataset in ```test/data/```. Each configuration gets its own subdirectory (e.g. ```test/data/classifier_svm/```), which becomes the location of that run's software outputs: images (```.png```), tables (```.csv```), and raw intermediate data (```.mat```).
+Start with ```example.m```: it runs the full pipeline (```buildIS``` + ```exploreIS```) once, on the bundled reference dataset, with sensible defaults and just a handful of commonly-adjusted settings (classifier, tuning strategy, projection dimensionality, feature selection on/off) exposed as plain variables near the top. Outputs — images (```.png```), tables (```.csv```), and raw intermediate data (```.mat```) — land in ```test/data/example/```. To analyse your own data, point it at a folder containing your ```metadata.csv``` instead (see "The metadata file" below), and revisit the performance-metric settings, which are tuned for the bundled dataset's error-rate semantics.
 
-**```options.json``` is a generated artifact, not a source file.** Each test case in ```example.m``` writes its own ```options.json``` into its output subdirectory from the ```opts``` struct built in MATLAB, every time the script runs. Hand-editing an ```options.json``` file has no lasting effect — the next run of ```example.m``` silently overwrites it. To change what gets run, edit ```example.m``` (the ```defaultOpts()``` local function for shared settings, or a specific test case's ```override``` function).
+```test_integration.m``` is the exhaustive option-coverage regression suite used during development — every classifier, tuning strategy, 2D/3D, PLS, viewpoint groups, and more, each in its own subdirectory under ```test/data/``` (e.g. ```test/data/classifier_svm/```) so no run overwrites another's outputs. It's a good reference for how a given option is meant to be used, but not the place to start.
+
+**```options.json``` is a generated artifact, not a source file**, for both scripts above. Each run writes its own ```options.json``` from the ```opts``` struct built in MATLAB. Hand-editing an ```options.json``` file has no lasting effect — the next run silently overwrites it. To change what gets run, edit the MATLAB script instead (```example.m``` directly, or for ```test_integration.m```, the ```defaultOpts()``` local function for shared settings and a specific test case's ```override``` function for that case only).
 
 ## The metadata file
 
@@ -55,7 +57,7 @@ Moreover, empty cells, NaN or null values are allowed but **not recommended**. W
 
 ## Options
 
-The script ```example.m``` constructs a structure that contains all the settings used by the code. Broadly, there are settings required for the analysis itself, settings for the pre-processing of the data, and output settings. For the first these are divided into general, dimensionality reduction, bound estimation, algorithm selection and footprint construction settings. For the second, the toolkit has routines for bounding outliers, scale the data and select features.
+Every setting below is a field of the ```opts``` structure passed to ```buildIS``` (as ```options.json```, built by ```example.m``` or ```test_integration.m```). Broadly, there are settings required for the analysis itself, settings for the pre-processing of the data, and output settings. For the first these are divided into general, dimensionality reduction, bound estimation, algorithm selection and footprint construction settings. For the second, the toolkit has routines for bounding outliers, scale the data and select features.
 
 ### General settings
 

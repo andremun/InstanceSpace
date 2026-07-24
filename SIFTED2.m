@@ -50,6 +50,11 @@ if size(X,2) ~= length(featlabels)
         length(featlabels), size(X,2));
 end
 if ~isfield(opts, 'pval'), opts.pval = 0.05; end
+if ~isfield(opts, 'dims'), opts.dims = 2;    end
+if ~(isnumeric(opts.dims) && isscalar(opts.dims) && ismember(opts.dims, [2 3]))
+    error('ISA:SIFTED2:invalidDims', ...
+        'opts.dims must be 2 or 3 (got %s).', mat2str(opts.dims));
+end
 
 % -------------------------------------------------------------------------
 % GA and clustering parameters (fixed internal constants; not user-facing
@@ -147,7 +152,7 @@ fprintf('[SIFTED] Constructing %d clusters of features.\n', opts.K);
 fprintf('[SIFTED] Using a GA+LookUpTable to find an optimal combination.\n');
 % -------------------------------------------------------------------------
 cvpart  = cvpartition(size(Xaux,1), 'Kfold', Kfolds);
-fcnwrap = @(x) costfcn(x, Xaux, Y, Ybin, out.clust, cvpart, featlabels(out.selvars), nworkers);
+fcnwrap = @(x) costfcn(x, Xaux, Y, Ybin, out.clust, cvpart, featlabels(out.selvars), nworkers, opts.dims);
 gaopts  = optimoptions('ga', ...
     'FitnessLimit',      FitnessLimit, ...
     'FunctionTolerance', FunctionTolerance, ...
@@ -167,16 +172,17 @@ fprintf('[SIFTED] Keeping %d out of %d features (clustering).\n', size(X,2), nfe
 
 end
 % =========================================================================
-function y = costfcn(ind, X, Y, Ybin, clust, cvpart, featlabels, nworkers)
+function y = costfcn(ind, X, Y, Ybin, clust, cvpart, featlabels, nworkers, dims)
     persistent mymap
     if isempty(mymap)
         mymap = containers.Map('KeyType','char','ValueType','double');
     end
-    % Internal PILOT call uses minimal settings: 5 random starts, numerical
-    % solver only. KNN uses 3 neighbours (D+1 for 2D projection).
+    % Internal PILOT call mirrors the canonical analytic branch, ntries=5
+    % (spec §5.5), at the same dimensionality as the outer pipeline's final
+    % projection. KNN uses dims+1 neighbours (D+1, generalised from 2D).
     ntries      = 5;
-    analytic    = false;
-    kneighbours = 3;
+    analytic    = true;
+    kneighbours = dims + 1;
 
     idx = false(1, size(X,2));
     for i = 1:length(ind)
@@ -189,7 +195,7 @@ function y = costfcn(ind, X, Y, Ybin, clust, cvpart, featlabels, nworkers)
         y = values(mymap, {key});
         y = y{1};
     else
-        out = PILOT(X(:,idx), Y, featlabels(idx), struct('analytic', analytic, 'ntries', ntries));
+        out = PILOT(X(:,idx), Y, featlabels(idx), struct('analytic', analytic, 'ntries', ntries, 'dims', dims));
         Z = out.Z;
         y = -Inf;
         % NOTE: ga runs fitness calls serially (no UseParallel in gaopts), so this

@@ -198,6 +198,9 @@ nfeats = size(model.data.X,2);
 model.featsel.idx = 1:nfeats;
 if opts.sifted.flag
     fprintf('[SIFTED] Calling SIFTED for automated feature selection.\n');
+    % Match the outer pipeline's final projection dimensionality (spec §5.5)
+    % so feature-subset evaluation is consistent with the chosen dims.
+    opts.sifted.dims = opts.pilot.dims;
     [model.data.X, model.sifted] = SIFTED2(model.data.X, model.data.Y, model.data.Ybin, model.data.featlabels, opts.sifted);
     model.data.featlabels = model.data.featlabels(model.sifted.selvars);
     model.featsel.idx = model.featsel.idx(model.sifted.selvars);
@@ -219,6 +222,10 @@ end
 % projection using the PILOT algorithm (Munoz et al. Mach Learn 2018)
 fprintf('[PILOT] Calling PILOT to find the optimal projection.\n');
 model.pilot = PILOT(model.data.X, model.data.Y, model.data.featlabels, opts.pilot);
+if opts.pilot.dims == 3
+    fprintf('[PILOT] Finding the optimal 2D viewpoint(s) of the 3D projection.\n');
+    model.pilot.viewpoint = PILOTviewpoint(model.pilot.Z, model.data.Y, opts.pilot);
+end
 % -------------------------------------------------------------------------
 % Finding the empirical bounds based on the ranges of the features and the
 % correlations of the different edges.

@@ -76,7 +76,7 @@ for i=1:nalgos
     catch
         fprintf('[OUTPUT] No classifier predictions are available.\n');
     end
-    % Drawing the footprints for good and bad performance acording to the
+    % Drawing the footprints for good and bad performance according to the
     % binary measure
     try
         clf;

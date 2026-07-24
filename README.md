@@ -42,6 +42,31 @@ Start with ```example.m```: it runs the full pipeline (```buildIS``` + ```explor
 
 **```options.json``` is a generated artifact, not a source file**, for both scripts above. Each run writes its own ```options.json``` from the ```opts``` struct built in MATLAB. Hand-editing an ```options.json``` file has no lasting effect — the next run silently overwrites it. To change what gets run, edit the MATLAB script instead (```example.m``` directly, or for ```test_integration.m```, the ```defaultOpts()``` local function for shared settings and a specific test case's ```override``` function for that case only).
 
+### The InstanceSpace class
+
+```buildIS```/```exploreIS``` are thin backward-compatibility wrappers (kept for callers like the MATILDA web platform that invoke them directly) around the ```InstanceSpace``` class, which is the recommended interface for new code:
+
+```matlab
+obj = InstanceSpace(rootdir);              % reads options.json if present, else defaults
+obj = obj.build();                          % run the full pipeline
+obj = obj.explore(testRootDir);              % evaluate a trained model on new data
+results = obj.getResults();                  % training results (== obj.model)
+obj.save();                                  % write rootdir/model.mat
+obj = InstanceSpace.load(rootdir);           % read it back
+```
+
+Options can be changed between individual pipeline stages, and only the stages that need to re-run do:
+
+```matlab
+obj = InstanceSpace(rootdir);
+obj = obj.build('stages', {'prelim', 'sifted', 'pilot'});
+obj.opts.pilot.alpha = 2.0;                  % adjust after inspecting the projection
+obj = obj.build('stages', {'pilot'});         % re-runs PILOT only; sifted output is reused
+obj = obj.build('stages', {'cloister', 'pythia', 'trace'});
+```
+
+See the class's own help text (```help InstanceSpace```) for the full method list, including ```plot()``` and ```getResults(idx)``` for accessing a specific ```explore()``` call's results.
+
 ## The metadata file
 
 The ```metadata.csv``` file should contain a table where each row corresponds to a problem instance, and each column must strictly follow the naming convention mentioned below:

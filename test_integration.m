@@ -212,6 +212,69 @@ for i = 1:nCases
     end
 end
 
+% ---- InstanceSpace class API coverage (spec Phase 7) -----------------
+% The cases above only exercise InstanceSpace indirectly, through the
+% buildIS/exploreIS backward-compatibility wrappers (each of which always
+% runs every stage in one shot). This drives the class directly: staged
+% build() with an option change between stages, out-of-order stage
+% requests, the missing-prerequisite error path, a save()/load()
+% round-trip, and explore() without going through exploreIS.m.
+fprintf('\n[EXAMPLE] === Class API: staged build + save/load + explore ===\n');
+classCaseDir = [rootdir 'class_api/'];
+if ~isfolder(classCaseDir), mkdir(classCaseDir); end
+for f = 1:numel(srcfiles)
+    copyfile([rootdir srcfiles{f}], [classCaseDir srcfiles{f}]);
+end
+results(end+1).name = 'class_api';
+try
+    obj = InstanceSpace(classCaseDir, baseOpts);
+
+    obj = obj.build('stages', {'prelim', 'sifted', 'pilot'});
+    assert(isequal(obj.completedStages, {'prelim', 'sifted', 'pilot'}), ...
+        'completedStages mismatch after a partial build().');
+
+    obj.opts.pilot.alpha = 2.0;
+    obj = obj.build('stages', {'pilot'}); % re-run just PILOT with the new weight
+    assert(isequal(obj.completedStages, {'prelim', 'sifted', 'pilot'}), ...
+        're-running an already-completed stage should not duplicate it in completedStages.');
+
+    % Requested out of canonical order: build() must still run them
+    % prelim->...->trace internally regardless of the order listed here.
+    obj = obj.build('stages', {'trace', 'cloister', 'pythia'});
+    assert(all(ismember({'cloister', 'pythia', 'trace'}, obj.completedStages)), ...
+        'cloister/pythia/trace did not complete.');
+
+    % A genuinely missing prerequisite must error clearly, not crash deep
+    % inside the requested stage.
+    prereqEnforced = false;
+    try
+        InstanceSpace(classCaseDir, baseOpts).build('stages', {'pilot'});
+    catch prereqErr
+        prereqEnforced = strcmp(prereqErr.identifier, 'ISA:InstanceSpace:missingPrereq');
+    end
+    assert(prereqEnforced, 'build(''stages'',{''pilot''}) on a fresh object should raise ISA:InstanceSpace:missingPrereq.');
+
+    % save()/load() round-trip.
+    obj.save();
+    loaded = InstanceSpace.load(classCaseDir);
+    assert(isequal(loaded.model.pilot.A, obj.model.pilot.A), 'save()/load() round-trip changed model.pilot.A.');
+
+    % explore() directly through the class, not via exploreIS.m.
+    loaded = loaded.explore(classCaseDir);
+    assert(numel(loaded.testResults) == 1 && strcmp(loaded.testDirs{1}, classCaseDir), ...
+        'explore() did not record testResults/testDirs correctly.');
+    assert(isfield(loaded.getResults(1), 'trace'), 'getResults(1) is missing the trace field.');
+
+    results(end).passed  = true;
+    results(end).message = 'OK';
+    fprintf('[EXAMPLE] Case ''class_api'' PASSED.\n');
+catch ME
+    results(end).passed  = false;
+    results(end).message = ME.message;
+    fprintf('[EXAMPLE] Case ''class_api'' FAILED: %s\n', ME.message);
+end
+nCases = numel(results);
+
 % ---- Summary ----------------------------------------------------------
 fprintf('\n[EXAMPLE] ================= Summary =================\n');
 nPassed = 0;

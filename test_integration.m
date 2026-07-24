@@ -230,7 +230,7 @@ if nPassed == nCases
     fprintf('EOF:SUCCESS\n');
 else
     fprintf('EOF:ERROR\n');
-    error('ISA:example:caseFailures', '%d of %d test cases failed.', nCases-nPassed, nCases);
+    error('ISA:test_integration:caseFailures', '%d of %d test cases failed.', nCases-nPassed, nCases);
 end
 
 % =========================================================================

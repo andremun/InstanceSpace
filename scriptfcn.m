@@ -46,14 +46,23 @@ function lims = axisLimits(Z)
 % 'omitnan' guards against instances with an unprojected/missing
 % coordinate; without it, a single NaN in Z makes min/max return NaN and
 % axis(...) errors instead of just excluding that instance from the bounds.
-ubound = ceil(max(Z,[],1,'omitnan'));
-lbound = floor(min(Z,[],1,'omitnan'));
+%
+% Padding is 10% of each dimension's own data range rather than a fixed
+% +/-1: PILOT's PLS method routinely produces Z values an order of
+% magnitude smaller than the standard/analytic methods (e.g. a
+% projection spanning +/-0.05), and a fixed +/-1 margin -- plus the
+% ceil/floor rounding this used to apply to the bounds themselves --
+% swamped that real range entirely, leaving the whole point cloud
+% squeezed into a tiny fraction of a much larger empty axes box.
+ubound = max(Z,[],1,'omitnan');
+lbound = min(Z,[],1,'omitnan');
 bad = isnan(ubound) | isnan(lbound);
-if any(bad)
-    ubound(bad) = 0;
-    lbound(bad) = 0;
-end
-lims = reshape([lbound-1; ubound+1], 1, []);
+ubound(bad) = 1;
+lbound(bad) = -1;
+range_ = ubound - lbound;
+range_(range_ == 0) = 1; % all instances share this coordinate; avoid zero padding
+pad = 0.1 * range_;
+lims = reshape([lbound-pad; ubound+pad], 1, []);
 end
 % =========================================================================
 function labelAxes(is3D)
@@ -130,7 +139,7 @@ labelAxes(is3D); title('Sources');
 legend(handle, sourcelabels, 'Location', 'NorthEastOutside');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
-axis square; axis(axisLimits(Z));
+axis square; axis(axisLimits(Z)); grid on;
 applyView(is3D, viewAngle);
 
 end
@@ -147,7 +156,7 @@ caxis([0,1])
 labelAxes(is3D); title(titlelabel);
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
-axis square; axis(axisLimits(Z));
+axis square; axis(axisLimits(Z)); grid on;
 applyView(is3D, viewAngle);
 colorbar('EastOutside');
 
@@ -181,7 +190,7 @@ labelAxes(is3D); title(titlelabel);
 legend(h(isworthy), algolbls(isworthy), 'Location', 'NorthEastOutside');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
-axis square; axis(axisLimits(Z));
+axis square; axis(axisLimits(Z)); grid on;
 applyView(is3D, viewAngle);
 
 end
@@ -215,7 +224,7 @@ labelAxes(is3D); title('Portfolio footprints');
 legend(h(isworthy), algolbls(isworthy), 'Location', 'NorthEastOutside');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
-axis square; axis(axisLimits(Z));
+axis square; axis(axisLimits(Z)); grid on;
 applyView(is3D, viewAngle);
 
 end
@@ -249,7 +258,7 @@ labelAxes(is3D); title([titlelabel ' Footprints']);
 legend(h(h~=0), lbls(h~=0), 'Location', 'NorthEastOutside');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
-axis square; axis(axisLimits(Z));
+axis square; axis(axisLimits(Z)); grid on;
 applyView(is3D, viewAngle);
 
 end
@@ -296,7 +305,7 @@ labelAxes(is3D); title(titlelabel);
 legend(h(h~=0), lbls(h~=0), 'Location', 'NorthEastOutside');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
-axis square; axis(axisLimits(Z));
+axis square; axis(axisLimits(Z)); grid on;
 applyView(is3D, viewAngle);
 
 end

@@ -18,9 +18,9 @@ end
 if ~isfield(opts, 'dims'),   opts.dims   = 2;          end
 if ~isfield(opts, 'alpha'),  opts.alpha  = 1.0;        end % performance-reconstruction cost weight (spec 5.4), 'standard' method only
 if ~isfield(opts, 'method'), opts.method = 'standard'; end % 'standard' (BFGS/analytic) or 'pls' (spec 5.3)
-if ~ismember(lower(opts.method), {'standard','pls'})
+if ~any(strcmpi(opts.method, {'standard','pls'}))
     error('ISA:PILOT:invalidMethod', ...
-        'opts.method must be ''standard'' or ''pls'' (got ''%s'').', opts.method);
+        'opts.method must be ''standard'' or ''pls'' (got ''%s'').', char(string(opts.method)));
 end
 if ~(isnumeric(opts.dims) && isscalar(opts.dims) && ismember(opts.dims, [2 3]))
     error('ISA:PILOT:invalidDims', ...

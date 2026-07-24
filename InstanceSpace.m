@@ -416,7 +416,9 @@ classdef InstanceSpace
                 return;
             end
             fprintf('[BUILD] Starting parallel processing pool.\n');
-            delete(mypool);
+            if ~isempty(mypool)
+                delete(mypool);
+            end
             if isnumeric(obj.opts.general.ncores)
                 mypool = parpool('local', obj.opts.general.ncores, 'SpmdEnabled', false);
             else
@@ -571,6 +573,13 @@ classdef InstanceSpace
                 model_.prelim.unif = densityUnif; % feature-space uniformity of the retained subset
             end
             model_.featsel.idx = 1:size(model_.data.X, 2);
+            % Snapshot the pre-SIFTED feature name order here: runSifted
+            % overwrites model.data.featlabels in place with the
+            % SIFTED-selected subset, so this is the only place the full,
+            % positionally-correct training order (post opts.selvars.feats
+            % and nanThreshold drops) survives for evaluateTestSet to
+            % validate metadata_test.csv's column order against.
+            model_.featsel.labels = model_.data.featlabels;
 
             obj.model = model_;
         end
@@ -762,6 +771,26 @@ classdef InstanceSpace
                      'opts.prelim.nanThreshold). Check that metadata_test.csv has the ' ...
                      'same feature_ columns as metadata.csv.'], ...
                     numel(featlabelsAll), numel(model.prelim.lambdaX));
+            end
+            % A count match alone doesn't guarantee the same feature ORDER:
+            % every bound-clipping/Box-Cox/normalisation step below indexes
+            % model.prelim.hibound/lobound/lambdaX/etc positionally, so if
+            % metadata_test.csv lists its feature_ columns in a different
+            % order than metadata.csv did, columns would be silently
+            % misaligned -- normalised/clipped with the wrong feature's
+            % parameters -- instead of erroring. Only checkable for models
+            % that retained the training order (featsel.labels); older
+            % saved models without it just skip this extra check.
+            if isfield(model.featsel, 'labels')
+                testLabels = strrep(featlabelsAll, 'feature_', '');
+                if ~isequal(testLabels(:), model.featsel.labels(:))
+                    error('ISA:InstanceSpace:featureOrderMismatch', ...
+                        ['metadata_test.csv''s feature_ columns are not in the same order ' ...
+                         'as the trained model''s (after applying opts.selvars.feats). ' ...
+                         'Expected order: %s. Got: %s. Reorder metadata_test.csv''s columns ' ...
+                         'to match metadata.csv.'], ...
+                        strjoin(model.featsel.labels, ', '), strjoin(testLabels, ', '));
+                end
             end
 
             % Reconcile test algorithms against the trained model's: known

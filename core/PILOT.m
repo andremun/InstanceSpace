@@ -64,6 +64,10 @@ function out = PILOT(X, Y, featlabels, opts)
 %   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
 %   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
 %   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
+%
+%   Munoz, M.A., Villanova, L., Baatar, D. & Smith-Miles, K. (2018).
+%   Instance spaces for machine learning classification. Machine
+%   Learning, 107(1), 109-147. https://doi.org/10.1007/s10994-017-5629-5
 % -------------------------------------------------------------------------
 
 if ~isfield(opts, 'verbose'), opts.verbose = true; end

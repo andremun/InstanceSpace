@@ -70,10 +70,6 @@ function modelOut = ISAmigrateModel(input, varargin)
 %   Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for
 %   Algorithm Testing. ACM Computing Surveys, 55(12), Article 255.
 %   https://doi.org/10.1145/3572895
-%
-%   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
-%   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
-%   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
 % -------------------------------------------------------------------------
 
 if ischar(input) || (isstring(input) && isscalar(input))

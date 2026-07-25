@@ -41,9 +41,6 @@ function out = TRACE(Z, Ybin, Yhat, P, beta, algolabels, opts, trainedTrace)
 %              best{nalgos}    best-algorithm footprints
 %              hard            beta-hard footprint (~beta instances)
 %              summary         (nalgos+1 x 11) cell array performance table
-%
-%   TRACE3 reference
-%     Simpson, D. et al. (2025). [TRACE3 paper citation.]
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit
@@ -66,6 +63,11 @@ function out = TRACE(Z, Ybin, Yhat, P, beta, algolabels, opts, trainedTrace)
 %   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
 %   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
 %   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
+%
+%   Munoz, M.A. & Smith-Miles, K. (2017). Performance analysis of
+%   continuous black-box optimization algorithms via footprints in
+%   instance space. Evolutionary Computation, 25(4), 529-554.
+%   https://doi.org/10.1162/EVCO_a_00194
 % -------------------------------------------------------------------------
 
 narginchk(7, 8);

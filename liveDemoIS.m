@@ -54,12 +54,6 @@
 % Algorithm Testing: Methodology and Software Tools. ACM Computing
 % Surveys, 55(12), Article 255. https://doi.org/10.1145/3572895
 %
-% If your instance space is 3-dimensional, please also cite:
-%
-% C. Simpson, M.A. Munoz, S. Kandanaarachchi & R.J.G.B. Campello (2025).
-% ISA3: A 3-dimensional expansion of Instance Space Analysis. Machine
-% Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
-%
 % If you use this toolkit itself, please also cite:
 %
 % M.A. Munoz & K. Smith-Miles. Instance Space Analysis: A toolkit for

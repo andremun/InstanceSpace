@@ -143,17 +143,28 @@ now lives under `deprecated/` as a warn-and-forward alias).
   threshold), and still clusters on 1-|correlation| with k-means
   (`opts.sifted.K` default 10, `opts.sifted.MaxIter`/`.Replicates`
   controlling convergence), but replaces the PCA+RandomForest
-  representative-selection step with a **genetic algorithm** whose
-  fitness is the worst-case (maximum, across algorithms) k-fold
-  cross-validated KNN classification loss for a candidate one-feature-
-  per-cluster combination, projected via **PILOT's analytic branch** (a
-  single closed-form solve, no BFGS restarts) at the same dimensionality
-  as the outer pipeline's `opts.pilot.dims`. Previously-evaluated
-  combinations are cached (a `persistent` variable) for the duration of
-  the call. This is a materially different (and more expensive) search
-  than the paper describes. If reproducing a published number or a
-  paper's exact SIFTED description, verify which version and which
-  commit produced it.
+  representative-selection step with a **genetic algorithm** that
+  searches for the one-feature-per-cluster combination **minimising**
+  the *worst-case* k-fold cross-validated KNN classification loss --
+  i.e. a minimax objective, not an average. For each candidate
+  combination, `costfcn` (`core/SIFTED.m`) projects it via **PILOT's
+  analytic branch** (a single closed-form solve, no BFGS restarts) at
+  the same dimensionality as the outer pipeline's `opts.pilot.dims`,
+  trains a k-fold KNN good/bad classifier per algorithm on that
+  projection, and takes the *maximum* CV loss across algorithms as that
+  candidate's fitness value (`y = max(y, knn.kfoldLoss)` per algorithm);
+  MATLAB's `ga()` then *minimises* that fitness across candidates (it has
+  no maximise mode -- confirmed by `FitnessLimit = 0`, "0 = perfect KNN
+  loss", an early-stop-when-small threshold, which only makes sense under
+  minimisation). Net effect: SIFTED picks the feature combination that is
+  least bad for its *worst*-served algorithm, not the one with the best
+  average loss -- a combination that is excellent for 9 algorithms and
+  terrible for a 10th scores worse here than one that is merely decent
+  for all 10. Previously-evaluated combinations are cached (a
+  `persistent` variable) for the duration of the call. This is a
+  materially different (and more expensive) search than the paper
+  describes. If reproducing a published number or a paper's exact SIFTED
+  description, verify which version and which commit produced it.
 - Edge cases handled explicitly in code: <=1 feature is a hard error;
   <=3 features skips the clustering+GA stage entirely (correlation-filter
   output is the final answer); fewer features than K skips clustering. A

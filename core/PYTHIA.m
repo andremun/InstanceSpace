@@ -15,7 +15,6 @@ function out = PYTHIA(Z, Y, Ybin, Ybest, algolabels, opts, trainedModel)
 %   'none'            — use pre-supplied opts.params directly; skip tuning
 %   'bayes'           — MATLAB bayesopt (Gaussian process surrogate),
 %                       opts.nTuningIter evals, same k-fold CV as 'sobol'
-% -------------------------------------------------------------------------
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit

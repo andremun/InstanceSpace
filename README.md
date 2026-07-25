@@ -20,6 +20,10 @@ If you follow the Instance Space Analysis methodology, please cite as follows:
 
 > K. Smith-Miles and M.A. Muñoz. *Instance Space Analysis for Algorithm Testing: Methodology and Software Tools*. ACM Comput. Surv. 55(12:255),1-31 [DOI:10.1145/3572895](https://doi.org/10.1145/3572895), 2023.
 
+If you use the 3D extension of the methodology (```opts.pilot.dims = 3```, ```PILOTviewpoint```, TRACE3's native 3D footprints), please additionally cite:
+
+> C. Simpson, M.A. Muñoz, S. Kandanaarachchi and R.J.G.B. Campello. *ISA3: A 3-dimensional expansion of Instance Space Analysis*. Machine Learning, 114, 240 [DOI:10.1007/s10994-025-06871-5](https://doi.org/10.1007/s10994-025-06871-5), 2025.
+
 Also, if you specifically use this code, please cite as follows:
 
 > M.A. Muñoz and K. Smith-Miles. *Instance Space Analysis: A toolkit for the assessment of algorithmic power*. andremun/InstanceSpace on Github. Zenodo, [DOI:10.5281/zenodo.4484107](https://doi.org/10.5281/zenodo.4484107), 2020.

@@ -328,16 +328,24 @@ else
         'Trained model has no recognised classifier field (classifiers / svm / knn).');
 end
 
-nalgos = length(clfs);
+modelalgos = length(clfs);
+% nalgos is the FULL reconciled algorithm count (Y/Ybin/algolabels already
+% include any algorithm present in the test set but absent from training --
+% see InstanceSpace.evaluateTestSet's reconciliation step). modelalgos <
+% nalgos whenever the test set introduces algorithms the trained
+% classifiers never saw; those columns have no classifier to apply and are
+% padded below (Yhat=false, Pr0hat=0, precision/recall/accuracy=NaN)
+% instead of being silently dropped, so out.Yhat/out.summary stay aligned
+% with algolabels/data.Y the same way TRACE's eval mode already pads
+% out.good/out.best for algorithms beyond its trained count.
+nalgos = size(Y, 2);
 ninst  = size(Znorm, 1);
-Y      = Y(:,1:nalgos);
-Ybin   = Ybin(:,1:nalgos);
 
 out.Yhat   = false(ninst, nalgos);
 out.Pr0hat = zeros(ninst, nalgos);
 out.cvcmat = zeros(nalgos, 4);
 
-for ii = 1:nalgos
+for ii = 1:modelalgos
     clf = clfs{ii};
     if isempty(clf)
         continue;
@@ -364,17 +372,28 @@ for ii = 1:nalgos
     cm = confusionmat(logical(Ybin(:,ii)), out.Yhat(:,ii), 'Order', [false true]);
     out.cvcmat(ii,:) = cm(:)';
 end
-
-tn = out.cvcmat(:,1); fp = out.cvcmat(:,3);
-fn = out.cvcmat(:,2); tp = out.cvcmat(:,4);
-out.precision = tp ./ (tp + fp);
-out.recall    = tp ./ (tp + fn);
-out.accuracy  = (tp + tn) ./ ninst;
+% Algorithms beyond modelalgos have no trained classifier (new in the test
+% set): leave precision/recall/accuracy as NaN ("no CV model") rather than
+% a fabricated 0%, matching the nanmean/nanstd "no data" convention used
+% elsewhere in buildSummary.
+out.precision = NaN(nalgos, 1);
+out.recall    = NaN(nalgos, 1);
+out.accuracy  = NaN(nalgos, 1);
+tn = out.cvcmat(1:modelalgos,1); fp = out.cvcmat(1:modelalgos,3);
+fn = out.cvcmat(1:modelalgos,2); tp = out.cvcmat(1:modelalgos,4);
+out.precision(1:modelalgos) = tp ./ (tp + fp);
+out.recall(1:modelalgos)    = tp ./ (tp + fn);
+out.accuracy(1:modelalgos)  = (tp + tn) ./ ninst;
 
 % Use the training-time precision for selection weighting if available; fall back
 % to the freshly computed eval precision so old/migrated models still work.
+% Either way, pad to the full nalgos with 0 for algorithms beyond
+% modelalgos so computeSelection (bsxfun over out.Yhat, which IS full
+% width) never favours an algorithm with no classifier signal.
 if isfield(trained, 'precision') && ~isempty(trained.precision)
-    out = computeSelection(out, nalgos, Ybin, trained.precision);
+    selPrecision = zeros(nalgos, 1);
+    selPrecision(1:modelalgos) = trained.precision(:);
+    out = computeSelection(out, nalgos, Ybin, selPrecision);
 else
     out = computeSelection(out, nalgos, Ybin);
 end

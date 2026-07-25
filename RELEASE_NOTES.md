@@ -34,6 +34,8 @@ This release is a complete refactor of the ISA Toolkit, covering everything sinc
 
 **`liveDemoIS.m`** — a new interactive, stage-by-stage walkthrough of the pipeline through the `InstanceSpace` class, replacing the previous `liveDemoIS.mlx` Live Script (which predated the class and several since-completed pipeline changes). Open it in MATLAB's Live Editor.
 
+**AI-assisted analysis — Claude Code skill.** `.claude/skills/instance-space-analysis/` adds a general ISA methodology reference plus an operational reference for this repository's `options.json` schema and `InstanceSpace` class API, so an AI assistant using Claude Code against this repository can help run, interpret, and debug the pipeline. Scoped to this MATLAB toolkit only — it does not cover MATILDA's web interface or the Python `pyInstanceSpace` package, though its general methodology content may still help interpret results from those.
+
 ---
 
 ## Better engineering

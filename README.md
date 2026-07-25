@@ -202,6 +202,12 @@ These settings result in more information being stored in files or presented in 
 - ```opts.outputs.fig``` For 3D projections, this flag also writes a ```.fig``` file alongside each footprint PNG for interactive rotation in MATLAB (see ```ISArecallView``` to snap a reopened figure back to its optimised viewpoint). No effect for 2D projections.
 - ```opts.outputs.web``` This flag produces the output files employed to draw the figures in MATILDA's web tools (click [here](https://matilda.unimelb.edu.au/matilda/newuser) to open an account). It is recommended to leave this setting as ```FALSE```.
 
+## AI-assisted analysis
+
+This repository ships a [Claude Code](https://claude.com/claude-code) skill at ```.claude/skills/instance-space-analysis/``` to help an AI assistant perform Instance Space Analysis with this MATLAB toolkit — interpreting PRELIM/SIFTED/PILOT/CLOISTER/PYTHIA/TRACE output, choosing and justifying options (e.g. the good-performance threshold, classifier, feature-selection settings), designing a new ISA application, or debugging a pipeline run. It combines a general methodology reference (```SKILL.md```, covering the six-space framework and the six-step ISA process against the source papers) with an operational reference for this specific codebase (```references/matlab-toolkit.md```, covering the repository layout, ```options.json``` schema, and the ```InstanceSpace``` class API, kept current against this repository's actual behaviour rather than reconstructed from the papers alone).
+
+**This skill only documents the MATLAB toolkit in this repository** — it does not cover MATILDA's web interface or the Python ```pyInstanceSpace```/```matilda``` package, whose options and code details differ from what's described here. The general methodology reference (six-space framework, reading footprints, when to augment vs. stop) is not toolkit-specific and may still help interpret results produced by those other tools, but any option name, file format, or code-behaviour detail should be verified against the tool actually in use.
+
 ## Contact
 
 If you have any suggestions or ideas (e.g. for new features), or if you encounter any problems while running the code, please use the [issue tracker](https://github.com/andremun/InstanceSpace/issues) or contact us through the MATILDA's [Queries and Feedback](http://matilda.unimelb.edu.au/matilda/contact-us) page.

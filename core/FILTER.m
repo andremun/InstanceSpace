@@ -63,6 +63,11 @@ function [subsetIndex,isDissimilar,isVISA,unif] = FILTER(X,Y,Ybin,opts)
 %   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
 %   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
 %   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
+%
+%   Alipour, H., Munoz, M.A. & Smith-Miles, K. (2023). Enhanced instance
+%   space analysis for the maximum flow problem. European Journal of
+%   Operational Research, 304(2), 411-428.
+%   https://doi.org/10.1016/j.ejor.2022.04.012
 % -------------------------------------------------------------------------
 
 [ninst,nalgos] = size(Y);

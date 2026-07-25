@@ -193,7 +193,7 @@ function d = dotDiameter()
 % drawScatter (scatter()-based, sized via dotArea() below) render dots of
 % the same apparent size -- tune this one value if the rendered PNGs need
 % bigger or smaller dots.
-d = 8;
+d = 6;
 end
 % =========================================================================
 function a = dotArea()

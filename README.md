@@ -39,6 +39,8 @@ The main requirement for the software to run is to have MATLAB R2025a or later, 
 ```
 InstanceSpace.m, buildIS.m, exploreIS.m   entry points (see below)
 example.m, test_integration.m             getting-started / regression suite
+liveDemoIS.m                              interactive, stage-by-stage walkthrough (open in
+                                          MATLAB's Live Editor)
 startup.m                                 adds the folders below to the MATLAB path
 Contents.m                                MATLAB Central File Exchange version/date metadata
 CITATION.cff                              machine-readable citation metadata

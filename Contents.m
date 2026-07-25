@@ -37,3 +37,5 @@
 % Example
 %   example           - Getting-started example using the reference dataset
 %   test_integration  - Exhaustive option-coverage regression suite
+%   liveDemoIS        - Interactive, stage-by-stage walkthrough (open in
+%                        MATLAB's Live Editor)

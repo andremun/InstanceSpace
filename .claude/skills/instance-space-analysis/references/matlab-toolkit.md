@@ -297,3 +297,27 @@ appears to have been substantially merged into this main
 `TRACE.m`), but if a specific ISA3 paper figure needs exact reproduction,
 prefer the paper's own repository and diff against this one rather than
 assuming full parity.
+
+## Licence
+
+**PolyForm Noncommercial License 1.0.0.** Use, modification, and
+redistribution of this toolkit are permitted for non-commercial research
+and educational purposes only; commercial use requires prior written
+permission from the copyright holders. Every source file carries an
+`SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0` header;
+the full text is at the repository root (`LICENSE`), with citation
+metadata in `CITATION.cff`. This changed from GPL v3 as of v0.9.0 -- a
+pre-v0.9.0 copy obtained under GPL v3 remains under GPL v3 as licensed,
+but the toolkit as it exists in this repository today, and this
+reference's description of it, are covered by PolyForm Noncommercial.
+
+## Acknowledgements
+
+Funding for the development of this toolkit was provided by:
+
+- The Australian Research Council, through the Australian Laureate
+  Fellowship FL140100012.
+- The University of Melbourne, through grant 2025DYA013.
+- The Australian Research Council, through the ARC Industrial
+  Transformation Training Centre in Optimisation Technologies, Integrated
+  Methodologies, and Applications (OPTIMA; grant No. IC200100009).

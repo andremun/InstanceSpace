@@ -463,3 +463,28 @@ work to one iteration.
 See `references/matlab-toolkit.md` for the `InstanceSpace` MATLAB
 repository's file format, `options.json` schema with verified current
 defaults, the `InstanceSpace` class API, and pipeline invocation.
+
+---
+
+## Licence
+
+The `andremun/InstanceSpace` toolkit this skill documents is distributed
+under the **PolyForm Noncommercial License 1.0.0** (non-commercial
+research and educational use only, without prior written permission from
+the copyright holders; see the repository's `LICENSE` and `CITATION.cff`
+for full terms). This skill file is documentation of that toolkit's
+behaviour, not a redistribution of its source, but inherits the same
+non-commercial spirit: use it to work with the toolkit under its licence
+terms, not to help build a commercial derivative without permission.
+
+## Acknowledgements
+
+Funding for the development of the `InstanceSpace` toolkit this skill
+documents was provided by:
+
+- The Australian Research Council, through the Australian Laureate
+  Fellowship FL140100012.
+- The University of Melbourne, through grant 2025DYA013.
+- The Australian Research Council, through the ARC Industrial
+  Transformation Training Centre in Optimisation Technologies, Integrated
+  Methodologies, and Applications (OPTIMA; grant No. IC200100009).

@@ -147,8 +147,6 @@ The toolkit implements SIFTED (```SIFTED.m```; ```SIFTED2``` is a deprecated ali
 - ```opts.sifted.MaxIter``` number of iterations used to converge the k-means algorithm. Usually, this setting does not need tuning.
 - ```opts.sifted.Replicates``` number of repeats carried out of the k-means algorithm. Usually, this setting does not need tuning.
 
-**Removed option**: ```opts.sifted.NTREES``` — a leftover from an earlier, since-replaced Random-Forest-based feature-cluster scoring step; the current GA+KNN fitness function (above) doesn't use it.
-
 ### Dimensionality reduction settings
 
 The toolkit uses PILOT as a dimensionality reduction method, with [BFGS](https://en.wikipedia.org/wiki/Broyden-Fletcher-Goldfarb-Shanno_algorithm) as numerical solver. Technical details about it can be found [here](https://doi.org/10.1007/s10994-017-5629-5).
@@ -185,10 +183,6 @@ The toolkit selects one binary classifier per algorithm (good/not-good performan
 - ```opts.pythia.seed``` RNG seed for classifier training/tuning; defaults to ```opts.general.seed``` and rarely needs to be set independently.
 - ```opts.pythia.verbose``` per-classifier training progress and tuning output; defaults to ```opts.general.verbose```.
 
-**Removed option**: ```opts.pythia.uselibsvm``` — no longer read by the toolkit (kept here only so old ```options.json```/```example.m``` files can be understood); superseded by ```opts.pythia.classifier```. Existing ```model.mat``` files with LIBSVM-format classifiers can be updated with `ISAmigrateModel`.
-
-**Legacy option, still honoured**: ```opts.pythia.useknn``` — superseded by ```opts.pythia.classifier```, but still read as a fallback: if ```opts.pythia.classifier``` isn't set and ```opts.pythia.useknn = false```, ```ISAdefaults``` sets the classifier to ```'svm'``` instead of the ```'knn'``` default. New code should set ```opts.pythia.classifier``` directly instead.
-
 ### Footprint construction settings
 
 The toolkit uses TRACE3, an algorithm based on MATLAB's [```alphaShape```](https://au.mathworks.com/help/matlab/ref/alphashape.html) to define the regions in the space where we statistically infer good algorithm performance, applicable to both 2D and 3D instance spaces. It runs last, after PYTHIA: TRACE3 always reuses PYTHIA's predicted labels for the good-performance region (`Zu = {z_i : yhat_i=1 AND ybin_i=1}`) rather than retraining its own classifier — this coupling is unconditional and not configurable. When ```opts.pythia.skip = true```, TRACE falls back to the true labels only (`Zu = {z_i : ybin_i=1}`), with a warning.
@@ -198,8 +192,6 @@ The toolkit uses TRACE3, an algorithm based on MATLAB's [```alphaShape```](https
 - ```opts.trace.minInstances``` (default ```4```) minimum number of instances a candidate footprint must contain to be considered valid.
 - ```opts.trace.minAreaFrac``` (default ```0.01```) minimum footprint size, as a fraction of the total instance-space area/volume, for a candidate footprint to be kept.
 - ```opts.trace.contra``` (```'legacy'``` method only, defaults to ```TRUE``` there) turns on contradiction removal — trimming overlapping sections of two algorithms' footprints where the evidence is weak. Not read by the default ```'trace3'``` method.
-
-**Removed option**: ```opts.trace.usesim``` — the PYTHIA/TRACE coupling described above is now unconditional, so there is no "simulated vs. actual data" switch to configure.
 
 ### Output settings
 
@@ -216,4 +208,8 @@ If you have any suggestions or ideas (e.g. for new features), or if you encounte
 
 ## Acknowledgements
 
-Funding for the development of this code was provided by the Australian Research Council through the Australian Laureate Fellowship FL140100012.
+Funding for the development of this code was provided by:
+
+- The Australian Research Council, through the Australian Laureate Fellowship FL140100012.
+- The University of Melbourne, through grant 2025DYA013.
+- The Australian Research Council, through the ARC Industrial Transformation Training Centre in Optimisation Technologies, Integrated Methodologies, and Applications (OPTIMA; grant No. IC200100009).

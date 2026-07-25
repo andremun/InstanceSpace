@@ -6,7 +6,7 @@ function out = TRACE_legacy(Z, Ybin, P, beta, algolabels, opts, useContra)
 %   Selectable via opts.trace.method = 'legacy' in TRACE.m. Uses DBSCAN
 %   clustering followed by boundary/polyshape construction per cluster.
 %   Contradiction removal between best-algorithm footprints is applied when
-%   useContra = true (the default for legacy mode; see spec section 4.1).
+%   useContra = true (the default for legacy mode).
 %
 %   Inputs / outputs mirror the old TRACE.m interface. Footprint structs use
 %   .area (not .measure); TRACE.m normalises naming after calling this function.
@@ -29,9 +29,10 @@ function out = TRACE_legacy(Z, Ybin, P, beta, algolabels, opts, useContra)
 %   Algorithm Testing. ACM Computing Surveys, 55(12), Article 255.
 %   https://doi.org/10.1145/3572895
 %
-%   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
-%   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
-%   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
+%   Munoz, M.A. & Smith-Miles, K. (2017). Performance analysis of
+%   continuous black-box optimization algorithms via footprints in
+%   instance space. Evolutionary Computation, 25(4), 529-554.
+%   https://doi.org/10.1162/EVCO_a_00194
 % -------------------------------------------------------------------------
 
 if nargin < 7, useContra = true; end

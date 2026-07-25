@@ -20,6 +20,10 @@ If you follow the Instance Space Analysis methodology, please cite as follows:
 
 > K. Smith-Miles and M.A. Muñoz. *Instance Space Analysis for Algorithm Testing: Methodology and Software Tools*. ACM Comput. Surv. 55(12:255),1-31 [DOI:10.1145/3572895](https://doi.org/10.1145/3572895), 2023.
 
+If you use the 3D extension of the methodology (```opts.pilot.dims = 3```, ```PILOTviewpoint```, TRACE3's native 3D footprints), please additionally cite:
+
+> C. Simpson, M.A. Muñoz, S. Kandanaarachchi and R.J.G.B. Campello. *ISA3: A 3-dimensional expansion of Instance Space Analysis*. Machine Learning, 114, 240 [DOI:10.1007/s10994-025-06871-5](https://doi.org/10.1007/s10994-025-06871-5), 2025.
+
 Also, if you specifically use this code, please cite as follows:
 
 > M.A. Muñoz and K. Smith-Miles. *Instance Space Analysis: A toolkit for the assessment of algorithmic power*. andremun/InstanceSpace on Github. Zenodo, [DOI:10.5281/zenodo.4484107](https://doi.org/10.5281/zenodo.4484107), 2020.
@@ -39,11 +43,16 @@ The main requirement for the software to run is to have MATLAB R2025a or later, 
 ```
 InstanceSpace.m, buildIS.m, exploreIS.m   entry points (see below)
 example.m, test_integration.m             getting-started / regression suite
+liveDemoIS.m                              interactive, stage-by-stage walkthrough (open in
+                                          MATLAB's Live Editor)
 startup.m                                 adds the folders below to the MATLAB path
+Contents.m                                MATLAB Central File Exchange version/date metadata
+CITATION.cff                              machine-readable citation metadata
 core/                                     PRELIM, SIFTED, PILOT, PILOTviewpoint,
                                           CLOISTER, PYTHIA, TRACE, TRACE_legacy, FILTER
-output/                                   scriptcsv, scriptpng, scriptweb, scriptfcn
-utils/                                    ISAdefaults, ISAgetClassifierFcn,
+output/                                   scriptcsv, scriptpng, scriptweb, scriptfcn,
+                                          ISArecallView
+utils/                                    ISAdefaults, ISAvalidateOpts, ISAgetClassifierFcn,
                                           ISAmigrateModel, ISAsubsetData
 deprecated/                               PYTHIA2, PYTHIAtest, SIFTED2 (warn-and-forward
                                           shims kept for backward compatibility)
@@ -99,7 +108,7 @@ Moreover, empty cells, NaN or null values are allowed but **not recommended**. W
 
 ## Options
 
-Every setting below is a field of the ```opts``` structure passed to ```buildIS``` (as ```options.json```, built by ```example.m``` or ```test_integration.m```). Broadly, there are settings required for the analysis itself, settings for the pre-processing of the data, and output settings. For the first these are divided into general, dimensionality reduction, bound estimation, algorithm selection and footprint construction settings. For the second, the toolkit has routines for bounding outliers, scale the data and select features.
+Every setting below is a field of the ```opts``` structure passed to ```buildIS``` (as ```options.json```, built by ```example.m``` or ```test_integration.m```). The sections follow the pipeline's actual execution order (```InstanceSpace.build()```'s canonical stage order and dependencies, spec §7.3): general settings apply throughout; PRELIM (data bounding/scaling) runs first, then SIFTED (feature selection), then PILOT (dimensionality reduction); CLOISTER (bound estimation) and PYTHIA (algorithm selection) both run next, since each depends only on PILOT's output, not on each other; TRACE (footprint construction) runs last among the analysis stages, since it depends on PYTHIA's predictions; output settings apply to what's written once the pipeline completes.
 
 ### General settings
 
@@ -120,63 +129,13 @@ Every setting below is a field of the ```opts``` structure passed to ```buildIS`
 -	```opts.selvars.mindistance``` feature-space distance threshold below which two instances are considered too close (redundant) for the density-based filter.
 -	```opts.selvars.type``` selects which extra condition, on top of feature-space closeness, ```FILTER``` requires before treating an instance as redundant and dropping it: ```'Ftr'``` (feature-space closeness alone), ```'Ftr&AP'``` (also requires similar algorithm performance), ```'Ftr&Good'``` (default; also requires both instances to be uniformly good across the whole portfolio), or ```'Ftr&AP&Good'``` (all of the above).
 
-### Dimensionality reduction settings
-
-The toolkit uses PILOT as a dimensionality reduction method, with [BFGS](https://en.wikipedia.org/wiki/Broyden-Fletcher-Goldfarb-Shanno_algorithm) as numerical solver. Technical details about it can be found [here](https://doi.org/10.1007/s10994-017-5629-5).
-
--	```opts.pilot.analytic``` determines whether the analytic (set as ```TRUE```) or the numerical (set as ```FALSE```) solution to the dimensionality reduction problem should be used. We recommend to leave this setting as ```FALSE```, due to the instability of the analytical solution due to possible poor-conditioning. Only applies when ```opts.pilot.method = 'standard'```.
--	```opts.pilot.ntries``` number of iterations that the numerical solution is attempted.
--	```opts.pilot.dims``` projection dimensionality, ```2``` (default) or ```3```. Replaces the legacy boolean ```opts.pilot.ISA3D```, which is still accepted as an alias (```ISA3D = true``` maps to ```dims = 3```). A 3D projection lets you additionally call ```PILOTviewpoint``` to find the best 2D camera angle(s) onto it (see below).
--	```opts.pilot.method``` selects the projection algorithm: ```'standard'``` (default) is the BFGS/analytic method described above; ```'pls'``` uses Partial Least Squares ([```plsregress```](https://au.mathworks.com/help/stats/plsregress.html)) instead, which maximises covariance between the projection and the performance matrix and does not require the feature matrix to be full column rank. Both methods work at 2D or 3D via ```opts.pilot.dims```.
--	```opts.pilot.alpha``` (default ```1.0```) scales the performance-reconstruction term of PILOT's cost function relative to the feature-reconstruction term, for ```opts.pilot.method = 'standard'``` only: `min ||F̃-BrZ||² + α||Y-CrZ||²`. Increase it to emphasise performance trends over feature trends in the projection.
--	```opts.pilot.topoWeight``` (default ```0```, disabled) is reserved for future experimental use and has no effect in the current version.
-
-When ```opts.pilot.dims = 3```, ```buildIS``` automatically calls ```PILOTviewpoint(Z, Y, opts.pilot)``` to find the best 2D camera viewpoint(s) of the 3D projection, storing the result in ```model.pilot.viewpoint```. By default one viewpoint is found across all algorithms; ```opts.pilot.viewGroups``` (a cell array of algorithm index vectors, e.g. ```{[1 2 3], [4 5 6]}```) requests one viewpoint per group instead, useful for inspecting a subset of algorithms in isolation.
-
-### Empirical bound estimation settings.
-
-The toolkit uses CLOISTER, an algorithm based on correlation to detect the empirical bounds of the Instance Space.
-
-- ```opts.cloister.corrThreshold``` Determines the maximum [Pearson correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) that would indicate non-correlated variables. The lower this value is, the more stringent is the algorithm; hence, it would be less likely to produce a good bound.
-- ```opts.cloister.pval``` Determines the p-value of the Pearson correlation coefficient that indicates no correlation.
-- ```opts.cloister.maxFeatures``` (default ```20```) guard on the number of features CLOISTER's correlation-based bit-matrix enumeration will process; above this count it would become intractable, so CLOISTER instead falls back to a plain convex hull of the projected instances as the boundary, with a warning.
-
-###  Algorithm selection settings
-
-The toolkit selects one binary classifier per algorithm (good/not-good performance) from a registry of MATLAB-native classifiers, resolved via `ISAgetClassifierFcn`. **LIBSVM is deprecated for new runs**: `buildIS` never dispatches to it. `ISAmigrateModel` (see below) only renames legacy field names on an old model (e.g. `.svm`/`.knn` → `.classifiers`) — it does **not** retrain anything. A migrated model whose classifiers are still legacy LIBSVM structs can still be evaluated through `exploreIS`/`PYTHIA` eval mode (which dispatches to `svmpredict` when it detects a struct instead of a MATLAB classifier object), but this requires the LIBSVM MEX-files to be present; retrain from scratch with `buildIS` if you want to drop that dependency entirely.
-
-- ```opts.pythia.classifier``` selects the classifier: ```'knn'``` (default, via `fitcknn`), ```'svm'``` (`fitcsvm`), ```'tree'``` (`fitctree`), ```'nb'``` (Naive Bayes, `fitcnb`), ```'linear'``` (`fitclinear`), or ```'ensemble'``` (`fitcensemble`; see ```opts.pythia.ensembleMethod```, default ```'Bag'```). All algorithms in the portfolio use the same classifier.
-- ```opts.pythia.tuning``` selects the hyperparameter search strategy: ```'sobol'``` (default; a scrambled Sobol quasi-random sequence, ```opts.pythia.nTuningIter``` evaluations with k-fold CV), ```'bayes'``` (MATLAB `bayesopt`, Gaussian-process surrogate, same evaluation budget and CV), or ```'none'``` (use ```opts.pythia.params``` directly, skipping tuning).
-- ```opts.pythia.nTuningIter``` number of Sobol/Bayes evaluations (default 20).
-- ```opts.pythia.kFold``` number of folds of the CV experiment.
-- ```opts.pythia.params``` pre-calculated hyperparameters; required when ```opts.pythia.tuning = 'none'```, and always takes precedence over tuning when supplied. Shape depends on ```opts.pythia.classifier```: ```[nalgos x 1]``` for the single-parameter classifiers (```'tree'```, ```'nb'```, ```'linear'```), or ```[nalgos x 2]``` for the two-parameter ones (```'knn'```, ```'svm'```, ```'ensemble'```).
-- ```opts.pythia.skip``` bypasses classifier training entirely (TRACE then falls back to the true labels directly, with a warning).
-- ```opts.pythia.ispolykrnl``` (SVM only) determines whether to use a polynomial (set as ```TRUE```) or Gaussian (set as ```FALSE```) kernel. Usually, the latter one is significantly faster to calculate and more accurate; however, it also has the disadvantage of producing discontinuous areas of good performance which may look overfitted. We tend to recommend a polynomial kernel if the dataset is higher than 1000 instances.
-- ```opts.pythia.useweights``` determines whether weighted (set as ```TRUE```) or unweighted (set as ```FALSE```) classification is performed. The weights are calculated as <img src="https://render.githubusercontent.com/render/math?math=\left|y_{\text{best}}-y\right|">.
-- ```opts.pythia.seed``` RNG seed for classifier training/tuning; defaults to ```opts.general.seed``` and rarely needs to be set independently.
-- ```opts.pythia.verbose``` per-classifier training progress and tuning output; defaults to ```opts.general.verbose```.
-
-**Removed options** (no longer read by the toolkit; kept here only so old ```options.json```/```example.m``` files can be understood): ```opts.pythia.uselibsvm``` and ```opts.pythia.useknn``` — superseded by ```opts.pythia.classifier```. Existing ```model.mat``` files using the old fields can be updated with `ISAmigrateModel`.
-
-### Footprint construction settings
-
-The toolkit uses TRACE3, an algorithm based on MATLAB's [```alphaShape```](https://au.mathworks.com/help/matlab/ref/alphashape.html) to define the regions in the space where we statistically infer good algorithm performance, applicable to both 2D and 3D instance spaces. TRACE3 always reuses PYTHIA's predicted labels for the good-performance region (`Zu = {z_i : yhat_i=1 AND ybin_i=1}`) rather than retraining its own classifier — this coupling is unconditional and not configurable. When ```opts.pythia.skip = true```, TRACE falls back to the true labels only (`Zu = {z_i : ybin_i=1}`), with a warning.
-
-- ```opts.trace.method``` selects ```'trace3'``` (default, above) or ```'legacy'``` (the pre-refactor DBSCAN + alpha-shape triangulation method, 2D only).
-- ```opts.trace.PI``` minimum purity required for a section of a footprint.
-- ```opts.trace.minInstances``` (default ```4```) minimum number of instances a candidate footprint must contain to be considered valid.
-- ```opts.trace.minAreaFrac``` (default ```0.01```) minimum footprint size, as a fraction of the total instance-space area/volume, for a candidate footprint to be kept.
-- ```opts.trace.contra``` (```'legacy'``` method only, defaults to ```TRUE``` there) turns on contradiction removal — trimming overlapping sections of two algorithms' footprints where the evidence is weak. Not read by the default ```'trace3'``` method.
-
-**Removed option**: ```opts.trace.usesim``` — the PYTHIA/TRACE coupling described above is now unconditional, so there is no "simulated vs. actual data" switch to configure.
-
 ### Automatic data bounding and scaling
 
 The toolkit implements simple routines to bound outliers and scale the data. **These routines are by no means perfect, and users should pre-process their data independently if preferred**. However, the automatic bounding and scaling routines should give some idea of the kind of results may be achieved. In general, we recommend that the data is transformed to become **close to normally distributed** due to the linear nature of PILOT's optimal projection algorithm.
 
 - ```opts.auto.preproc``` turns on (set as ```TRUE```) the automatic pre-processing.
 - ```opts.bound.flag``` turns on (set as ```TRUE```) data bounding. This sub-routine calculates the median and the interquartile range ([IQR](https://en.wikipedia.org/wiki/Interquartile_range)) of each feature and performance measure, and bounds the data to the median plus or minus ```opts.prelim.iqrMultiplier``` (default 5) times the IQR. **Warning**: this sub-routine often has issues with features that have low value diversity (e.g. most instances share the exact same value), since the IQR can collapse to zero. Consider either removing such features or setting ```opts.bound.flag = false```.
-- ```opts.norm.flag``` turns on (set as ```TRUE```) scalling. This sub-routine scales into a positive range each feature and performance measure. Then it calculates a [box-cox transformation](https://en.wikipedia.org/wiki/Power_transform#Box%E2%80%93Cox_transformation) to stabilise the variance, and a [Z-transformation](https://en.wikipedia.org/wiki/Standard_score) to standarise the data. The result are features and performance measures that are close to normally distributed.
+- ```opts.norm.flag``` turns on (set as ```TRUE```) scaling. This sub-routine scales into a positive range each feature and performance measure. Then it calculates a [box-cox transformation](https://en.wikipedia.org/wiki/Power_transform#Box%E2%80%93Cox_transformation) to stabilise the variance, and a [Z-transformation](https://en.wikipedia.org/wiki/Standard_score) to standardise the data. The result are features and performance measures that are close to normally distributed.
 - ```opts.prelim.nanThreshold``` (default 0.20) maximum fraction of missing (```NaN```) values allowed for a feature before it is dropped entirely.
 
 ### Automatic feature selection
@@ -192,15 +151,66 @@ The toolkit implements SIFTED (```SIFTED.m```; ```SIFTED2``` is a deprecated ali
 - ```opts.sifted.MaxIter``` number of iterations used to converge the k-means algorithm. Usually, this setting does not need tuning.
 - ```opts.sifted.Replicates``` number of repeats carried out of the k-means algorithm. Usually, this setting does not need tuning.
 
-**Removed option**: ```opts.sifted.NTREES``` — a leftover from an earlier, since-replaced Random-Forest-based feature-cluster scoring step; the current GA+KNN fitness function (above) doesn't use it.
+### Dimensionality reduction settings
+
+The toolkit uses PILOT as a dimensionality reduction method, with [BFGS](https://en.wikipedia.org/wiki/Broyden-Fletcher-Goldfarb-Shanno_algorithm) as numerical solver. Technical details about it can be found [here](https://doi.org/10.1007/s10994-017-5629-5).
+
+-	```opts.pilot.analytic``` determines whether the analytic (set as ```TRUE```) or the numerical (set as ```FALSE```) solution to the dimensionality reduction problem should be used. We recommend to leave this setting as ```FALSE```, due to the instability of the analytical solution due to possible poor-conditioning. Only applies when ```opts.pilot.method = 'standard'```.
+-	```opts.pilot.ntries``` number of iterations that the numerical solution is attempted.
+-	```opts.pilot.dims``` projection dimensionality, ```2``` (default) or ```3```. Replaces the legacy boolean ```opts.pilot.ISA3D```, which is still accepted as an alias (```ISA3D = true``` maps to ```dims = 3```). A 3D projection lets you additionally call ```PILOTviewpoint``` to find the best 2D camera angle(s) onto it (see below).
+-	```opts.pilot.method``` selects the projection algorithm: ```'standard'``` (default) is the BFGS/analytic method described above; ```'pls'``` uses Partial Least Squares ([```plsregress```](https://au.mathworks.com/help/stats/plsregress.html)) instead, which maximises covariance between the projection and the performance matrix and does not require the feature matrix to be full column rank. Both methods work at 2D or 3D via ```opts.pilot.dims```.
+-	```opts.pilot.alpha``` (default ```1.0```) scales the performance-reconstruction term of PILOT's cost function relative to the feature-reconstruction term, for ```opts.pilot.method = 'standard'``` only: `min ||F̃-BrZ||² + α||Y-CrZ||²`. Increase it to emphasise performance trends over feature trends in the projection.
+-	```opts.pilot.topoWeight``` (default ```0```, disabled) is reserved for future experimental use and has no effect in the current version.
+
+When ```opts.pilot.dims = 3```, ```buildIS``` automatically calls ```PILOTviewpoint(Z, Y, opts.pilot)``` to find the best 2D camera viewpoint(s) of the 3D projection, storing the result in ```model.pilot.viewpoint```. By default one viewpoint is found across all algorithms; ```opts.pilot.viewGroups``` (a cell array of algorithm index vectors, e.g. ```{[1 2 3], [4 5 6]}```) requests one viewpoint per group instead, useful for inspecting a subset of algorithms in isolation.
+
+### Empirical bound estimation settings
+
+The toolkit uses CLOISTER, an algorithm based on correlation to detect the empirical bounds of the Instance Space. It runs after PILOT, on the projected instance space, and does not depend on PYTHIA.
+
+- ```opts.cloister.corrThreshold``` Determines the maximum [Pearson correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) that would indicate non-correlated variables. The lower this value is, the more stringent is the algorithm; hence, it would be less likely to produce a good bound.
+- ```opts.cloister.pval``` Determines the p-value of the Pearson correlation coefficient that indicates no correlation.
+- ```opts.cloister.maxFeatures``` (default ```20```) guard on the number of features CLOISTER's correlation-based bit-matrix enumeration will process; above this count it would become intractable, so CLOISTER instead falls back to a plain convex hull of the projected instances as the boundary, with a warning.
+
+### Algorithm selection settings
+
+The toolkit selects one binary classifier per algorithm (good/not-good performance) from a registry of MATLAB-native classifiers, resolved via `ISAgetClassifierFcn`. It runs after PILOT, on the projected instance space, and does not depend on CLOISTER. **LIBSVM is deprecated for new runs**: `buildIS` never dispatches to it. `ISAmigrateModel` (see below) renames legacy field names on an old model (e.g. `.svm`/`.knn` → `.classifiers`), and additionally **retrains** any classifiers still in the legacy LIBSVM struct format (no `predict()` method, so they can't just be relabelled) using the current registry — `opts.pythia.classifier` if already set to a valid registry name, `'knn'` otherwise — provided the model still has `model.pilot.Z` and `model.data.Y`/`Ybin`/`Ybest`/`algolabels` to retrain from. If those fields are missing, migration proceeds but leaves the legacy classifiers in place with a warning; such a model can still be evaluated through `exploreIS`/`PYTHIA` eval mode (which dispatches to `svmpredict` when it detects a struct instead of a MATLAB classifier object), but this requires the LIBSVM MEX-files to be present. Prefer retraining from scratch with `buildIS`, or a migration with the full training data available, to drop that dependency entirely.
+
+- ```opts.pythia.classifier``` selects the classifier: ```'knn'``` (default, via `fitcknn`), ```'svm'``` (`fitcsvm`), ```'tree'``` (`fitctree`), ```'nb'``` (Naive Bayes, `fitcnb`), ```'linear'``` (`fitclinear`), or ```'ensemble'``` (`fitcensemble`; see ```opts.pythia.ensembleMethod```, default ```'Bag'```). All algorithms in the portfolio use the same classifier.
+- ```opts.pythia.tuning``` selects the hyperparameter search strategy: ```'sobol'``` (default; a scrambled Sobol quasi-random sequence, ```opts.pythia.nTuningIter``` evaluations with k-fold CV), ```'bayes'``` (MATLAB `bayesopt`, Gaussian-process surrogate, same evaluation budget and CV), or ```'none'``` (use ```opts.pythia.params``` directly, skipping tuning).
+- ```opts.pythia.nTuningIter``` number of Sobol/Bayes evaluations (default 20).
+- ```opts.pythia.kFold``` number of folds of the CV experiment.
+- ```opts.pythia.params``` pre-calculated hyperparameters; required when ```opts.pythia.tuning = 'none'```, and always takes precedence over tuning when supplied. Shape depends on ```opts.pythia.classifier```: ```[nalgos x 1]``` for the single-parameter classifiers (```'tree'```, ```'nb'```, ```'linear'```), or ```[nalgos x 2]``` for the two-parameter ones (```'knn'```, ```'svm'```, ```'ensemble'```).
+- ```opts.pythia.skip``` bypasses classifier training entirely (TRACE then falls back to the true labels directly, with a warning).
+- ```opts.pythia.ispolykrnl``` (SVM only) determines whether to use a polynomial (set as ```TRUE```) or Gaussian (set as ```FALSE```) kernel. Usually, the latter one is significantly faster to calculate and more accurate; however, it also has the disadvantage of producing discontinuous areas of good performance which may look overfitted. We tend to recommend a polynomial kernel if the dataset is higher than 1000 instances.
+- ```opts.pythia.useweights``` determines whether weighted (set as ```TRUE```) or unweighted (set as ```FALSE```) classification is performed. The weights are calculated as <img src="https://render.githubusercontent.com/render/math?math=\left|y_{\text{best}}-y\right|">.
+- ```opts.pythia.seed``` RNG seed for classifier training/tuning; defaults to ```opts.general.seed``` and rarely needs to be set independently.
+- ```opts.pythia.verbose``` per-classifier training progress and tuning output; defaults to ```opts.general.verbose```.
+
+### Footprint construction settings
+
+The toolkit uses TRACE3, an algorithm based on MATLAB's [```alphaShape```](https://au.mathworks.com/help/matlab/ref/alphashape.html) to define the regions in the space where we statistically infer good algorithm performance, applicable to both 2D and 3D instance spaces. It runs last, after PYTHIA: TRACE3 always reuses PYTHIA's predicted labels for the good-performance region (`Zu = {z_i : yhat_i=1 AND ybin_i=1}`) rather than retraining its own classifier — this coupling is unconditional and not configurable. When ```opts.pythia.skip = true```, TRACE falls back to the true labels only (`Zu = {z_i : ybin_i=1}`), with a warning.
+
+- ```opts.trace.method``` selects ```'trace3'``` (default, above) or ```'legacy'``` (the pre-refactor DBSCAN + alpha-shape triangulation method, 2D only).
+- ```opts.trace.PI``` minimum purity required for a section of a footprint.
+- ```opts.trace.minInstances``` (default ```4```) minimum number of instances a candidate footprint must contain to be considered valid.
+- ```opts.trace.minAreaFrac``` (default ```0.01```) minimum footprint size, as a fraction of the total instance-space area/volume, for a candidate footprint to be kept.
+- ```opts.trace.contra``` (```'legacy'``` method only, defaults to ```TRUE``` there) turns on contradiction removal — trimming overlapping sections of two algorithms' footprints where the evidence is weak. Not read by the default ```'trace3'``` method.
 
 ### Output settings
 
-These settings result in more information being stored in files or presented in the console output.
+These settings result in more information being stored in files or presented in the console output, once the pipeline above has completed.
 
 - ```opts.outputs.csv``` This flag produces the output CSV files for post-processing and analysis. It is recommended to leave this setting as ```TRUE```.
 - ```opts.outputs.png``` This flag produces the output figures files for post-processing and analysis. It is recommended to leave this setting as ```TRUE```.
+- ```opts.outputs.fig``` For 3D projections, this flag also writes a ```.fig``` file alongside each footprint PNG for interactive rotation in MATLAB (see ```ISArecallView``` to snap a reopened figure back to its optimised viewpoint). No effect for 2D projections.
 - ```opts.outputs.web``` This flag produces the output files employed to draw the figures in MATILDA's web tools (click [here](https://matilda.unimelb.edu.au/matilda/newuser) to open an account). It is recommended to leave this setting as ```FALSE```.
+
+## AI-assisted analysis
+
+This repository ships a [Claude Code](https://claude.com/claude-code) skill at ```.claude/skills/instance-space-analysis/``` to help an AI assistant perform Instance Space Analysis with this MATLAB toolkit — interpreting PRELIM/SIFTED/PILOT/CLOISTER/PYTHIA/TRACE output, choosing and justifying options (e.g. the good-performance threshold, classifier, feature-selection settings), designing a new ISA application, or debugging a pipeline run. It combines a general methodology reference (```SKILL.md```, covering the six-space framework and the six-step ISA process against the source papers) with an operational reference for this specific codebase (```references/matlab-toolkit.md```, covering the repository layout, ```options.json``` schema, and the ```InstanceSpace``` class API, kept current against this repository's actual behaviour rather than reconstructed from the papers alone).
+
+**This skill only documents the MATLAB toolkit in this repository** — it does not cover MATILDA's web interface or the Python ```pyInstanceSpace```/```matilda``` package, whose options and code details differ from what's described here. The general methodology reference (six-space framework, reading footprints, when to augment vs. stop) is not toolkit-specific and may still help interpret results produced by those other tools, but any option name, file format, or code-behaviour detail should be verified against the tool actually in use.
 
 ## Contact
 
@@ -208,4 +218,8 @@ If you have any suggestions or ideas (e.g. for new features), or if you encounte
 
 ## Acknowledgements
 
-Funding for the development of this code was provided by the Australian Research Council through the Australian Laureate Fellowship FL140100012.
+Funding for the development of this code was provided by:
+
+- The Australian Research Council, through the Australian Laureate Fellowship FL140100012.
+- The University of Melbourne, through grant 2025DYA013.
+- The Australian Research Council, through the ARC Industrial Transformation Training Centre in Optimisation Technologies, Integrated Methodologies, and Applications (OPTIMA; grant No. IC200100009).

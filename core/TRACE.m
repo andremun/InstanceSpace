@@ -19,12 +19,14 @@ function out = TRACE(Z, Ybin, Yhat, P, beta, algolabels, opts, trainedTrace)
 %     opts       - struct with fields (see ISAdefaults for defaults):
 %                    method        'trace3' (default) or 'legacy'
 %                    PI            minimum purity threshold (0.6)
-%                  Note: PYTHIA always runs before TRACE in this pipeline (mandatory
-%                  coupling, spec §4.5), so TRACE never trains its own KNN classifier
-%                  (spec §4.3 steps 1-2 describe that as the general algorithm, but it
-%                  is superseded whenever PYTHIA has already produced predictions,
-%                  which is always). If Yhat is empty/skipped, Zu = {yi=1} directly
-%                  with a warning; there is no KNN-training fallback in this version.
+%                  Note: PYTHIA always runs before TRACE in this pipeline
+%                  (mandatory coupling), so TRACE never trains its own KNN
+%                  classifier -- that would be the fallback algorithm when
+%                  no PYTHIA predictions are available, but it is
+%                  superseded whenever PYTHIA has already produced
+%                  predictions, which is always. If Yhat is empty/skipped,
+%                  Zu = {yi=1} directly with a warning; there is no
+%                  KNN-training fallback in this version.
 %                    minInstances  minimum instances for a valid footprint (4)
 %                    minAreaFrac   footprint must exceed this fraction of space (0.01)
 %                    contra        contradiction removal; legacy only; default true
@@ -39,9 +41,6 @@ function out = TRACE(Z, Ybin, Yhat, P, beta, algolabels, opts, trainedTrace)
 %              best{nalgos}    best-algorithm footprints
 %              hard            beta-hard footprint (~beta instances)
 %              summary         (nalgos+1 x 11) cell array performance table
-%
-%   TRACE3 reference
-%     Simpson, D. et al. (2025). [TRACE3 paper citation.]
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit
@@ -64,6 +63,11 @@ function out = TRACE(Z, Ybin, Yhat, P, beta, algolabels, opts, trainedTrace)
 %   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
 %   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
 %   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
+%
+%   Munoz, M.A. & Smith-Miles, K. (2017). Performance analysis of
+%   continuous black-box optimization algorithms via footprints in
+%   instance space. Evolutionary Computation, 25(4), 529-554.
+%   https://doi.org/10.1162/EVCO_a_00194
 % -------------------------------------------------------------------------
 
 narginchk(7, 8);
@@ -101,7 +105,6 @@ if isEvalMode
     % Normalise backward-compat: old models stored .area instead of .measure
     if ~isfield(trainedTrace.space, 'measure')
         trainedTrace.space.measure  = trainedTrace.space.area;
-        trainedTrace.space.density  = trainedTrace.space.density;
     end
     if ~isfield(trainedTrace.space, 'measureLabel')
         trainedTrace.space.measureLabel = measureLabel;

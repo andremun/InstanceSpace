@@ -12,6 +12,12 @@ function scriptpng(container,rootdir)
 %   Renders in 3D and applies the optimised camera viewpoint
 %   (container.pilot.viewpoint, see PILOTviewpoint.m) when the projection
 %   is 3D and one was computed.
+%
+%   For 3D projections, also writes a .fig file alongside each footprint
+%   PNG (footprint_<algo>.fig, footprint_portfolio.fig) for interactive
+%   rotation in MATLAB, unless container.opts.outputs.fig is false. Every
+%   figure carries the viewpoint struct in its UserData so ISArecallView
+%   can snap a reopened .fig back to its optimised camera angle later.
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit
@@ -104,6 +110,30 @@ else
     viewpoint = [];
 end
 globalView = resolveViewAngle(viewpoint, []); % feature/portfolio-level plots
+% Stash the viewpoint struct on the figure itself so ISArecallView(fig,
+% groupIdx) can snap a footprint plot back to its optimised camera angle
+% later -- including from a different MATLAB session, since UserData is
+% preserved when a .fig file is saved/reopened. Set once: UserData is a
+% figure-level property, so it survives every clf below without needing
+% to be reapplied (same reasoning as fig.Theme above).
+% fig.UserData defaults to [] on a fresh figure, and [].isaViewpoint = ...
+% is not guaranteed to auto-vivify into a struct through a graphics
+% property's dot-assignment chain -- initialise it explicitly first,
+% preserving any existing struct fields rather than clobbering them.
+if ~isstruct(fig.UserData)
+    fig.UserData = struct();
+end
+fig.UserData.isaViewpoint = viewpoint;
+% One .fig file per footprint (spec §8), for interactive rotation --
+% meaningful for 3D projections specifically; opts.outputs.fig (default
+% true) can disable it. Older containers saved before this option existed
+% default to true rather than silently losing the feature.
+is3D = size(container.pilot.Z, 2) == 3;
+writeFig = is3D;
+if isfield(container, 'opts') && isfield(container.opts, 'outputs') && ...
+        isfield(container.opts.outputs, 'fig')
+    writeFig = writeFig && container.opts.outputs.fig;
+end
 % -------------------------------------------------------------------------
 fprintf('[OUTPUT] Producing the plots.\n');
 % -------------------------------------------------------------------------
@@ -112,7 +142,6 @@ for i=1:nfeats
     clf;
     drawScatter(container.pilot.Z, Xaux(:,i),...
                 strrep(container.data.featlabels{i},'_',' '), globalView);
-    % line(model.cloist.Zedge(:,1), model.cloist.Zedge(:,2), 'LineStyle', '-', 'Color', 'r');
     exportgraphics(fig, [rootdir 'distribution_feature_' container.data.featlabels{i} '.png']);
 end
 % -------------------------------------------------------------------------
@@ -156,6 +185,9 @@ for i=1:nalgos
                              Yfoot(:,i), ...
                              strrep(container.data.algolabels{i},'_',' '), algoView);
         exportgraphics(fig, [rootdir 'footprint_' container.data.algolabels{i} '.png']);
+        if writeFig
+            savefig(fig, [rootdir 'footprint_' container.data.algolabels{i} '.fig']);
+        end
     catch
         fprintf('[OUTPUT] No Footprint has been calculated.\n');
     end
@@ -180,6 +212,9 @@ exportgraphics(fig, [rootdir 'distribution_svm_portfolio.png']);
 clf;
 drawPortfolioFootprint(container.pilot.Z, container.trace.best, Pfoot, container.data.algolabels, globalView);
 exportgraphics(fig, [rootdir 'footprint_portfolio.png']);
+if writeFig
+    savefig(fig, [rootdir 'footprint_portfolio.fig']);
+end
 % ---------------------------------------------------------------------
 % Plotting the model.data.beta score
 clf;

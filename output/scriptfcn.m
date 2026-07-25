@@ -116,6 +116,46 @@ if isempty(viewAngle)
 else
     view(viewAngle(1), viewAngle(2));
 end
+drawCompass(is3D);
+end
+% =========================================================================
+function drawCompass(is3D)
+% Coloured z1/z2/z3 axis-direction overlay (spec §8; Figure 5 of Simpson
+% et al., 2025), called from applyView so every 3D plot gets it uniformly.
+% Anchored at a corner of the current axis limits (already set by the
+% caller via axis(axisLimits(Z)) before applyView runs) and drawn in the
+% same 3D data coordinates as the scatter/footprint, so it rotates
+% together with the rest of the plot instead of staying screen-fixed.
+if ~is3D, return; end
+lims = axis;
+anchor  = [lims(1), lims(3), lims(5)];
+armLen  = 0.15 * max([lims(2)-lims(1), lims(4)-lims(3), lims(6)-lims(5)]);
+axColors = [0.85 0.10 0.10; 0.10 0.60 0.10; 0.10 0.40 0.85]; % z1/z2/z3
+axLabels = {'z_{1}', 'z_{2}', 'z_{3}'};
+dirs = eye(3);
+% Preserve/restore the caller's hold state rather than forcing it off:
+% these helpers are injected into other workspaces via scriptfcn and may
+% be composed with further overlays that rely on hold already being on.
+ax = gca;
+wasHeld = ishold(ax);
+hold(ax, 'on');
+for i = 1:3
+    tip = anchor + armLen * dirs(i,:);
+    % HandleVisibility off + explicit Parent: these are a fixed decorative
+    % overlay, not plotted data -- without this, a legend() created later
+    % in the same axes (AutoUpdate is on by default) would pick up these
+    % lines/labels as spurious entries, and they'd be selectable targets
+    % for interactive clicks like any other plotted object.
+    line([anchor(1) tip(1)], [anchor(2) tip(2)], [anchor(3) tip(3)], ...
+        'Color', axColors(i,:), 'LineWidth', 2, ...
+        'Parent', ax, 'HandleVisibility', 'off');
+    text(tip(1), tip(2), tip(3), axLabels{i}, 'Color', axColors(i,:), ...
+        'FontWeight', 'bold', 'FontSize', 10, ...
+        'Parent', ax, 'HandleVisibility', 'off');
+end
+if ~wasHeld
+    hold(ax, 'off');
+end
 end
 % =========================================================================
 function viewAngle = resolveViewAngle(viewpoint, algoIdx)
@@ -145,6 +185,26 @@ end
 viewAngle = rad2deg([viewpoint.azimuth(g), viewpoint.elevation(g)]);
 end
 % =========================================================================
+function d = dotDiameter()
+% Shared marker diameter (points) for every instance dot drawn by the
+% functions below. A single source of truth so drawSources/
+% drawPortfolioSelections/drawPortfolioFootprint/drawGoodBadFootprint/
+% drawBinaryPerformance (all plotLine()-based, Marker 'o') and
+% drawScatter (scatter()-based, sized via dotArea() below) render dots of
+% the same apparent size -- tune this one value if the rendered PNGs need
+% bigger or smaller dots.
+d = 6;
+end
+% =========================================================================
+function a = dotArea()
+% scatter()/scatter3()'s size argument is marker area in points^2, not
+% diameter, so drawScatter can't just reuse dotDiameter() directly --
+% convert to the equal-area circle so its dots match the 'o' markers'
+% diameter everywhere else in this file.
+d = dotDiameter();
+a = pi*(d/2)^2;
+end
+% =========================================================================
 function handle = drawSources(Z, S, viewAngle)
 if nargin < 3, viewAngle = []; end
 is3D = size(Z,2) == 3;
@@ -154,10 +214,11 @@ clrs = flipud(lines(nsources));
 handle = zeros(nsources,1);
 for i=nsources:-1:1
     plotLine(Z, S==sourcelabels{i}, 'LineStyle', 'none', ...
-             'Marker', '.', ...
+             'Marker', 'o', ...
              'Color', clrs(i,:), ...
              'MarkerFaceColor', clrs(i,:), ...
-             'MarkerSize', 8);
+             'MarkerEdgeColor', 'none', ...
+             'MarkerSize', dotDiameter());
     handle(i) = patch([0 0],[0 0], clrs(i,:), 'EdgeColor','none');
 end
 labelAxes(is3D); title('Sources');
@@ -173,9 +234,9 @@ function handle = drawScatter(Z, X, titlelabel, viewAngle)
 if nargin < 4, viewAngle = []; end
 is3D = size(Z,2) == 3;
 if is3D
-    handle = scatter3(Z(:,1), Z(:,2), Z(:,3), 8, X, 'filled');
+    handle = scatter3(Z(:,1), Z(:,2), Z(:,3), dotArea(), X, 'filled');
 else
-    handle = scatter(Z(:,1), Z(:,2), 8, X, 'filled');
+    handle = scatter(Z(:,1), Z(:,2), dotArea(), X, 'filled');
 end
 caxis([0,1])
 labelAxes(is3D); title(titlelabel);
@@ -200,10 +261,11 @@ for i=0:nalgos
         continue;
     end
     plotLine(Z, P==i, 'LineStyle', 'none', ...
-                       'Marker', '.', ...
+                       'Marker', 'o', ...
                        'Color', clr(i+1,:), ...
                        'MarkerFaceColor', clr(i+1,:), ...
-                       'MarkerSize', 4);
+                       'MarkerEdgeColor', 'none', ...
+                       'MarkerSize', dotDiameter());
     h(i+1) = patch([0 0],[0 0], clr(i+1,:), 'EdgeColor','none');
     if i==0
         algolbls{i+1} = 'None';
@@ -233,10 +295,11 @@ for i=0:nalgos
         continue;
     end
     plotLine(Z, P==i, 'LineStyle', 'none', ...
-                       'Marker', '.', ...
+                       'Marker', 'o', ...
                        'Color', clr(i+1,:), ...
                        'MarkerFaceColor', clr(i+1,:), ...
-                       'MarkerSize', 4);
+                       'MarkerEdgeColor', 'none', ...
+                       'MarkerSize', dotDiameter());
     h(i+1) = patch([0 0],[0 0], clr(i+1,:), 'EdgeColor','none');
     if i==0
         algolbls{i+1} = 'None';
@@ -262,20 +325,21 @@ blue = [0.0 0.0 1.0];
 lbls = {'GOOD','BAD'};
 h = zeros(1,2);
 if any(~Ybin)
-    % drawFootprint(bad, orange, 0.2);
     plotLine(Z, ~Ybin, 'LineStyle', 'none', ...
-                        'Marker', '.', ...
+                        'Marker', 'o', ...
                         'Color', orange, ...
                         'MarkerFaceColor', orange, ...
-                        'MarkerSize', 4);
+                        'MarkerEdgeColor', 'none', ...
+                        'MarkerSize', dotDiameter());
     h(2) = patch([0 0],[0 0], orange, 'EdgeColor','none');
 end
 if any(Ybin)
     plotLine(Z, Ybin, 'LineStyle', 'none', ...
-                       'Marker', '.', ...
+                       'Marker', 'o', ...
                        'Color', blue, ...
                        'MarkerFaceColor', blue, ...
-                       'MarkerSize', 4);
+                       'MarkerEdgeColor', 'none', ...
+                       'MarkerSize', dotDiameter());
     h(1) = patch([0 0],[0 0], blue, 'EdgeColor','none');
     drawFootprint(good, blue, 0.3);
 end
@@ -313,18 +377,20 @@ h = zeros(1,2);
 if any(~Ybin)
     h(2) = patch([0 0],[0 0], orange, 'EdgeColor','none');
     plotLine(Z, ~Ybin, 'LineStyle', 'none', ...
-                        'Marker', '.', ...
+                        'Marker', 'o', ...
                         'Color', orange, ...
                         'MarkerFaceColor', orange, ...
-                        'MarkerSize', 4);
+                        'MarkerEdgeColor', 'none', ...
+                        'MarkerSize', dotDiameter());
 end
 if any(Ybin)
     h(1) = patch([0 0],[0 0], blue, 'EdgeColor','none');
     plotLine(Z, Ybin, 'LineStyle', 'none', ...
-                       'Marker', '.', ...
+                       'Marker', 'o', ...
                        'Color', blue, ...
                        'MarkerFaceColor', blue, ...
-                       'MarkerSize', 4);
+                       'MarkerEdgeColor', 'none', ...
+                       'MarkerSize', dotDiameter());
 end
 labelAxes(is3D); title(titlelabel);
 legend(h(h~=0), lbls(h~=0), 'Location', 'NorthEastOutside');

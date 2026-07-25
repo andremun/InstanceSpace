@@ -22,10 +22,6 @@ function opts = ISAdefaults(opts)
 %   Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for
 %   Algorithm Testing. ACM Computing Surveys, 55(12), Article 255.
 %   https://doi.org/10.1145/3572895
-%
-%   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
-%   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
-%   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
 % -------------------------------------------------------------------------
 
 % general
@@ -157,6 +153,7 @@ end
 if ~isfield(opts, 'outputs'),           opts.outputs           = struct; end
 if ~isfield(opts.outputs, 'csv'),       opts.outputs.csv       = true;   end
 if ~isfield(opts.outputs, 'png'),       opts.outputs.png       = true;   end
+if ~isfield(opts.outputs, 'fig'),       opts.outputs.fig       = true;   end
 if ~isfield(opts.outputs, 'web'),       opts.outputs.web       = false;  end
 
 end

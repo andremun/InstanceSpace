@@ -21,11 +21,11 @@ function out = PILOT(X, Y, featlabels, opts)
 %                    ntries    int    BFGS multi-start restarts (numerical
 %                                     branch only)
 %                    alpha     double performance-reconstruction cost
-%                                     weight (method='standard' only, spec
-%                                     §5.4): min ||Xtilde-BrZ||^2 +
+%                                     weight (method='standard' only):
+%                                     min ||Xtilde-BrZ||^2 +
 %                                     alpha*||Y-CrZ||^2
 %                    topoWeight double reserved for future use; not wired
-%                                     into the cost function (spec §5.4.1)
+%                                     into the cost function
 %                    verbose   logical per-trial progress output
 %                    precalcAlpha (optional) pre-computed full BFGS
 %                                     solution vector, skips optimisation
@@ -64,6 +64,10 @@ function out = PILOT(X, Y, featlabels, opts)
 %   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
 %   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
 %   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
+%
+%   Munoz, M.A., Villanova, L., Baatar, D. & Smith-Miles, K. (2018).
+%   Instance spaces for machine learning classification. Machine
+%   Learning, 107(1), 109-147. https://doi.org/10.1007/s10994-017-5629-5
 % -------------------------------------------------------------------------
 
 if ~isfield(opts, 'verbose'), opts.verbose = true; end

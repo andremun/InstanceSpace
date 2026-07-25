@@ -1,13 +1,11 @@
-% test_integration.m - ISA Toolkit full-pipeline regression suite (spec
-% Section 12.2: "Full pipeline on reference dataset; numerical regression").
+% test_integration.m - ISA Toolkit full-pipeline regression suite: runs the
+% full pipeline on the reference dataset and checks for numerical regressions.
 %
 % This is the exhaustive option-coverage suite, not a getting-started
 % example -- for that, see example.m, which runs a single bare-bones
 % configuration with a short guide to the handful of settings most users
 % adjust first. This file exists to catch regressions across the option
-% surface: new features and bug fixes should get a case here (see
-% docs/tech/isa_refactor_plan_v1.7.pdf, "Each phase is complete when... any
-% new feature has a test case").
+% surface: new features and bug fixes should get a case here.
 %
 % Runs buildIS() + exploreIS() across a set of option configurations
 % against the reference dataset (Munoz et al. 2018 classification study,
@@ -46,10 +44,6 @@
 %   Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for
 %   Algorithm Testing. ACM Computing Surveys, 55(12), Article 255.
 %   https://doi.org/10.1145/3572895
-%
-%   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
-%   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
-%   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
 % -------------------------------------------------------------------------
 
 rootdir  = './test/data/';
@@ -331,6 +325,100 @@ catch ME
     results(end).message = ME.message;
     fprintf('[TEST] Case ''class_api'' FAILED: %s\n', ME.message);
 end
+
+% ---- ISAmigrateModel legacy migration coverage (spec §6.4) -----------
+fprintf('\n[TEST] === ISAmigrateModel: legacy migration table ===\n');
+results(end+1).name = 'isamigratemodel';
+try
+    % Pure opts/data field migrations: synthetic legacy-shaped structs, no
+    % trained model needed.
+    m = ISAmigrateModel(struct('opts', struct( ...
+        'pbldr',     struct('dims', 2), ...
+        'sbound',    struct('pval', 0.05), ...
+        'footprint', struct('method', 'trace3'))));
+    assert(isfield(m.opts, 'pilot') && m.opts.pilot.dims == 2 && ~isfield(m.opts, 'pbldr'), ...
+        'opts.pbldr -> opts.pilot rename failed.');
+    assert(isfield(m.opts, 'cloister') && ~isfield(m.opts, 'sbound'), ...
+        'opts.sbound -> opts.cloister rename failed.');
+    assert(isfield(m.opts, 'trace') && ~isfield(m.opts, 'footprint'), ...
+        'opts.footprint -> opts.trace rename failed.');
+
+    m = ISAmigrateModel(struct('opts', struct( ...
+        'corr',  struct('flag', true, 'threshold', 0.35), ...
+        'clust', struct('flag', false))));
+    assert(~isfield(m.opts, 'corr') && ~isfield(m.opts, 'clust'), ...
+        'opts.corr/opts.clust were not removed after merging into opts.sifted.');
+    assert(isfield(m.opts, 'sifted') && m.opts.sifted.rho == 0.35, ...
+        'opts.corr.threshold did not map to opts.sifted.rho.');
+    assert(m.opts.sifted.flag == false, ...
+        'opts.clust.flag=false did not set opts.sifted.flag=false.');
+
+    m = ISAmigrateModel(struct('opts', struct('perf', struct('MaxMin', true))));
+    assert(isfield(m.opts.perf, 'MaxPerf') && m.opts.perf.MaxPerf == true && ...
+        ~isfield(m.opts.perf, 'MaxMin'), 'opts.perf.MaxMin -> opts.perf.MaxPerf rename failed.');
+
+    m = ISAmigrateModel(struct('data', struct('bestPerformace', [1;2;3])));
+    assert(isfield(m.data, 'Ybest') && isequal(m.data.Ybest, [1;2;3]) && ...
+        ~isfield(m.data, 'bestPerformace'), 'model.data.bestPerformace -> model.data.Ybest rename failed.');
+
+    m = ISAmigrateModel(struct('prelim', struct(), 'sifted', struct(), 'pilot', struct()));
+    assert(isequal(m.completedStages, {'prelim','sifted','pilot'}), ...
+        'completedStages was not correctly inferred from present model sub-structs.');
+
+    lastwarn('');
+    ISAmigrateModel(struct('pilot', struct('A', 1)));
+    [~, warnId] = lastwarn();
+    assert(strcmp(warnId, 'ISA:ISAmigrateModel:incompletePilot'), ...
+        'model.pilot.A without B/C should raise an ISA:ISAmigrateModel:incompletePilot warning.');
+
+    % LIBSVM retraining and legacy TRACE recompute need real trained
+    % Z/Y/Ybin/etc. Reuse the already-built ''obj'' from the class_api
+    % case above when it's usable (cheaper than rebuilding); otherwise
+    % build a small fresh model here so this case stays self-contained --
+    % a class_api failure (or running just this block on its own)
+    % shouldn't cause a second, unrelated-looking assertion failure here
+    % that hides the real one.
+    if exist('obj', 'var') == 1 && isa(obj, 'InstanceSpace') && isfield(obj.model, 'trace')
+        baseModel = obj.model;
+    else
+        fprintf('[TEST] No usable ''obj'' from class_api; building a fresh model for the LIBSVM/TRACE migration checks.\n');
+        migrateObj = InstanceSpace(classCaseDir, baseOpts).build();
+        baseModel = migrateObj.model;
+    end
+
+    % LIBSVM struct: a plain struct (no predict() method) under the old
+    % 'svm' field name, as svmtrain() would have produced. NOTE: assigned
+    % directly (pythiaLegacy.svm = {...}), not via struct('svm',{...}) --
+    % the latter's cell-value form builds a struct ARRAY from the cell's
+    % elements instead of a scalar struct whose field holds the cell array.
+    pythiaLegacy = struct();
+    pythiaLegacy.svm = repmat({struct('nr_class', 2)}, 1, numel(baseModel.data.algolabels));
+    libsvmModel = baseModel;
+    libsvmModel.pythia = pythiaLegacy;
+    m = ISAmigrateModel(libsvmModel);
+    assert(isfield(m.pythia, 'classifiers') && ~isfield(m.pythia, 'svm'), ...
+        'LIBSVM-format pythia.svm was not retrained/migrated into pythia.classifiers.');
+    assert(numel(m.pythia.classifiers) == numel(baseModel.data.algolabels), ...
+        'Retrained pythia.classifiers has the wrong number of algorithms.');
+
+    % Legacy DBSCAN+polyshape triangulation format: .space.area, no .measure.
+    legacyTraceModel = baseModel;
+    legacyTraceModel.trace = struct('space', struct('area', 1, 'polygon', []));
+    m = ISAmigrateModel(legacyTraceModel);
+    assert(isfield(m.trace.space, 'measure') && ~isfield(m.trace.space, 'area'), ...
+        'Legacy triangulation-format model.trace was not recomputed via TRACE3.');
+    assert(isfield(m.trace, 'good') && numel(m.trace.good) == numel(baseModel.data.algolabels), ...
+        'Recomputed model.trace is missing per-algorithm footprints.');
+
+    results(end).passed  = true;
+    results(end).message = 'OK';
+    fprintf('[TEST] Case ''isamigratemodel'' PASSED.\n');
+catch ME
+    results(end).passed  = false;
+    results(end).message = ME.message;
+    fprintf('[TEST] Case ''isamigratemodel'' FAILED: %s\n', ME.message);
+end
+
 nCases = numel(results);
 
 % ---- Summary ----------------------------------------------------------

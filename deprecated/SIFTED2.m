@@ -2,8 +2,8 @@ function [X, out] = SIFTED2(X, Y, Ybin, featlabels, opts)
 % SIFTED2  Deprecated. Use SIFTED instead.
 %
 % This wrapper exists for backward compatibility. All new code should call
-% SIFTED directly; SIFTED2 was promoted and renamed as part of the v1.7
-% refactor (spec Phase 6).
+% SIFTED directly; SIFTED2 was renamed to SIFTED, with this thin alias
+% kept in its place.
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit
@@ -22,10 +22,6 @@ function [X, out] = SIFTED2(X, Y, Ybin, featlabels, opts)
 %   Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for
 %   Algorithm Testing. ACM Computing Surveys, 55(12), Article 255.
 %   https://doi.org/10.1145/3572895
-%
-%   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
-%   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
-%   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
 % -------------------------------------------------------------------------
 warning('ISA:SIFTED2:deprecated', ...
     'SIFTED2 is deprecated and will be removed in a future release. Call SIFTED instead.');

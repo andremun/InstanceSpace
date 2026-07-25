@@ -12,3 +12,4 @@ old_versions
 test/data/*
 !test/data/metadata.csv
 !test/data/metadata_test.csv
+!test/data/workspace_test.mat

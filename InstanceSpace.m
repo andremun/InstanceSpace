@@ -1,5 +1,5 @@
 classdef InstanceSpace
-% InstanceSpace  Value-class wrapper around the ISA pipeline (spec §7).
+% InstanceSpace  Value-class wrapper around the ISA pipeline.
 %
 %   obj = InstanceSpace(rootdir)
 %   obj = InstanceSpace(rootdir, opts)
@@ -32,8 +32,7 @@ classdef InstanceSpace
 %     obj = InstanceSpace.load(rootdir);   % reads it back
 %
 %   buildIS.m and exploreIS.m are thin backward-compatibility wrappers
-%   around this class (spec §7.5); new code should prefer the class
-%   directly.
+%   around this class; new code should prefer the class directly.
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit
@@ -52,10 +51,6 @@ classdef InstanceSpace
 %   Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for
 %   Algorithm Testing. ACM Computing Surveys, 55(12), Article 255.
 %   https://doi.org/10.1145/3572895
-%
-%   Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B.
-%   (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis.
-%   Machine Learning, 114, 240. https://doi.org/10.1007/s10994-025-06871-5
 % -------------------------------------------------------------------------
 
     properties (Access = public)
@@ -124,6 +119,7 @@ classdef InstanceSpace
                     opts = struct();
                 end
             end
+            opts = ISAvalidateOpts(opts);
             obj.opts             = ISAdefaults(opts);
             obj.model             = struct();
             % cell(1,0), not {}: {} is 0x0, and (1,:) property validation
@@ -761,6 +757,26 @@ classdef InstanceSpace
             out.data.Y = Xbar{:,isalgo};
             [ninst, nalgos] = size(out.data.Y);
 
+            % Mirror runPrelim's opts.selvars.algos restriction (applied at
+            % build time): without this, out.data.Y/algolabels keep every
+            % raw algo_ column from metadata_test.csv, so an algorithm
+            % deliberately excluded from training via opts.selvars.algos
+            % looks like a "new" algorithm to the reconciliation step below
+            % (see out.data.algolabels) -- appended as an extra column with
+            % real performance data but no trained classifier -- instead of
+            % simply being excluded from evaluation the same way it was
+            % excluded from training.
+            algolabelsAll = varlabels(isalgo);
+            if isfield(model.opts, 'selvars') && isfield(model.opts.selvars, 'algos')
+                isselalgo = false(1, length(algolabelsAll));
+                for i = 1:length(model.opts.selvars.algos)
+                    isselalgo = isselalgo | strcmp(algolabelsAll, model.opts.selvars.algos{i});
+                end
+                out.data.Y = out.data.Y(:,isselalgo);
+                algolabelsAll = algolabelsAll(isselalgo);
+                nalgos = size(out.data.Y, 2);
+            end
+
             % Mirror runPrelim's opts.selvars.feats restriction (applied at
             % build time, before PRELIM computed model.prelim.hibound/
             % lobound/minX/etc, all of which are sized to the RESTRICTED
@@ -820,7 +836,7 @@ classdef InstanceSpace
             % Reconcile test algorithms against the trained model's: known
             % algorithms line up by name, unseen ones are appended as new
             % columns (NaN for training-only algorithms).
-            out.data.algolabels = strrep(varlabels(isalgo), 'algo_', '');
+            out.data.algolabels = strrep(algolabelsAll, 'algo_', '');
             algoexist = zeros(1, nalgos);
             for ii = 1:nalgos
                 aux = find(strcmpi(strtrim(out.data.algolabels{ii}), strtrim(model.data.algolabels)));

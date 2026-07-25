@@ -78,8 +78,11 @@ end
 % actual footprint plot unrotated. Exclude them and apply the view to
 % every remaining (real, data) axes rather than assuming there's only one.
 ax = findall(fig, 'Type', 'axes');
-tags = arrayfun(@(a) string(get(a, 'Tag')), ax);
-ax = ax(~ismember(tags, ["legend", "Colorbar"]));
+% Tag casing for these internal legend/colorbar axes isn't a documented,
+% version-stable guarantee; compare case-insensitively rather than risk
+% a mismatch letting one slip through on some MATLAB version/configuration.
+tags = lower(arrayfun(@(a) string(get(a, 'Tag')), ax));
+ax = ax(~ismember(tags, ["legend", "colorbar"]));
 if isempty(ax)
     error('ISA:ISArecallView:noAxes', 'fig has no plot axes to apply the view to.');
 end

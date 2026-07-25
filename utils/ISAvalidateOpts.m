@@ -1,10 +1,15 @@
 function opts = ISAvalidateOpts(opts)
 % ISAvalidateOpts  Validate user-supplied opts fields before defaults are filled.
-%   opts = ISAvalidateOpts(opts) checks the type/range of every field the
-%   caller actually supplied and errors clearly (ISA:ISAvalidateOpts:*) on
-%   the first invalid one, instead of letting a typo'd or out-of-range
-%   value surface many stages later as a confusing crash deep inside
-%   PRELIM/PILOT/PYTHIA/etc.
+%   opts = ISAvalidateOpts(opts) checks the type/range of every RECOGNISED
+%   opts field the caller actually supplied (the fixed set of fields this
+%   function knows about; see the body) and errors clearly
+%   (ISA:ISAvalidateOpts:*) on the first invalid one, instead of letting
+%   an out-of-range value surface many stages later as a confusing crash
+%   deep inside PRELIM/PILOT/PYTHIA/etc. An unrecognised field name (e.g.
+%   a typo like opts.piyhia.classifier) is NOT flagged -- it passes
+%   through silently, exactly like an unset one, since this function has
+%   no way to distinguish "not a real option" from "a future option it
+%   doesn't know about yet".
 %
 %   Deliberately validates only fields that ARE present: this runs before
 %   ISAdefaults, so most fields are still absent at this point

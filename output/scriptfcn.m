@@ -141,10 +141,17 @@ wasHeld = ishold(ax);
 hold(ax, 'on');
 for i = 1:3
     tip = anchor + armLen * dirs(i,:);
+    % HandleVisibility off + explicit Parent: these are a fixed decorative
+    % overlay, not plotted data -- without this, a legend() created later
+    % in the same axes (AutoUpdate is on by default) would pick up these
+    % lines/labels as spurious entries, and they'd be selectable targets
+    % for interactive clicks like any other plotted object.
     line([anchor(1) tip(1)], [anchor(2) tip(2)], [anchor(3) tip(3)], ...
-        'Color', axColors(i,:), 'LineWidth', 2);
+        'Color', axColors(i,:), 'LineWidth', 2, ...
+        'Parent', ax, 'HandleVisibility', 'off');
     text(tip(1), tip(2), tip(3), axLabels{i}, 'Color', axColors(i,:), ...
-        'FontWeight', 'bold', 'FontSize', 10);
+        'FontWeight', 'bold', 'FontSize', 10, ...
+        'Parent', ax, 'HandleVisibility', 'off');
 end
 if ~wasHeld
     hold(ax, 'off');

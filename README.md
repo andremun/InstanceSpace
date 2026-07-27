@@ -3,7 +3,7 @@
 [![View InstanceSpace on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://au.mathworks.com/matlabcentral/fileexchange/75170-instancespace)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4750845.svg)](https://doi.org/10.5281/zenodo.4750845)
 
-Instance Space Analysis is a methodology for assessing the strengths and weaknesses of an algorithm and for objectively comparing algorithmic power without bias introduced by a restricted choice of test instances. At its core is the modelling of the relationship between structural properties of an instance and the performance of a group of algorithms. Instance Space Analysis allows the construction of **footprints** for each algorithm, defined as regions in the instance space where we statistically infer good performance. Other insights that can be gathered from Instance Space Analysis include:
+Instance Space Analysis is a methodology for assessing the strengths and weaknesses of an algorithm and objectively comparing its algorithmic power, without bias introduced by a restricted choice of test instances. At its core is the modelling of the relationship between an instance's structural properties and the performance of a group of algorithms. Instance Space Analysis allows the construction of **footprints** for each algorithm, defined as regions in the instance space where we statistically infer good performance. Other insights that can be gathered from Instance Space Analysis include:
 
 -	Objective metrics of each algorithm’s footprint across the instance space as a measure of algorithmic power;
 -	Explanation through visualisation of how instance features correlate with algorithm performance in various regions of the instance space;
@@ -14,7 +14,7 @@ Instance Space Analysis is a methodology for assessing the strengths and weaknes
 
 The unique advantage of visualising algorithm performance in the instance space, rather than as a small set of summary statistics averaged across a selected collection of instances, is the nuanced analysis that becomes possible to explain strengths and weaknesses and examine interesting variations in performance that may be hidden by tables of summary statistics.
 
-This repository provides a set of MATLAB tools to perform a complete Instance Space Analysis within an automated pipeline. It is also the computational engine that powers the Melbourne Algorithm Test Instance Library with Data Analytics ([MATILDA](http://matilda.unimelb.edu.au/matilda/)) web tools for online analysis. For further information on the Instance Space Analysis methodology, see [here](http://matilda.unimelb.edu.au/matilda/our-methodology).
+This repository provides a set of MATLAB tools for performing a complete Instance Space Analysis as part of an automated pipeline. It is also the computational engine that powers the Melbourne Algorithm Test Instance Library with Data Analytics ([MATILDA](http://matilda.unimelb.edu.au/matilda/)) web tools for online analysis. For further information on the Instance Space Analysis methodology, see [here](http://matilda.unimelb.edu.au/matilda/our-methodology).
 
 If you follow the Instance Space Analysis methodology, please cite as follows:
 
@@ -32,7 +32,7 @@ Or if you specifically use [MATILDA](http://matilda.unimelb.edu.au/matilda/), pl
 
 > K. Smith-Miles, M.A. Muñoz and Neelofar. *Melbourne Algorithm Test Instance Library with Data Analytics (MATILDA)*. Available at (https://matilda.unimelb.edu.au). 2020.
 
-**DISCLAIMER: This repository contains research code. On occasion, new features will be added, or changes will be made that may result in crashes. Although we have made every effort to reduce bugs, this code comes with NO GUARANTEES. If you find issues, let us know ASAP through the contact methods described at the end of this document.**
+**DISCLAIMER: This repository contains research code. On occasion, new features will be added, or changes will be made that may result in crashes. Although we have made every effort to reduce bugs, this code comes with NO GUARANTEES. If you find any issues, let us know ASAP via the contact methods listed at the end of this document.**
 
 ## Installation Instructions
 

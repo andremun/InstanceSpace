@@ -242,7 +242,6 @@ title('Held-out test instances projected into the trained instance space');
 
 %% Acknowledgements
 % This toolkit and the methodology it implements are the product of
-% many years of collaborative research by the Instance Space Analysis
-% research group at the School of Computing and Information Systems,
+% many years of collaborative research by the MATILDA team,
 % The University of Melbourne, and collaborators. See README.md,
 % "Acknowledgements" for the full list.

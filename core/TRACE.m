@@ -89,11 +89,10 @@ pythiaAvailable = ~isempty(Yhat) && ~pythiaSkipped;
 % -------------------------------------------------------------------------
 % Space measure from convex hull of all instances (computed once).
 % Passed to TRACEbuild3 so stopping criteria are relative to bounded space.
-if is3D
-    [~, spaceArea] = convhull(Z);
-else
-    [~, spaceArea] = convhull(Z(:,1), Z(:,2));
-end
+% convhull(Z) accepts Z directly as an n-by-2 or n-by-3 points matrix, so
+% no is3D branch is needed here (unlike TRACEmetrics3's area()/volume()
+% calls below, which really do need to dispatch on dimensionality).
+[~, spaceArea] = convhull(Z);
 if is3D; measureLabel = 'Volume'; else; measureLabel = 'Area'; end
 
 % =========================================================================

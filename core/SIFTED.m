@@ -201,10 +201,9 @@ function y = costfcn(ind, X, Y, Ybin, clust, cvpart, featlabels, dims)
     if isempty(mymap)
         mymap = containers.Map('KeyType','char','ValueType','double');
     end
-    % Internal PILOT call mirrors the canonical analytic branch, ntries=5
+    % Internal PILOT call mirrors the canonical analytic branch
     % (spec §5.5), at the same dimensionality as the outer pipeline's final
     % projection. KNN uses dims+1 neighbours (D+1, generalised from 2D).
-    ntries      = 5;
     analytic    = true;
     kneighbours = dims + 1;
 
@@ -223,7 +222,7 @@ function y = costfcn(ind, X, Y, Ybin, clust, cvpart, featlabels, dims)
         % (dozens to hundreds of times per SIFTED call), so PILOT's normal
         % per-run status/summary output would flood the console.
         out = PILOT(X(:,idx), Y, featlabels(idx), ...
-            struct('analytic', analytic, 'ntries', ntries, 'dims', dims, 'verbose', false));
+            struct('analytic', analytic, 'dims', dims, 'verbose', false));
         Z = out.Z;
         y = -Inf;
         % Plain loop, not parfor: costfcn is itself called in parallel by

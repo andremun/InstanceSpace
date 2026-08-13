@@ -63,7 +63,20 @@ end
 
 checkLogical(opts, 'perf', 'MaxPerf');
 checkLogical(opts, 'perf', 'AbsPerf');
-checkUnitRange(opts, 'perf', 'epsilon');
+% epsilon is only a [0,1] fraction when performance is relative (compared
+% against a normalized ratio to the best algorithm); under AbsPerf=true it
+% is compared directly against the raw performance measure (PRELIM.m), so
+% it carries that measure's units and can be any real number.
+[absPerf, absPerfPresent] = getf(opts, 'perf', 'AbsPerf');
+if absPerfPresent && absPerf
+    [epsVal, epsPresent] = getf(opts, 'perf', 'epsilon');
+    if epsPresent && ~(isnumeric(epsVal) && isscalar(epsVal) && isreal(epsVal) && isfinite(epsVal))
+        error('ISA:ISAvalidateOpts:notFiniteNumericScalar', ...
+            'opts.perf.epsilon must be a finite numeric real scalar when opts.perf.AbsPerf=true; got %s.', describe(epsVal));
+    end
+else
+    checkUnitRange(opts, 'perf', 'epsilon');
+end
 checkUnitRange(opts, 'perf', 'betaThreshold');
 
 checkPositive(opts, 'prelim', 'iqrMultiplier');

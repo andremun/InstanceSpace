@@ -9,11 +9,9 @@
 - **Reference papers:** `docs/papers/Smith-Miles2023.pdf` (general ISA methodology), `docs/papers/Simpson2025.pdf` (ISA3, the 3D extension — cited only in `PILOT.m`, `PILOTviewpoint.m`, `TRACE.m`, and the 3D-output files in `output/`, not repo-wide). PILOT's origin (Muñoz et al. 2018), legacy TRACE's origin (Muñoz & Smith-Miles 2017), and FILTER's origin (Alipour et al. 2023) are cited in each file's own docstring `Reference:` block but aren't archived as PDFs here.
 
 ## Test harness
-Run from the repo root; both must print `EOF:SUCCESS` (`EOF:ERROR` on failure) — this sentinel is also used by `buildIS.m`/`exploreIS.m` themselves, so don't remove or change it without checking every caller:
-```
-example
-test_integration
-```
+Run from the repo root; `buildIS.m`/`exploreIS.m` print `EOF:SUCCESS` on success (errors abort before printing), and `test_integration.m` prints `EOF:SUCCESS`/`EOF:ERROR` at the end:
+    example
+    test_integration
 `example.m` already runs the full `buildIS`+`exploreIS` pipeline internally on the bundled reference dataset — it's the one to start with. `test_integration.m` is the exhaustive option-coverage regression suite (every classifier, tuning strategy, 2D/3D, PLS, viewpoint groups, staged `build()`/`explore()`/save-load round-trips, the full `ISAmigrateModel` legacy-migration table); good as a reference for how an option is meant to be used, not the place to start reading.
 
 ## Current state (v0.9.0 shipped; v0.9.1 in progress)

@@ -68,7 +68,13 @@ checkLogical(opts, 'perf', 'AbsPerf');
 % is compared directly against the raw performance measure (PRELIM.m), so
 % it carries that measure's units and can be any real number.
 [absPerf, absPerfPresent] = getf(opts, 'perf', 'AbsPerf');
-if ~(absPerfPresent && absPerf)
+if absPerfPresent && absPerf
+    [epsVal, epsPresent] = getf(opts, 'perf', 'epsilon');
+    if epsPresent && ~(isnumeric(epsVal) && isscalar(epsVal) && isreal(epsVal) && isfinite(epsVal))
+        error('ISA:ISAvalidateOpts:notFiniteNumericScalar', ...
+            'opts.perf.epsilon must be a finite numeric real scalar when opts.perf.AbsPerf=true; got %s.', describe(epsVal));
+    end
+else
     checkUnitRange(opts, 'perf', 'epsilon');
 end
 checkUnitRange(opts, 'perf', 'betaThreshold');

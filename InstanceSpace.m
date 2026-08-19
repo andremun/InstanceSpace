@@ -86,6 +86,26 @@ classdef InstanceSpace
                                   'cloister', 'cloist', ...
                                   'pythia',   'pythia', ...
                                   'trace',    'trace');
+        % obj.model fields (dotted path, checked via hasNestedField) each
+        % stage's run* method dereferences before doing any real work.
+        % checkPrereq only verifies the prerequisite STAGE completed; it
+        % says nothing about whether that stage's specific output fields
+        % are actually present and non-empty on THIS object -- a gap that
+        % matters for a model reconstructed via InstanceSpace.load(), a
+        % legacy migration (ISAmigrateModel), or a hand-edited model.mat,
+        % none of which re-run the stages themselves. Deliberately NOT a
+        % full dependency-injection system, just the fields every
+        % successful run of that stage unconditionally produces --
+        % conditional-path fields (e.g. sifted's density-resubsetting
+        % branch) are already isfield()-guarded at their own call site and
+        % don't belong in a static required-fields list.
+        StageRequiredFields = struct( ...
+            'prelim',   {{}}, ...
+            'sifted',   {{'data.X', 'data.Y', 'data.Ybin', 'data.featlabels'}}, ...
+            'pilot',    {{'data.X', 'data.Y', 'data.featlabels'}}, ...
+            'cloister', {{'data.X', 'pilot.A'}}, ...
+            'pythia',   {{'pilot.Z', 'data.Yraw', 'data.Ybin', 'data.Ybest', 'data.algolabels'}}, ...
+            'trace',    {{'pilot.Z', 'data.Ybin', 'pythia.Yhat', 'data.P', 'data.beta', 'data.algolabels'}});
     end
 
     methods (Access = public)
@@ -152,6 +172,7 @@ classdef InstanceSpace
             for i = 1:numel(toRun)
                 stage = toRun{i};
                 obj.checkPrereq(stage);
+                obj.checkRequiredFields(stage);
                 switch stage
                     case 'prelim',   obj = obj.runPrelim();
                     case 'sifted',   obj = obj.runSifted();
@@ -415,6 +436,25 @@ classdef InstanceSpace
                     error('ISA:InstanceSpace:missingPrereq', ...
                         'Stage ''%s'' requires ''%s'' to have been run first (obj.completedStages: %s).', ...
                         stage, needed{i}, strjoin(obj.completedStages, ', '));
+                end
+            end
+        end
+
+        function checkRequiredFields(obj, stage)
+            % Field-level companion to checkPrereq (#28): checkPrereq only
+            % confirms the prerequisite stage completed, not that the
+            % specific obj.model fields this stage is about to dereference
+            % are actually present. Raises before dispatch, naming both the
+            % stage and the missing field, instead of letting it surface as
+            % an opaque crash deep inside PRELIM/SIFTED/PILOT/etc.
+            needed = InstanceSpace.StageRequiredFields.(stage);
+            for i = 1:numel(needed)
+                if ~InstanceSpace.hasNestedField(obj.model, needed{i})
+                    error('ISA:InstanceSpace:missingField', ...
+                        ['Stage ''%s'' requires obj.model.%s, which is missing or empty. ' ...
+                         'This can happen with a hand-edited model.mat, an incomplete legacy ' ...
+                         'migration (see ISAmigrateModel), or a model assembled outside the ' ...
+                         'normal build() flow.'], stage, needed{i});
                 end
             end
         end
@@ -689,6 +729,27 @@ classdef InstanceSpace
     end
 
     methods (Static, Access = private)
+        function tf = hasNestedField(s, dottedPath)
+            % Walks a 'a.b.c' dotted path through nested structs, used by
+            % checkRequiredFields (#28). Missing at any level, or present
+            % but empty at the leaf, both count as not-present -- an empty
+            % array at a leaf that should hold real computed data (X, Z,
+            % Yhat, ...) is exactly the "looks present, silently wrong"
+            % failure mode this check exists to catch, unlike opts fields
+            % (ISAvalidateOpts.getf) where an explicit [] can be a
+            % deliberate, if invalid, user choice worth rejecting on its
+            % own terms rather than treating as absent.
+            parts = strsplit(dottedPath, '.');
+            for i = 1:numel(parts)
+                if ~(isstruct(s) && isfield(s, parts{i}))
+                    tf = false;
+                    return;
+                end
+                s = s.(parts{i});
+            end
+            tf = ~isempty(s);
+        end
+
         function ensurePathSetup()
             % Adds this toolkit's core/output/utils/deprecated
             % subdirectories to the MATLAB path if they aren't already

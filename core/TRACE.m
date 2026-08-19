@@ -111,6 +111,21 @@ if isEvalMode
     out.space = trainedTrace.space;
     ngood = numel(trainedTrace.good);
     nbest = numel(trainedTrace.best);
+    % #28: ngood/nbest are used below as the real-vs-placeholder boundary
+    % for out.good/out.best respectively, on the assumption both equal the
+    % trained model's algorithm count and so land at the same index. That
+    % assumption is never otherwise checked -- a hand-edited model.mat, a
+    % migration bug, or corrupted data could desync them, silently
+    % producing out.good{i} real while out.best{i} is a placeholder for
+    % the same algorithm i, with no error. Assert before using either.
+    if ngood ~= nbest
+        error('ISA:TRACE:goodBestCountMismatch', ...
+            ['trainedTrace.good has %d algorithm(s) but trainedTrace.best has %d -- these ' ...
+             'must match (both are sized to the trained model''s algorithm count) for eval ' ...
+             'mode''s real-vs-placeholder indexing to be valid. This model is inconsistent ' ...
+             '(hand-edited model.mat, an incomplete migration, or corrupted data) and cannot ' ...
+             'be safely evaluated.'], ngood, nbest);
+    end
     for i = 1:min(nalgos, ngood)
         out.good{i} = TRACErescore(trainedTrace.good{i}, Z, Ybin(:,i), is3D);
     end

@@ -531,6 +531,72 @@ catch ME
     fprintf('[TEST] Case ''cloister_norm_off_warning'' FAILED: %s\n', ME.message);
 end
 
+% ---- Per-stage required-field validation (#28) -------------------------
+% checkPrereq only confirms the prerequisite STAGE completed; checkRequiredFields
+% additionally confirms the specific obj.model fields that stage needs are
+% actually present -- catches a hand-edited/incomplete model.mat that
+% completedStages alone would wave through.
+fprintf('\n[TEST] === InstanceSpace per-stage required-field validation (#28) ===\n');
+results(end+1).name = 'required_fields_validation';
+try
+    reqObj = InstanceSpace(classCaseDir, baseOpts).build('stages', {'prelim'});
+    reqObj.model.data = rmfield(reqObj.model.data, 'Ybin'); % simulate an incomplete/corrupted model
+    missingFieldRaised = false;
+    try
+        reqObj.build('stages', {'sifted'});
+    catch reqErr
+        missingFieldRaised = strcmp(reqErr.identifier, 'ISA:InstanceSpace:missingField');
+    end
+    assert(missingFieldRaised, ...
+        ['build(''stages'',{''sifted''}) with obj.model.data.Ybin removed should raise ' ...
+         'ISA:InstanceSpace:missingField, not an opaque crash inside SIFTED.']);
+
+    % Success path must be unaffected by the added check.
+    reqObj2 = InstanceSpace(classCaseDir, baseOpts).build('stages', {'prelim', 'sifted'});
+    assert(isequal(reqObj2.completedStages, {'prelim', 'sifted'}), ...
+        'checkRequiredFields should not interfere with a normal successful build.');
+
+    results(end).passed  = true;
+    results(end).message = 'OK';
+    fprintf('[TEST] Case ''required_fields_validation'' PASSED.\n');
+catch ME
+    results(end).passed  = false;
+    results(end).message = ME.message;
+    fprintf('[TEST] Case ''required_fields_validation'' FAILED: %s\n', ME.message);
+end
+
+% ---- TRACE eval-mode ngood/nbest mismatch guard (#28) -------------------
+% Folded-in finding from #28: TRACE's eval mode used ngood/nbest as the
+% real-vs-placeholder boundary for out.good/out.best without ever checking
+% they agree, relying entirely on an unasserted cross-file convention.
+fprintf('\n[TEST] === TRACE eval-mode ngood/nbest mismatch guard (#28) ===\n');
+results(end+1).name = 'trace_goodbest_mismatch_guard';
+try
+    assert(numel(baseModel.trace.good) >= 2, ...
+        'This check needs at least 2 trained algorithms to desync good/best counts.');
+    mismatchedTrace = baseModel.trace;
+    mismatchedTrace.good = mismatchedTrace.good(1:end-1);
+    mismatchRaised = false;
+    try
+        TRACE(baseModel.pilot.Z, baseModel.data.Ybin, baseModel.pythia.Yhat, ...
+            baseModel.data.P, baseModel.data.beta, baseModel.data.algolabels, ...
+            baseModel.opts.trace, mismatchedTrace);
+    catch trErr
+        mismatchRaised = strcmp(trErr.identifier, 'ISA:TRACE:goodBestCountMismatch');
+    end
+    assert(mismatchRaised, ...
+        ['TRACE eval mode with mismatched trainedTrace.good/.best counts should raise ' ...
+         'ISA:TRACE:goodBestCountMismatch.']);
+
+    results(end).passed  = true;
+    results(end).message = 'OK';
+    fprintf('[TEST] Case ''trace_goodbest_mismatch_guard'' PASSED.\n');
+catch ME
+    results(end).passed  = false;
+    results(end).message = ME.message;
+    fprintf('[TEST] Case ''trace_goodbest_mismatch_guard'' FAILED: %s\n', ME.message);
+end
+
 nCases = numel(results);
 
 % ---- Summary ----------------------------------------------------------

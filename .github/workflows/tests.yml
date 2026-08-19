@@ -9,6 +9,12 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Observed run: setup-matlab's system-dependency apt-get step stalled on
+    # a runner-side network/mirror hang for ~2h45m with no output at all
+    # (unrelated to any code here) before it had to be cancelled manually.
+    # Caps that failure mode to a fast, visible failure instead of silently
+    # running toward GitHub's 6-hour default job timeout.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 

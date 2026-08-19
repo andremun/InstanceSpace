@@ -653,6 +653,19 @@ classdef InstanceSpace
 
         function obj = runCloister(obj)
             fprintf('[CLOISTER] Finding empirical bounds using CLOISTER.\n');
+            % CLOISTER's correlation-contradiction filter (sign(Xedge(i,j)) ~=/==
+            % sign(Xedge(i,k))) only means anything for mean-centred data -- which
+            % PRELIM only produces when BOTH flags below are true (see its own
+            % opts.auto && opts.norm gate). With either off, a naturally all-positive
+            % feature (counts, sizes) makes the sign check degenerate for it, silently
+            % making the filter a no-op for that feature rather than erroring.
+            if ~(obj.opts.auto.preproc && obj.opts.norm.flag)
+                warning('ISA:InstanceSpace:cloisterNotMeanCentred', ...
+                    ['CLOISTER''s correlation-contradiction filter assumes mean-centred data ' ...
+                     '(opts.auto.preproc and opts.norm.flag are both true), but at least one is ' ...
+                     'false for this build. The sign-based filter may silently degrade for any ' ...
+                     'feature that is naturally all one sign in its raw scale.']);
+            end
             obj.model.cloist = CLOISTER(obj.model.data.X, obj.model.pilot.A, obj.opts.cloister);
         end
 

@@ -478,6 +478,38 @@ catch ME
     fprintf('[TEST] Case ''seed_reproducibility'' FAILED: %s\n', ME.message);
 end
 
+% ---- CLOISTER mean-centring warning (#44) ------------------------------
+% CLOISTER's correlation-contradiction filter assumes mean-centred data;
+% opts.auto.preproc=false or opts.norm.flag=false skips PRELIM's Box-Cox+
+% Z-score step entirely, silently making the filter degenerate for any
+% naturally all-positive feature. runCloister should warn in that case,
+% and must not warn on the default (normalised) path.
+fprintf('\n[TEST] === CLOISTER mean-centring warning: opts.norm.flag=false ===\n');
+results(end+1).name = 'cloister_norm_off_warning';
+try
+    noNormOpts = baseOpts;
+    noNormOpts.norm.flag = false;
+    lastwarn('');
+    InstanceSpace(classCaseDir, noNormOpts).build('stages', {'prelim', 'sifted', 'pilot', 'cloister'});
+    [~, warnId] = lastwarn();
+    assert(strcmp(warnId, 'ISA:InstanceSpace:cloisterNotMeanCentred'), ...
+        'opts.norm.flag=false should raise ISA:InstanceSpace:cloisterNotMeanCentred before CLOISTER runs.');
+
+    lastwarn('');
+    InstanceSpace(classCaseDir, baseOpts).build('stages', {'prelim', 'sifted', 'pilot', 'cloister'});
+    [~, warnId2] = lastwarn();
+    assert(~strcmp(warnId2, 'ISA:InstanceSpace:cloisterNotMeanCentred'), ...
+        'The default (normalised) path should not raise the cloisterNotMeanCentred warning.');
+
+    results(end).passed  = true;
+    results(end).message = 'OK';
+    fprintf('[TEST] Case ''cloister_norm_off_warning'' PASSED.\n');
+catch ME
+    results(end).passed  = false;
+    results(end).message = ME.message;
+    fprintf('[TEST] Case ''cloister_norm_off_warning'' FAILED: %s\n', ME.message);
+end
+
 nCases = numel(results);
 
 % ---- Summary ----------------------------------------------------------

@@ -214,7 +214,7 @@ This repository ships a [Claude Code](https://claude.com/claude-code) skill at `
 
 ## Contact
 
-If you have any suggestions or ideas (e.g. for new features), or if you encounter any problems while running the code, please use the [issue tracker](https://github.com/andremun/InstanceSpace/issues) or contact us through MATILDA's [Queries and Feedback](http://matilda.unimelb.edu.au/matilda/contact-us) page.
+If you have any suggestions or ideas (e.g. for new features), or if you encounter any problems while running the code, please use the [issue tracker](https://github.com/andremun/InstanceSpace/issues) or contact us through MATILDA's [Queries and Feedback](http://matilda.unimelb.edu.au/matilda/contact-us) page. See [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a pull request, and [`SECURITY.md`](SECURITY.md) to report a suspected vulnerability privately.
 
 ## Acknowledgements
 

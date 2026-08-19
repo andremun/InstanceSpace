@@ -83,10 +83,12 @@
 % You need MATLAB R2025a or later, with the
 % <https://au.mathworks.com/help/gads/index.html Global Optimization>,
 % <https://www.mathworks.com/products/parallel-computing.html Parallel Computing>,
-% <https://au.mathworks.com/products/optimization.html Optimization>, and
+% <https://au.mathworks.com/products/optimization.html Optimization>,
 % <https://au.mathworks.com/help/stats/index.html Statistics and Machine
-% Learning> toolboxes installed. The Communications and Financial
-% Toolboxes are *not* required. LIBSVM support is deprecated: new runs
+% Learning>, and <https://au.mathworks.com/products/finance.html Financial>
+% toolboxes installed (Financial Toolbox is needed for |boxcox()|, used by
+% |PRELIM.m|'s auto-normalisation step). The Communications Toolbox is
+% *not* required. LIBSVM support is deprecated: new runs
 % always use MATLAB's native classifier registry
 % (|opts.pythia.classifier|). The LIBSVM MEX-files are not bundled with
 % this repository; they're only relevant for evaluating a model migrated

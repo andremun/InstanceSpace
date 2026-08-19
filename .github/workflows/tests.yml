@@ -20,6 +20,7 @@ jobs:
             Optimization_Toolbox
             Parallel_Computing_Toolbox
             Statistics_and_Machine_Learning_Toolbox
+            Financial_Toolbox
 
       # example.m and test_integration.m both abort on any uncaught error
       # (test_integration.m explicitly raises ISA:test_integration:caseFailures

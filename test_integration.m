@@ -414,6 +414,27 @@ try
          'model''s summary on the same data -- retrainLibsvmPythia is training on the wrong ' ...
          '(normalized) scale.']);
 
+    % #29 regression: the LIBSVM MEX-files (svmpredict/svmtrain) were
+    % removed from this repository as precompiled binaries with no build
+    % source in the tree. PYTHIA's eval mode must now give a clear,
+    % actionable ISA:PYTHIA:noLibsvm error instead of MATLAB's generic
+    % "undefined function 'svmpredict'" if it ever needs to dispatch to a
+    % legacy (un-retrained) LIBSVM-format classifier struct. Uses
+    % pythiaLegacy directly (not m, which was already retrained above) so
+    % the isstruct(clf) legacy-LIBSVM branch is actually exercised; assumes
+    % no LIBSVM MEX-files are on this MATLAB path, which holds for this
+    % repository post-#29 unless one is installed separately.
+    noLibsvmRaised = false;
+    try
+        PYTHIA(baseModel.pilot.Z, baseModel.data.Yraw, baseModel.data.Ybin, ...
+            baseModel.data.Ybest, baseModel.data.algolabels, baseModel.opts.pythia, pythiaLegacy);
+    catch pyErr
+        noLibsvmRaised = strcmp(pyErr.identifier, 'ISA:PYTHIA:noLibsvm');
+    end
+    assert(noLibsvmRaised, ...
+        ['PYTHIA eval mode on a legacy LIBSVM struct should raise ISA:PYTHIA:noLibsvm ' ...
+         'when svmpredict is unavailable, not MATLAB''s generic undefined-function error.']);
+
     % Legacy DBSCAN+polyshape triangulation format: .space.area, no .measure.
     legacyTraceModel = baseModel;
     legacyTraceModel.trace = struct('space', struct('area', 1, 'polygon', []));

@@ -254,8 +254,13 @@ footprints fresh via TRACE3. If training data is missing, migration still
 renames fields but leaves legacy classifiers in place with a warning;
 such a model can still be evaluated via `explore()`/PYTHIA eval mode
 (which dispatches to `svmpredict` when it detects a legacy struct instead
-of a MATLAB classifier object), but this requires the LIBSVM MEX-files
-(`svmpredict.mexw64` at the repo root) to be present.
+of a MATLAB classifier object), but this requires the LIBSVM MEX-files,
+which are **not bundled with this repository** (removed as precompiled
+binaries with no corresponding source in the tree -- see #29). `PYTHIA`
+raises a clear `ISA:PYTHIA:noLibsvm` error naming the missing dependency
+if you hit this path without them; obtain LIBSVM from
+[the official project](https://www.csie.ntu.edu.tw/~cjlin/libsvm/) if you
+actually need to evaluate such a model rather than retraining it.
 
 ```matlab
 ISAmigrateModel(rootdir);   % migrates rootdir/model.mat in place, with automatic backup

@@ -88,9 +88,11 @@
 % Learning> toolboxes installed. The Communications and Financial
 % Toolboxes are *not* required. LIBSVM support is deprecated: new runs
 % always use MATLAB's native classifier registry
-% (|opts.pythia.classifier|); the LIBSVM MEX-files are only needed to
-% evaluate a model migrated from a pre-refactor toolkit version whose
-% classifiers haven't been retrained yet (see |ISAmigrateModel|).
+% (|opts.pythia.classifier|). The LIBSVM MEX-files are not bundled with
+% this repository; they're only relevant for evaluating a model migrated
+% from a pre-refactor toolkit version whose classifiers couldn't be
+% retrained (see |ISAmigrateModel|), and can be obtained from the official
+% LIBSVM project if actually needed.
 %
 % Run |startup.m| once per session before calling a |core|/|output|/|utils|
 % function directly; the class constructor (used below) adds those

@@ -355,7 +355,19 @@ for ii = 1:modelalgos
         % the training-mode degenerate-label branch above.
         out.Pr0hat(:,ii) = double(~clf.value);
     elseif isstruct(clf)
-        % Legacy LIBSVM struct.
+        % Legacy LIBSVM struct. Requires the svmpredict MEX-file, which is
+        % no longer bundled with this repository (#29) -- give a clear,
+        % actionable error instead of MATLAB's generic "undefined function"
+        % if it isn't on the path.
+        if exist('svmpredict', 'file') ~= 3
+            error('ISA:PYTHIA:noLibsvm', ...
+                ['Algorithm ''%s'' has a legacy LIBSVM-format classifier, but the svmpredict ' ...
+                 'MEX-file is not on the MATLAB path (no longer bundled with this repository -- ' ...
+                 'see README.md''s LIBSVM section). Retrain from scratch with build() ' ...
+                 '(recommended), or obtain LIBSVM yourself (https://www.csie.ntu.edu.tw/~cjlin/' ...
+                 'libsvm/) and add its MEX-files to the path if you need to evaluate this ' ...
+                 'unretrained legacy model as-is.'], algolabels{ii});
+        end
         Yin = double(Ybin(:,ii)) + 1;
         [aux, ~, out.Pr0hat(:,ii)] = svmpredict(Yin, Znorm, clf, '-q');
         out.Yhat(:,ii) = logical(aux == 2);

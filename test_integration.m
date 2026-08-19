@@ -401,6 +401,19 @@ try
     assert(numel(m.pythia.classifiers) == numel(baseModel.data.algolabels), ...
         'Retrained pythia.classifiers has the wrong number of algorithms.');
 
+    % #42 regression: retrainLibsvmPythia previously passed model.data.Y
+    % (normalized) instead of model.data.Yraw to PYTHIA. Avg/Std_Perf_all_instances
+    % are pure functions of the Y passed in (independent of which classifier
+    % was trained), so a normalized-scale bug here would show up as a scale
+    % mismatch against baseModel's own summary, built through the normal
+    % path on the same data.
+    avgPerfRetrained = cell2mat(m.pythia.summary(2:end-2, 2));
+    avgPerfOriginal  = cell2mat(baseModel.pythia.summary(2:end-2, 2));
+    assert(isequal(avgPerfRetrained, avgPerfOriginal), ...
+        ['Retrained pythia.summary''s Avg_Perf_all_instances does not match a freshly-built ' ...
+         'model''s summary on the same data -- retrainLibsvmPythia is training on the wrong ' ...
+         '(normalized) scale.']);
+
     % Legacy DBSCAN+polyshape triangulation format: .space.area, no .measure.
     legacyTraceModel = baseModel;
     legacyTraceModel.trace = struct('space', struct('area', 1, 'polygon', []));

@@ -254,7 +254,7 @@ classdef InstanceSpace
             startProcess = tic;
             fprintf('[EXPLORE] Root directory: %s\n', testRootDir);
             trainedModel = obj.model;
-            out = InstanceSpace.evaluateTestSet(trainedModel, datafile);
+            out = InstanceSpace.evaluateTestSet(trainedModel, testRootDir);
 
             if trainedModel.opts.outputs.csv
                 scriptcsv(out, testRootDir);
@@ -488,79 +488,7 @@ classdef InstanceSpace
         end
 
         function obj = runPrelim(obj)
-            fprintf('[BUILD] Loading metadata.csv.\n');
-            datafile = [obj.rootdir 'metadata.csv'];
-            Xbar = readtable(datafile);
-            varlabels = Xbar.Properties.VariableNames;
-            isname   = strcmpi(varlabels, 'instances');
-            isfeat   = strncmpi(varlabels, 'feature_', 8);
-            isalgo   = strncmpi(varlabels, 'algo_', 5);
-            issource = strcmpi(varlabels, 'source');
-
-            data = struct();
-            data.instlabels = Xbar{:,isname};
-            if isnumeric(data.instlabels)
-                data.instlabels = num2cell(data.instlabels);
-                data.instlabels = cellfun(@(x) num2str(x), data.instlabels, 'UniformOutput', false);
-            end
-            if any(issource)
-                data.S = categorical(Xbar{:,issource});
-            end
-            data.X = Xbar{:,isfeat};
-            data.Y = Xbar{:,isalgo};
-
-            data.featlabels = varlabels(isfeat);
-            if isfield(obj.opts, 'selvars') && isfield(obj.opts.selvars, 'feats')
-                msg = 'Using the following features: ';
-                isselfeat = false(1, length(data.featlabels));
-                for i = 1:length(obj.opts.selvars.feats)
-                    isselfeat = isselfeat | strcmp(data.featlabels, obj.opts.selvars.feats{i});
-                    msg = [msg obj.opts.selvars.feats{i} ' ']; %#ok<AGROW>
-                end
-                fprintf('[BUILD] %s\n', msg);
-                data.X = data.X(:,isselfeat);
-                data.featlabels = data.featlabels(isselfeat);
-            end
-
-            data.algolabels = varlabels(isalgo);
-            if isfield(obj.opts, 'selvars') && isfield(obj.opts.selvars, 'algos')
-                msg = 'Using the following algorithms: ';
-                isselalgo = false(1, length(data.algolabels));
-                for i = 1:length(obj.opts.selvars.algos)
-                    isselalgo = isselalgo | strcmp(data.algolabels, obj.opts.selvars.algos{i});
-                    msg = [msg obj.opts.selvars.algos{i} ' ']; %#ok<AGROW>
-                end
-                fprintf('[BUILD] %s\n', msg);
-                data.Y = data.Y(:,isselalgo);
-                data.algolabels = data.algolabels(isselalgo);
-            end
-
-            idx = all(isnan(data.X), 2) | all(isnan(data.Y), 2);
-            if any(idx)
-                warning('-> There are instances with too many missing values. They are being removed to increase speed.');
-                data.X = data.X(~idx,:);
-                data.Y = data.Y(~idx,:);
-                data.instlabels = data.instlabels(~idx);
-                if isfield(data, 'S')
-                    data.S = data.S(~idx);
-                end
-            end
-            idx = mean(isnan(data.X), 1) >= obj.opts.prelim.nanThreshold;
-            if any(idx)
-                warning('-> There are features with too many missing values. They are being removed to increase speed.');
-                data.X = data.X(:,~idx);
-                data.featlabels = data.featlabels(~idx);
-            end
-            ninst = size(data.X, 1);
-            nuinst = size(unique(data.X, 'rows'), 1);
-            if nuinst/ninst < 0.5
-                warning('-> There are too many repeated instances. It is unlikely that this run will produce good results.');
-            end
-
-            data.Xraw = data.X;
-            data.Yraw = data.Y;
-            data.featlabels = strrep(data.featlabels, 'feature_', '');
-            data.algolabels = strrep(data.algolabels, 'algo_', '');
+            data = INIT(obj.rootdir, obj.opts);
 
             fprintf('[PRELIM] Calling PRELIM for data pre-processing.\n');
             prelimOpts = obj.opts.perf;
@@ -816,249 +744,61 @@ classdef InstanceSpace
             end
         end
 
-        function out = evaluateTestSet(model, datafile)
+        function out = evaluateTestSet(model, rootdir)
             % Ported from exploreIS.m, operating on an in-memory trained
             % model (no model.mat re-read: the caller already has it).
-            fprintf('[EXPLORE] Loading metadata_test.csv.\n');
-            Xbar = readtable(datafile);
-            varlabels = Xbar.Properties.VariableNames;
-            isname   = strcmpi(varlabels, 'instances');
-            isfeat   = strncmpi(varlabels, 'feature_', 8);
-            isalgo   = strncmpi(varlabels, 'algo_', 5);
-            issource = strcmpi(varlabels, 'source');
-
+            [data, extra] = INIT(rootdir, model.opts, model);
             out = struct();
-            out.data.instlabels = Xbar{:,isname};
-            if isnumeric(out.data.instlabels)
-                out.data.instlabels = num2cell(out.data.instlabels);
-                out.data.instlabels = cellfun(@(x) num2str(x), out.data.instlabels, 'UniformOutput', false);
-            end
-            if any(issource)
-                out.data.S = categorical(Xbar{:,issource});
-            end
-            out.data.X = Xbar{:,isfeat};
-            out.data.Y = Xbar{:,isalgo};
-            [ninst, nalgos] = size(out.data.Y);
-
-            % Mirror runPrelim's opts.selvars.algos restriction (applied at
-            % build time): without this, out.data.Y/algolabels keep every
-            % raw algo_ column from metadata_test.csv, so an algorithm
-            % deliberately excluded from training via opts.selvars.algos
-            % looks like a "new" algorithm to the reconciliation step below
-            % (see out.data.algolabels) -- appended as an extra column with
-            % real performance data but no trained classifier -- instead of
-            % simply being excluded from evaluation the same way it was
-            % excluded from training.
-            algolabelsAll = varlabels(isalgo);
-            if isfield(model.opts, 'selvars') && isfield(model.opts.selvars, 'algos')
-                isselalgo = false(1, length(algolabelsAll));
-                for i = 1:length(model.opts.selvars.algos)
-                    isselalgo = isselalgo | strcmp(algolabelsAll, model.opts.selvars.algos{i});
-                end
-                out.data.Y = out.data.Y(:,isselalgo);
-                algolabelsAll = algolabelsAll(isselalgo);
-                nalgos = size(out.data.Y, 2);
-            end
-
-            % Mirror runPrelim's opts.selvars.feats restriction (applied at
-            % build time, before PRELIM computed model.prelim.hibound/
-            % lobound/minX/etc, all of which are sized to the RESTRICTED
-            % feature count): without this, out.data.X keeps every raw
-            % feature_ column from metadata_test.csv, and the bound-clipping
-            % below fails with a dimension mismatch against those
-            % restricted-size arrays -- or, if it happened not to error,
-            % model.featsel.idx would silently select the wrong columns
-            % positionally instead of the intended named features.
-            featlabelsAll = varlabels(isfeat);
-            if isfield(model.opts, 'selvars') && isfield(model.opts.selvars, 'feats')
-                isselfeat = false(1, length(featlabelsAll));
-                for i = 1:length(model.opts.selvars.feats)
-                    isselfeat = isselfeat | strcmp(featlabelsAll, model.opts.selvars.feats{i});
-                end
-                out.data.X = out.data.X(:,isselfeat);
-                featlabelsAll = featlabelsAll(isselfeat);
-            end
-            % Validate against model.prelim.lambdaX (one Box-Cox lambda per
-            % feature PRELIM actually fit at training time, i.e. after both
-            % opts.selvars.feats AND any opts.prelim.nanThreshold-triggered
-            % column drops -- the latter isn't mirrored above, since which
-            % columns those were isn't retained anywhere in the model). A
-            % count mismatch here means metadata_test.csv doesn't match the
-            % training feature set, and would otherwise surface many rows
-            % down as an opaque bsxfun dimension-mismatch error.
-            if numel(featlabelsAll) ~= numel(model.prelim.lambdaX)
-                error('ISA:InstanceSpace:featureCountMismatch', ...
-                    ['metadata_test.csv has %d feature column(s) after applying ' ...
-                     'opts.selvars.feats, but the trained model expects %d ' ...
-                     '(some training features may have been dropped for exceeding ' ...
-                     'opts.prelim.nanThreshold). Check that metadata_test.csv has the ' ...
-                     'same feature_ columns as metadata.csv.'], ...
-                    numel(featlabelsAll), numel(model.prelim.lambdaX));
-            end
-            % A count match alone doesn't guarantee the same feature ORDER:
-            % every bound-clipping/Box-Cox/normalisation step below indexes
-            % model.prelim.hibound/lobound/lambdaX/etc positionally, so if
-            % metadata_test.csv lists its feature_ columns in a different
-            % order than metadata.csv did, columns would be silently
-            % misaligned -- normalised/clipped with the wrong feature's
-            % parameters -- instead of erroring. Only checkable for models
-            % that retained the training order (featsel.labels); older
-            % saved models without it just skip this extra check.
-            if isfield(model.featsel, 'labels')
-                testLabels = strrep(featlabelsAll, 'feature_', '');
-                if ~isequal(testLabels(:), model.featsel.labels(:))
-                    error('ISA:InstanceSpace:featureOrderMismatch', ...
-                        ['metadata_test.csv''s feature_ columns are not in the same order ' ...
-                         'as the trained model''s (after applying opts.selvars.feats). ' ...
-                         'Expected order: %s. Got: %s. Reorder metadata_test.csv''s columns ' ...
-                         'to match metadata.csv.'], ...
-                        strjoin(model.featsel.labels, ', '), strjoin(testLabels, ', '));
-                end
-            end
-
-            % Reconcile test algorithms against the trained model's: known
-            % algorithms line up by name, unseen ones are appended as new
-            % columns (NaN for training-only algorithms).
-            out.data.algolabels = strrep(algolabelsAll, 'algo_', '');
-            algoexist = zeros(1, nalgos);
-            for ii = 1:nalgos
-                aux = find(strcmpi(strtrim(out.data.algolabels{ii}), strtrim(model.data.algolabels)));
-                if ~isempty(aux)
-                    algoexist(ii) = aux;
-                end
-            end
-            newalgos  = sum(algoexist == 0);
-            modelalgos = length(model.data.algolabels);
-            Yaux  = NaN + ones(ninst, modelalgos+newalgos);
-            lblaux = model.data.algolabels;
-            acc = modelalgos + 1;
-            for ii = 1:nalgos
-                if algoexist(ii) == 0
-                    Yaux(:,acc) = out.data.Y(:,ii);
-                    lblaux(:,acc) = out.data.algolabels(ii);
-                    acc = acc + 1;
-                else
-                    Yaux(:,algoexist(ii)) = out.data.Y(:,ii);
-                end
-            end
-            out.data.Y = Yaux;
-            out.data.algolabels = lblaux;
-            nalgos = size(out.data.Y, 2);
-
-            out.data.Xraw = out.data.X;
-            out.data.Yraw = out.data.Y;
+            out.data = data;
 
             fprintf('[EXPLORE] Calculating the binary measure of performance.\n');
-            msg = 'An algorithm is good if its performance is ';
-            MaxPerf = false;
-            if isfield(model.opts.perf, 'MaxPerf')
-                MaxPerf = model.opts.perf.MaxPerf;
-            elseif isfield(model.opts.perf, 'MaxMin')
-                MaxPerf = model.opts.perf.MaxMin;
-            else
-                warning('Can not find parameter "MaxPerf" in the trained model. We are assuming that performance metric is needed to be minimized.');
-            end
-            if MaxPerf
-                Yaux = out.data.Y;
-                Yaux(isnan(Yaux)) = -Inf;
-                [rankPerf, rankAlgo] = sort(Yaux, 2, 'descend');
-                out.data.Ybest = rankPerf(:,1);
-                out.data.P = rankAlgo(:,1);
-                if model.opts.perf.AbsPerf
-                    out.data.Ybin = out.data.Y >= model.opts.perf.epsilon;
-                    msg = [msg 'higher than ' num2str(model.opts.perf.epsilon)];
+            % model.opts.perf, flattened to PRELIM's own field names,
+            % mirroring runPrelim's prelimOpts construction -- with one
+            % addition kept from this function's pre-#38 form: a model
+            % saved before opts.perf.MaxPerf existed (only the legacy
+            % opts.perf.MaxMin, or neither) needs the same fallback
+            % resolution here that ISAmigrateModel/ISAdefaults would have
+            % applied for a normally-built model.
+            prelimOpts = model.opts.perf;
+            if ~isfield(prelimOpts, 'MaxPerf')
+                if isfield(prelimOpts, 'MaxMin')
+                    prelimOpts.MaxPerf = prelimOpts.MaxMin;
                 else
-                    out.data.Ybest(out.data.Ybest == 0) = eps;
-                    out.data.Y(out.data.Y == 0) = eps;
-                    out.data.Y = 1 - bsxfun(@rdivide, out.data.Y, out.data.Ybest);
-                    out.data.Ybin = (1 - bsxfun(@rdivide, Yaux, out.data.Ybest)) <= model.opts.perf.epsilon;
-                    msg = [msg 'within ' num2str(round(100.*model.opts.perf.epsilon)) '% of the best.'];
-                end
-            else
-                Yaux = out.data.Y;
-                Yaux(isnan(Yaux)) = Inf;
-                [rankPerf, rankAlgo] = sort(Yaux, 2, 'ascend');
-                out.data.Ybest = rankPerf(:,1);
-                out.data.P = rankAlgo(:,1);
-                if model.opts.perf.AbsPerf
-                    out.data.Ybin = out.data.Y <= model.opts.perf.epsilon;
-                    msg = [msg 'less than ' num2str(model.opts.perf.epsilon)];
-                else
-                    out.data.Ybest(out.data.Ybest == 0) = eps;
-                    out.data.Y(out.data.Y == 0) = eps;
-                    out.data.Y = bsxfun(@rdivide, out.data.Y, out.data.Ybest) - 1;
-                    out.data.Ybin = (bsxfun(@rdivide, Yaux, out.data.Ybest) - 1) <= model.opts.perf.epsilon;
-                    msg = [msg 'within ' num2str(round(100.*model.opts.perf.epsilon)) '% of the best.'];
+                    warning(['Can not find parameter "MaxPerf" in the trained model. ' ...
+                        'We are assuming that performance metric is needed to be minimized.']);
+                    prelimOpts.MaxPerf = false;
                 end
             end
-            fprintf('[EXPLORE] %s\n', msg);
-            out.data.numGoodAlgos = sum(out.data.Ybin, 2);
-            out.data.beta = out.data.numGoodAlgos > model.opts.perf.betaThreshold*nalgos;
+            prelimOpts.auto  = model.opts.auto.preproc;
+            prelimOpts.bound = model.opts.bound.flag;
+            prelimOpts.norm  = model.opts.norm.flag;
+            % PRELIM's eval mode recomputes Ybin/Ybest/P/beta on the new
+            % (reconciled-width) Y with the exact same code -- including
+            % tie-breaking -- training mode uses, then applies (not
+            % re-fits) model.prelim's bounds/Box-Cox/Z-score parameters to
+            % X and to the first extra.modelalgos columns of Y (#37/#38:
+            % this used to be a second, independently-drifted
+            % reimplementation here).
+            [out.data.X, out.data.Y, prelimOut] = PRELIM(out.data.X, out.data.Y, prelimOpts, model.prelim);
+            out.data.Ybest        = prelimOut.Ybest;
+            out.data.Ybin         = prelimOut.Ybin;
+            out.data.P            = prelimOut.P;
+            out.data.numGoodAlgos = prelimOut.numGoodAlgos;
+            out.data.beta         = prelimOut.beta;
 
-            if model.opts.auto.preproc && model.opts.bound.flag
-                fprintf('[EXPLORE] Auto-pre-processing. Bounding outliers, scaling and normalizing the data.\n');
-                fprintf('[EXPLORE] Removing extreme outliers from the feature values.\n');
-                himask = bsxfun(@gt, out.data.X, model.prelim.hibound);
-                lomask = bsxfun(@lt, out.data.X, model.prelim.lobound);
-                % Out-of-distribution warning (spec §7.5): more than 5% of
-                % test instances clipped to the training bounds suggests
-                % they may fall outside the training distribution.
-                fracClipped = mean(any(himask | lomask, 2));
-                if fracClipped > 0.05
-                    warning('ISA:InstanceSpace:outOfDistribution', ...
-                        ['%.1f%% of test instances were clipped to the training feature bounds; ' ...
-                         'they may be outside the training distribution. Consider retraining with ' ...
-                         'a combined dataset.'], 100*fracClipped);
-                end
-                out.data.X = out.data.X.*~(himask | lomask) + bsxfun(@times, himask, model.prelim.hibound) + ...
-                                                              bsxfun(@times, lomask, model.prelim.lobound);
-            end
-
-            if model.opts.auto.preproc && model.opts.norm.flag
-                fprintf('[EXPLORE] Auto-normalizing the data.\n');
-                out.data.X = bsxfun(@minus, out.data.X, model.prelim.minX) + 1;
-                out.data.X(~isnan(out.data.X) & out.data.X < 1) = 1;
-                for ii = 1:length(model.prelim.lambdaX)
-                    lambda = model.prelim.lambdaX(ii);
-                    x = out.data.X(:,ii);
-                    idx = ~isnan(x);
-                    if abs(lambda) < 1e-10
-                        x(idx) = log(x(idx));
-                    else
-                        x(idx) = (x(idx).^lambda - 1) ./ lambda;
-                    end
-                    out.data.X(:,ii) = x;
-                end
-                out.data.X = bsxfun(@rdivide, bsxfun(@minus, out.data.X, model.prelim.muX), model.prelim.sigmaX);
-
-                out.data.Y = (out.data.Y - model.prelim.minY) + eps;
-                out.data.Y(out.data.Y <= 0) = eps;
-                for ii = 1:modelalgos
-                    lambda = model.prelim.lambdaY(ii);
-                    y = out.data.Y(:,ii);
-                    idx = ~isnan(y);
-                    if abs(lambda) < 1e-10
-                        y(idx) = log(y(idx));
-                    else
-                        y(idx) = (y(idx).^lambda - 1) ./ lambda;
-                    end
-                    out.data.Y(:,ii) = y;
-                end
-                out.data.Y(:,1:modelalgos) = bsxfun(@rdivide, bsxfun(@minus, out.data.Y(:,1:modelalgos), ...
-                    model.prelim.muY), model.prelim.sigmaY);
-                if newalgos > 0
-                    [~, out.data.Y(:,modelalgos+1:nalgos)] = InstanceSpace.autoNormalize( ...
-                        ones(ninst,1), out.data.Y(:,modelalgos+1:nalgos));
-                end
-            end
-            if ~isreal(out.data.X)
-                error('ISA:InstanceSpace:complexX', ...
-                    'Feature matrix X is complex after normalisation. Check test data range vs training data.');
+            % Algorithms present in the test metadata but absent from the
+            % trained model (extra.newalgos > 0) have no pre-fit
+            % lambda/mu/sigma for PRELIM to apply -- fit-and-apply them
+            % separately, same gating (opts.auto.preproc && opts.norm.flag)
+            % as the rest of the normalisation PRELIM just did.
+            if prelimOpts.auto && prelimOpts.norm && extra.newalgos > 0
+                [~, out.data.Y(:,extra.modelalgos+1:extra.nalgos)] = InstanceSpace.autoNormalize( ...
+                    ones(extra.ninst,1), out.data.Y(:,extra.modelalgos+1:extra.nalgos));
             end
 
             out.featsel.idx = model.featsel.idx;
             out.data.X = out.data.X(:,out.featsel.idx);
-            out.data.featlabels = strrep(featlabelsAll, 'feature_', '');
+            out.data.featlabels = strrep(extra.featlabelsAll, 'feature_', '');
             out.data.featlabels = out.data.featlabels(model.featsel.idx);
 
             out.pilot.Z = out.data.X*model.pilot.A';

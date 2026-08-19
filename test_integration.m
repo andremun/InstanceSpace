@@ -597,6 +597,46 @@ catch ME
     fprintf('[TEST] Case ''trace_goodbest_mismatch_guard'' FAILED: %s\n', ME.message);
 end
 
+% ---- PRELIM train/eval tie-breaking consistency (#37/#38) --------------
+% Before #38, InstanceSpace.evaluateTestSet reimplemented PRELIM's
+% Ybin/Ybest/P/beta computation independently, using a silent
+% deterministic sort() with no tie-breaking logic at all -- diverging from
+% PRELIM's own random tie-break for instances with more than one
+% best-performing algorithm. #38 gave PRELIM itself an eval mode
+% (nargin==4) that shares this exact code with training mode, so the two
+% can no longer drift apart. Verified directly here (not through a full
+% build+explore round trip) with a synthetic tie, seeding rng identically
+% before each call: PRELIM's tie-break is the only randomness before that
+% point in the function, so an identical seed must give an identical pick
+% if -- and only if -- both modes are genuinely running the same code.
+fprintf('\n[TEST] === PRELIM train/eval tie-breaking consistency (#37/#38) ===\n');
+results(end+1).name = 'prelim_tie_breaking_consistency';
+try
+    Xsynth = [1 2; 3 4; 5 6; 7 8];
+    Ysynth = [1 1 5; 2 3 4; 1 5 2; 6 2 1]; % row 1: algorithms 1 and 2 tied for best (both = 1)
+    prelimTestOpts = struct('MaxPerf', false, 'AbsPerf', false, 'epsilon', 0.05, ...
+        'betaThreshold', 0.55, 'auto', true, 'bound', true, 'norm', true, 'iqrMultiplier', 5);
+
+    rng(7, 'twister');
+    [~, ~, trainOut] = PRELIM(Xsynth, Ysynth, prelimTestOpts);
+    assert(ismember(trainOut.P(1), [1, 2]), ...
+        'Training-mode tie-break for the tied instance should pick one of the tied algorithms (1 or 2).');
+
+    rng(7, 'twister');
+    [~, ~, evalOut] = PRELIM(Xsynth, Ysynth, prelimTestOpts, trainOut);
+    assert(evalOut.P(1) == trainOut.P(1), ...
+        ['Eval-mode PRELIM should break the same tie the same way training mode does when seeded ' ...
+         'identically -- #37''s drift meant these used to disagree.']);
+
+    results(end).passed  = true;
+    results(end).message = 'OK';
+    fprintf('[TEST] Case ''prelim_tie_breaking_consistency'' PASSED.\n');
+catch ME
+    results(end).passed  = false;
+    results(end).message = ME.message;
+    fprintf('[TEST] Case ''prelim_tie_breaking_consistency'' FAILED: %s\n', ME.message);
+end
+
 nCases = numel(results);
 
 % ---- Summary ----------------------------------------------------------

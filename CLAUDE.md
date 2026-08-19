@@ -39,6 +39,8 @@ Run from the repo root; `buildIS.m`/`exploreIS.m` print `EOF:SUCCESS` on success
 - `traceAlphaBoundary` (in `output/scriptcsv.m`) — silently exports partial boundaries for multi-region alpha shapes; its own comment admits it "works correctly for simple (single-region) connected alpha shapes" only. Was "deferred to Phase 9" in the old plan; Phase 9 shipped in v0.9.0 without this actually being fixed. Tracked as #31.
 - CLOISTER's boundary is computed but never rendered in automated output (`scriptpng.m` has no reference to it at all; `InstanceSpace.plot()` has no `'boundary'` case). Also "deferred to Phase 9" in the old plan, also never actually closed. Tracked as #32.
 
+Not still open, despite also appearing on the old plan's deferred list — closed by v0.9.0 but not previously recorded as such (#33, now documented in `RELEASE_NOTES.md`): the "ensemble hyperparameter API" question (verifying `fitcensemble`'s `OptimizeHyperparameters` support). PYTHIA's shipped design tunes every classifier, including `'ensemble'`, through one shared Sobol/Bayesian layer instead of `fitcensemble`'s own optimiser, sidestepping the question rather than answering it directly — don't re-open this as if it were still pending.
+
 ## `.gitignore` notes
 - `docs/**/*.pdf` — tracked (negation rule), recursive under `docs/`.
 - `test/data/*` — ignored except `metadata.csv`, `metadata_test.csv`, and `workspace_test.mat` (an explicit three-file allowlist). Do not broaden this to `!test/data/**` — that was tried and reverted because it makes every generated test-run output file (model.mat, CSVs, PNGs, per-case subdirectories from `test_integration.m`) trackable.

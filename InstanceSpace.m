@@ -570,7 +570,8 @@ classdef InstanceSpace
                 subsetIndex(aux) = true;
             elseif bydensity
                 fprintf('[BUILD] Creating a small scale experiment for validation based on density.\n');
-                [subsetIndex, ~, ~, densityUnif] = FILTER(data.X, data.Y, data.Ybin, obj.opts.selvars);
+                [subsetIndex, densityIsDissimilar, densityIsVISA, densityUnif] = ...
+                    FILTER(data.X, data.Y, data.Ybin, obj.opts.selvars);
                 subsetIndex = ~subsetIndex;
                 fprintf('[BUILD] Percentage of instances retained: %s%%\n', ...
                     num2str(round(100.*mean(subsetIndex), 2)));
@@ -591,6 +592,11 @@ classdef InstanceSpace
             model_.prelim.bydensity = bydensity; % needed by the sifted stage's re-subsetting step
             if bydensity
                 model_.prelim.unif = densityUnif; % feature-space uniformity of the retained subset
+                % Kept for later diagnostics, not consumed by the pipeline itself: isDissimilar
+                % flags instances FILTER's closeness check ruled out of the subset, isVISA flags
+                % near-duplicate pairs it kept anyway (see FILTER.m's docstring).
+                model_.prelim.isDissimilar = densityIsDissimilar;
+                model_.prelim.isVISA = densityIsVISA;
             end
             model_.featsel.idx = 1:size(model_.data.X, 2);
             % Snapshot the pre-SIFTED feature name order here: runSifted
@@ -619,7 +625,10 @@ classdef InstanceSpace
 
                 if isfield(obj.model.prelim, 'bydensity') && obj.model.prelim.bydensity
                     fprintf('[SIFTED] Creating a small scale experiment for validation based on density.\n');
-                    [subsetIndex, ~, ~, obj.model.sifted.unif] = FILTER(obj.model.data_dense.X(:,obj.model.featsel.idx), ...
+                    % isDissimilar/isVISA kept for later diagnostics, not consumed by the
+                    % pipeline itself (see FILTER.m's docstring).
+                    [subsetIndex, obj.model.sifted.isDissimilar, obj.model.sifted.isVISA, obj.model.sifted.unif] = ...
+                                         FILTER(obj.model.data_dense.X(:,obj.model.featsel.idx), ...
                                          obj.model.data_dense.Y, ...
                                          obj.model.data_dense.Ybin, ...
                                          obj.opts.selvars);

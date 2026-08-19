@@ -1,0 +1,38 @@
+name: Tests
+
+on:
+  push: {}
+  pull_request:
+    branches: [master]
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: matlab-actions/setup-matlab@v2
+        with:
+          release: latest
+          products: >
+            Global_Optimization_Toolbox
+            Optimization_Toolbox
+            Parallel_Computing_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
+
+      # example.m and test_integration.m both abort on any uncaught error
+      # (test_integration.m explicitly raises ISA:test_integration:caseFailures
+      # if any case fails; buildIS.m/exploreIS.m abort before printing
+      # EOF:SUCCESS), which run-command turns into a nonzero exit code and a
+      # failed step -- no separate pass/fail parsing needed here.
+      - uses: matlab-actions/run-command@v2
+        with:
+          command: example, test_integration
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-outputs
+          path: test/data/
+          retention-days: 14

@@ -1,5 +1,6 @@
 # Instance Space Analysis: A toolkit for the assessment of algorithmic power
 
+[![Tests](https://github.com/andremun/InstanceSpace/actions/workflows/tests.yml/badge.svg)](https://github.com/andremun/InstanceSpace/actions/workflows/tests.yml)
 [![View InstanceSpace on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://au.mathworks.com/matlabcentral/fileexchange/75170-instancespace)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4750845.svg)](https://doi.org/10.5281/zenodo.4750845)
 

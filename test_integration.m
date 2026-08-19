@@ -419,6 +419,52 @@ catch ME
     fprintf('[TEST] Case ''isamigratemodel'' FAILED: %s\n', ME.message);
 end
 
+% ---- Seed reproducibility (#41: opts.general.seed threading) ----------
+% PILOT/SIFTED previously always reseeded via rng('default'), ignoring
+% opts.general.seed entirely -- a user rerunning with a different seed for
+% a replication/variance study got identical PILOT/SIFTED results anyway.
+% Confirms a different seed changes PILOT's BFGS-multi-start result, and
+% that the same seed still reproduces bit-identical results.
+fprintf('\n[TEST] === Seed reproducibility: opts.general.seed threads through PILOT/SIFTED ===\n');
+results(end+1).name = 'seed_reproducibility';
+try
+    seedOptsA = baseOpts;
+    seedOptsA.general.seed = 1;
+    objSeedA = InstanceSpace(classCaseDir, seedOptsA).build('stages', {'prelim', 'sifted', 'pilot'});
+
+    seedOptsB = baseOpts;
+    seedOptsB.general.seed = 2;
+    objSeedB = InstanceSpace(classCaseDir, seedOptsB).build('stages', {'prelim', 'sifted', 'pilot'});
+
+    % PILOT's numerical (BFGS) path draws its multi-start X0 from
+    % rng(opts.seed,'twister'); different seeds must give different random
+    % starting points and therefore (with overwhelming probability, given
+    % the non-convex cost surface) a different converged A. This is the
+    % robust half of the check -- SIFTED's K-means+GA feature selection can
+    % legitimately converge to the same selvars across seeds on a small
+    % dataset even when its own seeding is correct, so that's logged for
+    % information rather than asserted.
+    assert(~isequal(objSeedA.model.pilot.A, objSeedB.model.pilot.A), ...
+        'Different opts.general.seed values produced identical PILOT.A -- the seed is not threading through PILOT''s BFGS multi-start.');
+    if isequal(objSeedA.model.sifted.selvars, objSeedB.model.sifted.selvars)
+        fprintf('[TEST] Note: SIFTED.selvars happened to match across seeds 1 and 2 (not itself a failure).\n');
+    end
+
+    % Same seed, rebuilt from scratch: must reproduce bit-identically.
+    objSeedA2 = InstanceSpace(classCaseDir, seedOptsA).build('stages', {'prelim', 'sifted', 'pilot'});
+    assert(isequal(objSeedA.model.pilot.A, objSeedA2.model.pilot.A) && ...
+           isequal(objSeedA.model.sifted.selvars, objSeedA2.model.sifted.selvars), ...
+        'Rebuilding with the same opts.general.seed changed PILOT.A/SIFTED.selvars -- reproducibility regressed.');
+
+    results(end).passed  = true;
+    results(end).message = 'OK';
+    fprintf('[TEST] Case ''seed_reproducibility'' PASSED.\n');
+catch ME
+    results(end).passed  = false;
+    results(end).message = ME.message;
+    fprintf('[TEST] Case ''seed_reproducibility'' FAILED: %s\n', ME.message);
+end
+
 nCases = numel(results);
 
 % ---- Summary ----------------------------------------------------------

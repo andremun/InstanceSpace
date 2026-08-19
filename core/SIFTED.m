@@ -142,7 +142,7 @@ end
 % -------------------------------------------------------------------------
 fprintf('[SIFTED] Selecting features based on correlation clustering.\n');
 state = rng;
-rng('default');
+rng(opts.seed, 'twister');
 out.eva = evalclusters(Xaux', 'kmeans', 'Silhouette', 'KList', 3:nfeats, ...
                               'Distance', 'correlation');
 fprintf('[SIFTED] Average silhouette values for each number of clusters.\n');
@@ -156,7 +156,7 @@ if out.eva.CriterionValues(out.eva.InspectedK==opts.K) < unnaceptableClustering
     end
 end
 % -------------------------------------------------------------------------
-rng('default');
+rng(opts.seed, 'twister');
 out.clust = bsxfun(@eq, kmeans(Xaux', opts.K, 'Distance', 'correlation', ...
                                               'MaxIter', opts.MaxIter, ...
                                               'Replicates', opts.Replicates, ...

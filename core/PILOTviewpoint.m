@@ -121,7 +121,7 @@ for g = 1:ngroups
         ntries = size(opts.X0,2);
     else
         state = rng;
-        rng('default');
+        rng(opts.seed, 'twister');
         X0 = 2*rand(2*n+2*n2, opts.ntries)-1;
         rng(state);
         ntries = opts.ntries;

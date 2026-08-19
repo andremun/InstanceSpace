@@ -558,7 +558,7 @@ classdef InstanceSpace
                 fprintf('[BUILD] Creating a small scale experiment for validation. Percentage of subset: %s%%\n', ...
                     num2str(round(100.*obj.opts.selvars.smallscale, 2)));
                 state = rng;
-                rng('default');
+                rng(obj.opts.general.seed, 'twister');
                 aux = cvpartition(ninst, 'HoldOut', obj.opts.selvars.smallscale);
                 rng(state);
                 subsetIndex = aux.test;

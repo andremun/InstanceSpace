@@ -203,7 +203,7 @@ else
                 fprintf('[PILOT] PILOT is using a random starting points for BFGS.\n');
             end
             state = rng;
-            rng('default');
+            rng(opts.seed, 'twister');
             X0 = 2*rand(d*m+d*n, opts.ntries)-1;
             rng(state);
         end

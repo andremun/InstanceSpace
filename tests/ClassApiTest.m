@@ -165,6 +165,20 @@ classdef ClassApiTest < matlab.unittest.TestCase
             testCase.verifyTrue(isfield(testCase.StageSnapshots{pilotIdx}, 'pilot'), ...
                 'the model snapshot passed at the ''pilot'' stage should already contain the pilot field.');
 
+            % onStage's other mode: combined with a 'stages' subset, it
+            % should fire only for the stages actually requested, not the
+            % full canonical list above -- this is the independent-stage
+            % flexibility 'stages' itself already provides, and needs its
+            % own coverage rather than assuming the full-build case above
+            % implies it.
+            testCase.StageLog = {};
+            testCase.StageSnapshots = {};
+            partialStages = {'prelim', 'sifted', 'pilot'};
+            objPartial = InstanceSpace(classCaseDir, baseOpts);
+            objPartial = objPartial.build('stages', partialStages, 'onStage', cb);
+            testCase.verifyEqual(testCase.StageLog, partialStages, ...
+                'onStage should fire only for the requested stages, in canonical order, not the full pipeline.');
+
             testCase.StageLog = {};
             testCase.StageSnapshots = {};
             obj = obj.explore(classCaseDir, 'onStage', cb);

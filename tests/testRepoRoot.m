@@ -1,7 +1,7 @@
 function root = testRepoRoot()
 % testRepoRoot  Absolute path (trailing slash) to the repository root, one
 % level up from tests/. Used instead of a relative './test/data/' literal
-% because MATLAB's current working directory during actual test.unittest
+% because MATLAB's current working directory during actual matlab.unittest
 % execution is not guaranteed to be the directory test_integration.m was
 % launched from -- observed directly in CI (#39): TestClassSetup methods
 % ran with cwd set to tests/ itself, turning './test/data/...' into

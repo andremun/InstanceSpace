@@ -547,11 +547,17 @@ valid = order ~= 0;
 % every cycle within a region is a real algorithmic addition, tracked
 % separately as #52 (out of v0.9.1 scope) rather than attempted here.
 if ~all(valid)
+    nOmitted = sum(~valid);
+    if nOmitted == 1
+        vertexWord = 'vertex';
+    else
+        vertexWord = 'vertices';
+    end
     warning('ISA:scriptfcn:boundaryHoleOmitted', ...
-        ['This region''s boundary has %d vertice(s) not reachable from its outer ring -- ' ...
+        ['This region''s boundary has %d %s not reachable from its outer ring -- ' ...
          'likely a hole (a second, disconnected boundary cycle). Only the outer ring is ' ...
          'included in the traced output; the hole is omitted, not just approximated.'], ...
-        sum(~valid));
+        nOmitted, vertexWord);
 end
 verts = bv(order(valid), :);
 end

@@ -137,6 +137,27 @@ classdef RegressionTest < matlab.unittest.TestCase
                 ['build(''stages'',{''sifted''}) with obj.model.featsel.idx removed should raise ' ...
                  'ISA:InstanceSpace:missingField, not an opaque crash inside SIFTED.']);
 
+            % PR #51 review (round 5): runSifted()'s density-resubsetting
+            % branch (obj.model.prelim.bydensity==true) unconditionally
+            % dereferences obj.model.data_dense.X/Y/Ybin, but those fields
+            % are only needed on that conditional path, so they don't
+            % belong in StageRequiredFields' unconditional 'sifted' list
+            % (that would wrongly demand them even for a model that never
+            % went through density-based subsetting) -- guarded locally
+            % inside runSifted instead.
+            densityOpts = baseOpts;
+            densityOpts.selvars.densityflag = true;
+            densityOpts.selvars.mindistance = 0.1;
+            densityOpts.selvars.type = 'Ftr&Good';
+            reqObj4 = InstanceSpace(classCaseDir, densityOpts).build('stages', {'prelim'});
+            testCase.assumeTrue(isfield(reqObj4.model.prelim, 'bydensity') && reqObj4.model.prelim.bydensity, ...
+                'This check needs a genuinely density-subsetted model to reproduce the gap.');
+            reqObj4.model = rmfield(reqObj4.model, 'data_dense');
+            testCase.verifyError(@() reqObj4.build('stages', {'sifted'}), 'ISA:InstanceSpace:missingField', ...
+                ['build(''stages'',{''sifted''}) on a density-subsetted model with ' ...
+                 'obj.model.data_dense removed should raise ISA:InstanceSpace:missingField, not an ' ...
+                 'opaque crash inside runSifted.']);
+
             % Success path must be unaffected by the added check.
             reqObj2 = InstanceSpace(classCaseDir, baseOpts).build('stages', {'prelim', 'sifted'});
             testCase.verifyEqual(reqObj2.completedStages, {'prelim', 'sifted'}, ...
@@ -158,6 +179,25 @@ classdef RegressionTest < matlab.unittest.TestCase
                 baseModel.opts.trace, mismatchedTrace), ...
                 'ISA:TRACE:goodBestCountMismatch', ...
                 'TRACE eval mode with mismatched trainedTrace.good/.best counts should raise ISA:TRACE:goodBestCountMismatch.');
+
+            % PR #51 review (round 5): ngood==nbest alone doesn't prove
+            % either still matches the true trained algorithm count -- if
+            % BOTH were shortened by the same amount, that check passes
+            % and the "lost" algorithms would be silently replaced with
+            % empty placeholders. trainedTrace.summary is an independent
+            % field (not derived from good/best's own sizes) that should
+            % still catch this.
+            equallyShortenedTrace = baseModel.trace;
+            equallyShortenedTrace.good = equallyShortenedTrace.good(1:end-1);
+            equallyShortenedTrace.best = equallyShortenedTrace.best(1:end-1);
+            testCase.verifyError(@() TRACE(baseModel.pilot.Z, baseModel.data.Ybin, baseModel.pythia.Yhat, ...
+                baseModel.data.P, baseModel.data.beta, baseModel.data.algolabels, ...
+                baseModel.opts.trace, equallyShortenedTrace), ...
+                'ISA:TRACE:goodBestCountMismatch', ...
+                ['TRACE eval mode with trainedTrace.good/.best shortened by the SAME amount (still ' ...
+                 'equal to each other, but no longer matching trainedTrace.summary''s implied count) ' ...
+                 'should still raise ISA:TRACE:goodBestCountMismatch, not silently produce empty ' ...
+                 'placeholders for the truncated algorithms.']);
         end
 
         function testPrelimTieBreakingConsistency(testCase)

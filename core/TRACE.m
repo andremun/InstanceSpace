@@ -118,13 +118,25 @@ if isEvalMode
     % migration bug, or corrupted data could desync them, silently
     % producing out.good{i} real while out.best{i} is a placeholder for
     % the same algorithm i, with no error. Assert before using either.
-    if ngood ~= nbest
+    %
+    % ngood==nbest alone only proves good/best agree with EACH OTHER, not
+    % that either still holds the true trained algorithm count: if both
+    % were shortened by the same amount (e.g. by the same buggy
+    % migration/edit), the check above would pass and the "lost"
+    % algorithms would be silently replaced with empty placeholders
+    % instead of erroring. trainedTrace.summary (cell(nalgos+1, 11),
+    % unconditionally built by both training-mode branches right after
+    % good/best) gives an independent cross-check that isn't derived from
+    % good/best's own sizes -- a corruption that shortens good/best has
+    % no particular reason to also shorten summary consistently.
+    trainedNalgos = size(trainedTrace.summary, 1) - 1;
+    if ngood ~= nbest || ngood ~= trainedNalgos
         error('ISA:TRACE:goodBestCountMismatch', ...
-            ['trainedTrace.good has %d algorithm(s) but trainedTrace.best has %d -- these ' ...
-             'must match (both are sized to the trained model''s algorithm count) for eval ' ...
-             'mode''s real-vs-placeholder indexing to be valid. This model is inconsistent ' ...
-             '(hand-edited model.mat, an incomplete migration, or corrupted data) and cannot ' ...
-             'be safely evaluated.'], ngood, nbest);
+            ['trainedTrace.good has %d algorithm(s), trainedTrace.best has %d, and ' ...
+             'trainedTrace.summary implies %d were originally trained -- all three must ' ...
+             'match for eval mode''s real-vs-placeholder indexing to be valid. This model is ' ...
+             'inconsistent (hand-edited model.mat, an incomplete migration, or corrupted ' ...
+             'data) and cannot be safely evaluated.'], ngood, nbest, trainedNalgos);
     end
     for i = 1:min(nalgos, ngood)
         out.good{i} = TRACErescore(trainedTrace.good{i}, Z, Ybin(:,i), is3D);

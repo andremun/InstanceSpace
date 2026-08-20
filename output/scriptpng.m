@@ -231,6 +231,12 @@ if isfield(container, 'cloist') && ~is3D
     clf;
     drawBoundary(container.pilot.Z, container.cloist.Zedge, 'CLOISTER empirical bound');
     exportgraphics(fig, [rootdir 'distribution_boundary.png']);
+elseif isfile([rootdir 'distribution_boundary.png'])
+    % A prior build in this same rootdir may have written this file (e.g.
+    % rebuilt as 3D, or with CLOISTER since skipped) -- remove it rather
+    % than leave a stale 2D boundary that looks like it belongs to the
+    % current result.
+    delete([rootdir 'distribution_boundary.png']);
 end
 % ---------------------------------------------------------------------
 % Drawing the sources of the instances if available

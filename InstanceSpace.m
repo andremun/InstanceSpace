@@ -297,6 +297,7 @@ classdef InstanceSpace
             %   'portfolio' drawPortfolioSelections(Z, P, algolabels, ...)
             %   'good'      drawBinaryPerformance(Z, Ybin(:,algoIdx), ...)
             %   'footprint' drawGoodBadFootprint(Z, good{algoIdx}, Ybin(:,algoIdx), ...)
+            %   'boundary'  drawBoundary(Z, cloist.Zedge, ...)     (needs model.cloist; 2D only, #32)
             % algoIdx (1-based, into model.data.algolabels) is required
             % for 'good'/'footprint'.
             narginchk(2, 3);
@@ -324,9 +325,23 @@ classdef InstanceSpace
                     algoIdx = InstanceSpace.requireAlgoIdx(varargin, obj.model.data.algolabels);
                     drawGoodBadFootprint(Z, obj.model.trace.good{algoIdx}, ...
                         obj.model.data.Ybin(:,algoIdx), strrep(obj.model.data.algolabels{algoIdx}, '_', ' '));
+                case 'boundary'
+                    if ~isfield(obj.model, 'cloist')
+                        error('ISA:InstanceSpace:noCloister', ...
+                            'model.cloist is not available -- call build(''stages'',{...,''cloister''}) first.');
+                    end
+                    if size(Z, 2) == 3
+                        % CLOISTER's Zedge/Zecorr use a 2D-only convex hull
+                        % (core/CLOISTER.m) even for a 3D projection, so an
+                        % accurate 3D boundary isn't available yet (#32).
+                        error('ISA:InstanceSpace:boundaryNot3D', ...
+                            ['The ''boundary'' view is 2D only: CLOISTER''s empirical bound is not ' ...
+                             'yet computed for 3D projections (opts.pilot.dims==3). See issue #32.']);
+                    end
+                    drawBoundary(Z, obj.model.cloist.Zedge, 'CLOISTER empirical bound');
                 otherwise
                     error('ISA:InstanceSpace:unknownView', ...
-                        'Unknown plot view ''%s''. Valid views: sources, portfolio, good, footprint.', viewName);
+                        'Unknown plot view ''%s''. Valid views: sources, portfolio, good, footprint, boundary.', viewName);
             end
         end
 

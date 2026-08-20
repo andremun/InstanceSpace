@@ -178,5 +178,69 @@ classdef RegressionTest < matlab.unittest.TestCase
                 ['Eval-mode PRELIM should break the same tie the same way training mode does when seeded ' ...
                  'identically -- #37''s drift meant these used to disagree.']);
         end
+
+        function testBoundaryDisplay2D(testCase)
+            % #32 (option (a), 2D only): CLOISTER's boundary was computed
+            % but never rendered in automated output or exposed via
+            % plot(). BaseModel is a 2D build (testDefaultOpts default),
+            % so both the scriptpng.m PNG and plot('boundary') should now
+            % work without error.
+            baseModel = testCase.BaseModel;
+            testCase.assumeTrue(isfield(baseModel, 'cloist'), ...
+                'This check needs a model with CLOISTER built.');
+            pngPath = [testCase.CaseDir 'distribution_boundary.png'];
+            testCase.verifyTrue(isfile(pngPath), ...
+                'scriptpng.m should have written distribution_boundary.png for a 2D build with CLOISTER run.');
+
+            obj = InstanceSpace(testCase.CaseDir, testCase.BaseOpts);
+            obj.model = baseModel;
+            fig = figure('Visible', 'off');
+            testCase.addTeardown(@() close(fig));
+            % No try/catch, no verifyWarningFree: an uncaught error here
+            % fails this test automatically, and headless CI can
+            % legitimately warn (e.g. graphics-acceleration-unavailable)
+            % without that being a real failure.
+            obj.plot('boundary');
+        end
+
+        function testBoundaryDisplayRejects3D(testCase)
+            % The 'boundary' view must refuse a 3D projection rather than
+            % draw an inaccurate boundary: CLOISTER's Zedge/Zecorr are
+            % computed via a 2D-only convex hull (core/CLOISTER.m) even
+            % when the projection itself is 3D (#32's own scope note).
+            % Synthesised directly (no full 3D build) since only
+            % obj.model.pilot.Z's column count and obj.model.cloist's
+            % presence are checked before this error is raised.
+            obj = InstanceSpace(testCase.CaseDir, testCase.BaseOpts);
+            obj.model.pilot.Z = zeros(5, 3);
+            obj.model.cloist = struct('Zedge', zeros(5, 2));
+            testCase.verifyError(@() obj.plot('boundary'), 'ISA:InstanceSpace:boundaryNot3D', ...
+                'plot(''boundary'') on a 3D model should raise ISA:InstanceSpace:boundaryNot3D, not draw an inaccurate boundary.');
+        end
+
+        function testTraceAlphaBoundaryMultiRegion(testCase)
+            % #31: traceAlphaBoundary previously built one adjacency graph
+            % from boundaryFacets(poly)'s combined (all-regions) edge list
+            % and stopped as soon as it ran out of same-loop neighbours,
+            % silently returning only the first region traced for a
+            % disconnected/multi-region alpha shape. Reproduced directly
+            % with two well-separated point clusters (#31's own
+            % acceptance criteria step 1: reproduce the multi-region
+            % case) and confirmed here that every region's vertices come
+            % back now, not just the first.
+            scriptfcn; % injects traceAlphaBoundary into this function's workspace
+            cluster1 = [0 0; 1 0; 0 1; 1 1];
+            cluster2 = [20 20; 21 20; 20 21; 21 21];
+            pts = [cluster1; cluster2];
+            as = alphaShape(pts, 2); % alpha << inter-cluster gap, keeps the two regions disconnected
+            testCase.assumeTrue(numRegions(as) >= 2, ...
+                'This check needs a genuinely multi-region alphaShape to reproduce #31.');
+
+            verts = traceAlphaBoundary(as); %#ok<NODEF> -- injected by scriptfcn above
+            testCase.verifyTrue(any(all(isnan(verts), 2)), ...
+                'traceAlphaBoundary should separate multiple regions with a NaN row, not silently drop all but one.');
+            testCase.verifyTrue(any(verts(:,1) < 5) && any(verts(:,1) > 15), ...
+                'traceAlphaBoundary should include vertices from BOTH well-separated clusters, not just the first region traced.');
+        end
     end
 end

@@ -221,6 +221,18 @@ clf;
 drawBinaryPerformance(container.pilot.Z, container.data.beta, '\beta score', globalView);
 exportgraphics(fig, [rootdir 'distribution_beta_score.png']);
 % ---------------------------------------------------------------------
+% Drawing CLOISTER's empirical space boundary, if computed (#32). Not
+% present in an explore()/evaluateTestSet result (CLOISTER is a
+% training-time-only artifact, never recomputed at explore time -- see
+% #38's audit). 2D only for now: CLOISTER's Zedge/Zecorr use a 2D-only
+% convex hull (core/CLOISTER.m) even for a 3D projection, so an accurate
+% 3D boundary isn't available yet.
+if isfield(container, 'cloist') && ~is3D
+    clf;
+    drawBoundary(container.pilot.Z, container.cloist.Zedge, 'CLOISTER empirical bound');
+    exportgraphics(fig, [rootdir 'distribution_boundary.png']);
+end
+% ---------------------------------------------------------------------
 % Drawing the sources of the instances if available
 if isfield(container.data,'S')
     clf;

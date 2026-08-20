@@ -173,11 +173,8 @@ title('Instance space, coloured by number of good algorithms per instance');
 % generated one) falls inside or outside the range the model was built
 % from.
 obj = obj.build('stages', {'cloister'});
-hold on;
-plot(obj.model.cloist.Zedge(:,1), obj.model.cloist.Zedge(:,2), ...
-    'r-', 'LineWidth', 1.5, 'DisplayName', 'CLOISTER empirical bound');
-legend('Location', 'best');
-hold off;
+figure;
+obj.plot('boundary');
 
 %% PYTHIA: building an oracle for algorithm selection
 % PYTHIA trains one binary classifier per algorithm (good/not-good

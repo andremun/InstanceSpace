@@ -6,12 +6,14 @@ function scriptfcn
 %
 %   Called at the top of scriptcsv.m/scriptpng.m/scriptweb.m so they can
 %   use writeArray2CSV, writeCell2CSV, makeBndLabels, colorscale,
-%   colorscaleg, and the draw*/getPolygonPoints functions defined below as
-%   if they were local functions, without duplicating them in each file.
-%   See the individual subfunctions below (axisLimits, applyView,
-%   resolveViewAngle, drawSources, drawScatter, drawPortfolioSelections,
+%   colorscaleg, and the draw*/getPolygonPoints/footprintBoundary/
+%   traceAlphaBoundary functions defined below as if they were local
+%   functions, without duplicating them in each file. See the individual
+%   subfunctions below (axisLimits, applyView, resolveViewAngle,
+%   drawSources, drawScatter, drawPortfolioSelections,
 %   drawPortfolioFootprint, drawGoodBadFootprint, drawFootprint,
-%   drawBinaryPerformance, getPolygonPoints) for what each does.
+%   drawBinaryPerformance, drawBoundary, getPolygonPoints,
+%   footprintBoundary, traceAlphaBoundary) for what each does.
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit
@@ -58,7 +60,10 @@ assignin('caller','drawPortfolioFootprint',@drawPortfolioFootprint);
 assignin('caller','drawGoodBadFootprint',@drawGoodBadFootprint);
 assignin('caller','drawFootprint',@drawFootprint);
 assignin('caller','drawBinaryPerformance',@drawBinaryPerformance);
+assignin('caller','drawBoundary',@drawBoundary);
 assignin('caller','getPolygonPoints',@getPolygonPoints);
+assignin('caller','footprintBoundary',@footprintBoundary);
+assignin('caller','traceAlphaBoundary',@traceAlphaBoundary);
 assignin('caller','resolveViewAngle',@resolveViewAngle);
 
 end
@@ -401,6 +406,29 @@ applyView(is3D, viewAngle);
 
 end
 % =========================================================================
+function handle = drawBoundary(Z, Zedge, titlelabel)
+% Draws CLOISTER's empirical space boundary (Zedge, a closed polygon --
+% see core/CLOISTER.m) as a red outline over a grey scatter of every
+% instance, so the boundary can be read against the point cloud it
+% bounds (spec deferred item, #32).
+%
+% 2D only: CLOISTER's Zedge/Zecorr are computed via a 2D-only convex hull
+% (core/CLOISTER.m's convhull(Z(:,1),Z(:,2))) even when the projection
+% itself is 3D, so an accurate 3D boundary isn't available yet -- callers
+% must not invoke this for a 3D projection (opts.pilot.dims==3); see #32.
+handle = scatter(Z(:,1), Z(:,2), dotArea(), [0.7 0.7 0.7], 'filled');
+hold on;
+idxClosed = [1:size(Zedge,1), 1]; % close the polygon back to its first vertex
+plot(Zedge(idxClosed,1), Zedge(idxClosed,2), 'r-', 'LineWidth', 1.5, ...
+    'DisplayName', 'CLOISTER empirical bound');
+hold off;
+labelAxes(false); title(titlelabel);
+legend('Location', 'NorthEastOutside');
+set(findall(gcf,'-property','FontSize'),'FontSize',12);
+set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
+axis square; axis(axisLimits(Z)); grid on;
+end
+% =========================================================================
 function pts = getPolygonPoints(polygon)
 % Extract vertex/point matrix from either a polyshape or alphaShape object.
 if isa(polygon, 'alphaShape')
@@ -409,4 +437,97 @@ else
     pts = polygon.Vertices;
     pts = pts(~any(isnan(pts),2),:); % polyshape uses NaN rows as region separators
 end
+end
+% =========================================================================
+function verts = footprintBoundary(fp)
+% Extract ordered 2-D boundary vertices from a footprint struct.
+% Handles both polyshape (legacy) and alphaShape (TRACE3) polygons.
+verts = [];
+if ~isfield(fp, 'polygon') || isempty(fp.polygon)
+    return;
+end
+poly = fp.polygon;
+if isa(poly, 'alphaShape')
+    if size(poly.Points, 2) == 3
+        % 3D boundary CSV export not supported; skip silently.
+        % Full 3D boundary extraction is deferred to a later phase.
+        return;
+    end
+    verts = traceAlphaBoundary(poly);
+elseif isa(poly, 'polyshape')
+    verts = poly.Vertices;
+end
+end
+% =========================================================================
+function verts = traceAlphaBoundary(poly)
+% Trace ordered closed-polygon vertices from a 2-D alphaShape, covering
+% EVERY disconnected region (#31) instead of silently returning only the
+% first one traced -- the previous version built one adjacency graph from
+% boundaryFacets(poly)'s combined edge list (every region's edges
+% flattened together) and stopped as soon as it ran out of same-loop
+% neighbours, silently dropping every other region. Regions are traced
+% independently via boundaryFacets(poly, regionID) instead.
+%
+% Multiple regions are separated by a row of NaNs in the returned matrix
+% -- the same multi-part-polyline convention polyshape.Vertices already
+% uses (see getPolygonPoints above): plot()/line() naturally break the
+% line at a NaN row, and a consumer that doesn't expect multiple regions
+% can split on isnan(verts(:,1)). A single-region shape (the common case)
+% is returned identically to before: no separator rows at all.
+verts = [];
+for r = 1:numRegions(poly)
+    [bf, bv] = boundaryFacets(poly, r);
+    if isempty(bf)
+        continue;
+    end
+    regionVerts = traceOneRegion(bf, bv);
+    if isempty(regionVerts)
+        continue;
+    end
+    if ~isempty(verts)
+        verts = [verts; NaN(1, size(regionVerts,2))]; %#ok<AGROW>
+    end
+    verts = [verts; regionVerts]; %#ok<AGROW>
+end
+end
+% =========================================================================
+function verts = traceOneRegion(bf, bv)
+% Trace an ordered closed polygon from a single region's boundary-facets
+% edge list. bf: (m x 2) edge index pairs into bv's rows (bv may be the
+% full alphaShape's point list rather than one scoped to this region
+% alone; only the vertices bf actually references matter here). Works
+% correctly for a simple, single connected boundary -- traceAlphaBoundary
+% calls this once per region rather than once for a whole (possibly
+% multi-region) shape, which is what makes that assumption safe again.
+regionVertIdx = unique(bf(:));
+nRegionVerts = numel(regionVertIdx);
+if nRegionVerts == 0, verts = []; return; end
+% Build adjacency: each vertex has exactly 2 neighbours on this region's
+% boundary. Sized to the largest referenced index (not size(bv,1)) since
+% bf's indices may only be a subset of bv's full row range.
+maxIdx = max(regionVertIdx);
+adj = zeros(maxIdx, 2);
+cnt = zeros(maxIdx, 1);
+for k = 1:size(bf, 1)
+    v1 = bf(k,1); v2 = bf(k,2);
+    cnt(v1) = cnt(v1)+1;
+    if cnt(v1) <= 2, adj(v1, cnt(v1)) = v2; end
+    cnt(v2) = cnt(v2)+1;
+    if cnt(v2) <= 2, adj(v2, cnt(v2)) = v1; end
+end
+% Trace starting from a vertex actually in THIS region (bf(1,1)), not a
+% hardcoded global index 1 -- vertex 1 of the whole shape may belong to a
+% different region entirely once bf is scoped to region r.
+order = zeros(nRegionVerts, 1);
+order(1) = bf(1,1);
+prev = 0; curr = order(1);
+for k = 2:nRegionVerts
+    nxt = adj(curr, adj(curr,:) ~= prev & adj(curr,:) ~= 0);
+    if isempty(nxt), break; end
+    order(k) = nxt(1);
+    prev = curr;
+    curr = order(k);
+end
+valid = order ~= 0;
+verts = bv(order(valid), :);
 end

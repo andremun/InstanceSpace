@@ -9,5 +9,5 @@ authors:
     given-names: "Mario Andrés"
   - family-names: "Smith-Miles"
     given-names: "Kate"
-license: LicenseRef-PolyForm-Noncommercial-1.0.0
+license-url: "https://polyformproject.org/licenses/noncommercial/1.0.0/"
 repository-code: "https://github.com/andremun/InstanceSpace"

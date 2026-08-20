@@ -50,6 +50,19 @@ import matlab.unittest.TestRunner
 import matlab.unittest.plugins.CodeCoveragePlugin
 import matlab.unittest.plugins.codecoverage.CoberturaFormat
 
+% buildIS.m/exploreIS.m/InstanceSpace.m live at the repo root and, unlike
+% core/output/utils (self-added to the path the first time InstanceSpace
+% is touched -- see InstanceSpace.ensurePathSetup), are never formally on
+% the MATLAB search path: they only resolve today via MATLAB's implicit
+% current-folder lookup, which is exactly what breaks once
+% matlab.unittest shifts the working directory away from the repo root
+% during test execution (observed directly in CI -- see tests/testRepoRoot.m
+% for the matching fix on the read/write-path side of this same issue).
+% This addpath is what actually makes buildIS/InstanceSpace resolvable
+% from inside tests/*.m regardless of that shift.
+repoRoot = pwd;
+addpath(repoRoot);
+
 if ~isfolder('./test/data/')
     mkdir('./test/data/');
 end

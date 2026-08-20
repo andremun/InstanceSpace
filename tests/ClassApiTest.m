@@ -152,11 +152,16 @@ classdef ClassApiTest < matlab.unittest.TestCase
             testCase.StageSnapshots = {};
             cb = @(stageName, snapshot) testCase.logStage(stageName, snapshot);
 
+            % InstanceSpace.StageOrder is private -- not accessible from
+            % here -- so the canonical order is hardcoded, same as the
+            % explore() case below.
+            buildOrder = {'prelim', 'sifted', 'pilot', 'cloister', 'pythia', 'trace'};
+
             obj = InstanceSpace(classCaseDir, baseOpts);
             obj = obj.build('onStage', cb);
-            testCase.verifyEqual(testCase.StageLog, InstanceSpace.StageOrder, ...
+            testCase.verifyEqual(testCase.StageLog, buildOrder, ...
                 'build()''s onStage callback should fire once per stage, in canonical order.');
-            pilotIdx = find(strcmp(InstanceSpace.StageOrder, 'pilot'));
+            pilotIdx = find(strcmp(buildOrder, 'pilot'));
             testCase.verifyTrue(isfield(testCase.StageSnapshots{pilotIdx}, 'pilot'), ...
                 'the model snapshot passed at the ''pilot'' stage should already contain the pilot field.');
 

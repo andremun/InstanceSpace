@@ -34,6 +34,20 @@ classdef ClassApiTest < matlab.unittest.TestCase
     properties
         CaseDir
         BaseOpts
+        StageLog
+        StageSnapshots
+    end
+
+    methods
+        function logStage(testCase, stageName, snapshot)
+            % Accumulator for the 'onStage' callback tests below (#26/#27):
+            % testCase is a handle object (matlab.unittest.TestCase
+            % extends handle), so an anonymous function closing over it
+            % can mutate these properties even though MATLAB anonymous
+            % functions can't contain assignment statements themselves.
+            testCase.StageLog{end+1} = stageName;
+            testCase.StageSnapshots{end+1} = snapshot;
+        end
     end
 
     methods (TestClassSetup)
@@ -123,6 +137,39 @@ classdef ClassApiTest < matlab.unittest.TestCase
                 'explore() did not record testResults/testDirs correctly.');
             testCase.verifyTrue(isfield(loaded.getResults(1), 'trace'), ...
                 'getResults(1) is missing the trace field.');
+        end
+
+        function testOnStageCallback(testCase)
+            % #26/#27: build()/explore() both accept an 'onStage' callback,
+            % invoked once per completed stage with that stage's name and
+            % the in-progress model/result, and both leave behaviour
+            % unchanged when the callback is omitted (already exercised by
+            % every other test in this file, none of which pass it).
+            classCaseDir = testCase.CaseDir;
+            baseOpts = testCase.BaseOpts;
+
+            testCase.StageLog = {};
+            testCase.StageSnapshots = {};
+            cb = @(stageName, snapshot) testCase.logStage(stageName, snapshot);
+
+            obj = InstanceSpace(classCaseDir, baseOpts);
+            obj = obj.build('onStage', cb);
+            testCase.verifyEqual(testCase.StageLog, InstanceSpace.StageOrder, ...
+                'build()''s onStage callback should fire once per stage, in canonical order.');
+            pilotIdx = find(strcmp(InstanceSpace.StageOrder, 'pilot'));
+            testCase.verifyTrue(isfield(testCase.StageSnapshots{pilotIdx}, 'pilot'), ...
+                'the model snapshot passed at the ''pilot'' stage should already contain the pilot field.');
+
+            testCase.StageLog = {};
+            testCase.StageSnapshots = {};
+            obj = obj.explore(classCaseDir, 'onStage', cb);
+            testCase.verifyEqual(testCase.StageLog, {'prelim','sifted','pilot','pythia','trace'}, ...
+                ['explore()''s onStage callback should fire once per conceptual stage, in order, ' ...
+                 'excluding cloister (never recomputed at explore time).']);
+            explorePilotIdx = find(strcmp(testCase.StageLog, 'pilot'));
+            testCase.verifyTrue(isfield(testCase.StageSnapshots{explorePilotIdx}, 'pilot') && ...
+                isfield(testCase.StageSnapshots{explorePilotIdx}.pilot, 'Z'), ...
+                'the result snapshot passed at explore()''s ''pilot'' stage should already contain pilot.Z.');
         end
     end
 end

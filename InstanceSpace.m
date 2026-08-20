@@ -27,6 +27,13 @@ classdef InstanceSpace
 %     obj.opts.pythia.tuning = 'bayes';
 %     obj = obj.build('stages', {'cloister','pythia','trace'});
 %
+%   Callback-based inspection, as an alternative to staged calls (#26/#27):
+%     inspect = @(stageName, model) fprintf('%s done\n', stageName);
+%     obj = obj.build('onStage', inspect);
+%     obj = obj.explore(testRootDir, 'onStage', inspect);
+%   The callback fires once per completed stage with that stage's name and
+%   the model/result at that point; omitting it changes nothing.
+%
 %   Persistence:
 %     obj.save();                    % writes rootdir/model.mat (-v7.3)
 %     obj = InstanceSpace.load(rootdir);   % reads it back
@@ -154,11 +161,20 @@ classdef InstanceSpace
             % obj = obj.build('stages', {'pilot', ...}) runs only the
             % named stages (in canonical order), erroring if a requested
             % stage's prerequisite hasn't already completed.
+            % obj = obj.build('onStage', @(stageName, model) ...) invokes
+            % the callback once after each stage completes, with that
+            % stage's name and obj.model at that point (#26) -- useful for
+            % inspecting intermediate results (e.g. PILOT's projection)
+            % without manually breaking a run into several staged calls.
+            % Omitting it changes nothing.
             p = inputParser;
             addParameter(p, 'stages', InstanceSpace.StageOrder, ...
                 @(x) iscell(x) && all(ismember(x, InstanceSpace.StageOrder)));
+            addParameter(p, 'onStage', [], ...
+                @(x) isempty(x) || isa(x, 'function_handle'));
             parse(p, varargin{:});
             toRun = InstanceSpace.StageOrder(ismember(InstanceSpace.StageOrder, p.Results.stages));
+            onStage = p.Results.onStage;
 
             startProcess = tic;
             fprintf('[BUILD] Root directory: %s\n', obj.rootdir);
@@ -195,6 +211,9 @@ classdef InstanceSpace
                 % re-running are unaffected -- they just get re-added a
                 % few iterations later, same as any other stage.
                 obj = obj.invalidateDownstream(stage);
+                if ~isempty(onStage)
+                    onStage(stage, obj.model);
+                end
             end
 
             if poolOpenedHere
@@ -225,12 +244,23 @@ classdef InstanceSpace
             fprintf('[BUILD] Completed in %.1f s.\n', toc(startProcess));
         end
 
-        function obj = explore(obj, testRootDir)
+        function obj = explore(obj, testRootDir, varargin)
             % Evaluates the trained model (obj.model) on new instances
             % from testRootDir/metadata_test.csv, using the opts frozen
             % at training time (obj.model.opts), not any opts changed on
             % obj since. Appends to obj.testDirs/obj.testResults.
-            narginchk(2, 2);
+            %
+            % obj.explore(testRootDir, 'onStage', @(stageName, out) ...)
+            % invokes the callback once after each conceptual stage
+            % (prelim, sifted, pilot, pythia, trace -- no cloister, which
+            % is never recomputed at explore time) completes, with that
+            % stage's name and the in-progress result struct (#27).
+            % Omitting it changes nothing.
+            p = inputParser;
+            addParameter(p, 'onStage', [], ...
+                @(x) isempty(x) || isa(x, 'function_handle'));
+            parse(p, varargin{:});
+            onStage = p.Results.onStage;
             if ~(endsWith(testRootDir, '/') || endsWith(testRootDir, '\'))
                 testRootDir = [testRootDir '/'];
             end
@@ -254,7 +284,7 @@ classdef InstanceSpace
             startProcess = tic;
             fprintf('[EXPLORE] Root directory: %s\n', testRootDir);
             trainedModel = obj.model;
-            out = InstanceSpace.evaluateTestSet(trainedModel, testRootDir);
+            out = InstanceSpace.evaluateTestSet(trainedModel, testRootDir, onStage);
 
             if trainedModel.opts.outputs.csv
                 scriptcsv(out, testRootDir);
@@ -759,9 +789,14 @@ classdef InstanceSpace
             end
         end
 
-        function out = evaluateTestSet(model, rootdir)
+        function out = evaluateTestSet(model, rootdir, onStage)
             % Ported from exploreIS.m, operating on an in-memory trained
             % model (no model.mat re-read: the caller already has it).
+            % onStage, if non-empty, is invoked as onStage(stageName, out)
+            % after each conceptual stage below completes (#27).
+            if nargin < 3
+                onStage = [];
+            end
             [data, extra] = INIT(rootdir, model.opts, model);
             out = struct();
             out.data = data;
@@ -810,18 +845,33 @@ classdef InstanceSpace
                 [~, out.data.Y(:,extra.modelalgos+1:extra.nalgos)] = InstanceSpace.autoNormalize( ...
                     ones(extra.ninst,1), out.data.Y(:,extra.modelalgos+1:extra.nalgos));
             end
+            if ~isempty(onStage)
+                onStage('prelim', out);
+            end
 
             out.featsel.idx = model.featsel.idx;
             out.data.X = out.data.X(:,out.featsel.idx);
             out.data.featlabels = strrep(extra.featlabelsAll, 'feature_', '');
             out.data.featlabels = out.data.featlabels(model.featsel.idx);
+            if ~isempty(onStage)
+                onStage('sifted', out);
+            end
 
             out.pilot.Z = out.data.X*model.pilot.A';
+            if ~isempty(onStage)
+                onStage('pilot', out);
+            end
 
             out.pythia = PYTHIA(out.pilot.Z, out.data.Yraw, out.data.Ybin, out.data.Ybest, ...
                                 out.data.algolabels, model.opts.pythia, model.pythia);
+            if ~isempty(onStage)
+                onStage('pythia', out);
+            end
             out.trace = TRACE(out.pilot.Z, out.data.Ybin, out.pythia.Yhat, out.data.P, ...
                               out.data.beta, out.data.algolabels, model.opts.trace, model.trace);
+            if ~isempty(onStage)
+                onStage('trace', out);
+            end
 
             out.opts = model.opts;
         end

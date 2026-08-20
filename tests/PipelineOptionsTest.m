@@ -13,8 +13,9 @@ classdef PipelineOptionsTest < matlab.unittest.TestCase
 % It is a generated artifact: TestClassSetup writes a fresh options.json
 % into each case's subdirectory from the opts struct built in MATLAB
 % below. Hand-editing an options.json file has no lasting effect -- the
-% next run overwrites it. To change what gets tested, edit baseOpts()
-% (this file) or the relevant OptionCase entry.
+% next run overwrites it. To change what gets tested, edit
+% testDefaultOpts() (tests/testDefaultOpts.m) or the relevant OptionCase
+% entry.
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit
@@ -48,7 +49,7 @@ classdef PipelineOptionsTest < matlab.unittest.TestCase
         % matching the pre-#39 convention so test/data/<case_name>/ output
         % paths are unchanged). Value is a struct with .desc (what the
         % case exercises) and .override (function handle applied to
-        % baseOpts()).
+        % testDefaultOpts()).
         OptionCase = pipelineOptionCases();
     end
 
@@ -236,7 +237,7 @@ opts.general.ncores = 2; % small pool, just enough to exercise the parallel path
 end
 
 function opts = setPilotISA3DLegacy(opts)
-% Removes the dims field (set unconditionally in baseOpts) so
+% Removes the dims field (set unconditionally in testDefaultOpts) so
 % ISAdefaults' legacy-alias migration -- which only fires when dims is
 % absent -- actually gets exercised by this case.
 opts.pilot = rmfield(opts.pilot, 'dims');

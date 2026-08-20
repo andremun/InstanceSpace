@@ -275,8 +275,10 @@ unless building for that platform).
 CLOISTER's empirical bound (`model.cloist.Zedge`/`Zecorr`) is rendered too
 (v0.9.1+), but **2D projections only**: `scriptpng.m` writes
 `distribution_boundary.png`, and `obj.plot('boundary')` works like the
-other views. Both explicitly raise `ISA:InstanceSpace:boundaryNot3D`
-rather than render a 3D boundary -- CLOISTER's own hull computation is
+other views. Neither renders a 3D boundary -- but they differ in how:
+`scriptpng.m` silently skips writing the file for a 3D projection (no
+error, no warning), while `obj.plot('boundary')` explicitly raises
+`ISA:InstanceSpace:boundaryNot3D`. CLOISTER's own hull computation is
 still 2D-only regardless of `opts.pilot.dims` (uses `convhull(Z(:,1),
 Z(:,2))` even at `dims=3`), tracked as a separate open issue (#50) rather
 than fixed silently.

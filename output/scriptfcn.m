@@ -529,5 +529,20 @@ for k = 2:nRegionVerts
     curr = order(k);
 end
 valid = order ~= 0;
+% A region with a hole (e.g. an annulus) has TWO disconnected boundary
+% cycles -- outer ring and hole -- even though numRegions/boundaryFacets
+% still treat it as one region. This tracer only follows the single cycle
+% starting at bf(1,1); it breaks out above once that cycle closes, never
+% reaching the other cycle's vertices, since they're graph-disconnected
+% from it. Warn rather than silently drop the untraced cycle -- tracing
+% every cycle within a region is a real algorithmic addition, tracked
+% separately as #52 (out of v0.9.1 scope) rather than attempted here.
+if ~all(valid)
+    warning('ISA:scriptfcn:boundaryHoleOmitted', ...
+        ['This region''s boundary has %d vertice(s) not reachable from its outer ring -- ' ...
+         'likely a hole (a second, disconnected boundary cycle). Only the outer ring is ' ...
+         'included in the traced output; the hole is omitted, not just approximated.'], ...
+        sum(~valid));
+end
 verts = bv(order(valid), :);
 end

@@ -108,7 +108,7 @@ classdef InstanceSpace
         % don't belong in a static required-fields list.
         StageRequiredFields = struct( ...
             'prelim',   {{}}, ...
-            'sifted',   {{'data.X', 'data.Y', 'data.Ybin', 'data.featlabels'}}, ...
+            'sifted',   {{'data.X', 'data.Y', 'data.Ybin', 'data.featlabels', 'featsel.idx'}}, ...
             'pilot',    {{'data.X', 'data.Y', 'data.featlabels'}}, ...
             'cloister', {{'data.X', 'pilot.A'}}, ...
             'pythia',   {{'pilot.Z', 'data.Yraw', 'data.Ybin', 'data.Ybest', 'data.algolabels'}}, ...
@@ -556,6 +556,23 @@ classdef InstanceSpace
                 data.Y         = data.Y(:,~idx);
                 data.Ybin      = data.Ybin(:,~idx);
                 data.algolabels = data.algolabels(~idx);
+                % prelimOut.lambdaY/muY/sigmaY are per-algorithm (1 x
+                % original-nalgos), fit before this pruning -- explore()
+                % later indexes them positionally against model.data.
+                % algolabels (the pruned list) via
+                % modelalgos=numel(trainedPrelim.lambdaY), so leaving them
+                % unpruned both over-counts modelalgos (indexing Y past
+                % its actual reconciled width, or misapplying a pruned
+                % algorithm's transform to an unrelated new algorithm's
+                % column) and, whenever a pruned algorithm wasn't last,
+                % misaligns every surviving lambda/mu/sigma after it.
+                % Pruning with the same mask keeps both counts and
+                % positions consistent with data.algolabels. minY is a
+                % single scalar (global min across all algorithms), not
+                % per-algorithm, so it needs no equivalent pruning.
+                prelimOut.lambdaY = prelimOut.lambdaY(~idx);
+                prelimOut.muY     = prelimOut.muY(~idx);
+                prelimOut.sigmaY  = prelimOut.sigmaY(~idx);
                 if size(data.Y, 2) == 0
                     error('-> There are no ''good'' algorithms. Please verify the binary performance measure. STOPPING!')
                 end
@@ -828,7 +845,18 @@ classdef InstanceSpace
             % re-fits) model.prelim's bounds/Box-Cox/Z-score parameters to
             % X and to the first extra.modelalgos columns of Y (#37/#38:
             % this used to be a second, independently-drifted
-            % reimplementation here).
+            % reimplementation here). Sharing that code means explore()
+            % now also shares its randi() tie-break, so it needs the same
+            % kind of seeding build() already does before calling PRELIM
+            % -- otherwise two explore() calls on the identical model and
+            % test data could pick different tied algorithms depending on
+            % unrelated prior RNG use, purely because nothing here seeded
+            % it. Uses the frozen model's own seed, restoring the
+            % caller's RNG state once PRELIM returns (PYTHIA/SIFTED's
+            % established onCleanup pattern).
+            prevRNG = rng;
+            rngGuard = onCleanup(@() rng(prevRNG)); %#ok<NASGU>
+            rng(model.opts.general.seed, 'twister');
             [out.data.X, out.data.Y, prelimOut] = PRELIM(out.data.X, out.data.Y, prelimOpts, model.prelim);
             out.data.Ybest        = prelimOut.Ybest;
             out.data.Ybin         = prelimOut.Ybin;

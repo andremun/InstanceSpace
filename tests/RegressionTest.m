@@ -125,6 +125,18 @@ classdef RegressionTest < matlab.unittest.TestCase
                 ['build(''stages'',{''sifted''}) with obj.model.data.Ybin removed should raise ' ...
                  'ISA:InstanceSpace:missingField, not an opaque crash inside SIFTED.']);
 
+            % PR #51 review: runSifted() unconditionally read-then-writes
+            % obj.model.featsel.idx (obj.model.featsel.idx =
+            % obj.model.featsel.idx(obj.model.sifted.selvars)), a genuine
+            % prerequisite the 'sifted' contract had omitted -- a model
+            % missing it crashed opaquely inside runSifted instead of via
+            % the intended clear error.
+            reqObj3 = InstanceSpace(classCaseDir, baseOpts).build('stages', {'prelim'});
+            reqObj3.model = rmfield(reqObj3.model, 'featsel');
+            testCase.verifyError(@() reqObj3.build('stages', {'sifted'}), 'ISA:InstanceSpace:missingField', ...
+                ['build(''stages'',{''sifted''}) with obj.model.featsel.idx removed should raise ' ...
+                 'ISA:InstanceSpace:missingField, not an opaque crash inside SIFTED.']);
+
             % Success path must be unaffected by the added check.
             reqObj2 = InstanceSpace(classCaseDir, baseOpts).build('stages', {'prelim', 'sifted'});
             testCase.verifyEqual(reqObj2.completedStages, {'prelim', 'sifted'}, ...
@@ -241,6 +253,50 @@ classdef RegressionTest < matlab.unittest.TestCase
                 'traceAlphaBoundary should separate multiple regions with a NaN row, not silently drop all but one.');
             testCase.verifyTrue(any(verts(:,1) < 5) && any(verts(:,1) > 15), ...
                 'traceAlphaBoundary should include vertices from BOTH well-separated clusters, not just the first region traced.');
+        end
+
+        function testPrelimEvalModeAlgoAlignmentAfterPruning(testCase)
+            % PR #51 review: InstanceSpace.runPrelim removes any algorithm
+            % with no good instances from data.Yraw/Y/Ybin/algolabels, but
+            % left trainedPrelim.lambdaY/muY/sigmaY (per-algorithm,
+            % fit before that pruning) untouched. PRELIM's eval mode
+            % derives modelalgos from numel(trainedPrelim.lambdaY), so an
+            % unpruned lambdaY both over-counts modelalgos against the
+            % actually-reconciled eval-time Y (indexing past it, or
+            % misapplying a pruned algorithm's transform to an unrelated
+            % new algorithm's column) and, if the pruned algorithm wasn't
+            % last, misaligns every surviving lambda/mu/sigma positioned
+            % after it. Reproduced directly against PRELIM rather than
+            % the full pipeline: forcing InstanceSpace.build() to prune a
+            % real algorithm needs data engineered so one is never
+            % "good," which is fragile against the bundled reference
+            % dataset; simulating the post-prune trainedPrelim state
+            % directly is equivalent and deterministic. Middle algorithm
+            % (not the last) pruned deliberately, since that's what
+            % exposes the positional-misalignment half of the bug, not
+            % just the over-counting half.
+            opts = struct('MaxPerf', false, 'AbsPerf', true, 'epsilon', 10, ...
+                'betaThreshold', 0.55, 'auto', true, 'bound', true, ...
+                'norm', true, 'iqrMultiplier', 5);
+            rng(1, 'twister');
+            Xtrain = rand(40, 3) + 1;
+            Ytrain = rand(40, 3) + 1;
+            [~, ~, trainedPrelim] = PRELIM(Xtrain, Ytrain, opts);
+
+            keep = [true false true]; % algorithm 2 of 3 "pruned"
+            trainedPrelim.lambdaY = trainedPrelim.lambdaY(keep);
+            trainedPrelim.muY     = trainedPrelim.muY(keep);
+            trainedPrelim.sigmaY  = trainedPrelim.sigmaY(keep);
+
+            Xtest = rand(10, 3) + 1;
+            Ytest = rand(10, 3) + 1;
+            Ytest = Ytest(:, keep); % as INIT.m/evaluateTestSet would reconcile it
+
+            [~, YOut, ~] = PRELIM(Xtest, Ytest, opts, trainedPrelim);
+            testCase.verifyEqual(size(YOut, 2), 2, ...
+                'PRELIM eval mode should not resize/error on Y when trainedPrelim''s per-algorithm fields are pruned to match the reconciled algorithm count.');
+            testCase.verifyTrue(all(isfinite(YOut(:))), ...
+                'PRELIM eval-mode normalisation produced non-finite values after algorithm pruning -- likely misapplied a wrong algorithm''s Box-Cox/Z-score transform.');
         end
     end
 end

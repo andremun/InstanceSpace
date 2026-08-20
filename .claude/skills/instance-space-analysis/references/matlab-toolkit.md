@@ -2,8 +2,10 @@
 
 Verified directly against this repository (`andremun/InstanceSpace`,
 v0.9.1). Requires **MATLAB R2025a or later**, with the Global
-Optimization, Parallel Computing, Optimization, and Statistics and
-Machine Learning toolboxes. Re-verify against the live repo if a detail
+Optimization, Parallel Computing, Optimization, Statistics and Machine
+Learning, and Financial toolboxes (the last needed specifically for
+`boxcox()`, used by `PRELIM.m`'s auto-normalisation step -- confirmed via
+CI, #34). Re-verify against the live repo if a detail
 below matters for a specific decision -- option names and defaults have
 already changed across recent versions (see `RELEASE_NOTES.md` at the
 repo root for the version-to-version breaking changes).
@@ -151,9 +153,10 @@ highlights most likely to surprise someone reading only the JSON:
   `cthres` (still accepted as a legacy alias); `maxFeatures` (default 20)
   is the enumeration guard (see SKILL.md's CLOISTER section). CLOISTER's
   correlation-contradiction filter assumes mean-centred feature data; if
-  `prelim.norm=false`, a warning (`ISA:InstanceSpace:cloisterNotMeanCentred`,
-  v0.9.1+) is raised, since a naturally all-positive feature would
-  otherwise silently make the sign-based check degenerate for it.
+  `auto.preproc`/`norm.flag` aren't both true, a warning
+  (`ISA:InstanceSpace:cloisterNotMeanCentred`, v0.9.1+) is raised, since a
+  naturally all-positive feature would otherwise silently make the
+  sign-based check degenerate for it.
 - `pythia.classifier` is a registry name (`'knn'` default, `'svm'`,
   `'tree'`, `'nb'`, `'linear'`, `'ensemble'`; resolved via
   `ISAgetClassifierFcn`), not always SVM as in the original papers.

@@ -363,10 +363,10 @@ classdef InstanceSpace
                     if size(Z, 2) == 3
                         % CLOISTER's Zedge/Zecorr use a 2D-only convex hull
                         % (core/CLOISTER.m) even for a 3D projection, so an
-                        % accurate 3D boundary isn't available yet (#32).
+                        % accurate 3D boundary isn't available yet (#50).
                         error('ISA:InstanceSpace:boundaryNot3D', ...
                             ['The ''boundary'' view is 2D only: CLOISTER''s empirical bound is not ' ...
-                             'yet computed for 3D projections (opts.pilot.dims==3). See issue #32.']);
+                             'yet computed for 3D projections (opts.pilot.dims==3). See issue #50.']);
                     end
                     drawBoundary(Z, obj.model.cloist.Zedge, 'CLOISTER empirical bound');
                 otherwise

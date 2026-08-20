@@ -68,15 +68,21 @@ import matlab.unittest.plugins.codecoverage.CoberturaFormat
 repoRoot = fileparts(mfilename('fullpath'));
 addpath(repoRoot);
 
-if ~isfolder('./test/data/')
-    mkdir('./test/data/');
+testDataDir = fullfile(repoRoot, 'test', 'data');
+if ~isfolder(testDataDir)
+    mkdir(testDataDir);
 end
 
-suite = TestSuite.fromFolder('tests', 'IncludingSubfolders', true);
+% All built from repoRoot, not pwd, for the same reason as the addpath
+% above: fromFolder/forFolder resolve their folder names relative to the
+% current directory, so a caller launching this script from elsewhere
+% would otherwise search (or fail to find) the wrong tests/core/output/
+% utils folders instead of this repository's.
+suite = TestSuite.fromFolder(fullfile(repoRoot, 'tests'), 'IncludingSubfolders', true);
 runner = TestRunner.withTextOutput();
 
-coverageReportFile = 'coverage.xml';
-sourceFolders = {'.', 'core', 'output', 'utils'};
+coverageReportFile = fullfile(repoRoot, 'coverage.xml');
+sourceFolders = {repoRoot, fullfile(repoRoot, 'core'), fullfile(repoRoot, 'output'), fullfile(repoRoot, 'utils')};
 runner.addPlugin(CodeCoveragePlugin.forFolder(sourceFolders, ...
     'IncludingSubfolders', false, 'Producing', CoberturaFormat(coverageReportFile)));
 

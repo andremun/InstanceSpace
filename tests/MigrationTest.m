@@ -143,7 +143,12 @@ classdef MigrationTest < matlab.unittest.TestCase
             % dispatch to a legacy (un-retrained) LIBSVM-format classifier
             % struct. Assumes no LIBSVM MEX-files are on this MATLAB path,
             % which holds for this repository post-#29 unless one is
-            % installed separately.
+            % installed separately -- guarded with assumeTrue rather than
+            % asserted, so a contributor who genuinely has svmpredict on
+            % their path gets a skipped (inapplicable) test instead of a
+            % spurious failure.
+            testCase.assumeTrue(exist('svmpredict', 'file') == 0, ...
+                'svmpredict is on the MATLAB path (LIBSVM installed) -- this negative-path regression does not apply.');
             baseModel = testCase.BaseModel;
             pythiaLegacy = struct();
             pythiaLegacy.svm = repmat({struct('nr_class', 2)}, 1, numel(baseModel.data.algolabels));

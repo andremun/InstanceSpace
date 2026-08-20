@@ -71,6 +71,11 @@ function out = PILOT(X, Y, featlabels, opts)
 % -------------------------------------------------------------------------
 
 if ~isfield(opts, 'verbose'), opts.verbose = true; end
+% ISAdefaults sets this to opts.general.seed for a call routed through
+% InstanceSpace; a standalone PILOT(...) call (CLAUDE.md: every core
+% pipeline function must remain independently callable) needs its own
+% fallback, same as PYTHIA's opts.seed default.
+if ~isfield(opts, 'seed'), opts.seed = 42; end
 % Legacy: opts.ISA3D (boolean) -> opts.dims (2|3, spec Appendix A).
 if isfield(opts, 'ISA3D') && ~isfield(opts, 'dims')
     opts.dims = 2 + double(logical(opts.ISA3D));

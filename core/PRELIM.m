@@ -159,6 +159,16 @@ if isEvalMode
         fprintf('[PRELIM] Removing extreme outliers from the feature values.\n');
         himask = bsxfun(@gt, X, trainedPrelim.hibound);
         lomask = bsxfun(@lt, X, trainedPrelim.lobound);
+        % Out-of-distribution warning: more than 5% of test instances
+        % clipped to the training bounds suggests they may fall outside
+        % the training distribution.
+        fracClipped = mean(any(himask | lomask, 2));
+        if fracClipped > 0.05
+            warning('ISA:InstanceSpace:outOfDistribution', ...
+                ['%.1f%% of test instances were clipped to the training feature bounds; ' ...
+                 'they may be outside the training distribution. Consider retraining with ' ...
+                 'a combined dataset.'], 100*fracClipped);
+        end
         X = X.*~(himask | lomask) + bsxfun(@times, himask, trainedPrelim.hibound) + ...
                                     bsxfun(@times, lomask, trainedPrelim.lobound);
     end
@@ -203,7 +213,7 @@ if isEvalMode
             trainedPrelim.muY), trainedPrelim.sigmaY);
     end
     if ~isreal(X)
-        error('ISA:PRELIM:complexX', ...
+        error('ISA:InstanceSpace:complexX', ...
             'Feature matrix X is complex after normalisation. Check test data range vs training data.');
     end
 else

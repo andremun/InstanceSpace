@@ -1,7 +1,7 @@
 # MATLAB `InstanceSpace` Toolkit -- Operational Reference
 
 Verified directly against this repository (`andremun/InstanceSpace`,
-v0.9.0). Requires **MATLAB R2025a or later**, with the Global
+v0.9.1). Requires **MATLAB R2025a or later**, with the Global
 Optimization, Parallel Computing, Optimization, and Statistics and
 Machine Learning toolboxes. Re-verify against the live repo if a detail
 below matters for a specific decision -- option names and defaults have
@@ -97,8 +97,8 @@ or just `startup` with the repo root as the current folder).
                "fileidxflag": false, "fileidx": "",
                "densityflag": false, "mindistance": 0.1, "type": "Ftr&Good"},
   "sifted":   {"flag": true, "rho": 0.1, "pval": 0.05, "K": 10,
-               "MaxIter": 1000, "Replicates": 100},
-  "pilot":    {"analytic": false, "ntries": 10, "dims": 2, "method": "standard", "alpha": 1.0},
+               "MaxIter": 1000, "Replicates": 100, "seed": 42},
+  "pilot":    {"analytic": false, "ntries": 10, "dims": 2, "method": "standard", "alpha": 1.0, "seed": 42},
   "cloister": {"pval": 0.05, "corrThreshold": 0.7, "maxFeatures": 20},
   "pythia":   {"classifier": "knn", "tuning": "sobol", "nTuningIter": 20, "kFold": 5},
   "trace":    {"method": "trace3", "PI": 0.6, "minInstances": 4, "minAreaFrac": 0.01},
@@ -117,8 +117,14 @@ highlights most likely to surprise someone reading only the JSON:
 - `perf.MaxPerf`/`AbsPerf` select which of the four PRELIM good-
   performance definitions applies (maximise vs minimise; absolute
   threshold vs relative-to-best margin) -- see SKILL.md Section 3.
-  `perf.betaThreshold` sets the fraction of algorithms that must be
-  "good" for an instance to count as beta-easy (TRACE's hard footprint).
+  `perf.epsilon` is restricted to `[0,1]` only when `AbsPerf=false` (a
+  fraction relative to the best algorithm); with `AbsPerf=true` it's
+  compared directly against the raw performance measure, so any finite
+  real number is valid (v0.9.1+; previously validated as `[0,1]`
+  regardless of `AbsPerf`, incorrectly rejecting valid absolute
+  thresholds). `perf.betaThreshold` sets the fraction of algorithms that
+  must be "good" for an instance to count as beta-easy (TRACE's hard
+  footprint).
 - `selvars.smallscaleflag`/`fileidxflag`/`densityflag` are three
   mutually-relevant (not combinable in one call) ways to subset instances
   before the pipeline runs: random fraction, an external index file, or
@@ -135,10 +141,19 @@ highlights most likely to surprise someone reading only the JSON:
   `'standard'` (BFGS/analytic) or `'pls'` (Partial Least Squares,
   code addition beyond either paper). `pilot.alpha` weights the
   performance-reconstruction term relative to the feature term (standard
-  method only).
+  method only). `pilot.seed`/`sifted.seed` (v0.9.1+, both default to
+  `general.seed`) drive PILOT's BFGS restarts and SIFTED's k-means/GA
+  respectively -- previously both silently ignored `general.seed` and
+  always used MATLAB's factory RNG state instead (results were still
+  reproducible run-to-run, just not responsive to a deliberately different
+  configured seed).
 - `cloister.corrThreshold`/`maxFeatures` -- field was renamed from
   `cthres` (still accepted as a legacy alias); `maxFeatures` (default 20)
-  is the enumeration guard (see SKILL.md's CLOISTER section).
+  is the enumeration guard (see SKILL.md's CLOISTER section). CLOISTER's
+  correlation-contradiction filter assumes mean-centred feature data; if
+  `prelim.norm=false`, a warning (`ISA:InstanceSpace:cloisterNotMeanCentred`,
+  v0.9.1+) is raised, since a naturally all-positive feature would
+  otherwise silently make the sign-based check degenerate for it.
 - `pythia.classifier` is a registry name (`'knn'` default, `'svm'`,
   `'tree'`, `'nb'`, `'linear'`, `'ensemble'`; resolved via
   `ISAgetClassifierFcn`), not always SVM as in the original papers.
@@ -200,6 +215,21 @@ and `pythia` both depend only on `pilot`'s output, not on each other, so
 either may run first within a single `build()` call; `trace` depends on
 `pythia`'s predictions and always runs last among the analysis stages.
 
+Both `build()` and `explore()` accept an optional `'onStage'` callback
+(v0.9.1+), `@(stageName, model) ...`, invoked once after each stage
+completes with that stage's name and the model/result at that point --
+useful for inspecting an intermediate result (e.g. plotting PILOT's `Z`
+right after it's computed) without splitting a run into several staged
+calls. `explore()`'s conceptual stages are `prelim`, `sifted`, `pilot`,
+`pythia`, `trace` (no `cloister`, which is never recomputed at explore
+time). Omitting the callback changes nothing:
+
+```matlab
+inspect = @(stageName, model) fprintf('%s done\n', stageName);
+obj = obj.build('onStage', inspect);
+obj = obj.explore(testRootDir, 'onStage', inspect);
+```
+
 `buildIS.m`/`exploreIS.m` remain as thin wrappers around this class for
 existing callers (notably the MATILDA web platform); prefer the class
 directly for new code. See `help InstanceSpace` for the full method list.
@@ -239,6 +269,15 @@ coloured compass overlay for orientation. `outputs.web` writes
 colour-scaled CSVs consumed by MATILDA's web front end (leave `false`
 unless building for that platform).
 
+CLOISTER's empirical bound (`model.cloist.Zedge`/`Zecorr`) is rendered too
+(v0.9.1+), but **2D projections only**: `scriptpng.m` writes
+`distribution_boundary.png`, and `obj.plot('boundary')` works like the
+other views. Both explicitly raise `ISA:InstanceSpace:boundaryNot3D`
+rather than render a 3D boundary -- CLOISTER's own hull computation is
+still 2D-only regardless of `opts.pilot.dims` (uses `convhull(Z(:,1),
+Z(:,2))` even at `dims=3`), tracked as a separate open issue (#50) rather
+than fixed silently.
+
 ## Migrating an older model or options file
 
 `ISAmigrateModel.m` brings a pre-v0.9.0 `model.mat` forward to the
@@ -274,17 +313,24 @@ ISAmigrateModel(rootdir);   % migrates rootdir/model.mat in place, with automati
   projection dimensionality, feature selection on/off) exposed as plain
   variables near the top. Outputs land in `test/data/example/`. Start
   here.
-- `test_integration.m` -- exhaustive option-coverage regression suite:
-  every classifier, tuning strategy, 2D/3D, PLS, viewpoint groups, staged
-  `build()`/`explore()`/save-load round-trips through the class API, and
-  the full `ISAmigrateModel` legacy-migration table, each in its own
-  `test/data/<case_name>/` subdirectory. A good reference for how a
-  specific option is meant to be used, but not the place to start reading
-  -- edit `defaultOpts()` for shared settings or a specific case's
-  `override` function for that case only. **`options.json` at the repo
-  root is a generated artifact of these scripts, not a source file** --
-  hand-editing it has no lasting effect, since the next run overwrites it
-  from the `opts` struct built in MATLAB.
+- `test_integration.m` -- a thin `matlab.unittest` runner (v0.9.1+) over
+  the exhaustive option-coverage regression suite in `tests/*.m`
+  (`PipelineOptionsTest` -- every classifier, tuning strategy, 2D/3D, PLS,
+  viewpoint groups, parameterised; `ClassApiTest` -- staged
+  `build()`/`explore()`/save-load round-trips; `MigrationTest` -- the full
+  `ISAmigrateModel` legacy-migration table; `RegressionTest` -- targeted
+  fixed-bug regressions), each case in its own `test/data/<case_name>/`
+  subdirectory, with a `CodeCoveragePlugin` producing `coverage.xml`. A
+  good reference for how a specific option is meant to be used, but not
+  the place to start reading -- edit `testDefaultOpts()` for shared
+  settings, or a specific `TestParameter` case's `.override` (e.g. in
+  `PipelineOptionsTest.m`'s `pipelineOptionCases()`) for that case only.
+  New features/bug fixes get a test *method* under `tests/`, not a new
+  block in `test_integration.m` itself. Runs automatically on every
+  push/PR via CI. **`options.json` at the repo root is a generated
+  artifact of these scripts, not a source file** -- hand-editing it has no
+  lasting effect, since the next run overwrites it from the `opts` struct
+  built in MATLAB.
 - `liveDemoIS.m` -- stage-by-stage interactive walkthrough through the
   `InstanceSpace` class, `%%`-sectioned for MATLAB's Live Editor (open
   and run cell-by-cell, or "Save As -> MATLAB Live Code File" for a

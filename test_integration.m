@@ -60,7 +60,12 @@ import matlab.unittest.plugins.codecoverage.CoberturaFormat
 % for the matching fix on the read/write-path side of this same issue).
 % This addpath is what actually makes buildIS/InstanceSpace resolvable
 % from inside tests/*.m regardless of that shift.
-repoRoot = pwd;
+%
+% Derived from this file's own location (mfilename), not pwd: this file
+% is meant to be run from the repo root, but a caller launching it from
+% elsewhere (e.g. `run('/abs/path/test_integration.m')`) would otherwise
+% add the wrong directory to the path instead of failing loudly.
+repoRoot = fileparts(mfilename('fullpath'));
 addpath(repoRoot);
 
 if ~isfolder('./test/data/')

@@ -24,9 +24,9 @@ MATLAB path automatically the first time any of them runs in a session.
    than only relying on the existing ones (see the file's own header
    comment for how cases are structured).
 
-There is no CI on this repository yet (tracked as #34) -- these two
-scripts are the whole test surface, so please run them locally before
-opening a PR.
+CI (`.github/workflows/tests.yml`) runs both scripts automatically on
+every push/PR, but run them locally first too -- catching a failure
+before pushing is faster than waiting on a CI run.
 
 ## Code style
 
@@ -50,10 +50,12 @@ rediscovering:
   get a default in `utils/ISAdefaults.m` and, where the field has a
   meaningful type/range, a check in `utils/ISAvalidateOpts.m` -- not
   ad-hoc validation inside the algorithm file that consumes it.
-- Only `PYTHIA.m` and `TRACE.m` currently implement the train/eval
-  dual-mode convention (an optional trailing `trainedModel`/`trainedTrace`
-  struct argument, dispatched on `nargin`); see `CLAUDE.md` and issue #38
-  before adding this pattern to another stage.
+- Only `PYTHIA.m`, `TRACE.m`, `PRELIM.m`, and `INIT.m` currently implement
+  the train/eval dual-mode convention (an optional trailing
+  `trainedModel`/`trainedTrace`/`trainedPrelim` struct argument, dispatched
+  on `nargin`); see `CLAUDE.md` and issue #38 before adding this pattern to
+  another stage -- `SIFTED`/`PILOT`/`CLOISTER`/`FILTER` deliberately don't
+  need it, since none of them recompute anything at explore time.
 
 ## Issues and scope
 

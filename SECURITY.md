@@ -15,8 +15,9 @@ separately.
 
 Please **do not** open a public GitHub issue for a suspected security
 vulnerability (e.g. unsafe deserialization of a loaded `.mat`/model file,
-path handling in `buildIS`/`exploreIS`, or a supply-chain concern with a
-bundled binary such as the LIBSVM MEX files -- see #29).
+path handling in `buildIS`/`exploreIS`, or a supply-chain concern with an
+external binary such as LIBSVM's MEX files, if you've added them locally
+-- see #29).
 
 Instead, report it privately through MATILDA's
 [Queries and Feedback](http://matilda.unimelb.edu.au/matilda/contact-us)
@@ -37,5 +38,8 @@ repository. The main areas worth a security-minded look are:
 - Loading untrusted `.mat` model files (`InstanceSpace.load`,
   `ISAmigrateModel`) -- MATLAB's `.mat` format can embed executable
   content, so only load models from sources you trust.
-- The bundled LIBSVM MEX binaries, used only for migrating pre-v1.7
-  legacy models (see #29 for their provenance status).
+- LIBSVM's MEX binaries are **not bundled** with this repository (removed,
+  see #29); only relevant if you've obtained and added them yourself to
+  migrate a pre-v1.7 legacy model whose classifiers couldn't be retrained
+  from scratch -- treat any such binary as an external, untrusted
+  dependency like any other you add to your own MATLAB path.

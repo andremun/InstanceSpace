@@ -36,7 +36,11 @@ classdef MigrationTest < matlab.unittest.TestCase
 
     methods (TestClassSetup)
         function buildBaseModel(testCase)
-            rootdir = './test/data/';
+            % Absolute, not './test/data/': matlab.unittest does not
+            % guarantee the working directory during test execution is
+            % the directory test_integration.m was launched from (see
+            % testRepoRoot.m).
+            rootdir = [testRepoRoot() 'test/data/'];
             srcfiles = {'metadata.csv', 'metadata_test.csv'};
             caseDir = [rootdir 'migration_test/'];
             if ~isfolder(caseDir), mkdir(caseDir); end

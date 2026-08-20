@@ -38,7 +38,11 @@ classdef ClassApiTest < matlab.unittest.TestCase
 
     methods (TestClassSetup)
         function setupCaseDir(testCase)
-            rootdir = './test/data/';
+            % Absolute, not './test/data/': matlab.unittest does not
+            % guarantee the working directory during test execution is
+            % the directory test_integration.m was launched from (see
+            % testRepoRoot.m).
+            rootdir = [testRepoRoot() 'test/data/'];
             srcfiles = {'metadata.csv', 'metadata_test.csv'};
             testCase.CaseDir = [rootdir 'class_api/'];
             if ~isfolder(testCase.CaseDir), mkdir(testCase.CaseDir); end

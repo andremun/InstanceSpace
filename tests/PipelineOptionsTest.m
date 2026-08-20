@@ -36,7 +36,10 @@ classdef PipelineOptionsTest < matlab.unittest.TestCase
 % -------------------------------------------------------------------------
 
     properties (Constant)
-        RootDir = './test/data/';
+        % Absolute, not './test/data/': matlab.unittest does not guarantee
+        % the working directory during test execution is the directory
+        % test_integration.m was launched from (see testRepoRoot.m).
+        RootDir = [testRepoRoot() 'test/data/'];
         SrcFiles = {'metadata.csv', 'metadata_test.csv'};
     end
 
@@ -95,7 +98,7 @@ function cases = pipelineOptionCases()
 % changes. TestParameter properties are evaluated once, statically, before
 % any test runs, so the CSV must already exist in the repo (it does --
 % test/data/metadata.csv is tracked, see the repo's .gitignore notes).
-hdr = readtable('./test/data/metadata.csv');
+hdr = readtable([testRepoRoot() 'test/data/metadata.csv']);
 nalgos = sum(strncmpi(hdr.Properties.VariableNames, 'algo_', 5));
 
 cases = struct();

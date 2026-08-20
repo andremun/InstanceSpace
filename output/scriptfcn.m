@@ -13,7 +13,8 @@ function scriptfcn
 %   drawSources, drawScatter, drawPortfolioSelections,
 %   drawPortfolioFootprint, drawGoodBadFootprint, drawFootprint,
 %   drawBinaryPerformance, drawBoundary, getPolygonPoints,
-%   footprintBoundary, traceAlphaBoundary) for what each does.
+%   footprintBoundary, traceAlphaBoundary, traceOneRegion) for what each
+%   does.
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit
@@ -64,6 +65,7 @@ assignin('caller','drawBoundary',@drawBoundary);
 assignin('caller','getPolygonPoints',@getPolygonPoints);
 assignin('caller','footprintBoundary',@footprintBoundary);
 assignin('caller','traceAlphaBoundary',@traceAlphaBoundary);
+assignin('caller','traceOneRegion',@traceOneRegion);
 assignin('caller','resolveViewAngle',@resolveViewAngle);
 
 end
@@ -523,7 +525,14 @@ order(1) = bf(1,1);
 prev = 0; curr = order(1);
 for k = 2:nRegionVerts
     nxt = adj(curr, adj(curr,:) ~= prev & adj(curr,:) ~= 0);
-    if isempty(nxt), break; end
+    % Also stop on returning to the start vertex, not just on a dead end:
+    % without this, a closed cycle shorter than nRegionVerts (i.e. this
+    % region has a hole -- see below) never actually halts the walk, since
+    % excluding only `prev` still leaves the "next" vertex available once
+    % back at the start. It would just keep re-treading the same cycle
+    % until order filled up completely, leaving `valid` all true and the
+    % omitted-hole warning below silently never firing.
+    if isempty(nxt) || nxt(1) == order(1), break; end
     order(k) = nxt(1);
     prev = curr;
     curr = order(k);

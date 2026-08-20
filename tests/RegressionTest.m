@@ -298,5 +298,36 @@ classdef RegressionTest < matlab.unittest.TestCase
             testCase.verifyTrue(all(isfinite(YOut(:))), ...
                 'PRELIM eval-mode normalisation produced non-finite values after algorithm pruning -- likely misapplied a wrong algorithm''s Box-Cox/Z-score transform.');
         end
+
+        function testTraceOneRegionHoleWarning(testCase)
+            % PR #51 review (round 4): traceOneRegion's walk had no
+            % "returned to the start vertex" stop condition -- only
+            % isempty(nxt). For a region with a hole (two disconnected
+            % boundary cycles), the walk didn't actually halt when the
+            % outer cycle closed; excluding just `prev` still leaves a
+            % "next" vertex available once back at the start, so it kept
+            % re-treading the SAME cycle until order filled up completely.
+            % That left `valid` all true and the ISA:scriptfcn:
+            % boundaryHoleOmitted warning added for exactly this case
+            % silently never firing. Tested directly against a synthetic
+            % two-cycle edge list (an outer 4-cycle plus a disconnected
+            % inner 3-cycle) rather than a geometric alphaShape, for full
+            % control over the exact adjacency without depending on
+            % alphaShape's own region/facet algorithm to produce a
+            % specific hole shape.
+            scriptfcn; % injects traceOneRegion into this function's workspace
+            bf = [1 2; 2 3; 3 4; 4 1; ...  % outer 4-cycle
+                  5 6; 6 7; 7 5];          % disconnected inner 3-cycle (the "hole")
+            bv = [0 0; 4 0; 4 4; 0 4; ...  % outer square corners
+                  1.5 1.5; 2.5 1.5; 2 2.5]; % inner triangle corners
+
+            testCase.verifyWarning(@() traceOneRegion(bf, bv), ... %#ok<NODEF> -- injected by scriptfcn above
+                'ISA:scriptfcn:boundaryHoleOmitted', ...
+                'traceOneRegion should warn when part of a region''s boundary (a hole) is unreachable from its outer ring, not silently stay quiet.');
+
+            verts = traceOneRegion(bf, bv);
+            testCase.verifyEqual(size(verts, 1), 4, ...
+                'traceOneRegion should return exactly the outer 4-cycle''s vertices (no duplicates from re-treading the same cycle, no hole vertices it never actually reached).');
+        end
     end
 end

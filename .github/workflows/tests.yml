@@ -56,3 +56,15 @@ jobs:
           name: coverage-report
           path: coverage.xml
           retention-days: 14
+
+      # Feeds the Codecov badge in README.md. fail_ci_if_error: false is
+      # deliberate: a Codecov outage or a missing/misconfigured
+      # CODECOV_TOKEN secret should not fail the actual test run -- the
+      # tests already passed or failed on their own merits above this
+      # step, and that's the signal that actually matters for CI status.
+      - uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false

@@ -1,3 +1,51 @@
+# Instance Space Analysis Toolkit — v0.9.1
+
+This release is an engineering-quality, architecture, and infrastructure follow-up to v0.9.0 — deliberately scoped to avoid changing any pipeline algorithm's actual behaviour (see the `v0.9.1` GitHub milestone). What did land: two small, additive API surfaces (a per-stage inspection callback, and finally rendering a boundary CLOISTER had computed all along), `opts.pilot.seed`/`opts.sifted.seed` (new fields, but only to make the already-documented `opts.general.seed` behave as promised for two stages that were silently ignoring it — not a new capability), a real architectural clean-up of data ingestion, and a batch of confirmed correctness fixes found via a full-repository audit against the project's own established conventions. It targets **MATLAB R2025a or later**.
+
+---
+
+## New functionality
+
+**Per-stage inspection callbacks in `build()`/`explore()`.** Both methods accept an optional `'onStage'` name-value argument, `@(stageName, model) ...`, invoked once after each stage completes, with that stage's name and the model/result at that point:
+
+```matlab
+inspect = @(stageName, model) fprintf('%s done\n', stageName);
+obj = obj.build('onStage', inspect);
+obj = obj.explore(testRootDir, 'onStage', inspect);
+```
+
+Lets you inspect intermediate results (e.g. PILOT's projection right after it's computed) without manually splitting a run into several separate staged `build()`/`explore()` calls. Purely additive — omitting the argument changes nothing about existing behaviour.
+
+**CLOISTER boundary is now actually rendered, for 2D projections.** CLOISTER has always computed an empirical bound (`model.cloist.Zedge`/`Zecorr`) for the instance space, but nothing in the automated pipeline ever drew it — a three-year-old deferred item from the original refactor plan's design review that Phase 9 was supposed to close and didn't. Now: `scriptpng.m` writes a `distribution_boundary.png`, and `InstanceSpace.plot('boundary')` works like the other views. Neither renders a boundary that would silently be wrong in the third dimension — `scriptpng.m` simply skips the file for a 3D projection, and `plot('boundary')` explicitly raises `ISA:InstanceSpace:boundaryNot3D` — since CLOISTER's own hull computation is still 2D-only regardless of projection dimensionality, tracked separately as a genuine algorithmic follow-up ([#50](https://github.com/andremun/InstanceSpace/issues/50), out of this release's scope).
+
+---
+
+## Better engineering
+
+- **Data ingestion given its own train/eval dual-mode function.** `INIT.m` (new, `core/`) does the CSV-read plus `opts.selvars.feats`/`.algos` filtering that used to be duplicated between `InstanceSpace.runPrelim` (build time) and `InstanceSpace.evaluateTestSet` (explore time) — `INIT(rootdir, opts)` trains, `INIT(rootdir, opts, trainedModel)` evaluates (validating the feature set/order against the trained model, reconciling algorithm columns). `PRELIM.m` itself gained the same `nargin`-dispatched train/eval structure already used by `PYTHIA`/`TRACE`, closing a confirmed drift between build-time and explore-time behaviour (see Bug fixes).
+- **Per-stage input/output contract validation.** `build()` now checks not just that a stage's prerequisite *stage* completed, but that the specific `obj.model` fields it dereferences actually exist (`StageRequiredFields`/`checkRequiredFields`), raising a clear `ISA:InstanceSpace:missingField` naming the stage and field instead of an opaque crash deep inside PRELIM/SIFTED/PILOT/etc. for a hand-edited `model.mat`, an incomplete legacy migration, or a model assembled outside the normal `build()` flow. `TRACE.m`'s eval mode also now asserts its `ngood`/`nbest` counts agree before use, instead of relying on an implicit, never-checked cross-file convention.
+- **CI added** (GitHub Actions, `.github/workflows/tests.yml`): runs `example.m` and `test_integration.m` on every push/PR, with the Financial Toolbox installed (needed by `PRELIM.m`'s `boxcox()` call — confirmed by making CI fail without it first) and a 90-minute job timeout as a safety net against an unrelated runner-side dependency-mirror stall observed during development.
+- **`test_integration.m` migrated to `matlab.unittest`.** Test cases are now `matlab.unittest.TestCase` subclasses under `tests/` (`PipelineOptionsTest`, `ClassApiTest`, `MigrationTest`, `RegressionTest`), with a `CodeCoveragePlugin` producing `coverage.xml`. `test_integration.m` itself is now a thin runner over that suite; `example.m` remains the separate, minimal getting-started script.
+- **`SECURITY.md`/`CONTRIBUTING.md` added** at the repository root, both linked from `README.md`.
+- **LIBSVM MEX-file provenance resolved.** `svmpredict.mexw64`/`svmtrain.mexw64` were precompiled binaries with no corresponding source anywhere in the tree; removed outright rather than kept without provenance, since LIBSVM is already fully deprecated for new runs. `PYTHIA`'s eval mode now raises a clear `ISA:PYTHIA:noLibsvm` error naming the algorithm and pointing to the official LIBSVM project, instead of MATLAB's generic undefined-function error, if it ever needs to dispatch to a legacy LIBSVM-format classifier struct with `svmpredict` unavailable.
+- **`FILTER`'s `isDissimilar`/`isVISA` outputs kept.** Both were computed with genuine per-instance bookkeeping but previously discarded via `~` at both call sites; now threaded into `model.prelim`/`model.sifted` for later diagnostic inspection instead of silently discarded.
+- **Documentation closure**: recorded that PYTHIA's shared Sobol/Bayesian tuning layer (all classifiers, including `'ensemble'`, tuned through one layer rather than `fitcensemble`'s own optimiser) already resolves the refactor plan's deferred "ensemble hyperparameter API" question, rather than leaving it looking open.
+- **Minor dead-code cleanup**: a redundant `ntries` argument (a numerical-branch-only PILOT parameter, never read by the analytic branch SIFTED actually uses) removed from SIFTED's internal PILOT call; `TRACE.m`'s redundant 2D/3D branch around `convhull(Z)` collapsed to a single call, since `convhull` already accepts an n-by-2 or n-by-3 matrix directly.
+- **`CITATION.cff` fixed for Zenodo archival**: `license: LicenseRef-PolyForm-Noncommercial-1.0.0` (not a registered SPDX identifier, since PolyForm Noncommercial isn't OSI-approved) replaced with `license-url`, the CFF spec's documented mechanism for a non-SPDX licence — this had been silently failing Zenodo's GitHub-integration archival check.
+
+---
+
+## Bug fixes
+
+- **Explore-time tie-breaking now matches build-time.** `PRELIM.m`'s `Ybin`/`Ybest`/`P`/`beta` computation includes a random tie-break (with frequency reporting) when multiple algorithms tie for best performance on an instance; `InstanceSpace.evaluateTestSet` independently reimplemented the same computation with **no** tie-breaking at all, silently breaking ties deterministically by column order instead via a stable `sort()`. Both now share the exact same code, via `INIT.m`/`PRELIM.m`'s new dual mode.
+- **`traceAlphaBoundary` multi-region export bug.** Previously silently exported only the first region's boundary for a multi-region `alphaShape`, despite its own comment admitting the limitation. Now traces each region independently (`boundaryFacets(poly, regionID)` per region) instead of building one adjacency graph over the combined multi-region edge list; regions are NaN-separated in the output, matching the convention `polyshape.Vertices` already uses.
+- **`opts.general.seed` now actually reaches PILOT/SIFTED.** `PILOT.m`, `SIFTED.m`, `PILOTviewpoint.m`, and the small-scale-subsetting `cvpartition` call in `InstanceSpace.m` all called `rng('default')` unconditionally rather than reading a configured seed (unlike PYTHIA, which already did this correctly) — results stayed reproducible run-to-run, but a user deliberately configuring a different `opts.general.seed` for a replication/variance study would silently get identical PILOT restarts and SIFTED clustering every time regardless. `opts.pilot.seed`/`opts.sifted.seed` (defaulting from `opts.general.seed`) now drive these stages properly.
+- **`ISAmigrateModel`'s LIBSVM-retraining path used the wrong performance data.** `retrainLibsvmPythia` passed `model.data.Y` (normalized) to `PYTHIA`, inconsistent with both production call sites in `InstanceSpace.m`, which pass `Yraw`. Beyond a training-data inconsistency, this made a migrated model's `pythia.summary` table display visibly wrong (normalized-scale) performance columns. Fixed to match the established convention.
+- **CLOISTER's correlation-contradiction filter silently degraded under non-mean-centred data.** Its sign-based contradiction check (`sign(Xedge(i,j)) ~=/== sign(Xedge(i,k))`) is only meaningful when feature values span both positive and negative territory — true by default (CLOISTER receives Box-Cox+Z-scored data), but not when `opts.auto.preproc`/`opts.norm.flag` are off, legitimate documented options. A naturally all-positive feature (counts, sizes) under that setting made the check degenerate with no indication anything was off. `InstanceSpace.m` now warns (`ISA:InstanceSpace:cloisterNotMeanCentred`) when this precondition is violated.
+- **`opts.perf.epsilon` validation over-tightened for `AbsPerf=true`.** A prior fix correctly stopped rejecting an absolute-performance `epsilon` outside `[0,1]` (meaningful only for the *relative*-performance case), but left it with no numeric validation at all under `AbsPerf=true`. It's now validated as a finite real numeric scalar in both cases, just without the `[0,1]` range restriction when absolute.
+
+---
+
 # Instance Space Analysis Toolkit — v0.9.0
 
 This release is a complete refactor of the ISA Toolkit, covering everything since v0.3.3: a rewritten PILOT/PYTHIA/TRACE/SIFTED pipeline, a new class-based API, a full legacy-model migration path, and a repository-wide correctness and code-quality pass. It targets **MATLAB R2025a or later**.
@@ -18,7 +66,7 @@ This release is a complete refactor of the ISA Toolkit, covering everything sinc
 - `opts.pilot.alpha` — adjustable weight on the performance-reconstruction term of PILOT's cost function.
 - `PILOTviewpoint` — finds the optimal 2D camera viewpoint(s) of a 3D projection; `opts.pilot.viewGroups` requests one viewpoint per algorithm group instead of a single global one.
 
-**PYTHIA — generic classifier registry.** Hardcoded SVM/LIBSVM replaced with a registry of MATLAB-native classifiers (`opts.pythia.classifier`: `'knn'`, `'svm'`, `'tree'`, `'nb'`, `'linear'`, `'ensemble'`), resolved via `ISAgetClassifierFcn`. Hyperparameter tuning via `opts.pythia.tuning`: scrambled Sobol sequence (default), MATLAB `bayesopt`, or pre-supplied `opts.pythia.params`.
+**PYTHIA — generic classifier registry.** Hardcoded SVM/LIBSVM replaced with a registry of MATLAB-native classifiers (`opts.pythia.classifier`: `'knn'`, `'svm'`, `'tree'`, `'nb'`, `'linear'`, `'ensemble'`), resolved via `ISAgetClassifierFcn`. Hyperparameter tuning via `opts.pythia.tuning`: scrambled Sobol sequence (default), MATLAB `bayesopt`, or pre-supplied `opts.pythia.params`. This also resolves the refactor plan's deferred "ensemble hyperparameter API" question (verifying `fitcensemble`'s built-in `OptimizeHyperparameters` support): the shipped design sidesteps it entirely by tuning every classifier, `'ensemble'` included, through this one shared Sobol/Bayesian layer rather than `fitcensemble`'s own optimiser, so no per-classifier MATLAB-toolbox compatibility check was ever needed.
 
 **TRACE3 — unified footprint algorithm.** A single canonical implementation for both 2D and 3D instance spaces, using PYTHIA's predicted labels directly (mandatory PYTHIA→TRACE coupling). The pre-refactor DBSCAN + alpha-shape algorithm is retained as `TRACE_legacy.m`, selectable via `opts.trace.method = 'legacy'` (2D only).
 

@@ -64,6 +64,10 @@ if size(X,2) ~= length(featlabels)
 end
 if ~isfield(opts, 'pval'), opts.pval = 0.05; end
 if ~isfield(opts, 'dims'), opts.dims = 2;    end
+% ISAdefaults sets this to opts.general.seed for a call routed through
+% InstanceSpace; a standalone SIFTED(...) call needs its own fallback,
+% same as PYTHIA's opts.seed default.
+if ~isfield(opts, 'seed'), opts.seed = 42;   end
 if ~(isnumeric(opts.dims) && isscalar(opts.dims) && ismember(opts.dims, [2 3]))
     error('ISA:SIFTED:invalidDims', ...
         'opts.dims must be 2 or 3 (got %s).', mat2str(opts.dims));
@@ -141,8 +145,14 @@ elseif nfeats <= opts.K
 end
 % -------------------------------------------------------------------------
 fprintf('[SIFTED] Selecting features based on correlation clustering.\n');
-state = rng;
-rng('default');
+% Held through GA completion below (onCleanup, not a manual restore right
+% after kmeans): cvpartition and ga() also consume randomness, and a
+% restore between kmeans and ga left both running under the caller's
+% original RNG state instead of opts.seed, silently defeating the point
+% of a configurable seed for this stage.
+prevRNG = rng;
+rngGuard = onCleanup(@() rng(prevRNG)); %#ok<NASGU>
+rng(opts.seed, 'twister');
 out.eva = evalclusters(Xaux', 'kmeans', 'Silhouette', 'KList', 3:nfeats, ...
                               'Distance', 'correlation');
 fprintf('[SIFTED] Average silhouette values for each number of clusters.\n');
@@ -156,13 +166,12 @@ if out.eva.CriterionValues(out.eva.InspectedK==opts.K) < unnaceptableClustering
     end
 end
 % -------------------------------------------------------------------------
-rng('default');
+rng(opts.seed, 'twister');
 out.clust = bsxfun(@eq, kmeans(Xaux', opts.K, 'Distance', 'correlation', ...
                                               'MaxIter', opts.MaxIter, ...
                                               'Replicates', opts.Replicates, ...
                                               'Options', statset('UseParallel', nworkers~=0), ...
                                               'OnlinePhase', 'on'), 1:opts.K);
-rng(state);
 fprintf('[SIFTED] Constructing %d clusters of features.\n', opts.K);
 fprintf('[SIFTED] Using a GA+LookUpTable to find an optimal combination.\n');
 % -------------------------------------------------------------------------

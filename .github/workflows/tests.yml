@@ -1,0 +1,70 @@
+name: Tests
+
+on:
+  push: {}
+  pull_request:
+    branches: [master]
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # Observed run: setup-matlab's system-dependency apt-get step stalled on
+    # a runner-side network/mirror hang for ~2h45m with no output at all
+    # (unrelated to any code here) before it had to be cancelled manually.
+    # Caps that failure mode to a fast, visible failure instead of silently
+    # running toward GitHub's 6-hour default job timeout.
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: matlab-actions/setup-matlab@v2
+        with:
+          # Pinned, not 'latest': README/RELEASE_NOTES promise support from
+          # R2025a onward, so CI should keep validating that minimum
+          # specifically rather than silently drifting to whatever release
+          # 'latest' resolves to as new MATLAB versions ship.
+          release: R2025a
+          products: >
+            Global_Optimization_Toolbox
+            Optimization_Toolbox
+            Parallel_Computing_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
+            Financial_Toolbox
+
+      # example.m and test_integration.m both abort on any uncaught error
+      # (test_integration.m explicitly raises ISA:test_integration:caseFailures
+      # if any case fails; buildIS.m/exploreIS.m abort before printing
+      # EOF:SUCCESS), which run-command turns into a nonzero exit code and a
+      # failed step -- no separate pass/fail parsing needed here.
+      - uses: matlab-actions/run-command@v2
+        with:
+          command: example, test_integration
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-outputs
+          path: test/data/
+          retention-days: 14
+
+      # test_integration.m (#39) always writes a Cobertura coverage report
+      # via matlab.unittest's CodeCoveragePlugin, success or failure.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 14
+
+      # Feeds the Codecov badge in README.md. fail_ci_if_error: false is
+      # deliberate: a Codecov outage or a missing/misconfigured
+      # CODECOV_TOKEN secret should not fail the actual test run -- the
+      # tests already passed or failed on their own merits above this
+      # step, and that's the signal that actually matters for CI status.
+      - uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false

@@ -83,6 +83,7 @@ if ~isfield(opts.sifted, 'pval'),           opts.sifted.pval           = 0.05;  
 if ~isfield(opts.sifted, 'K'),              opts.sifted.K              = 10;     end
 if ~isfield(opts.sifted, 'MaxIter'),        opts.sifted.MaxIter        = 1000;   end
 if ~isfield(opts.sifted, 'Replicates'),     opts.sifted.Replicates     = 100;    end
+if ~isfield(opts.sifted, 'seed'),           opts.sifted.seed           = opts.general.seed; end
 
 % pilot
 if ~isfield(opts, 'pilot'),             opts.pilot             = struct; end
@@ -98,6 +99,7 @@ if ~isfield(opts.pilot, 'alpha'),       opts.pilot.alpha       = 1.0;    end
 if ~isfield(opts.pilot, 'viewGroups'),  opts.pilot.viewGroups  = {};     end
 if ~isfield(opts.pilot, 'topoWeight'),  opts.pilot.topoWeight  = 0;      end
 if ~isfield(opts.pilot, 'verbose'),     opts.pilot.verbose     = opts.general.verbose; end
+if ~isfield(opts.pilot, 'seed'),        opts.pilot.seed        = opts.general.seed; end
 
 % cloister
 if ~isfield(opts, 'cloister'),              opts.cloister              = struct; end

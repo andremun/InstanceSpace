@@ -1,7 +1,8 @@
 # Instance Space Analysis: A toolkit for the assessment of algorithmic power
 
+[![Tests](https://github.com/andremun/InstanceSpace/actions/workflows/tests.yml/badge.svg)](https://github.com/andremun/InstanceSpace/actions/workflows/tests.yml)
 [![View InstanceSpace on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://au.mathworks.com/matlabcentral/fileexchange/75170-instancespace)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4750845.svg)](https://doi.org/10.5281/zenodo.4750845)
+[![DOI](https://zenodo.org/badge/144672744.svg)](https://doi.org/10.5281/zenodo.4484107)
 
 Instance Space Analysis is a methodology for assessing the strengths and weaknesses of an algorithm and objectively comparing its algorithmic power, without bias introduced by a restricted choice of test instances. At its core is the modelling of the relationship between an instance's structural properties and the performance of a group of algorithms. Instance Space Analysis allows the construction of **footprints** for each algorithm, defined as regions in the instance space where we statistically infer good performance. Other insights that can be gathered from Instance Space Analysis include:
 
@@ -36,7 +37,7 @@ Or if you specifically use [MATILDA](http://matilda.unimelb.edu.au/matilda/), pl
 
 ## Installation Instructions
 
-The main requirement for the software to run is to have MATLAB R2025a or later, with the [Global Optimization](https://au.mathworks.com/help/gads/index.html), [Parallel Computing](https://www.mathworks.com/products/parallel-computing.html), [Optimization](https://au.mathworks.com/products/optimization.html), and [Statistics and Machine Learning](https://au.mathworks.com/help/stats/index.html) toolboxes installed. The Communications and Financial toolboxes are **not** required (an earlier version used the Communications Toolbox's `de2bi`; it has since been replaced with a pure-MATLAB equivalent). LIBSVM support is deprecated: new runs always use MATLAB's native classifier registry (```opts.pythia.classifier```), so the LIBSVM MEX files are only needed to load and migrate models saved by a pre-v1.7 version of the toolkit (see `ISAmigrateModel`).
+The main requirement for the software to run is to have MATLAB R2025a or later, with the [Global Optimization](https://au.mathworks.com/help/gads/index.html), [Parallel Computing](https://www.mathworks.com/products/parallel-computing.html), [Optimization](https://au.mathworks.com/products/optimization.html), [Statistics and Machine Learning](https://au.mathworks.com/help/stats/index.html), and [Financial](https://au.mathworks.com/products/finance.html) toolboxes installed. The Financial Toolbox is needed specifically for `boxcox()`, used by `PRELIM.m`'s auto-normalisation step — confirmed via CI (#34), correcting an earlier assumption in this file that it wasn't required. The Communications Toolbox is **not** required (an earlier version used its `de2bi`; it has since been replaced with a pure-MATLAB equivalent). LIBSVM support is deprecated: new runs always use MATLAB's native classifier registry (```opts.pythia.classifier```). The LIBSVM MEX-files (`svmpredict`/`svmtrain`) are **not bundled with this repository** — they were precompiled binaries with no corresponding source in the tree, so they were removed (see #29). They're only relevant at all for evaluating a pre-v1.7 model whose classifiers `ISAmigrateModel` couldn't retrain (missing original training data); `ISAmigrateModel` prefers retraining from scratch with the current registry whenever the training data is available, which needs no LIBSVM dependency. If you do hit that path, obtain LIBSVM yourself from [the official project](https://www.csie.ntu.edu.tw/~cjlin/libsvm/) and add its MEX-files to the MATLAB path — `PYTHIA`'s eval mode raises a clear `ISA:PYTHIA:noLibsvm` error naming the missing dependency if you don't.
 
 ## Repository layout
 
@@ -64,9 +65,9 @@ deprecated/                               PYTHIA2, PYTHIAtest, SIFTED2 (warn-and
 
 Start with ```example.m```: it runs the full pipeline (```buildIS``` + ```exploreIS```) once, on the bundled reference dataset, with sensible defaults and just a handful of commonly adjusted settings (classifier, tuning strategy, projection dimensionality, feature selection on/off) exposed as plain variables near the top. Outputs — images (```.png```), tables (```.csv```), and raw intermediate data (```.mat```) — land in ```test/data/example/```. To analyse your own data, point it at a folder containing your ```metadata.csv``` instead (see "The metadata file" below), and revisit the performance-metric settings, which are tuned for the bundled dataset's error-rate semantics.
 
-```test_integration.m``` is the exhaustive option-coverage regression suite used during development — every classifier, tuning strategy, 2D/3D, PLS, viewpoint groups, and more, each in its own subdirectory under ```test/data/``` (e.g. ```test/data/classifier_svm/```) so no run overwrites another's outputs. It's a good reference for how a given option is meant to be used, but not the place to start.
+```test_integration.m``` is a thin ```matlab.unittest``` runner over the exhaustive option-coverage regression suite in ```tests/*.m``` (every classifier, tuning strategy, 2D/3D, PLS, viewpoint groups, staged ```build()```/```explore()```/save-load round-trips, and the full ```ISAmigrateModel``` legacy-migration table), each case in its own subdirectory under ```test/data/``` (e.g. ```test/data/classifier_svm/```) so no run overwrites another's outputs, with a code-coverage report (```coverage.xml```) produced alongside. Runs automatically on every push/PR via CI. It's a good reference for how a given option is meant to be used, but not the place to start.
 
-**```options.json``` is a generated artifact, not a source file**, for both scripts above. Each run writes its own ```options.json``` from the ```opts``` struct built in MATLAB. Hand-editing an ```options.json``` file has no lasting effect — the next run silently overwrites it. To change what gets run, edit the MATLAB script instead (```example.m``` directly, or for ```test_integration.m```, the ```defaultOpts()``` local function for shared settings and a specific test case's ```override``` function for that case only).
+**```options.json``` is a generated artifact, not a source file**, for both scripts above. Each run writes its own ```options.json``` from the ```opts``` struct built in MATLAB. Hand-editing an ```options.json``` file has no lasting effect — the next run silently overwrites it. To change what gets run, edit the MATLAB script instead (```example.m``` directly, or for the ```tests/*.m``` suite behind ```test_integration.m```, ```testDefaultOpts()``` for shared settings and a specific ```TestParameter``` case's ```.override``` for that case only, e.g. in ```PipelineOptionsTest.m```'s ```pipelineOptionCases()```).
 
 ### The InstanceSpace class
 
@@ -89,6 +90,14 @@ obj = obj.build('stages', {'prelim', 'sifted', 'pilot'});
 obj.opts.pilot.alpha = 2.0;                  % adjust after inspecting the projection
 obj = obj.build('stages', {'pilot'});         % re-runs PILOT only; sifted output is reused
 obj = obj.build('stages', {'cloister', 'pythia', 'trace'});
+```
+
+Both ```build()``` and ```explore()``` also accept an optional ```'onStage'``` callback, invoked once after each stage completes with that stage's name and the model/result at that point — useful for inspecting intermediate results (e.g. PILOT's projection) without splitting a run into several staged calls:
+
+```matlab
+inspect = @(stageName, model) fprintf('%s done\n', stageName);
+obj = obj.build('onStage', inspect);
+obj = obj.explore(testRootDir, 'onStage', inspect);
 ```
 
 See the class's own help text (```help InstanceSpace```) for the full method list, including ```plot()``` and ```getResults(idx)``` for accessing a specific ```explore()``` call's results.
@@ -118,7 +127,7 @@ Every setting below is a field of the ```opts``` structure passed to ```buildIS`
 - ```opts.general.ncores``` number of available cores for parallel processing.
 -	```opts.perf.MaxPerf``` determines whether the algorithm performance values provided are **efficiency** measures that should be maximised (set as ```TRUE```), or **cost** measures that should be minimised (set as ```FALSE```).
 -	```opts.perf.AbsPerf``` determines whether good performance is defined absolutely, e.g., misclassification error is lower than a 20%, (set as ```TRUE```), or if it is defined relatively to the best performing algorithm, e.g., misclassification error is within at least 5% of the best algorithm, (set as ```FALSE```).
--	```opts.perf.epsilon``` corresponds to the threshold used to calculate good performance. It must be of the type "Double".
+-	```opts.perf.epsilon``` corresponds to the threshold used to calculate good performance. It must be of the type "Double". Restricted to ```[0,1]``` when ```opts.perf.AbsPerf = FALSE``` (a fraction relative to the best algorithm); any finite real number when ```opts.perf.AbsPerf = TRUE``` (compared directly against the raw performance measure, which isn't bounded to ```[0,1]```).
 -	```opts.perf.betaThreshold``` corresponds to the fraction of algorithms in the portfolio that must have good performance in the instance, for it to be considered an **easy** instance. It must be a value between 0 and 1.
 -	```opts.selvars.feats``` / ```opts.selvars.algos``` optional cell arrays of feature/algorithm names to restrict the analysis to a hand-picked subset, matching the ```metadata.csv``` column headers **with** their ```feature_```/```algo_``` prefix (e.g. ```{'feature_density', 'feature_diameter'}```, not ```{'density', 'diameter'}```). Omit either field to use all available features/algorithms.
 -	```opts.selvars.smallscaleflag``` By setting this flag as ```TRUE```, you can carry out a small-scale experiment using a randomly selected fraction of the original data. This is useful if you have a large dataset with more than 1000 instances and want to explore the model's parameters.
@@ -150,6 +159,7 @@ The toolkit implements SIFTED (```SIFTED.m```; ```SIFTED2``` is a deprecated ali
 - ```opts.sifted.K``` number of clusters, which corresponds to the final number of features returned. The routine assumes at least 3 clusters and no more than the number of features. Ideally, it **should not** exceed 10.
 - ```opts.sifted.MaxIter``` number of iterations used to converge the k-means algorithm. Usually, this setting does not need tuning.
 - ```opts.sifted.Replicates``` number of repeats carried out of the k-means algorithm. Usually, this setting does not need tuning.
+- ```opts.sifted.seed``` RNG seed for SIFTED's k-means clustering and genetic algorithm; defaults to ```opts.general.seed``` and rarely needs to be set independently.
 
 ### Dimensionality reduction settings
 
@@ -161,20 +171,23 @@ The toolkit uses PILOT for dimensionality reduction and [BFGS](https://en.wikipe
 -	```opts.pilot.method``` selects the projection algorithm: ```'standard'``` (default) is the BFGS/analytic method described above; ```'pls'``` uses Partial Least Squares ([```plsregress```](https://au.mathworks.com/help/stats/plsregress.html)) instead, which maximises covariance between the projection and the performance matrix and does not require the feature matrix to be full column rank. Both methods work at 2D or 3D via ```opts.pilot.dims```.
 -	```opts.pilot.alpha``` (default ```1.0```) scales the performance-reconstruction term of PILOT's cost function relative to the feature-reconstruction term, for ```opts.pilot.method = 'standard'``` only: `min ||F̃-BrZ||² + α||Y-CrZ||²`. Increase it to emphasise performance trends over feature trends in the projection.
 -	```opts.pilot.topoWeight``` (default ```0```, disabled) is reserved for future experimental use and has no effect in the current version.
+-	```opts.pilot.seed``` RNG seed for PILOT's BFGS random restarts; defaults to ```opts.general.seed``` and rarely needs to be set independently.
 
 When ```opts.pilot.dims = 3```, ```buildIS``` automatically calls ```PILOTviewpoint(Z, Y, opts.pilot)``` to find the best 2D camera viewpoint(s) of the 3D projection, storing the result in ```model.pilot.viewpoint```. By default, one viewpoint is found across all algorithms; ```opts.pilot.viewGroups``` (a cell array of algorithm index vectors, e.g. ```{[1 2 3], [4 5 6]}```) requests one viewpoint per group instead, useful for inspecting a subset of algorithms in isolation.
 
 ### Empirical bound estimation settings
 
-The toolkit uses CLOISTER, an algorithm based on correlation to detect the empirical bounds of the Instance Space. It runs after PILOT, on the projected instance space, and does not depend on PYTHIA.
+The toolkit uses CLOISTER, an algorithm based on correlation to detect the empirical bounds of the Instance Space. It runs after PILOT, on the projected instance space, and does not depend on PYTHIA. For a 2D projection, its computed boundary is written to ```distribution_boundary.png``` (when ```opts.outputs.png```) and is available via ```obj.plot('boundary')```; both explicitly refuse a 3D projection rather than render a boundary that's silently 2D-only regardless of the projection's actual dimensionality.
 
 - ```opts.cloister.corrThreshold``` Determines the maximum [Pearson correlation coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) that would indicate non-correlated variables. The lower this value is, the more stringent the algorithm is; hence, it would be less likely to produce a good bound.
 - ```opts.cloister.pval``` Determines the p-value of the Pearson correlation coefficient that indicates no correlation.
 - ```opts.cloister.maxFeatures``` (default ```20```) guards the number of features CLOISTER's correlation-based bit-matrix enumeration will process; above this count it would become intractable, so CLOISTER instead falls back to a plain convex hull of the projected instances as the boundary, with a warning.
 
+CLOISTER's correlation-contradiction filter assumes mean-centred feature data (its sign-based check is only meaningful when values span both positive and negative territory); if ```opts.auto.preproc``` and ```opts.norm.flag``` aren't both ```TRUE```, a warning (```ISA:InstanceSpace:cloisterNotMeanCentred```) is raised, since a naturally all-positive feature would otherwise silently make the check degenerate for it.
+
 ### Algorithm selection settings
 
-The toolkit selects one binary classifier per algorithm (good/not-good performance) from a registry of MATLAB-native classifiers, resolved via `ISAgetClassifierFcn`. It runs after PILOT, on the projected instance space, and does not depend on CLOISTER. **LIBSVM is deprecated for new runs**: `buildIS` never dispatches to it. `ISAmigrateModel` (see below) renames legacy field names on an old model (e.g. `.svm`/`.knn` → `.classifiers`), and additionally **retrains** any classifiers still in the legacy LIBSVM struct format (no `predict()` method, so they can't just be relabelled) using the current registry — `opts.pythia.classifier` if already set to a valid registry name, `'knn'` otherwise — provided the model still has `model.pilot.Z` and `model.data.Y`/`Ybin`/`Ybest`/`algolabels` to retrain from. If those fields are missing, migration proceeds but leaves the legacy classifiers in place with a warning; such a model can still be evaluated through `exploreIS`/`PYTHIA` eval mode (which dispatches to `svmpredict` when it detects a struct instead of a MATLAB classifier object), but this requires the LIBSVM MEX-files to be present. Prefer retraining from scratch with `buildIS`, or a migration with the full training data available, to drop that dependency entirely.
+The toolkit selects one binary classifier per algorithm (good/not-good performance) from a registry of MATLAB-native classifiers, resolved via `ISAgetClassifierFcn`. It runs after PILOT, on the projected instance space, and does not depend on CLOISTER. **LIBSVM is deprecated for new runs**: `buildIS` never dispatches to it. `ISAmigrateModel` (see below) renames legacy field names on an old model (e.g. `.svm`/`.knn` → `.classifiers`), and additionally **retrains** any classifiers still in the legacy LIBSVM struct format (no `predict()` method, so they can't just be relabelled) using the current registry — `opts.pythia.classifier` if already set to a valid registry name, `'knn'` otherwise — provided the model still has `model.pilot.Z` and `model.data.Yraw`/`Ybin`/`Ybest`/`algolabels` to retrain from. If those fields are missing, migration proceeds but leaves the legacy classifiers in place with a warning; such a model can still be evaluated through `exploreIS`/`PYTHIA` eval mode (which dispatches to `svmpredict` when it detects a struct instead of a MATLAB classifier object), but this requires the LIBSVM MEX-files, which are **not bundled with this repository** (see the Installation Instructions section above) — obtain them from [the official LIBSVM project](https://www.csie.ntu.edu.tw/~cjlin/libsvm/) if you actually need to go down this path. Prefer retraining from scratch with `buildIS`, or a migration with the full training data available, to drop that dependency entirely.
 
 - ```opts.pythia.classifier``` selects the classifier: ```'knn'``` (default, via `fitcknn`), ```'svm'``` (`fitcsvm`), ```'tree'``` (`fitctree`), ```'nb'``` (Naive Bayes, `fitcnb`), ```'linear'``` (`fitclinear`), or ```'ensemble'``` (`fitcensemble`; see ```opts.pythia.ensembleMethod```, default ```'Bag'```). All algorithms in the portfolio use the same classifier.
 - ```opts.pythia.tuning``` selects the hyperparameter search strategy: ```'sobol'``` (default; a scrambled Sobol quasi-random sequence, ```opts.pythia.nTuningIter``` evaluations with k-fold CV), ```'bayes'``` (MATLAB `bayesopt`, Gaussian-process surrogate, same evaluation budget and CV), or ```'none'``` (use ```opts.pythia.params``` directly, skipping tuning).
@@ -214,7 +227,7 @@ This repository ships a [Claude Code](https://claude.com/claude-code) skill at `
 
 ## Contact
 
-If you have any suggestions or ideas (e.g. for new features), or if you encounter any problems while running the code, please use the [issue tracker](https://github.com/andremun/InstanceSpace/issues) or contact us through MATILDA's [Queries and Feedback](http://matilda.unimelb.edu.au/matilda/contact-us) page.
+If you have any suggestions or ideas (e.g. for new features), or if you encounter any problems while running the code, please use the [issue tracker](https://github.com/andremun/InstanceSpace/issues) or contact us through MATILDA's [Queries and Feedback](http://matilda.unimelb.edu.au/matilda/contact-us) page. See [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a pull request, and [`SECURITY.md`](SECURITY.md) to report a suspected vulnerability privately.
 
 ## Acknowledgements
 

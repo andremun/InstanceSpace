@@ -77,6 +77,10 @@ if size(Z,2) ~= 3
         'Z must be a (ninst x 3) 3D PILOT projection (got %d columns).', size(Z,2));
 end
 if ~isfield(opts, 'ntries'), opts.ntries = 10; end
+% ISAdefaults sets this to opts.general.seed for a call routed through
+% InstanceSpace; a standalone PILOTviewpoint(...) call needs its own
+% fallback, same as PYTHIA's opts.seed default.
+if ~isfield(opts, 'seed'), opts.seed = 42; end
 if ~isfield(opts, 'viewGroups') || isempty(opts.viewGroups)
     groups = {1:size(Y,2)};
 elseif iscell(opts.viewGroups)
@@ -121,7 +125,7 @@ for g = 1:ngroups
         ntries = size(opts.X0,2);
     else
         state = rng;
-        rng('default');
+        rng(opts.seed, 'twister');
         X0 = 2*rand(2*n+2*n2, opts.ntries)-1;
         rng(state);
         ntries = opts.ntries;

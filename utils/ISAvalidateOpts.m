@@ -102,11 +102,13 @@ checkUnitRange(opts, 'sifted', 'pval');
 checkPosInt(opts, 'sifted', 'K', false);
 checkPosInt(opts, 'sifted', 'MaxIter', false);
 checkPosInt(opts, 'sifted', 'Replicates', false);
+checkPosInt(opts, 'sifted', 'seed', true); % 0 allowed
 
 checkMember(opts, 'pilot', 'method', {'standard','pls'});
 checkMember(opts, 'pilot', 'dims', {2,3});
 checkLogical(opts, 'pilot', 'analytic');
 checkPosInt(opts, 'pilot', 'ntries', false);
+checkPosInt(opts, 'pilot', 'seed', true); % 0 allowed
 checkPositive(opts, 'pilot', 'alpha');
 checkPositive(opts, 'pilot', 'topoWeight', true); % 0 allowed
 checkViewGroups(opts, 'pilot', 'viewGroups');

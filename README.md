@@ -3,6 +3,8 @@
 [![Tests](https://github.com/andremun/InstanceSpace/actions/workflows/tests.yml/badge.svg)](https://github.com/andremun/InstanceSpace/actions/workflows/tests.yml)
 [![View InstanceSpace on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://au.mathworks.com/matlabcentral/fileexchange/75170-instancespace)
 [![DOI](https://zenodo.org/badge/144672744.svg)](https://doi.org/10.5281/zenodo.4484107)
+[![codecov](https://codecov.io/gh/andremun/InstanceSpace/branch/master/graph/badge.svg)](https://codecov.io/gh/andremun/InstanceSpace)
+[![Downloads](https://img.shields.io/github/downloads/andremun/InstanceSpace/total.svg)](https://github.com/andremun/InstanceSpace/releases)
 
 Instance Space Analysis is a methodology for assessing the strengths and weaknesses of an algorithm and objectively comparing its algorithmic power, without bias introduced by a restricted choice of test instances. At its core is the modelling of the relationship between an instance's structural properties and the performance of a group of algorithms. Instance Space Analysis allows the construction of **footprints** for each algorithm, defined as regions in the instance space where we statistically infer good performance. Other insights that can be gathered from Instance Space Analysis include:
 

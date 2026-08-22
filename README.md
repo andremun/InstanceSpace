@@ -1,10 +1,10 @@
 # Instance Space Analysis: A toolkit for the assessment of algorithmic power
 
-[![Tests](https://github.com/andremun/InstanceSpace/actions/workflows/tests.yml/badge.svg)](https://github.com/andremun/InstanceSpace/actions/workflows/tests.yml)
 [![View InstanceSpace on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://au.mathworks.com/matlabcentral/fileexchange/75170-instancespace)
 [![DOI](https://zenodo.org/badge/144672744.svg)](https://doi.org/10.5281/zenodo.4484107)
-[![codecov](https://codecov.io/gh/andremun/InstanceSpace/branch/master/graph/badge.svg)](https://codecov.io/gh/andremun/InstanceSpace)
 [![Downloads](https://img.shields.io/github/downloads/andremun/InstanceSpace/total.svg)](https://github.com/andremun/InstanceSpace/releases)
+[![Tests](https://github.com/andremun/InstanceSpace/actions/workflows/tests.yml/badge.svg)](https://github.com/andremun/InstanceSpace/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/andremun/InstanceSpace/branch/master/graph/badge.svg)](https://codecov.io/gh/andremun/InstanceSpace)
 
 Instance Space Analysis is a methodology for assessing the strengths and weaknesses of an algorithm and objectively comparing its algorithmic power, without bias introduced by a restricted choice of test instances. At its core is the modelling of the relationship between an instance's structural properties and the performance of a group of algorithms. Instance Space Analysis allows the construction of **footprints** for each algorithm, defined as regions in the instance space where we statistically infer good performance. Other insights that can be gathered from Instance Space Analysis include:
 
@@ -15,7 +15,7 @@ Instance Space Analysis is a methodology for assessing the strengths and weaknes
 -	Partitioning of the instance space into recommended regions for automated algorithm selection;
 -	Distinguishing areas of the instance space where it may be useful to generate additional instances to gain further insights.
 
-The unique advantage of visualising algorithm performance in the instance space, rather than as a small set of summary statistics averaged across a selected collection of instances, is the nuanced analysis that becomes possible to explain strengths and weaknesses and examine interesting variations in performance that may be hidden by tables of summary statistics.
+The unique advantage of visualising algorithm performance in the instance space, rather than as a small set of summary statistics averaged across a selected collection of instances, is the nuanced analysis it enables: explaining strengths and weaknesses and examining interesting variations in performance that may be hidden by tables of summary statistics.
 
 This repository provides a set of MATLAB tools for performing a complete Instance Space Analysis as part of an automated pipeline. It is also the computational engine that powers the Melbourne Algorithm Test Instance Library with Data Analytics ([MATILDA](http://matilda.unimelb.edu.au/matilda/)) web tools for online analysis. For further information on the Instance Space Analysis methodology, see [here](http://matilda.unimelb.edu.au/matilda/our-methodology).
 
@@ -39,7 +39,7 @@ Or if you specifically use [MATILDA](http://matilda.unimelb.edu.au/matilda/), pl
 
 ## Installation Instructions
 
-The main requirement for the software to run is to have MATLAB R2025a or later, with the [Global Optimization](https://au.mathworks.com/help/gads/index.html), [Parallel Computing](https://www.mathworks.com/products/parallel-computing.html), [Optimization](https://au.mathworks.com/products/optimization.html), [Statistics and Machine Learning](https://au.mathworks.com/help/stats/index.html), and [Financial](https://au.mathworks.com/products/finance.html) toolboxes installed. The Financial Toolbox is needed specifically for `boxcox()`, used by `PRELIM.m`'s auto-normalisation step. LIBSVM support is deprecated: new runs always use MATLAB's native classifier registry (`opts.pythia.classifier`). The LIBSVM MEX-files (`svmpredict`/`svmtrain`) are **not bundled with this repository** (no build source is available for them). They're only relevant at all for evaluating a pre-v1.7 model whose classifiers `ISAmigrateModel` couldn't retrain (missing original training data); `ISAmigrateModel` prefers retraining from scratch with the current registry whenever the training data is available, which needs no LIBSVM dependency. If you do hit that path, obtain LIBSVM yourself from [the official project](https://www.csie.ntu.edu.tw/~cjlin/libsvm/) and add its MEX-files to the MATLAB path — `PYTHIA`'s eval mode raises a clear `ISA:PYTHIA:noLibsvm` error naming the missing dependency if you don't.
+The main requirement for the software to run is to have MATLAB R2025a or later, with the [Global Optimization](https://au.mathworks.com/help/gads/index.html), [Parallel Computing](https://www.mathworks.com/products/parallel-computing.html), [Optimization](https://au.mathworks.com/products/optimization.html), [Statistics and Machine Learning](https://au.mathworks.com/help/stats/index.html), and [Financial](https://au.mathworks.com/products/finance.html) toolboxes installed. The LIBSVM MEX-files (`svmpredict`/`svmtrain`), used for legacy models, are **not bundled with this repository** (no build source is available for them). They're only relevant for evaluating a pre-v0.9.0 model whose classifiers `ISAmigrateModel` couldn't retrain (missing original training data); `ISAmigrateModel` prefers retraining from scratch with the current registry whenever the training data is available, which needs no LIBSVM dependency. If you do hit that path, obtain LIBSVM yourself from [the official project](https://www.csie.ntu.edu.tw/~cjlin/libsvm/) and add its MEX-files to the MATLAB path — `PYTHIA`'s eval mode raises a clear `ISA:PYTHIA:noLibsvm` error naming the missing dependency if you don't.
 
 ## Repository layout
 

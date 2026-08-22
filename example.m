@@ -47,7 +47,7 @@ classifier = 'knn';    % opts.pythia.classifier: 'knn' (default), 'svm', 'tree',
 tuning     = 'sobol';  % opts.pythia.tuning: 'sobol' (default), 'bayes', or 'none' (needs opts.pythia.params)
 dims       = 2;        % opts.pilot.dims: 2 (default) or 3
 siftedFlag = true;     % opts.sifted.flag: automated feature selection on/off
-% -----------------------------------------------------------------------
+% -------------------------------------------------------------------------
 
 % Starts from a clean struct so a stale opts variable left in the base
 % workspace by a previous script (e.g. test_integration.m) in the same

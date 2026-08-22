@@ -1,20 +1,77 @@
 function out = PYTHIA(Z, Y, Ybin, Ybest, algolabels, opts, trainedModel)
-% Unified binary classifier for instance-space algorithm selection.
+% PYTHIA  Unified binary classifier for instance-space algorithm selection.
 %
-% Training mode  (6 args):
-%   out = PYTHIA(Z, Y, Ybin, Ybest, algolabels, opts)
+%   Training mode  (6 args): out = PYTHIA(Z, Y, Ybin, Ybest, algolabels, opts)
+%     Trains one binary good/not-good classifier per algorithm (registry
+%     resolved via ISAgetClassifierFcn), tuning hyperparameters per
+%     opts.tuning.
 %
-% Evaluation mode (7 args — uses classifiers trained by a previous buildIS):
-%   out = PYTHIA(Z, Y, Ybin, Ybest, algolabels, opts, trainedModel)
+%   Evaluation mode (7 args): out = PYTHIA(Z, Y, Ybin, Ybest, algolabels, opts, trainedModel)
+%     Applies trainedModel's already-fitted classifiers to new data
+%     instead of training fresh ones -- trainedModel is a prior
+%     training-mode call's out struct.
 %
-% Classifier is selected via opts.classifier (default 'knn').
-% See ISAgetClassifierFcn for the full registry.
+%   Inputs
+%     Z          - (ninst x ndim) projected instance coordinates
+%     Y          - (ninst x nalgos) raw performance matrix
+%     Ybin       - (ninst x nalgos) logical good-performance labels
+%     Ybest      - (ninst x 1) best algorithm's raw performance per instance
+%     algolabels - (1 x nalgos) cell array of algorithm name strings
+%     opts       - struct with fields:
+%                    classifier     char    registry name (default 'knn');
+%                                            see ISAgetClassifierFcn
+%                    tuning         char    'sobol' (default) -- scrambled
+%                                            Sobol quasi-random search,
+%                                            opts.nTuningIter evals;
+%                                            'bayes' -- MATLAB bayesopt
+%                                            (Gaussian process surrogate),
+%                                            same evals/k-fold CV as
+%                                            'sobol'; 'none' -- use
+%                                            pre-supplied opts.params
+%                                            directly, skip tuning
+%                    nTuningIter    int     Sobol/Bayes evaluation budget
+%                                            (default 20)
+%                    kFold          int     cross-validation folds
+%                                            (default 5)
+%                    ispolykrnl     logical SVM only: polynomial vs
+%                                            Gaussian kernel (default false)
+%                    useweights     logical cost-sensitive classification
+%                                            (default false)
+%                    params         double  pre-calculated hyperparameters,
+%                                            required when tuning='none'
+%                                            (default [])
+%                    skip           logical bypass training entirely
+%                                            (default false)
+%                    ensembleMethod char    fitcensemble method
+%                                            (default 'Bag')
+%                    seed           double  RNG seed, defaults to
+%                                            opts.general.seed
+%                    verbose        logical per-classifier progress
+%                                            output (default true)
+%     trainedModel - (optional) a prior training-mode call's out struct;
+%                    presence selects evaluation mode over training mode
 %
-% Hyperparameter tuning (opts.tuning):
-%   'sobol' (default) — scrambled Sobol quasi-random search, opts.nTuningIter evals
-%   'none'            — use pre-supplied opts.params directly; skip tuning
-%   'bayes'           — MATLAB bayesopt (Gaussian process surrogate),
-%                       opts.nTuningIter evals, same k-fold CV as 'sobol'
+%   Outputs
+%     out  - struct with fields:
+%              classifiers{nalgos}      trained classifier objects (or
+%                                       legacy LIBSVM structs)
+%              Yhat, Pr0hat            predicted good-performance labels
+%                                       and probabilities
+%              Ysub, Pr0sub            cross-validated predictions
+%                                       (training mode)
+%              cvcmat, accuracy,
+%              precision, recall       per-algorithm cross-validation
+%                                       performance
+%              param1, param2,
+%              param2Label             selected hyperparameters per
+%                                       algorithm
+%              selection0, selection1  predicted best-algorithm index per
+%                                       instance (precision-weighted, with
+%                                       and without a default fallback)
+%              mu, sigma               Z-score normalisation parameters
+%                                       applied to Z
+%              summary                 cell array display of the above,
+%                                       one row per algorithm
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit

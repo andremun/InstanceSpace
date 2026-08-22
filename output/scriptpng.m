@@ -192,22 +192,22 @@ for i=1:nalgos
         fprintf('[OUTPUT] No Footprint has been calculated.\n');
     end
 end
-% ---------------------------------------------------------------------
+% -------------------------------------------------------------------------
 % Plotting the number of good algos
 clf;
 drawScatter(container.pilot.Z, container.data.numGoodAlgos./nalgos, 'Percentage of good algorithms', globalView);
 exportgraphics(fig, [rootdir 'distribution_number_good_algos.png']);
-% ---------------------------------------------------------------------
+% -------------------------------------------------------------------------
 % Drawing the algorithm performance
 clf;
 drawPortfolioSelections(container.pilot.Z, container.data.P, container.data.algolabels, 'Best algorithm', globalView);
 exportgraphics(fig, [rootdir 'distribution_portfolio.png']);
-% ---------------------------------------------------------------------
+% -------------------------------------------------------------------------
 % Drawing the SVM's recommendations
 clf;
 drawPortfolioSelections(container.pilot.Z, container.pythia.selection0, container.data.algolabels, 'Predicted best algorithm', globalView);
 exportgraphics(fig, [rootdir 'distribution_svm_portfolio.png']);
-% ---------------------------------------------------------------------
+% -------------------------------------------------------------------------
 % Drawing the footprints as portfolio.
 clf;
 drawPortfolioFootprint(container.pilot.Z, container.trace.best, Pfoot, container.data.algolabels, globalView);
@@ -215,12 +215,12 @@ exportgraphics(fig, [rootdir 'footprint_portfolio.png']);
 if writeFig
     savefig(fig, [rootdir 'footprint_portfolio.fig']);
 end
-% ---------------------------------------------------------------------
+% -------------------------------------------------------------------------
 % Plotting the model.data.beta score
 clf;
 drawBinaryPerformance(container.pilot.Z, container.data.beta, '\beta score', globalView);
 exportgraphics(fig, [rootdir 'distribution_beta_score.png']);
-% ---------------------------------------------------------------------
+% -------------------------------------------------------------------------
 % Drawing CLOISTER's empirical space boundary, if computed (#32). Not
 % present in an explore()/evaluateTestSet result (CLOISTER is a
 % training-time-only artifact, never recomputed at explore time -- see
@@ -238,7 +238,7 @@ elseif isfile([rootdir 'distribution_boundary.png'])
     % current result.
     delete([rootdir 'distribution_boundary.png']);
 end
-% ---------------------------------------------------------------------
+% -------------------------------------------------------------------------
 % Drawing the sources of the instances if available
 if isfield(container.data,'S')
     clf;

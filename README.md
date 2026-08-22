@@ -2,6 +2,7 @@
 
 [![View InstanceSpace on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://au.mathworks.com/matlabcentral/fileexchange/75170-instancespace)
 [![DOI](https://zenodo.org/badge/144672744.svg)](https://doi.org/10.5281/zenodo.4484107)
+[![Citations](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2FDOI%3A10.1145%2F3572895%3Ffields%3DcitationCount&query=%24.citationCount&label=citations&color=blue)](https://doi.org/10.1145/3572895)
 [![Downloads](https://img.shields.io/github/downloads/andremun/InstanceSpace/total.svg)](https://github.com/andremun/InstanceSpace/releases)
 [![Tests](https://github.com/andremun/InstanceSpace/actions/workflows/tests.yml/badge.svg)](https://github.com/andremun/InstanceSpace/actions/workflows/tests.yml)
 [![codecov](https://codecov.io/gh/andremun/InstanceSpace/branch/master/graph/badge.svg)](https://codecov.io/gh/andremun/InstanceSpace)

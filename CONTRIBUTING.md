@@ -60,7 +60,6 @@ rediscovering:
 ## Issues and scope
 
 Check the [open issues](https://github.com/andremun/InstanceSpace/issues)
-and the `v0.9.1` [milestone](https://github.com/andremun/InstanceSpace/milestone/1)
 before starting substantial work, in case it's already tracked or
 superseded by a larger planned change. For anything beyond a small fix,
 opening an issue first (or commenting on an existing one) before writing

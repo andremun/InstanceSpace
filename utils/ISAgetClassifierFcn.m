@@ -3,12 +3,6 @@ function [fitFcn, p1label, p2label] = ISAgetClassifierFcn(name)
 %
 %   [fitFcn, p1label, p2label] = ISAgetClassifierFcn(name)
 %
-%   name     : string matching an entry in the classifier registry
-%   fitFcn   : MATLAB fitc* function handle
-%   p1label  : human-readable label for the first Sobol-tuned hyperparameter
-%   p2label  : human-readable label for the second Sobol-tuned hyperparameter
-%              (may be 'N/A' for classifiers that have only one tunable parameter)
-%
 %   Registry:
 %   +-----------+---------------+---------------------+------------------+
 %   | name      | MATLAB fn     | param 1             | param 2          |
@@ -23,6 +17,13 @@ function [fitFcn, p1label, p2label] = ISAgetClassifierFcn(name)
 %
 %   fitcecoc is excluded: PYTHIA trains one binary classifier per algorithm;
 %   multi-class ECOC machinery is never required.
+%
+%   Inputs
+%     name - string representing the classifier registry entry (options: 'knn', 'svm', 'tree', 'nb', 'linear', 'ensemble').
+%   Outputs
+%     fitFcn - MATLAB fitc* function handle.
+%     p1label - human-readable label for the first Sobol-tuned hyperparameter.
+%     p2label - human-readable label for the second Sobol-tuned hyperparameter (may be 'N/A' for classifiers with only one tunable parameter).
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit

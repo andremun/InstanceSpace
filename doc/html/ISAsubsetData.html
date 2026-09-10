@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ISAsubsetData</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="sidebar">
+<h4>InstanceSpace</h4>
+<ul>
+<li><a href="Landing.html">InstanceSpace</a></li>
+</ul>
+<h4>Getting Started</h4>
+<ul>
+<li><a href="GettingStarted.html">Getting Started</a></li>
+<li><a href="InteractiveWalkthrough.html">Interactive Walkthrough</a></li>
+</ul>
+<h4>Standalone pipeline functions</h4>
+<ul>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="INIT.html">INIT</a></li>
+</ul>
+<h4>Class interface</h4>
+<ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul>
+<h4>Backward-compatibility wrappers</h4>
+<ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul>
+<h4>Utilities</h4>
+<ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><span class="current-page">ISAsubsetData</span></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+</ul>
+<h4>Output</h4>
+<ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul>
+<h4>Deprecated Functions</h4>
+<ul>
+<li><a href="Deprecated.html">Deprecated</a></li>
+</ul>
+<h4>Reference</h4>
+<ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+</ul>
+<h4>What's New</h4>
+<ul>
+<li><a href="WhatsNew.html">What's New</a></li>
+</ul>
+</div>
+<div class="content">
+<h1>ISAsubsetData</h1>
+<p class="tagline">Subset rows (and optionally feature columns) of a data struct.</p>
+<h2>Syntax</h2>
+<pre class="syntax"><code>data = ISAsubsetData(data, subsetIndex)
+data = ISAsubsetData(data, subsetIndex, featIdx)
+</code></pre>
+<h2>Description</h2>
+<p>subsets all row-indexed fields. also selects feature columns featIdx from data.X (used in the post-SIFTED density path).</p>
+<h2>Input Arguments</h2>
+<table class="args">
+<thead>
+<tr>
+<th>Argument</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>data</code></td>
+<td>struct containing fields X, Y, Xraw, Yraw, Ybin, beta, numGoodAlgos, Ybest, P, instlabels, and optionally S.</td>
+</tr>
+<tr>
+<td><code>subsetIndex</code></td>
+<td>index or logical vector for row selection.</td>
+</tr>
+<tr>
+<td><code>featIdx</code></td>
+<td>optional column indices for data.X and data.featlabels.</td>
+</tr>
+</tbody>
+</table>
+<h2>Output Arguments</h2>
+<table class="args">
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>data</code></td>
+<td>the subsetted struct with corresponding fields and columns updated.</td>
+</tr>
+</tbody>
+</table>
+<h2>References</h2>
+<ul>
+<li>Smith-Miles, K. &amp; Munoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. ACM Computing Surveys, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
+</ul>
+<h2>See Also</h2>
+<p><a href="InstanceSpace.html">InstanceSpace</a></p>
+<hr class="footer-rule">
+<p class="copyright"><em>Copyright (c) 2026 Mario Andres Munoz Acosta and contributors,
+School of Computing and Information Systems, The University of Melbourne.
+Released under the PolyForm Noncommercial License 1.0.0.</em></p>
+</div>
+</body>
+</html>

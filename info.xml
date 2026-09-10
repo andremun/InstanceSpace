@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<productinfo>
+    <matlabrelease>R2025a</matlabrelease>
+    <name>InstanceSpace</name>
+    <type>toolbox</type>
+    <icon>$toolbox/matlab/icons/reficon.gif</icon>
+    <help_location>doc/html</help_location>
+    <help_contents_icon>HelpIcon.HELP</help_contents_icon>
+</productinfo>

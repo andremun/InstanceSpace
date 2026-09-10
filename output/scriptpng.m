@@ -3,10 +3,6 @@ function scriptpng(container,rootdir)
 %
 %   scriptpng(container,rootdir)
 %
-%   container - model struct from buildIS/InstanceSpace.build(), or a
-%               testResults entry from exploreIS/InstanceSpace.explore()
-%   rootdir   - destination directory (trailing slash required)
-%
 %   Produces per-feature and per-algorithm distribution plots, portfolio
 %   selection and footprint plots, using scriptfcn.m's drawing helpers.
 %   Renders in 3D and applies the optimised camera viewpoint
@@ -18,6 +14,12 @@ function scriptpng(container,rootdir)
 %   rotation in MATLAB, unless container.opts.outputs.fig is false. Every
 %   figure carries the viewpoint struct in its UserData so ISArecallView
 %   can snap a reopened .fig back to its optimised camera angle later.
+%
+%   Inputs
+%     container - struct (model from `buildIS/InstanceSpace.build()` or a `testResults` entry from `exploreIS/InstanceSpace.explore()`).
+%     rootdir - string (destination directory; trailing slash required).
+%   Outputs
+%     none - writes PNG (and, for 3D projections, .fig) files to rootdir as a side effect (void function).
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit

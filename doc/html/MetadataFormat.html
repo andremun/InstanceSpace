@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MetadataFormat</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="sidebar">
+<h4>InstanceSpace</h4>
+<ul>
+<li><a href="Landing.html">InstanceSpace</a></li>
+</ul>
+<h4>Getting Started</h4>
+<ul>
+<li><a href="GettingStarted.html">Getting Started</a></li>
+<li><a href="InteractiveWalkthrough.html">Interactive Walkthrough</a></li>
+</ul>
+<h4>Standalone pipeline functions</h4>
+<ul>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="INIT.html">INIT</a></li>
+</ul>
+<h4>Class interface</h4>
+<ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul>
+<h4>Backward-compatibility wrappers</h4>
+<ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul>
+<h4>Utilities</h4>
+<ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+</ul>
+<h4>Output</h4>
+<ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul>
+<h4>Deprecated Functions</h4>
+<ul>
+<li><a href="Deprecated.html">Deprecated</a></li>
+</ul>
+<h4>Reference</h4>
+<ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><span class="current-page">Metadata File Format</span></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+</ul>
+<h4>What's New</h4>
+<ul>
+<li><a href="WhatsNew.html">What's New</a></li>
+</ul>
+</div>
+<div class="content">
+<h1>MetadataFormat</h1>
+<h2>Overview</h2>
+<p><code>metadata.csv</code> is used by <code>buildIS</code> in training mode, while <code>metadata_test.csv</code> is used by <code>exploreIS</code> in evaluation mode. Both files share an identical column layout.</p>
+<h2>Column Schema</h2>
+<h3>Instances</h3>
+<p>The first column contains the instance label/identifier (string), with one row per instance.</p>
+<h3>Feature Columns (<code>feature_*</code>)</h3>
+<p>Numeric columns representing instance features. In the reference dataset, there are 10 such columns.</p>
+<h3>Algorithm Columns (<code>algo_*</code>)</h3>
+<p>Numeric columns representing an algorithm's raw performance value on that instance. In the reference dataset, there are 10 algorithm columns (NB, LDA, QDA, CART, J48, KNN, L_SVM, poly_SVM, RBF_SVM, RandF).</p>
+<h3>Optional Source Column</h3>
+<p>An optional <code>source</code> column is used for per-instance provenance labels (not present in the reference dataset).</p>
+<h2>Configuration and Constraints</h2>
+<h3>Column Selection</h3>
+<p><code>opts.selvars.feats</code> and <code>opts.selvars.algos</code> in <code>options.json</code> can restrict used columns by name.</p>
+<h3>Evaluation Mode Requirements</h3>
+<p>For <code>metadata_test.csv</code> in evaluation mode:
+- Feature columns must match the training <code>metadata.csv</code> in both set and order (validated by <code>InstanceSpace.explore()/evaluateTestSet</code>).
+- Algorithm columns: Known algorithms match their trained column position; new algorithms present in the test file are appended as new columns.</p>
+<h2>Example</h2>
+<p>Confirmed via direct inspection of test/data/metadata.csv and test/data/metadata_test.csv's header row (identical in both files):</p>
+<pre class="syntax"><code>Instances,feature_Max_Normalized_Entropy_attributes,feature_Normalized_Entropy_Class_Attribute,feature_Mean_Mutual_Information_Attribute_Class,feature_ErrorRate_Decision_Node,feature_WeightedDist_StdDev,feature_Max_Feature_Efficiency_F3,feature_Collective_Feature_Efficiency_F4,feature_Training_Error_Linear_Classifier_L2,feature_Fraction_Points_Class_Boundary_N1,feature_Nonlinearity_Nearest_Neighbor_Classifier_N4,algo_NB,algo_LDA,algo_QDA,algo_CART,algo_J48,algo_KNN,algo_L_SVM,algo_poly_SVM,algo_RBF_SVM,algo_RandF
+</code></pre>
+<p>First data row (metadata.csv), showing the value format:</p>
+<pre><code>abalone,0.332548382,0.131686939,0.229928422,0.386458668,2.343235444,0.076929217,0.095203899,0.260234614,0.404836009,0.327388088,0.280095763,0.239715007,0.25401222,0.24533949,0.256491398,0.256969153,0.230584159,0.277410974,0.221197935,0.234432252
+</code></pre>
+<hr class="footer-rule">
+<p class="copyright"><em>Copyright (c) 2026 Mario Andres Munoz Acosta and contributors,
+School of Computing and Information Systems, The University of Melbourne.
+Released under the PolyForm Noncommercial License 1.0.0.</em></p>
+</div>
+</body>
+</html>

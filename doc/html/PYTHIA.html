@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PYTHIA</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="sidebar">
+<h4>InstanceSpace</h4>
+<ul>
+<li><a href="Landing.html">InstanceSpace</a></li>
+</ul>
+<h4>Getting Started</h4>
+<ul>
+<li><a href="GettingStarted.html">Getting Started</a></li>
+<li><a href="InteractiveWalkthrough.html">Interactive Walkthrough</a></li>
+</ul>
+<h4>Standalone pipeline functions</h4>
+<ul>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><span class="current-page">PYTHIA</span></li>
+<li><a href="TRACE.html">TRACE</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="INIT.html">INIT</a></li>
+</ul>
+<h4>Class interface</h4>
+<ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul>
+<h4>Backward-compatibility wrappers</h4>
+<ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul>
+<h4>Utilities</h4>
+<ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+</ul>
+<h4>Output</h4>
+<ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul>
+<h4>Deprecated Functions</h4>
+<ul>
+<li><a href="Deprecated.html">Deprecated</a></li>
+</ul>
+<h4>Reference</h4>
+<ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+</ul>
+<h4>What's New</h4>
+<ul>
+<li><a href="WhatsNew.html">What's New</a></li>
+</ul>
+</div>
+<div class="content">
+<h1>PYTHIA</h1>
+<p>Unified binary classifier for instance-space algorithm selection.</p>
+<h2>Syntax</h2>
+<pre class="syntax"><code># Training mode
+out = PYTHIA(Z, Y, Ybin, Ybest, algolabels, opts)
+
+# Evaluation mode
+out = PYTHIA(Z, Y, Ybin, Ybest, algolabels, opts, trainedModel)
+</code></pre>
+<h2>Description</h2>
+<p>Trains one binary good/not-good classifier per algorithm (registry resolved via ISAgetClassifierFcn), tuning hyperparameters per opts.tuning. Applies trainedModel's already-fitted classifiers to new data instead of training fresh ones -- trainedModel is a prior training-mode call's out struct.</p>
+<h2>Input Arguments</h2>
+<table class="args">
+<thead>
+<tr>
+<th>Argument</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Z</td>
+<td>(ninst x ndim) projected instance coordinates</td>
+</tr>
+<tr>
+<td>Y</td>
+<td>(ninst x nalgos) raw performance matrix</td>
+</tr>
+<tr>
+<td>Ybin</td>
+<td>(ninst x nalgos) logical good-performance labels</td>
+</tr>
+<tr>
+<td>Ybest</td>
+<td>(ninst x 1) best algorithm's raw performance per instance</td>
+</tr>
+<tr>
+<td>algolabels</td>
+<td>(1 x nalgos) cell array of algorithm name strings</td>
+</tr>
+<tr>
+<td>opts</td>
+<td>struct with fields:</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>opts.classifier</code></td>
+<td>char registry name (default 'knn'); see ISAgetClassifierFcn</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>opts.tuning</code></td>
+<td>char 'sobol' (default) -- scrambled Sobol quasi-random search, opts.nTuningIter evals; 'bayes' -- MATLAB bayesopt (Gaussian process surrogate), same evals/k-fold CV as 'sobol'; 'none' -- use pre-supplied opts.params directly, skip tuning</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>opts.nTuningIter</code></td>
+<td>int Sobol/Bayes evaluation budget (default 20)</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>opts.kFold</code></td>
+<td>int cross-validation folds (default 5)</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>opts.ispolykrnl</code></td>
+<td>logical SVM only: polynomial vs Gaussian kernel (default false)</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>opts.useweights</code></td>
+<td>logical cost-sensitive classification (default false)</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>opts.params</code></td>
+<td>double pre-calculated hyperparameters, required when tuning='none' (default [])</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>opts.skip</code></td>
+<td>logical bypass training entirely (default false)</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>opts.ensembleMethod</code></td>
+<td>char fitcensemble method (default 'Bag')</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>opts.seed</code></td>
+<td>double RNG seed, defaults to opts.general.seed</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>opts.verbose</code></td>
+<td>logical per-classifier progress output (default true)</td>
+</tr>
+<tr>
+<td>trainedModel</td>
+<td>(optional) a prior training-mode call's out struct; presence selects evaluation mode over training mode</td>
+</tr>
+<tr>
+<td>## Output Arguments</td>
+<td></td>
+</tr>
+<tr>
+<td>Argument</td>
+<td>Description</td>
+</tr>
+<tr>
+<td>---</td>
+<td>---</td>
+</tr>
+<tr>
+<td>out</td>
+<td>struct with fields:</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>out.classifiers{nalgos}</code></td>
+<td>trained classifier objects (or legacy LIBSVM structs)</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>out.Yhat</code>, <code>out.Pr0hat</code></td>
+<td>predicted good-performance labels and probabilities</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>out.Ysub</code>, <code>out.Pr0sub</code></td>
+<td>cross-validated predictions (training mode)</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>out.cvcmat</code>, <code>out.accuracy</code>, <code>out.precision</code>, <code>out.recall</code></td>
+<td>per-algorithm cross-validation performance</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>out.param1</code>, <code>out.param2</code>, <code>out.param2Label</code></td>
+<td>selected hyperparameters per algorithm</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>out.selection0</code>, <code>out.selection1</code></td>
+<td>predicted best-algorithm index per instance (precision-weighted, with and without a default fallback)</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>out.mu</code>, <code>out.sigma</code></td>
+<td>Z-score normalisation parameters applied to Z</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>out.summary</code></td>
+<td>cell array display of the above, one row per algorithm</td>
+</tr>
+<tr>
+<td>## References</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Smith-Miles, K. &amp; Munoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. ACM Computing Surveys, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
+</ul>
+<h2>See Also</h2>
+<p><a href="TRACE.html">TRACE</a> | <a href="InstanceSpace.html">InstanceSpace</a></p>
+<hr class="footer-rule">
+<p class="copyright"><em>Copyright (c) 2026 Mario Andres Munoz Acosta and contributors,
+School of Computing and Information Systems, The University of Melbourne.
+Released under the PolyForm Noncommercial License 1.0.0.</em></p>
+</div>
+</body>
+</html>

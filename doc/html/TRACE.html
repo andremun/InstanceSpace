@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TRACE</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="sidebar">
+<h4>InstanceSpace</h4>
+<ul>
+<li><a href="Landing.html">InstanceSpace</a></li>
+</ul>
+<h4>Getting Started</h4>
+<ul>
+<li><a href="GettingStarted.html">Getting Started</a></li>
+<li><a href="InteractiveWalkthrough.html">Interactive Walkthrough</a></li>
+</ul>
+<h4>Standalone pipeline functions</h4>
+<ul>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><span class="current-page">TRACE</span></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="INIT.html">INIT</a></li>
+</ul>
+<h4>Class interface</h4>
+<ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul>
+<h4>Backward-compatibility wrappers</h4>
+<ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul>
+<h4>Utilities</h4>
+<ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+</ul>
+<h4>Output</h4>
+<ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul>
+<h4>Deprecated Functions</h4>
+<ul>
+<li><a href="Deprecated.html">Deprecated</a></li>
+</ul>
+<h4>Reference</h4>
+<ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+</ul>
+<h4>What's New</h4>
+<ul>
+<li><a href="WhatsNew.html">What's New</a></li>
+</ul>
+</div>
+<div class="content">
+<h1>TRACE</h1>
+<p class="tagline">Compute or evaluate algorithm footprints in the instance space.</p>
+<h2>Syntax</h2>
+<pre class="syntax"><code>Training mode (7 args):
+out = TRACE(Z, Ybin, Yhat, P, beta, algolabels, opts)
+
+Evaluation mode (8 args):
+out = TRACE(Z, Ybin, Yhat, P, beta, algolabels, opts, trainedTrace)
+</code></pre>
+<h2>Description</h2>
+<p>Builds footprints using TRACE3 (default) or the legacy DBSCAN algorithm.</p>
+<p>Note: PYTHIA always runs before TRACE in this pipeline (mandatory coupling), so TRACE never trains its own KNN classifier -- that would be the fallback algorithm when no PYTHIA predictions are available, but it is superseded whenever PYTHIA has already produced predictions, which is always. If Yhat is empty/skipped, Zu = {yi=1} directly with a warning; there is no KNN-training fallback in this version.</p>
+<h2>Input Arguments</h2>
+<table class="args">
+<thead>
+<tr>
+<th>Argument</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Z</code></td>
+<td>(<code>ninst</code> x <code>ndim</code>) projected instance coordinates (2D or 3D)</td>
+</tr>
+<tr>
+<td><code>Ybin</code></td>
+<td>(<code>ninst</code> x <code>nalgos</code>) true binary performance labels</td>
+</tr>
+<tr>
+<td><code>Yhat</code></td>
+<td>(<code>ninst</code> x <code>nalgos</code>) PYTHIA predicted labels; [] if unavailable</td>
+</tr>
+<tr>
+<td><code>P</code></td>
+<td>(<code>ninst</code> x 1) best-algorithm index per instance</td>
+</tr>
+<tr>
+<td><code>beta</code></td>
+<td>(<code>ninst</code> x 1) logical: instance is easy (has a good algorithm)</td>
+</tr>
+<tr>
+<td><code>algolabels</code></td>
+<td>(1 x <code>nalgos</code>) cell array of algorithm name strings</td>
+</tr>
+<tr>
+<td><code>opts</code></td>
+<td>struct with fields (see ISAdefaults for defaults):</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>opts.method</code></td>
+<td>'trace3' (default) or 'legacy'</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>opts.PI</code></td>
+<td>minimum purity threshold (0.6)</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>opts.minInstances</code></td>
+<td>minimum instances for a valid footprint (4)</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>opts.minAreaFrac</code></td>
+<td>footprint must exceed this fraction of space (0.01)</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>opts.contra</code></td>
+<td>contradiction removal; legacy only; default true when method='legacy', false otherwise</td>
+</tr>
+<tr>
+<td><code>trainedTrace</code></td>
+<td>(optional) trained trace struct from a prior TRACE call; when provided, activates evaluation mode.</td>
+</tr>
+</tbody>
+</table>
+<h2>Output Arguments</h2>
+<table class="args">
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>out</code></td>
+<td>struct with fields:</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>out.space</code></td>
+<td>convex-hull space footprint (measure, density, ...)</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>out.good{nalgos}</code></td>
+<td>good-performance footprints</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>out.best{nalgos}</code></td>
+<td>best-algorithm footprints</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>out.hard</code></td>
+<td>beta-hard footprint (~beta instances)</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;<code>out.summary</code></td>
+<td>(nalgos+1 x 11) cell array performance table</td>
+</tr>
+</tbody>
+</table>
+<h2>Legacy method (<code>opts.method = 'legacy'</code>)</h2>
+<p>Selectable via <code>opts.method='legacy'</code> above, implemented in <code>TRACE_legacy.m</code>. Uses DBSCAN clustering followed by boundary/polyshape construction per cluster, instead of TRACE3's default algorithm. Contradiction removal between best-algorithm footprints is applied when <code>useContra = true</code> (the default for legacy mode).</p>
+<p>Inputs mirror TRACE's own training-mode signature above, with one confirmed difference: there is no <code>Yhat</code> argument -- legacy mode does not consult PYTHIA predictions at all. Outputs mirror the same <code>out</code> struct shape (<code>space</code>, <code>good</code>, <code>best</code>, <code>hard</code>), but each footprint struct's area is stored as <code>.area</code>, not <code>.measure</code> -- <code>TRACE.m</code> itself normalises this naming difference after calling <code>TRACE_legacy</code>, so callers of <code>TRACE.m</code> never see the discrepancy.</p>
+<h2>References</h2>
+<ul>
+<li>Smith-Miles, K. &amp; Munoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. ACM Computing Surveys, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
+<li>Simpson, C., Munoz, M.A., Kandanaarachchi, S. &amp; Campello, R.J.G.B. (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis. Machine Learning, 114, 240. <a href="https://doi.org/10.1007/s10994-025-06871-5">https://doi.org/10.1007/s10994-025-06871-5</a></li>
+<li>Munoz, M.A. &amp; Smith-Miles, K. (2017). Performance analysis of continuous black-box optimization algorithms via footprints in instance space. Evolutionary Computation, 25(4), 529-554. <a href="https://doi.org/10.1162/EVCO_a_00194">https://doi.org/10.1162/EVCO_a_00194</a></li>
+</ul>
+<h2>See Also</h2>
+<p><a href="PYTHIA.html">PYTHIA</a> | <a href="InstanceSpace.html">InstanceSpace</a></p>
+<hr class="footer-rule">
+<p class="copyright"><em>Copyright (c) 2026 Mario Andres Munoz Acosta and contributors,
+School of Computing and Information Systems, The University of Melbourne.
+Released under the PolyForm Noncommercial License 1.0.0.</em></p>
+</div>
+</body>
+</html>

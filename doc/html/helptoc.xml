@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<toc version="2.0">
+  <tocitem target="Landing.html" image="HelpIcon.HELP">
+    <label>InstanceSpace</label>
+  </tocitem>
+  <tocitem target="GettingStarted.html" image="HelpIcon.GETTING_STARTED">
+    <label>Getting Started</label>
+    <tocitem target="GettingStarted.html" image="HelpIcon.GETTING_STARTED"><label>Getting Started</label></tocitem>
+    <tocitem target="InteractiveWalkthrough.html" image="HelpIcon.GETTING_STARTED"><label>Interactive Walkthrough</label></tocitem>
+  </tocitem>
+  <tocitem target="PRELIM.html" image="HelpIcon.FUNCTION">
+    <label>Standalone pipeline functions</label>
+    <tocitem target="PRELIM.html" image="HelpIcon.FUNCTION"><label>PRELIM</label></tocitem>
+    <tocitem target="SIFTED.html" image="HelpIcon.FUNCTION"><label>SIFTED</label></tocitem>
+    <tocitem target="PILOT.html" image="HelpIcon.FUNCTION"><label>PILOT</label></tocitem>
+    <tocitem target="CLOISTER.html" image="HelpIcon.FUNCTION"><label>CLOISTER</label></tocitem>
+    <tocitem target="PYTHIA.html" image="HelpIcon.FUNCTION"><label>PYTHIA</label></tocitem>
+    <tocitem target="TRACE.html" image="HelpIcon.FUNCTION"><label>TRACE</label></tocitem>
+    <tocitem target="FILTER.html" image="HelpIcon.FUNCTION"><label>FILTER</label></tocitem>
+    <tocitem target="PILOTviewpoint.html" image="HelpIcon.FUNCTION"><label>PILOTviewpoint</label></tocitem>
+    <tocitem target="INIT.html" image="HelpIcon.FUNCTION"><label>INIT</label></tocitem>
+  </tocitem>
+  <tocitem target="InstanceSpace.html" image="HelpIcon.FUNCTION">
+    <label>Class interface</label>
+    <tocitem target="InstanceSpace.html" image="HelpIcon.FUNCTION"><label>InstanceSpace</label></tocitem>
+  </tocitem>
+  <tocitem target="buildIS.html" image="HelpIcon.FUNCTION">
+    <label>Backward-compatibility wrappers</label>
+    <tocitem target="buildIS.html" image="HelpIcon.FUNCTION"><label>buildIS</label></tocitem>
+    <tocitem target="exploreIS.html" image="HelpIcon.FUNCTION"><label>exploreIS</label></tocitem>
+  </tocitem>
+  <tocitem target="ISAdefaults.html" image="HelpIcon.FUNCTION">
+    <label>Utilities</label>
+    <tocitem target="ISAdefaults.html" image="HelpIcon.FUNCTION"><label>ISAdefaults</label></tocitem>
+    <tocitem target="ISAvalidateOpts.html" image="HelpIcon.FUNCTION"><label>ISAvalidateOpts</label></tocitem>
+    <tocitem target="ISAsubsetData.html" image="HelpIcon.FUNCTION"><label>ISAsubsetData</label></tocitem>
+    <tocitem target="ISAgetClassifierFcn.html" image="HelpIcon.FUNCTION"><label>ISAgetClassifierFcn</label></tocitem>
+    <tocitem target="ISAmigrateModel.html" image="HelpIcon.FUNCTION"><label>ISAmigrateModel</label></tocitem>
+  </tocitem>
+  <tocitem target="scriptcsv.html" image="HelpIcon.FUNCTION">
+    <label>Output</label>
+    <tocitem target="scriptcsv.html" image="HelpIcon.FUNCTION"><label>scriptcsv</label></tocitem>
+    <tocitem target="scriptpng.html" image="HelpIcon.FUNCTION"><label>scriptpng</label></tocitem>
+    <tocitem target="scriptweb.html" image="HelpIcon.FUNCTION"><label>scriptweb</label></tocitem>
+    <tocitem target="ISArecallView.html" image="HelpIcon.FUNCTION"><label>ISArecallView</label></tocitem>
+  </tocitem>
+  <tocitem target="Deprecated.html" image="HelpIcon.FUNCTION">
+    <label>Deprecated Functions</label>
+  </tocitem>
+  <tocitem target="OptionsReference.html" image="HelpIcon.FUNCTION">
+    <label>Reference</label>
+    <tocitem target="OptionsReference.html" image="HelpIcon.FUNCTION"><label>Options Reference</label></tocitem>
+    <tocitem target="MetadataFormat.html" image="HelpIcon.FUNCTION"><label>Metadata File Format</label></tocitem>
+    <tocitem target="MigratingLegacyModel.html" image="HelpIcon.FUNCTION"><label>Migrating a Legacy Model</label></tocitem>
+  </tocitem>
+  <tocitem target="WhatsNew.html" image="HelpIcon.HELP">
+    <label>What's New</label>
+  </tocitem>
+</toc>

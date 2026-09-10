@@ -1,0 +1,122 @@
+/* Shared stylesheet for both trial candidates -- a MathWorks-toolbox-doc
+   *style* lookalike (own layout/typography choices, not MathWorks' actual
+   CSS/branded assets, which aren't licensed for reuse). Both candidate
+   pages link this same file so the visual comparison isolates "how the
+   page's markup gets authored" from "how it looks", per §4a. */
+
+html, body { background: #ffffff; }
+
+body {
+  font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  color: #1a1a1a;
+  line-height: 1.55;
+  display: flex;
+  align-items: flex-start;
+  margin: 0 auto;
+  max-width: 1180px;
+}
+
+/* Added with the site-wide nav (instancespace_docs_nav_framework.md) --
+   sidebar/content flex split; body's own font/color rules above still
+   apply, only the single-column max-width/padding/margin move here. */
+.sidebar {
+  flex: 0 0 220px;
+  padding: 24px 16px 64px 32px;
+  font-size: 0.9em;
+  border-right: 1px solid #e0e0e0;
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar h4 {
+  margin: 1.1em 0 0.3em;
+  font-size: 0.95em;
+  color: #0b5b8c;
+}
+
+.sidebar ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar li { margin: 2px 0; }
+
+.sidebar a { color: #1a1a1a; text-decoration: none; }
+.sidebar a:hover { text-decoration: underline; }
+
+.sidebar .current-page {
+  font-weight: 600;
+  color: #0b5b8c;
+}
+
+.content {
+  flex: 1 1 auto;
+  max-width: 860px;
+  padding: 24px 32px 64px;
+  min-width: 0;
+}
+
+.footer-rule {
+  margin-top: 2.5em;
+  border: none;
+  border-top: 1px solid #d6d6d6;
+}
+
+.copyright {
+  color: #777;
+  font-size: 0.85em;
+}
+
+h1 { font-size: 1.7em; margin-bottom: 2px; }
+.tagline { color: #555; font-size: 1.02em; margin-top: 0; }
+
+h2 {
+  font-size: 1.15em;
+  border-bottom: 1px solid #d6d6d6;
+  padding-bottom: 4px;
+  margin-top: 2em;
+  color: #0b5b8c;
+}
+
+pre.syntax {
+  background: #f4f6f8;
+  border: 1px solid #dde3e8;
+  border-radius: 4px;
+  padding: 10px 14px;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.95em;
+  overflow-x: auto;
+}
+
+table.args {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 10px 0 20px;
+  font-size: 0.95em;
+}
+table.args th, table.args td {
+  text-align: left;
+  padding: 6px 10px;
+  border-bottom: 1px solid #e6e6e6;
+  vertical-align: top;
+}
+table.args th {
+  background: #f4f6f8;
+  font-weight: 600;
+  width: 22%;
+}
+table.args code { white-space: nowrap; }
+
+.see-also a { color: #0b5b8c; text-decoration: none; }
+.see-also a:hover { text-decoration: underline; }
+
+footer.license {
+  margin-top: 3em;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+  font-size: 0.8em;
+  color: #888;
+}

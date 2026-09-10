@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>INIT</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="sidebar">
+<h4>InstanceSpace</h4>
+<ul>
+<li><a href="Landing.html">InstanceSpace</a></li>
+</ul>
+<h4>Getting Started</h4>
+<ul>
+<li><a href="GettingStarted.html">Getting Started</a></li>
+<li><a href="InteractiveWalkthrough.html">Interactive Walkthrough</a></li>
+</ul>
+<h4>Standalone pipeline functions</h4>
+<ul>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><span class="current-page">INIT</span></li>
+</ul>
+<h4>Class interface</h4>
+<ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul>
+<h4>Backward-compatibility wrappers</h4>
+<ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul>
+<h4>Utilities</h4>
+<ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+</ul>
+<h4>Output</h4>
+<ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul>
+<h4>Deprecated Functions</h4>
+<ul>
+<li><a href="Deprecated.html">Deprecated</a></li>
+</ul>
+<h4>Reference</h4>
+<ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+</ul>
+<h4>What's New</h4>
+<ul>
+<li><a href="WhatsNew.html">What's New</a></li>
+</ul>
+</div>
+<div class="content">
+<h1>INIT</h1>
+<p>Load and filter instance-space metadata (build or explore time).</p>
+<h2>Syntax</h2>
+<pre class="syntax"><code>Training mode (2 args): [data, extra] = INIT(rootdir, opts)
+Evaluation mode (3 args): [data, extra] = INIT(rootdir, opts, trainedModel)
+</code></pre>
+<h2>Description</h2>
+<p>Reads rootdir/metadata.csv, applies opts.selvars.feats/.algos column filtering, and drops instances/features with too many missing values (opts.prelim.nanThreshold).</p>
+<p>Reads rootdir/metadata_test.csv, applies the same opts.selvars filtering, validates the feature set/order against trainedModel (a previously-built InstanceSpace object's obj.model), and reconciles algorithm columns against trainedModel.data.algolabels: known algorithms line up by name at their trained column position, unseen ones are appended as new columns (NaN for training-only algorithms).</p>
+<p>Before this function existed, this logic was two independent, drifted implementations -- the version embedded in InstanceSpace.runPrelim (build time) and a separate inline reimplementation in InstanceSpace.evaluateTestSet (explore time). INIT is a pure extraction of both into one shared function, dispatched by nargin like PYTHIA/TRACE (#38): each mode's behaviour is preserved exactly as it was, just no longer duplicated in two places that could silently drift apart from each other.</p>
+<h2>Input Arguments</h2>
+<table class="args">
+<thead>
+<tr>
+<th>Argument</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>rootdir</td>
+<td>directory containing metadata.csv (training mode) or metadata_test.csv (evaluation mode), trailing slash</td>
+</tr>
+<tr>
+<td>opts</td>
+<td>the full opts struct (obj.opts in training mode, trainedModel.opts in evaluation mode)</td>
+</tr>
+<tr>
+<td>trainedModel</td>
+<td>(optional) a previously-built InstanceSpace object's obj.model; presence selects evaluation mode</td>
+</tr>
+<tr>
+<td>## Output Arguments</td>
+<td></td>
+</tr>
+<tr>
+<td>Argument</td>
+<td>Description</td>
+</tr>
+<tr>
+<td>---</td>
+<td>---</td>
+</tr>
+<tr>
+<td>data</td>
+<td>struct: instlabels, S (if a 'source' column is present), X, Y, Xraw, Yraw, algolabels. Training mode also: featlabels (evaluation mode's equivalent is finalised later by the caller, after featsel.idx subsetting -- see extra.featlabelsAll)</td>
+</tr>
+<tr>
+<td>extra</td>
+<td>training mode: struct() (unused) evaluation mode: struct with featlabelsAll (feature labels, 'feature_'-prefixed, after opts.selvars.feats filtering but before featsel.idx subsetting), modelalgos, newalgos, nalgos, ninst -- all needed by the caller's downstream PRELIM/normalisation/featsel step, which must treat the first modelalgos columns of data.Y differently from newly appended ones</td>
+</tr>
+<tr>
+<td>## References</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Smith-Miles, K. &amp; Munoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. ACM Computing Surveys, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
+</ul>
+<h2>See Also</h2>
+<p><a href="PRELIM.html">PRELIM</a> | <a href="InstanceSpace.html">InstanceSpace</a></p>
+<hr class="footer-rule">
+<p class="copyright"><em>Copyright (c) 2026 Mario Andres Munoz Acosta and contributors,
+School of Computing and Information Systems, The University of Melbourne.
+Released under the PolyForm Noncommercial License 1.0.0.</em></p>
+</div>
+</body>
+</html>

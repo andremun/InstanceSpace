@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>InstanceSpace</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="sidebar">
+<h4>InstanceSpace</h4>
+<ul>
+<li><a href="Landing.html">InstanceSpace</a></li>
+</ul>
+<h4>Getting Started</h4>
+<ul>
+<li><a href="GettingStarted.html">Getting Started</a></li>
+<li><a href="InteractiveWalkthrough.html">Interactive Walkthrough</a></li>
+</ul>
+<h4>Standalone pipeline functions</h4>
+<ul>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="INIT.html">INIT</a></li>
+</ul>
+<h4>Class interface</h4>
+<ul>
+<li><span class="current-page">InstanceSpace</span></li>
+</ul>
+<h4>Backward-compatibility wrappers</h4>
+<ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul>
+<h4>Utilities</h4>
+<ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+</ul>
+<h4>Output</h4>
+<ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul>
+<h4>Deprecated Functions</h4>
+<ul>
+<li><a href="Deprecated.html">Deprecated</a></li>
+</ul>
+<h4>Reference</h4>
+<ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+</ul>
+<h4>What's New</h4>
+<ul>
+<li><a href="WhatsNew.html">What's New</a></li>
+</ul>
+</div>
+<div class="content">
+<h1>InstanceSpace</h1>
+<h2>Overview</h2>
+<p><code>InstanceSpace</code> is a MATLAB value class that wraps the ISA pipeline (PRELIM, SIFTED, PILOT, CLOISTER, PYTHIA, TRACE). This class provides a structured way to manage and analyze data through a series of predefined stages. Because <code>InstanceSpace</code> is a value class (not a handle class), every method that changes state returns the updated object; the caller must reassign, e.g., <code>obj = obj.build()</code>.</p>
+<p><code>buildIS.m</code> and <code>exploreIS.m</code> are backward-compatibility wrappers around this class; new code is encouraged to use the class directly.</p>
+<h2>Construction and Persistence</h2>
+<h3>Constructor</h3>
+<p>The constructor for <code>InstanceSpace</code> is designed to accept two main arguments: <code>rootdir</code> and <code>opts</code>. The constructor reads <code>metadata.csv</code> and <code>options.json</code> to initialize the object, validates the options using <code>ISAvalidateOpts</code>, and fills in defaults using <code>ISAdefaults</code>.</p>
+<ul>
+<li><strong>Syntax:</strong> <code>obj = InstanceSpace(rootdir)</code> or <code>obj = InstanceSpace(rootdir, opts)</code>.</li>
+<li><strong>Persistence:</strong> The constructor does not run any computation; it merely initializes the object.</li>
+</ul>
+<h3>Saving/Loading</h3>
+<ul>
+<li><strong><code>save(obj)</code>:</strong> Writes <code>model.mat</code> (-v7.3) by flattening <code>obj.model</code> fields.</li>
+<li><strong><code>load(rootdir)</code> (Static):</strong> Loads <code>model.mat</code>, migrates legacy names via <code>ISAmigrateModel</code>, and fills missing defaults.</li>
+</ul>
+<h2>Properties</h2>
+<p>The following properties are publicly accessible:</p>
+<ul>
+<li><code>rootdir</code> (1,:) char -- the directory this object was constructed from</li>
+<li><code>opts</code> (1,1) struct -- the full pipeline options struct</li>
+<li><code>model</code> (1,1) struct -- the trained model, populated stage by stage as <code>build()</code> runs</li>
+<li><code>testDirs</code> (1,:) cell -- one entry per <code>explore()</code> call, the test root directory used</li>
+<li><code>testResults</code> (1,:) cell -- one entry per <code>explore()</code> call, that call's result struct</li>
+<li><code>completedStages</code> (1,:) cell -- which of <code>prelim</code>, <code>sifted</code>, <code>pilot</code>, <code>cloister</code>, <code>pythia</code>, <code>trace</code> have run and are still valid; re-running an earlier stage invalidates subsequent stages</li>
+</ul>
+<h2>Core Methods</h2>
+<h3><code>build(obj, varargin)</code></h3>
+<p>The <code>build()</code> method runs the full pipeline or specific stages.</p>
+<ul>
+<li><strong>Syntax:</strong> <code>obj = obj.build()</code> runs every stage. <code>obj.build('stages', {'pilot',...})</code> runs only named stages.</li>
+<li><strong>Callback:</strong> <code>obj.build('onStage', @(stageName, model) ...)</code> invokes a callback once per completed stage with that stage's name and <code>obj.model</code> at that point.</li>
+<li><strong>Persistence:</strong> Outputs are persisted and written (CSV/web/PNG) only once every stage has completed.</li>
+</ul>
+<h3><code>explore(obj, testRootDir, varargin)</code></h3>
+<p>The <code>explore()</code> method evaluates the trained model on new data using frozen training options. It excludes the <code>cloister</code> stage.</p>
+<ul>
+<li><strong>Syntax:</strong> <code>obj = obj.explore(testRootDir, 'onStage', @(stageName, out) ...)</code> fires once per conceptual stage.</li>
+<li><strong>Exclusion:</strong> The <code>cloister</code> stage is never recomputed at explore time.</li>
+</ul>
+<h3><code>getResults(obj, idx)</code></h3>
+<ul>
+<li><code>results = obj.getResults()</code>: Returns training results (<code>obj.model</code>).</li>
+<li><code>results = obj.getResults(idx)</code>: Returns the <code>idx</code>-th explore result (<code>obj.testResults{idx}</code>).</li>
+</ul>
+<h3><code>plot(obj, varargin)</code></h3>
+<p>Interactive convenience wrapper around <code>scriptfcn.m</code>'s drawing helpers, plotting to the current figure. Requires a trained model.</p>
+<ul>
+<li><code>plot(obj, viewName)</code> -- basic form.</li>
+<li><code>plot(obj, viewName, algoIdx)</code> -- with an algorithm index, required for the <code>'good'</code>/<code>'footprint'</code> views.</li>
+</ul>
+<p><strong>View options:</strong></p>
+<table class="args">
+<thead>
+<tr>
+<th><code>viewName</code></th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>'sources'</code></td>
+<td>Requires <code>model.data.S</code></td>
+</tr>
+<tr>
+<td><code>'portfolio'</code></td>
+<td>Uses <code>drawPortfolioSelections</code></td>
+</tr>
+<tr>
+<td><code>'good'</code></td>
+<td>Requires <code>algoIdx</code> (1-based into <code>model.data.algolabels</code>)</td>
+</tr>
+<tr>
+<td><code>'footprint'</code></td>
+<td>Requires <code>algoIdx</code> (1-based into <code>model.data.algolabels</code>)</td>
+</tr>
+<tr>
+<td><code>'boundary'</code></td>
+<td>Requires <code>model.cloist</code>; 2D only</td>
+</tr>
+</tbody>
+</table>
+<h2>Usage</h2>
+<h3>Basic usage</h3>
+<pre><code class="language-matlab">obj = InstanceSpace(rootdir);
+obj = obj.build();
+obj = obj.explore(testRootDir);
+results = obj.getResults();
+testResults = obj.getResults(1);
+</code></pre>
+<h3>Staged usage, with option changes between stages</h3>
+<pre><code class="language-matlab">obj = InstanceSpace(rootdir);
+obj.opts.pilot.dims = 3;
+obj = obj.build('stages', {'prelim','sifted','pilot'});
+figure; scatter(obj.model.pilot.Z(:,1), obj.model.pilot.Z(:,2));
+obj.opts.pilot.alpha = 2.0;
+obj = obj.build('stages', {'pilot'});
+obj.opts.pythia.tuning = 'bayes';
+obj = obj.build('stages', {'cloister','pythia','trace'});
+</code></pre>
+<p>Re-running an earlier stage invalidates every later stage's output.</p>
+<h3>Callback-based inspection</h3>
+<pre><code class="language-matlab">inspect = @(stageName, model) fprintf('%s done\n', stageName);
+obj = obj.build('onStage', inspect);
+obj = obj.explore(testRootDir, 'onStage', inspect);
+</code></pre>
+<h2>References</h2>
+<ul>
+<li>Smith-Miles, K. &amp; Munoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. ACM Computing Surveys, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
+</ul>
+<h2>See Also</h2>
+<p><a href="buildIS.html">buildIS</a> | <a href="exploreIS.html">exploreIS</a></p>
+<hr class="footer-rule">
+<p class="copyright"><em>Copyright (c) 2026 Mario Andres Munoz Acosta and contributors,
+School of Computing and Information Systems, The University of Melbourne.
+Released under the PolyForm Noncommercial License 1.0.0.</em></p>
+</div>
+</body>
+</html>

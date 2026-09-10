@@ -52,6 +52,12 @@ function modelOut = ISAmigrateModel(input, varargin)
 % Examples:
 %   ISAmigrateModel('/path/to/rootdir/');            % migrates model.mat on disk
 %   m = load('model.mat'); m = ISAmigrateModel(m);   % migrates an in-memory struct
+%
+%   Inputs
+%     input - either a rootdir (char/string) containing model.mat (file-based form), or an already-loaded model struct (in-memory form); dispatched on this argument's type.
+%     varargin - name-value pairs, optional; file-based form only. backupSuffix (char, default '_legacy') - suffix appended to the backup filename; must produce a filename different from model.mat, and refuses to overwrite an existing backup at that name.
+%   Outputs
+%     modelOut - the migrated model struct. File-based form also writes it back to model.mat in rootdir (after backing up the original) as a side effect; in-memory form performs no file I/O -- only the returned struct is migrated.
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit

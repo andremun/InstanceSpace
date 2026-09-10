@@ -8,6 +8,11 @@ function model = buildIS(rootdir)
 %
 %   obj = InstanceSpace(rootdir);
 %   obj = obj.build();
+%
+%   Inputs
+%     rootdir - directory containing metadata.csv and options.json
+%   Outputs
+%     model - the built InstanceSpace object's obj.model (equivalent to calling InstanceSpace(rootdir).build().model directly)
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit

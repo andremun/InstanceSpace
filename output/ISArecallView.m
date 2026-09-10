@@ -5,17 +5,6 @@ function ISArecallView(fig, groupIdx)
 %   ISArecallView(fig, groupIdx)
 %   ISArecallView(fig)          % use the default/global viewpoint
 %
-%   fig      - handle to a figure produced by scriptpng.m, or a .fig file
-%              it wrote reopened via openfig/uiopen -- the viewpoint is
-%              stored in the figure's UserData (scriptpng.m sets
-%              fig.UserData.isaViewpoint), so it survives a save/load
-%              round-trip through a .fig file even in a different MATLAB
-%              session.
-%   groupIdx - algorithm column index (as used in opts.pilot.viewGroups)
-%              whose stored viewpoint to apply. Omit or pass [] for the
-%              default/global viewpoint (the one feature/portfolio-level
-%              plots use).
-%
 %   Useful after manually rotating a 3D footprint .fig while exploring it
 %   interactively, to return to the optimised viewpoint without having to
 %   recompute or look it up by hand.
@@ -23,6 +12,12 @@ function ISArecallView(fig, groupIdx)
 %   Example:
 %     fig = openfig('footprint_KNN.fig');
 %     ISArecallView(fig, 3);   % back to the stored view for algorithm 3
+%
+%   Inputs
+%     fig - handle to a figure (produced by scriptpng.m or a .fig file) containing viewpoint data in UserData.
+%     groupIdx - algorithm column index (from opts.pilot.viewGroups) to apply a specific viewpoint, or [] for the default/global viewpoint.
+%   Outputs
+%     None -- rotates the camera to the stored viewpoint as a side effect.
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit

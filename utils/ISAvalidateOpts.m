@@ -24,6 +24,11 @@ function opts = ISAvalidateOpts(opts)
 %   unmodified; this function only ever errors or passes through, it
 %   never rewrites values (renaming/migrating legacy field names is
 %   ISAmigrateModel's job, not this one's).
+%
+%   Inputs
+%     opts - struct, user-supplied, possibly partial -- only the fields actually present are checked
+%   Outputs
+%     opts - the same struct, unmodified. This function only ever errors (on the first invalid recognised field) or passes through -- it never rewrites values
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit

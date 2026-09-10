@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MigratingLegacyModel</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="sidebar">
+<h4>InstanceSpace</h4>
+<ul>
+<li><a href="Landing.html">InstanceSpace</a></li>
+</ul>
+<h4>Getting Started</h4>
+<ul>
+<li><a href="GettingStarted.html">Getting Started</a></li>
+<li><a href="InteractiveWalkthrough.html">Interactive Walkthrough</a></li>
+</ul>
+<h4>Standalone pipeline functions</h4>
+<ul>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="INIT.html">INIT</a></li>
+</ul>
+<h4>Class interface</h4>
+<ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul>
+<h4>Backward-compatibility wrappers</h4>
+<ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul>
+<h4>Utilities</h4>
+<ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+</ul>
+<h4>Output</h4>
+<ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul>
+<h4>Deprecated Functions</h4>
+<ul>
+<li><a href="Deprecated.html">Deprecated</a></li>
+</ul>
+<h4>Reference</h4>
+<ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+<li><span class="current-page">Migrating a Legacy Model</span></li>
+</ul>
+<h4>What's New</h4>
+<ul>
+<li><a href="WhatsNew.html">What's New</a></li>
+</ul>
+</div>
+<div class="content">
+<h1>MigratingLegacyModel</h1>
+<h2>Introduction</h2>
+<p>This guide is designed as a companion to the <code>ISAmigrateModel</code> reference page, providing a user-friendly explanation of when and why to migrate a legacy model. Specifically, this guide is relevant if you are using a <code>model.mat</code> file that was produced by a pre-v0.9.0 version of the toolkit (before the introduction of the InstanceSpace class). The goal of this migration process is to make these legacy models compatible with the current toolkit's <code>exploreIS</code> or <code>InstanceSpace.explore()</code> functions, or with output scripts and pipelines.</p>
+<h2>When to Migrate</h2>
+<p>You should consider migrating your legacy model when you are using a <code>model.mat</code> file that was created by a version of the toolkit prior to v0.9.0. This migration is necessary to ensure compatibility with the current version of the toolkit, which uses a different class-based structure.</p>
+<h2>Migration Methods</h2>
+<p>There are two primary methods for migrating your legacy model:</p>
+<h3>File-based (Recommended)</h3>
+<p>The recommended approach is to use the <code>ISAmigrateModel(rootdir)</code> function. This function reads the <code>model.mat</code> file located in <code>rootdir/model.mat</code>, backs up the original file to <code>model_legacy.mat</code>, and writes the migrated model back to <code>model.mat</code>.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-matlab">rootdir = '/path/to/model/directory';
+ISAmigrateModel(rootdir);
+</code></pre>
+<h3>In-memory</h3>
+<p>If your legacy model is already loaded into the MATLAB workspace as a struct, you can use the <code>ISAmigrateModel(model)</code> function. This method performs the migration without any file I/O operations.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-matlab">model = load('path/to/model.mat');
+migratedModel = ISAmigrateModel(model);
+</code></pre>
+<h2>High-Level Summary of Changes</h2>
+<p>The migration process involves several changes to the legacy model's structure. A full field-by-field table is available on the <code>ISAmigrateModel</code> reference page. Below is a high-level summary of the changes:</p>
+<ul>
+<li><strong>Field renames:</strong></li>
+<li><code>opts</code> struct updates:<ul>
+<li><code>opts.oracle</code>/<code>opts.pbldr</code>/<code>opts.sbound</code>/<code>opts.footprint</code> -&gt; <code>opts.pythia</code>/<code>opts.pilot</code>/<code>opts.cloister</code>/<code>opts.trace</code></li>
+</ul>
+</li>
+<li><code>opts</code> merges:<ul>
+<li><code>opts.corr.flag/.threshold</code> and <code>opts.clust.flag</code> merged into <code>opts.sifted</code></li>
+</ul>
+</li>
+<li><code>opts</code> updates:<ul>
+<li><code>opts.perf.MaxMin</code> -&gt; <code>opts.perf.MaxPerf</code></li>
+</ul>
+</li>
+<li><code>model.data</code> updates:<ul>
+<li><code>model.data.bestPerformace</code> (typo) -&gt; <code>model.data.Ybest</code></li>
+</ul>
+</li>
+<li><code>model.pilot</code> updates:<ul>
+<li><code>model.pilot.A</code> without <code>B/C</code> -&gt; warning only (not expected; not auto-fixable)</li>
+</ul>
+</li>
+<li><code>model.pythia</code> updates:<ul>
+<li><code>model.pythia.svm{i}</code> / <code>.knn{i}</code> -&gt; <code>model.pythia.classifiers{i}</code></li>
+<li><code>model.pythia.boxcosnt</code> / <code>.kscale</code> -&gt; <code>model.pythia.param1</code> / <code>.param2</code></li>
+</ul>
+</li>
+<li><code>model.pythia</code> LIBSVM struct:<ul>
+<li>Retrained via the current classifier registry (default 'knn')</li>
+</ul>
+</li>
+<li><code>model.trace</code> updates:<ul>
+<li>Recomputed fresh via TRACE3, using <code>model.pythia.Yhat</code> when available (else <code>model.data.Ybin</code>)</li>
+</ul>
+</li>
+<li><code>model.completedStages</code> updates:<ul>
+<li>Inferred from which sub-structs are present</li>
+</ul>
+</li>
+</ul>
+<p>After migration, the model can be passed to <code>PYTHIA</code> eval mode and <code>scriptcsv</code> -- i.e., it becomes usable with the current toolkit's <code>explore()</code>/output pipeline.</p>
+<h2>See Also</h2>
+<p>For the full field-by-field migration table, see <a href="ISAmigrateModel.html">ISAmigrateModel</a>.</p>
+<hr class="footer-rule">
+<p class="copyright"><em>Copyright (c) 2026 Mario Andres Munoz Acosta and contributors,
+School of Computing and Information Systems, The University of Melbourne.
+Released under the PolyForm Noncommercial License 1.0.0.</em></p>
+</div>
+</body>
+</html>

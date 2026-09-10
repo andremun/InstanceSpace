@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>InteractiveWalkthrough</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="sidebar">
+<h4>InstanceSpace</h4>
+<ul>
+<li><a href="Landing.html">InstanceSpace</a></li>
+</ul>
+<h4>Getting Started</h4>
+<ul>
+<li><a href="GettingStarted.html">Getting Started</a></li>
+<li><span class="current-page">Interactive Walkthrough</span></li>
+</ul>
+<h4>Standalone pipeline functions</h4>
+<ul>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="INIT.html">INIT</a></li>
+</ul>
+<h4>Class interface</h4>
+<ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul>
+<h4>Backward-compatibility wrappers</h4>
+<ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul>
+<h4>Utilities</h4>
+<ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+</ul>
+<h4>Output</h4>
+<ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul>
+<h4>Deprecated Functions</h4>
+<ul>
+<li><a href="Deprecated.html">Deprecated</a></li>
+</ul>
+<h4>Reference</h4>
+<ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+</ul>
+<h4>What's New</h4>
+<ul>
+<li><a href="WhatsNew.html">What's New</a></li>
+</ul>
+</div>
+<div class="content">
+<h1>InteractiveWalkthrough</h1>
+<h2>Introduction</h2>
+<p>An interactive, stage-by-stage walkthrough of the ISA pipeline using the <code>InstanceSpace</code> class. Adapted from <code>liveDemoIS.m</code>, a <code>%%</code>-sectioned file designed to be opened in MATLAB's Live Editor (distinct from <code>example.m</code>, the Getting Started page's source).</p>
+<h2>Installation Requirements</h2>
+<p>To run this walkthrough, ensure you have the following:
+- MATLAB R2025a or later.
+- The following toolboxes installed:
+  - Global Optimization
+  - Parallel Computing
+  - Optimization
+  - Statistics and Machine Learning
+  - Financial (for <code>boxcox()</code>).
+- Communications Toolbox is not required.
+- LIBSVM support is deprecated; new runs use the native classifier registry.</p>
+<p>Before starting, run <code>startup.m</code> once per session to ensure all necessary paths are added. Alternatively, you can construct the <code>InstanceSpace</code> class to add paths automatically.</p>
+<h2>Setup</h2>
+<p>The walkthrough uses a reference dataset from Munoz et al. (2018), which consists of 212 training instances and 23 test instances, with 10 features and 10 algorithms. The dataset's performance scores are measured by misclassification error, where a lower score indicates better performance.</p>
+<h3>Setup Process</h3>
+<ol>
+<li>Copy <code>metadata.csv</code> and <code>metadata_test.csv</code> into a root directory.</li>
+<li>Set specific <code>opts.perf</code> values:</li>
+<li><code>MaxPerf=false</code></li>
+<li><code>AbsPerf=true</code></li>
+<li><code>epsilon=0.20</code></li>
+<li>Construct the <code>InstanceSpace</code> object: <code>obj = InstanceSpace(rootdir, opts)</code>.</li>
+</ol>
+<p>After construction, <code>obj.completedStages</code> is empty, indicating no stages have been completed yet.</p>
+<h2>PRELIM Stage</h2>
+<h3>Process Description</h3>
+<p>The PRELIM stage involves:
+- Removing instances/features with too many missing values.
+- Optionally bounding outliers (median +/- <code>opts.prelim.iqrMultiplier</code> x IQR).
+- Normalizing every feature/performance column using Box-Cox and Z-score.
+- Determining which algorithm is "good" on which instance based on <code>opts.perf.*</code>.</p>
+<h3>Execution</h3>
+<p>Run <code>obj.build('stages', {'prelim'})</code> to execute the PRELIM stage. The demo output includes instance/feature/algorithm counts and the fraction of "easy" instances (<code>mean(obj.model.data.beta)</code>).</p>
+<h2>SIFTED Stage</h2>
+<h3>Feature Selection Process</h3>
+<p>Feature selection involves:
+- A correlation filter to identify the most predictive features.
+- A genetic algorithm (if more than a handful of features remain) to pick representative features from each correlation cluster.</p>
+<h3>Execution</h3>
+<p>If <code>opts.sifted.flag=false</code>, skip this stage, using every feature. Run <code>obj.build('stages', {'sifted'})</code> to execute the SIFTED stage. The demo output compares feature lists before and after selection (<code>obj.model.featsel.labels</code> vs <code>obj.model.data.featlabels</code>).</p>
+<h2>PILOT Stage</h2>
+<h3>Linear Projection Explanation</h3>
+<p>The PILOT stage involves finding a linear projection <code>Z = X*A'</code> that reconstructs both features and performance as closely as possible. The projection is used to explore the instance space in 2D or 3D dimensions.</p>
+<h3>Options</h3>
+<ul>
+<li><code>opts.pilot.dims=3</code> for a 3D projection.</li>
+<li><code>opts.pilot.method='pls'</code> for using Partial Least Squares instead of the default BFGS/analytic method.</li>
+</ul>
+<h3>Execution</h3>
+<p>Run <code>obj.build('stages', {'pilot'})</code> to execute the PILOT stage. The demo output includes a scatter plot of <code>obj.model.pilot.Z(:,1)</code> vs <code>Z(:,2)</code>, colored by <code>obj.model.data.numGoodAlgos</code>.</p>
+<h2>CLOISTER</h2>
+<p><strong>Purpose:</strong> Estimating the reachable boundary of the instance space based on feature correlations.</p>
+<p><strong>Usage:</strong> Running the stage via <code>obj = obj.build('stages', {'cloister'})</code>.</p>
+<p><strong>Visualization:</strong> Using <code>obj.plot('boundary')</code> to view the boundary.</p>
+<h2>PYTHIA</h2>
+<p><strong>Purpose:</strong> Training binary classifiers per algorithm to predict performance over instance space <code>Z</code>.</p>
+<p><strong>Configuration:</strong> Details on <code>opts.pythia.classifier</code> (default 'knn'; others: 'svm', 'tree', 'nb', 'linear', 'ensemble') and <code>opts.pythia.tuning</code> (default scrambled Sobol; others: 'bayes' or pre-supplied params).</p>
+<p><strong>Execution &amp; Output:</strong> Running via <code>obj = obj.build('stages', {'pythia'})</code>. Display of <code>obj.model.pythia.summary</code> (accuracy/precision/recall) and scatter-plots of <code>Z</code> colored by <code>obj.model.pythia.selection0</code>.</p>
+<h2>TRACE</h2>
+<p><strong>Purpose:</strong> Building footprints (regions of expected high performance) for individual algorithms and the portfolio.</p>
+<p><strong>Configuration:</strong> Mention of <code>opts.trace.method='legacy'</code> for the DBSCAN + alpha-shape algorithm (2D only).</p>
+<p><strong>Execution &amp; Output:</strong> Running via <code>obj = obj.build('stages', {'trace'})</code>. Display of <code>obj.model.trace.summary</code> (area/density/purity).</p>
+<h2>Post-processing</h2>
+<p><strong>Saving:</strong> <code>obj.save()</code> writes <code>model.mat</code> (HDF5-compatible, -v7.3) containing all stage outputs and geometry objects.</p>
+<p><strong>Side Effects:</strong> Note that CSV and PNG outputs are written during <code>build()</code>, not <code>save()</code>.</p>
+<h2>Exploring the model</h2>
+<p><strong>Purpose:</strong> Projecting new instances (from <code>metadata_test.csv</code>) into the fitted space for evaluation without retraining.</p>
+<p><strong>Execution:</strong> Running <code>obj = obj.explore(rootdir)</code> and retrieving results via <code>testResults = obj.getResults(1)</code>.</p>
+<p><strong>Visualization:</strong> Display of <code>testResults.pythia.summary</code>, <code>testResults.trace.summary</code>, and scatter-plots of <code>testResults.pilot.Z</code> colored by <code>testResults.pythia.selection0</code>.</p>
+<h2>Additional resources</h2>
+<p><strong>Documentation/Testing:</strong> <code>README.md</code> (options/layout) and <code>test_integration.m</code> (regression suite/option reference).</p>
+<p><strong>Web Platform:</strong> MATILDA (https://matilda.unimelb.edu.au).</p>
+<h2>See Also</h2>
+<p><a href="GettingStarted.html">GettingStarted</a> | <a href="Landing.html">Landing</a></p>
+<hr class="footer-rule">
+<p class="copyright"><em>Copyright (c) 2026 Mario Andres Munoz Acosta and contributors,
+School of Computing and Information Systems, The University of Melbourne.
+Released under the PolyForm Noncommercial License 1.0.0.</em></p>
+</div>
+</body>
+</html>

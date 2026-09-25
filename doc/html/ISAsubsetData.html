@@ -2,128 +2,101 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>ISAsubsetData</title>
-<link rel="stylesheet" href="../style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ISAsubsetData - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Keep a subset of the instances in a data structure">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
 </head>
 <body>
-<div class="sidebar">
-<h4>InstanceSpace</h4>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
 <ul>
-<li><a href="Landing.html">InstanceSpace</a></li>
-</ul>
-<h4>Getting Started</h4>
-<ul>
-<li><a href="GettingStarted.html">Getting Started</a></li>
-<li><a href="InteractiveWalkthrough.html">Interactive Walkthrough</a></li>
-</ul>
-<h4>Standalone pipeline functions</h4>
-<ul>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
 <li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
 <li><a href="SIFTED.html">SIFTED</a></li>
 <li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
 <li><a href="CLOISTER.html">CLOISTER</a></li>
 <li><a href="PYTHIA.html">PYTHIA</a></li>
 <li><a href="TRACE.html">TRACE</a></li>
-<li><a href="FILTER.html">FILTER</a></li>
-<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
-<li><a href="INIT.html">INIT</a></li>
-</ul>
-<h4>Class interface</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
 <li><a href="InstanceSpace.html">InstanceSpace</a></li>
-</ul>
-<h4>Backward-compatibility wrappers</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
 <li><a href="buildIS.html">buildIS</a></li>
 <li><a href="exploreIS.html">exploreIS</a></li>
-</ul>
-<h4>Utilities</h4>
-<ul>
+</ul></details></li>
+<li><details open><summary>Utilities</summary><ul>
 <li><a href="ISAdefaults.html">ISAdefaults</a></li>
 <li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
-<li><span class="current-page">ISAsubsetData</span></li>
 <li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
 <li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
-</ul>
-<h4>Output</h4>
-<ul>
+<li><a class="current" aria-current="page" href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
 <li><a href="scriptcsv.html">scriptcsv</a></li>
 <li><a href="scriptpng.html">scriptpng</a></li>
 <li><a href="scriptweb.html">scriptweb</a></li>
 <li><a href="ISArecallView.html">ISArecallView</a></li>
-</ul>
-<h4>Deprecated Functions</h4>
-<ul>
-<li><a href="Deprecated.html">Deprecated</a></li>
-</ul>
-<h4>Reference</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
 <li><a href="OptionsReference.html">Options Reference</a></li>
-<li><a href="MetadataFormat.html">Metadata File Format</a></li>
 <li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
-</ul>
-<h4>What's New</h4>
-<ul>
-<li><a href="WhatsNew.html">What's New</a></li>
-</ul>
-</div>
-<div class="content">
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> <a href="FunctionList.html">Utilities</a> <span class="sep">›</span> <span>ISAsubsetData</span></nav>
+<div class="page-head function">
 <h1>ISAsubsetData</h1>
-<p class="tagline">Subset rows (and optionally feature columns) of a data struct.</p>
-<h2>Syntax</h2>
-<pre class="syntax"><code>data = ISAsubsetData(data, subsetIndex)
-data = ISAsubsetData(data, subsetIndex, featIdx)
-</code></pre>
-<h2>Description</h2>
-<p>subsets all row-indexed fields. also selects feature columns featIdx from data.X (used in the post-SIFTED density path).</p>
-<h2>Input Arguments</h2>
-<table class="args">
-<thead>
-<tr>
-<th>Argument</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>data</code></td>
-<td>struct containing fields X, Y, Xraw, Yraw, Ybin, beta, numGoodAlgos, Ybest, P, instlabels, and optionally S.</td>
-</tr>
-<tr>
-<td><code>subsetIndex</code></td>
-<td>index or logical vector for row selection.</td>
-</tr>
-<tr>
-<td><code>featIdx</code></td>
-<td>optional column indices for data.X and data.featlabels.</td>
-</tr>
-</tbody>
-</table>
-<h2>Output Arguments</h2>
-<table class="args">
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>data</code></td>
-<td>the subsetted struct with corresponding fields and columns updated.</td>
-</tr>
-</tbody>
-</table>
-<h2>References</h2>
-<ul>
-<li>Smith-Miles, K. &amp; Munoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. ACM Computing Surveys, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
-</ul>
-<h2>See Also</h2>
-<p><a href="InstanceSpace.html">InstanceSpace</a></p>
-<hr class="footer-rule">
-<p class="copyright"><em>Copyright (c) 2026 Mario Andres Munoz Acosta and contributors,
-School of Computing and Information Systems, The University of Melbourne.
-Released under the PolyForm Noncommercial License 1.0.0.</em></p>
+<p class="purpose">Keep a subset of the instances in a data structure</p>
+</div>
+<section class="refsect" id="syntax"><h2>Syntax</h2><div class="syntax-block">
+<div class="syntax-line"><a href="#desc-1"><code>data = ISAsubsetData(data,subsetIndex)</code></a></div>
+<div class="syntax-line"><a href="#desc-2"><code>data = ISAsubsetData(data,subsetIndex,featIdx)</code></a></div>
+</div></section>
+<section class="refsect" id="description"><h2>Description</h2><p class="syntax-desc" id="desc-1"><code>data = ISAsubsetData(data,subsetIndex)</code> keeps the rows <code>subsetIndex</code> of every per-instance field of <code>data</code>: <code>X</code>, <code>Y</code>, <code>Xraw</code>, <code>Yraw</code>, <code>Ybin</code>, <code>beta</code>, <code>numGoodAlgos</code>, <code>Ybest</code>, <code>P</code>, <code>instlabels</code> and, if present, <code>S</code>.</p>
+<p class="syntax-desc" id="desc-2"><code>data = ISAsubsetData(data,subsetIndex,featIdx)</code> also keeps only the feature columns <code>featIdx</code> of <code>data.X</code> and <code>data.featlabels</code>. <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> uses this form after <a class="code-link" href="SIFTED.html"><code>SIFTED</code></a> when density filtering is on.</p></section>
+<section class="refsect" id="examples"><h2>Examples</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="example">Expand all</button></p><details class="example" id="example-keep-the-beta-easy-instances" open><summary>Keep the beta-easy instances</summary><div class="example-body"><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>obj = obj.build(<span class="str">'stages'</span>, {<span class="str">'prelim'</span>});
+easy = ISAsubsetData(obj.model.data, obj.model.data.beta);
+size(easy.X, <span class="num">1</span>)</code></pre></div></div></details></section>
+<section class="refsect" id="input-arguments"><h2>Input Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="arg-data"><summary><code>data</code> <span class="arg-desc">— Instance data</span></summary><div class="arg-body"><p class="arg-type">structure</p>
+<p><code>model.data</code>, with the fields listed above.</p></div></details>
+<details class="arg" id="arg-subsetindex"><summary><code>subsetIndex</code> <span class="arg-desc">— Instances to keep</span></summary><div class="arg-body"><p class="arg-type">logical vector | vector of indices</p></div></details>
+<details class="arg" id="arg-featidx"><summary><code>featIdx</code> <span class="arg-desc">— Features to keep</span></summary><div class="arg-body"><p class="arg-type">vector of indices</p></div></details></section>
+<section class="refsect" id="output-arguments"><h2>Output Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="out-data"><summary><code>data</code> <span class="arg-desc">— Subset</span></summary><div class="arg-body"><p class="arg-type">structure</p></div></details></section>
+<section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="v0-9-0-introduced">v0.9.0 — Introduced</h3></div></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="FILTER.html"><code>FILTER</code></a> | <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#syntax">Syntax</a></li><li><a href="#description">Description</a></li><li><a href="#examples">Examples</a></li><li><a href="#input-arguments">Input Arguments</a></li><li><a href="#output-arguments">Output Arguments</a></li><li><a href="#version-history">Version History</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
 </div>
 </body>
 </html>

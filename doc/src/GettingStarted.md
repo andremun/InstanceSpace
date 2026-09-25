@@ -1,81 +1,72 @@
-# Getting Started
+# Getting Started with Instance Space Analysis
 
-## Introduction
+Build and explore your first instance space
 
-This page serves as a getting-started guide adapted from `example.m`, designed to help users familiarize themselves with the full Instance Space Analysis (ISA) pipeline. The tutorial covers the execution of `buildIS` and `exploreIS` using the bundled Munoz et al. 2018 reference dataset. This dataset consists of 212 instances, 10 features, and 10 classification algorithms, all scored by misclassification error.
+This example builds an instance space for the reference dataset shipped with the toolbox: 212 classification problems (the *instances*), described by 10 features, on which 10 classification algorithms were scored by misclassification error (Muñoz et al., 2018). A further 23 instances are held out for testing. The same steps apply to your own data once it is in the [metadata format](MetadataFormat.html).
 
-## Running the Example
+`example.m` in the repository root runs this example from start to finish.
 
-The following MATLAB code snippet from `example.m` sets up the environment and runs the ISA pipeline. Adjust the settings as necessary to suit your specific needs.
+## Prepare a Folder
+
+The toolbox reads its inputs from, and writes its outputs to, one folder. Copy the reference metadata into a new folder:
 
 ```matlab
-srcdir  = './test/data/';
-rootdir = './test/data/example/';
+rootdir = 'test/data/example/';
 if ~isfolder(rootdir), mkdir(rootdir); end
-copyfile([srcdir 'metadata.csv'], [rootdir 'metadata.csv']);
-copyfile([srcdir 'metadata_test.csv'], [rootdir 'metadata_test.csv']);
-
-% ---- A few of the most commonly adjusted settings --------------------------
-classifier = 'knn';    % opts.pythia.classifier: 'knn' (default), 'svm', 'tree', 'nb', 'linear', 'ensemble'
-tuning     = 'sobol';  % opts.pythia.tuning: 'sobol' (default), 'bayes', or 'none' (needs opts.pythia.params)
-dims       = 2;        % opts.pilot.dims: 2 (default) or 3
-siftedFlag = true;     % opts.sifted.flag: automated feature selection on/off
-% -------------------------------------------------------------------------
-
-opts = struct();
-opts.pythia.classifier = classifier;
-opts.pythia.tuning     = tuning;
-opts.pilot.dims        = dims;
-opts.sifted.flag       = siftedFlag;
-
-% This dataset's algorithm performance is a misclassification error rate:
-% lower is better (MaxPerf=false), and "good" means an absolute error
-% below 20% (AbsPerf=true, epsilon=0.20). Everything else is left at the
-% toolkit's defaults.
-opts.perf.MaxPerf = false;
-opts.perf.AbsPerf = true;
-opts.perf.epsilon = 0.20;
-
-fid = fopen([rootdir 'options.json'], 'w+');
-fprintf(fid, '%s', jsonencode(opts));
-fclose(fid);
-
-model = buildIS(rootdir);
-out = exploreIS(rootdir);
+copyfile('test/data/metadata.csv', rootdir);
+copyfile('test/data/metadata_test.csv', rootdir);
 ```
 
-### Key Settings
+## Describe the Performance Measure
 
-- **`classifier`**: The classifier type, defaulting to 'knn'. Other options include 'svm', 'tree', 'nb', 'linear', and 'ensemble'.
-- **`tuning`**: The tuning strategy, with options 'sobol' (default), 'bayes', or 'none' (requires additional parameters).
-- **`dims`**: The projection dimensionality, defaulting to 2. The other option is 3.
-- **`siftedFlag`**: A flag for automated feature selection, set to `true` for on.
+The one decision you must always make is how to judge performance. Here performance is an error rate, so lower is better, and an algorithm counts as *good* on an instance when its error is below 20%:
 
-### Performance Metric Settings
+```matlab
+opts.perf.MaxPerf = false;   % a cost: lower is better
+opts.perf.AbsPerf = true;    % compare with a fixed threshold
+opts.perf.epsilon = 0.20;    % the threshold
+```
 
-For this dataset, the performance metric is misclassification error. The goal is to minimize this error, where "good" performance is defined as an absolute error below 20%.
+With `AbsPerf = false`, an algorithm is good when it is within `epsilon` (a fraction) of the best algorithm on that instance. Every other option has a default; see the [Options Reference](OptionsReference.html).
 
-## Analyzing Custom Data
+## Build the Instance Space
 
-To analyze your own data, replace `SRCDIR` with the folder containing `metadata.csv`. Be sure to revisit the performance metric settings, as they are tuned for the reference dataset's error-rate semantics.
+```matlab
+obj = InstanceSpace(rootdir, opts);
+obj = obj.build();
+```
 
-## Outputs
+`build` runs the whole pipeline: `PRELIM` labels and normalises the data, `SIFTED` selects features, `PILOT` projects the instances to 2D, `CLOISTER` estimates the boundary of the space, `PYTHIA` trains a classifier per algorithm, and `TRACE` finds the footprints. It then saves `model.mat` and writes CSV and PNG files to `rootdir`. It takes a few minutes, most of it in SIFTED and PYTHIA.
 
-After running the script, the following workspace variables are available:
+## Look at the Results
 
-- **`model`**: The result of `buildIS`.
-- **`out`**: The result of `exploreIS`.
+```matlab
+figure, obj.plot('portfolio')        % best algorithm on each instance
+figure, obj.plot('footprint', 6)     % footprint of the 6th algorithm
+disp(obj.model.trace.summary)        % footprint area, density and purity
+disp(obj.model.pythia.summary)       % classifier accuracy and the selector
+```
 
-Additionally, the script writes the following outputs to `rootdir`:
+The PNG files in `rootdir` show the same views for every feature and algorithm.
 
-- CSVs
-- PNGs
-- `model.mat`
+## Evaluate New Instances
 
-## See Also
+```matlab
+obj = obj.explore(rootdir);          % reads rootdir/metadata_test.csv
+test = obj.getResults(1);
+scatter(test.pilot.Z(:,1), test.pilot.Z(:,2), 30, test.pythia.selection0, 'filled')
+```
 
-For the exhaustive option-coverage regression suite, see `test_integration.m`. For the full list of configurable options, see the [Options Reference page](OptionsReference.html).
+`explore` applies the trained preprocessing, projection, classifiers and footprints to the new instances; nothing is refitted.
 
-## Conclusion
+## Next Steps
 
-This guide provides a step-by-step introduction to running the ISA pipeline using the bundled reference dataset. Adjust the settings as needed to fit your specific analysis requirements. For more advanced usage, refer to the regression suite and the full list of configurable options.
+- Change an option and re-run only the affected stages — see `InstanceSpace`.
+- Run and inspect each stage in turn — see the [Stage-by-Stage Walkthrough](InteractiveWalkthrough.html).
+- Build a 3D instance space with `opts.pilot.dims = 3` — see `PILOT` and `PILOTviewpoint`.
+- Use your own data — see [Metadata File Format](MetadataFormat.html).
+
+## References
+
+- Muñoz, M.A., Villanova, L., Baatar, D. & Smith-Miles, K. (2018). Instance spaces for machine learning classification. *Machine Learning*, 107(1), 109–147. <https://doi.org/10.1007/s10994-017-5629-5>
+- Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>

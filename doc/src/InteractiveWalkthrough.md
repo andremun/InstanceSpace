@@ -1,124 +1,103 @@
-# InteractiveWalkthrough
+# Stage-by-Stage Walkthrough
 
-## Introduction
+Run each stage of the pipeline and inspect its output
 
-An interactive, stage-by-stage walkthrough of the ISA pipeline using the `InstanceSpace` class. Adapted from `liveDemoIS.m`, a `%%`-sectioned file designed to be opened in MATLAB's Live Editor (distinct from `example.m`, the Getting Started page's source).
+This walkthrough builds the instance space one stage at a time so you can see what each stage produces. It follows `liveDemoIS.m` in the repository root, which you can open in the Live Editor and run section by section. It uses the same reference data and performance settings as [Getting Started](GettingStarted.html).
 
-## Installation Requirements
+```matlab
+rootdir = 'test/data/liveDemo/';
+if ~isfolder(rootdir), mkdir(rootdir); end
+copyfile('test/data/metadata.csv', rootdir);
+copyfile('test/data/metadata_test.csv', rootdir);
 
-To run this walkthrough, ensure you have the following:
-- MATLAB R2025a or later.
-- The following toolboxes installed:
-  - Global Optimization
-  - Parallel Computing
-  - Optimization
-  - Statistics and Machine Learning
-  - Financial (for `boxcox()`).
-- Communications Toolbox is not required.
-- LIBSVM support is deprecated; new runs use the native classifier registry.
+opts.perf = struct('MaxPerf', false, 'AbsPerf', true, 'epsilon', 0.20);
+obj = InstanceSpace(rootdir, opts);
+obj.completedStages          % empty: nothing has run yet
+```
 
-Before starting, run `startup.m` once per session to ensure all necessary paths are added. Alternatively, you can construct the `InstanceSpace` class to add paths automatically.
+## PRELIM: Label and Normalise
 
-## Setup
+`PRELIM` decides which algorithms are good on each instance, bounds outlying feature values, and normalises features and performance.
 
-The walkthrough uses a reference dataset from Munoz et al. (2018), which consists of 212 training instances and 23 test instances, with 10 features and 10 algorithms. The dataset's performance scores are measured by misclassification error, where a lower score indicates better performance.
+```matlab
+obj = obj.build('stages', {'prelim'});
+fprintf('%d instances, %d features, %d algorithms\n', ...
+    size(obj.model.data.X,1), size(obj.model.data.X,2), size(obj.model.data.Y,2));
+fprintf('Fraction of beta-easy instances: %.2f\n', mean(obj.model.data.beta));
+```
 
-### Setup Process
+An instance is *beta-easy* when more than `opts.perf.betaThreshold` of the algorithms are good on it.
 
-1. Copy `metadata.csv` and `metadata_test.csv` into a root directory.
-2. Set specific `opts.perf` values:
-   - `MaxPerf=false`
-   - `AbsPerf=true`
-   - `epsilon=0.20`
-3. Construct the `InstanceSpace` object: `obj = InstanceSpace(rootdir, opts)`.
+## SIFTED: Select Features
 
-After construction, `obj.completedStages` is empty, indicating no stages have been completed yet.
+`SIFTED` keeps the features that best explain performance: a correlation filter, then a genetic algorithm that picks one feature from each cluster of correlated features.
 
-## PRELIM Stage
+```matlab
+obj = obj.build('stages', {'sifted'});
+disp(obj.model.featsel.labels)       % before
+disp(obj.model.data.featlabels)      % after
+```
 
-### Process Description
+Set `opts.sifted.flag = false` to keep every feature.
 
-The PRELIM stage involves:
-- Removing instances/features with too many missing values.
-- Optionally bounding outliers (median +/- `opts.prelim.iqrMultiplier` x IQR).
-- Normalizing every feature/performance column using Box-Cox and Z-score.
-- Determining which algorithm is "good" on which instance based on `opts.perf.*`.
+## PILOT: Project to 2D
 
-### Execution
+`PILOT` finds the linear projection `Z = X*A'` from which features and performance can best be reconstructed. `Z` is the instance space.
 
-Run `obj.build('stages', {'prelim'})` to execute the PRELIM stage. The demo output includes instance/feature/algorithm counts and the fraction of "easy" instances (`mean(obj.model.data.beta)`).
+```matlab
+obj = obj.build('stages', {'pilot'});
+figure
+scatter(obj.model.pilot.Z(:,1), obj.model.pilot.Z(:,2), 20, obj.model.data.numGoodAlgos, 'filled')
+xlabel('z_1'), ylabel('z_2'), colorbar
+title('Number of good algorithms per instance')
+```
 
-## SIFTED Stage
+`opts.pilot.dims = 3` gives a 3D space; `opts.pilot.method = 'pls'` uses Partial Least Squares.
 
-### Feature Selection Process
+## CLOISTER: Estimate the Boundary
 
-Feature selection involves:
-- A correlation filter to identify the most predictive features.
-- A genetic algorithm (if more than a handful of features remain) to pick representative features from each correlation cluster.
+`CLOISTER` estimates where instances could exist, given the ranges and correlations of the features. Empty areas inside the boundary are candidates for new test instances.
 
-### Execution
+```matlab
+obj = obj.build('stages', {'cloister'});
+figure, obj.plot('boundary')
+```
 
-If `opts.sifted.flag=false`, skip this stage, using every feature. Run `obj.build('stages', {'sifted'})` to execute the SIFTED stage. The demo output compares feature lists before and after selection (`obj.model.featsel.labels` vs `obj.model.data.featlabels`).
+## PYTHIA: Predict Good Algorithms
 
-## PILOT Stage
+`PYTHIA` trains one classifier per algorithm that predicts, from an instance's position, whether the algorithm is good there, and combines them into an algorithm selector.
 
-### Linear Projection Explanation
+```matlab
+obj = obj.build('stages', {'pythia'});
+disp(obj.model.pythia.summary)
+figure
+scatter(obj.model.pilot.Z(:,1), obj.model.pilot.Z(:,2), 20, obj.model.pythia.selection0, 'filled')
+colorbar, title('Selected algorithm')
+```
 
-The PILOT stage involves finding a linear projection `Z = X*A'` that reconstructs both features and performance as closely as possible. The projection is used to explore the instance space in 2D or 3D dimensions.
+## TRACE: Find the Footprints
 
-### Options
+`TRACE` finds the region where each algorithm is good (its footprint) and where it is best, and measures their size, density and purity.
 
-- `opts.pilot.dims=3` for a 3D projection.
-- `opts.pilot.method='pls'` for using Partial Least Squares instead of the default BFGS/analytic method.
+```matlab
+obj = obj.build('stages', {'trace'});
+disp(obj.model.trace.summary)
+figure, obj.plot('footprint', 6)
+```
 
-### Execution
+## Save and Explore
 
-Run `obj.build('stages', {'pilot'})` to execute the PILOT stage. The demo output includes a scatter plot of `obj.model.pilot.Z(:,1)` vs `Z(:,2)`, colored by `obj.model.data.numGoodAlgos`.
+Once every stage has run, `build` has already saved `model.mat` and written the output files. `explore` evaluates new instances with the trained model:
 
-## CLOISTER
+```matlab
+obj = obj.explore(rootdir);
+test = obj.getResults(1);
+disp(test.pythia.summary)
+disp(test.trace.summary)
+```
 
-**Purpose:** Estimating the reachable boundary of the instance space based on feature correlations.
-
-**Usage:** Running the stage via `obj = obj.build('stages', {'cloister'})`.
-
-**Visualization:** Using `obj.plot('boundary')` to view the boundary.
-
-## PYTHIA
-
-**Purpose:** Training binary classifiers per algorithm to predict performance over instance space `Z`.
-
-**Configuration:** Details on `opts.pythia.classifier` (default 'knn'; others: 'svm', 'tree', 'nb', 'linear', 'ensemble') and `opts.pythia.tuning` (default scrambled Sobol; others: 'bayes' or pre-supplied params).
-
-**Execution & Output:** Running via `obj = obj.build('stages', {'pythia'})`. Display of `obj.model.pythia.summary` (accuracy/precision/recall) and scatter-plots of `Z` colored by `obj.model.pythia.selection0`.
-
-## TRACE
-
-**Purpose:** Building footprints (regions of expected high performance) for individual algorithms and the portfolio.
-
-**Configuration:** Mention of `opts.trace.method='legacy'` for the DBSCAN + alpha-shape algorithm (2D only).
-
-**Execution & Output:** Running via `obj = obj.build('stages', {'trace'})`. Display of `obj.model.trace.summary` (area/density/purity).
-
-## Post-processing
-
-**Saving:** `obj.save()` writes `model.mat` (HDF5-compatible, -v7.3) containing all stage outputs and geometry objects.
-
-**Side Effects:** Note that CSV and PNG outputs are written during `build()`, not `save()`.
-
-## Exploring the model
-
-**Purpose:** Projecting new instances (from `metadata_test.csv`) into the fitted space for evaluation without retraining.
-
-**Execution:** Running `obj = obj.explore(rootdir)` and retrieving results via `testResults = obj.getResults(1)`.
-
-**Visualization:** Display of `testResults.pythia.summary`, `testResults.trace.summary`, and scatter-plots of `testResults.pilot.Z` colored by `testResults.pythia.selection0`.
-
-## Additional resources
-
-**Documentation/Testing:** `README.md` (options/layout) and `test_integration.m` (regression suite/option reference).
-
-**Web Platform:** MATILDA (https://matilda.unimelb.edu.au).
+To change a setting later, edit `obj.opts` and re-run from the stage it affects, for example `obj = obj.build('stages', {'pythia','trace'})` after changing `opts.pythia.classifier`. Re-running a stage discards the results of later stages.
 
 ## See Also
 
-[GettingStarted](GettingStarted.html) | [Landing](Landing.html)
+`InstanceSpace` | [Getting Started](GettingStarted.html) | [Options Reference](OptionsReference.html)

@@ -1,36 +1,56 @@
 # ISAsubsetData
 
-Subset rows (and optionally feature columns) of a data struct.
+Keep a subset of the instances in a data structure
 
 ## Syntax
 
 ```
-data = ISAsubsetData(data, subsetIndex)
-data = ISAsubsetData(data, subsetIndex, featIdx)
+data = ISAsubsetData(data,subsetIndex)
+data = ISAsubsetData(data,subsetIndex,featIdx)
 ```
 
 ## Description
 
-subsets all row-indexed fields. also selects feature columns featIdx from data.X (used in the post-SIFTED density path).
+`data = ISAsubsetData(data,subsetIndex)` keeps the rows `subsetIndex` of every per-instance field of `data`: `X`, `Y`, `Xraw`, `Yraw`, `Ybin`, `beta`, `numGoodAlgos`, `Ybest`, `P`, `instlabels` and, if present, `S`.
+
+`data = ISAsubsetData(data,subsetIndex,featIdx)` also keeps only the feature columns `featIdx` of `data.X` and `data.featlabels`. `InstanceSpace` uses this form after `SIFTED` when density filtering is on.
+
+## Examples
+
+### Keep the beta-easy instances
+
+```matlab
+obj = obj.build('stages', {'prelim'});
+easy = ISAsubsetData(obj.model.data, obj.model.data.beta);
+size(easy.X, 1)
+```
 
 ## Input Arguments
 
-| Argument | Description |
-|---|---|
-| `data` | struct containing fields X, Y, Xraw, Yraw, Ybin, beta, numGoodAlgos, Ybest, P, instlabels, and optionally S. |
-| `subsetIndex` | index or logical vector for row selection. |
-| `featIdx` | optional column indices for data.X and data.featlabels. |
+### `data` — Instance data
+
+*structure*
+
+`model.data`, with the fields listed above.
+
+### `subsetIndex` — Instances to keep
+
+*logical vector | vector of indices*
+
+### `featIdx` — Features to keep
+
+*vector of indices*
 
 ## Output Arguments
 
-| Field | Description |
-|---|---|
-| `data` | the subsetted struct with corresponding fields and columns updated. |
+### `data` — Subset
 
-## References
+*structure*
 
-- Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. ACM Computing Surveys, 55(12), Article 255. <https://doi.org/10.1145/3572895>
+## Version History
+
+### v0.9.0 — Introduced
 
 ## See Also
 
-[InstanceSpace](InstanceSpace.html)
+`FILTER` | `InstanceSpace`

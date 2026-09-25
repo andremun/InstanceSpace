@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <productinfo>
     <matlabrelease>R2025a</matlabrelease>
-    <name>InstanceSpace</name>
+    <name>Instance Space Analysis Toolbox</name>
     <type>toolbox</type>
     <icon>$toolbox/matlab/icons/reficon.gif</icon>
     <help_location>doc/html</help_location>

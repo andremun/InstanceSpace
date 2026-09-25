@@ -57,6 +57,27 @@ rediscovering:
   another stage -- `SIFTED`/`PILOT`/`CLOISTER`/`FILTER` deliberately don't
   need it, since none of them recompute anything at explore time.
 
+## Documentation
+
+The reference pages are written in Markdown under `doc/src/` and built
+into `doc/html/` by `doc/generate.py`. Both folders are committed:
+MATLAB's Help browser reads `doc/html/` from a plain clone, and the
+Documentation workflow publishes the same folder to GitHub Pages from
+`master`.
+
+- Edit the Markdown in `doc/src/`, never the HTML. `doc/generate.py`
+  describes the page conventions (Syntax, Description, Examples,
+  Input/Output Arguments, Version History, See Also).
+- Add a new page to the `TOC` list in `doc/generate.py`; the sidebar,
+  `helptoc.xml`, breadcrumbs, search index and *All Functions* page all
+  come from it.
+- Rebuild with `pip install -r doc/requirements.txt` then `python
+  doc/generate.py`, and commit the result. CI fails when `doc/html/` does
+  not match its sources (`python doc/generate.py --check`) or has a broken
+  link.
+- When you change a function's behaviour or signature, update its page and
+  add a Version History entry.
+
 ## Issues and scope
 
 Check the [open issues](https://github.com/andremun/InstanceSpace/issues)

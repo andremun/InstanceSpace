@@ -1,31 +1,58 @@
 # exploreIS
 
-Thin backward-compatibility wrapper around InstanceSpace.
+Evaluate a saved instance space on new instances (backward-compatible wrapper)
 
-Requires model.mat to already exist in rootdir (written by buildIS). Preserves the original exploreIS(rootdir) calling convention for callers -- notably the MATILDA web platform -- that invoke this entry point directly. New code should use InstanceSpace directly:
+## Syntax
 
 ```
+out = exploreIS(rootdir)
+```
+
+## Description
+
+`out = exploreIS(rootdir)` loads `rootdir/model.mat`, evaluates `rootdir/metadata_test.csv` with it, writes the output files to `rootdir`, prints `EOF:SUCCESS`, and returns the result. It is equivalent to
+
+```matlab
 obj = InstanceSpace.load(rootdir);
 obj = obj.explore(rootdir);
-out  = obj.getResults(1);
+out = obj.getResults(1);
+```
+
+A `model.mat` from a version before v0.9.0 is migrated in memory by `ISAmigrateModel`. For new code, use `InstanceSpace`.
+
+## Examples
+
+### Evaluate test instances after buildIS
+
+```matlab
+copyfile('test/data/metadata_test.csv', rootdir);
+model = buildIS(rootdir);
+out = exploreIS(rootdir);
+out.pythia.summary
 ```
 
 ## Input Arguments
 
-| Argument | Description |
-|---|---|
-| `rootdir` | string/path to the directory containing model.mat and metadata_test.csv |
+### `rootdir` — Data folder
+
+*character vector*
+
+Folder that contains `model.mat` and `metadata_test.csv`.
 
 ## Output Arguments
 
-| Field | Description |
-|---|---|
-| `out` | the most recent test-results entry (specifically obj.testResults{end}) |
+### `out` — Evaluation result
 
-## References
+*structure*
 
-- Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. ACM Computing Surveys, 55(12), Article 255. <https://doi.org/10.1145/3572895>
+Same fields as a trained model, computed for the test instances.
+
+## Version History
+
+### v0.9.0 — Wrapper around InstanceSpace
+
+`exploreIS` became a wrapper around `InstanceSpace`. Its inputs, outputs and files are unchanged.
 
 ## See Also
 
-[InstanceSpace](InstanceSpace.html)
+`buildIS` | `InstanceSpace` | `ISAmigrateModel`

@@ -2,155 +2,128 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>PILOTviewpoint</title>
-<link rel="stylesheet" href="../style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PILOTviewpoint - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Find the best viewing angles of a 3D instance space">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
 </head>
 <body>
-<div class="sidebar">
-<h4>InstanceSpace</h4>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
 <ul>
-<li><a href="Landing.html">InstanceSpace</a></li>
-</ul>
-<h4>Getting Started</h4>
-<ul>
-<li><a href="GettingStarted.html">Getting Started</a></li>
-<li><a href="InteractiveWalkthrough.html">Interactive Walkthrough</a></li>
-</ul>
-<h4>Standalone pipeline functions</h4>
-<ul>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details open><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
 <li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
 <li><a href="SIFTED.html">SIFTED</a></li>
 <li><a href="PILOT.html">PILOT</a></li>
+<li><a class="current" aria-current="page" href="PILOTviewpoint.html">PILOTviewpoint</a></li>
 <li><a href="CLOISTER.html">CLOISTER</a></li>
 <li><a href="PYTHIA.html">PYTHIA</a></li>
 <li><a href="TRACE.html">TRACE</a></li>
-<li><a href="FILTER.html">FILTER</a></li>
-<li><span class="current-page">PILOTviewpoint</span></li>
-<li><a href="INIT.html">INIT</a></li>
-</ul>
-<h4>Class interface</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
 <li><a href="InstanceSpace.html">InstanceSpace</a></li>
-</ul>
-<h4>Backward-compatibility wrappers</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
 <li><a href="buildIS.html">buildIS</a></li>
 <li><a href="exploreIS.html">exploreIS</a></li>
-</ul>
-<h4>Utilities</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Utilities</summary><ul>
 <li><a href="ISAdefaults.html">ISAdefaults</a></li>
 <li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
-<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
 <li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
 <li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
-</ul>
-<h4>Output</h4>
-<ul>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
 <li><a href="scriptcsv.html">scriptcsv</a></li>
 <li><a href="scriptpng.html">scriptpng</a></li>
 <li><a href="scriptweb.html">scriptweb</a></li>
 <li><a href="ISArecallView.html">ISArecallView</a></li>
-</ul>
-<h4>Deprecated Functions</h4>
-<ul>
-<li><a href="Deprecated.html">Deprecated</a></li>
-</ul>
-<h4>Reference</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
 <li><a href="OptionsReference.html">Options Reference</a></li>
-<li><a href="MetadataFormat.html">Metadata File Format</a></li>
 <li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
-</ul>
-<h4>What's New</h4>
-<ul>
-<li><a href="WhatsNew.html">What's New</a></li>
-</ul>
-</div>
-<div class="content">
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> <a href="FunctionList.html">Pipeline Stages</a> <span class="sep">›</span> <span>PILOTviewpoint</span></nav>
+<div class="page-head function">
 <h1>PILOTviewpoint</h1>
-<p>Find the optimal 2D camera viewpoint(s) of a 3D PILOT projection (Equation 2 of Simpson et al., 2025).</p>
-<h2>Syntax</h2>
-<pre class="syntax"><code>out = PILOTviewpoint(Z, Y, opts)
-</code></pre>
-<h2>Description</h2>
-<p>For each group, jointly fits A (2xn, the view) and C (nalgos x 2, the performance reconstruction) via BFGS, minimising <code>||Y_group - (C*A*Z')'||_F^2 + LAMBDA*|dot(v1,v2)|</code> where <code>v1=A(1,:)</code>, <code>v2=A(2,:)</code>, following the same multi-start / topological-preservation trial-selection scheme as PILOT.m's numerical branch (Hd = pdist(Z), best trial = highest corr(Hd, pdist(Z*A'))). LAMBDA=0.2 is the paper-calibrated orthogonality penalty weight (not user-exposed). v1 and v2 are rescaled to unit magnitude once per trial (both for the topological-preservation scoring and the stored solution), replacing the original PILOTANGLE.m reference's redundant and axis-wrong sum(A.^2') row-normalisation applied twice.</p>
-<h2>Input Arguments</h2>
-<table class="args">
-<thead>
-<tr>
-<th>Argument</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>Z</code></td>
-<td>(ninst x n) 3D PILOT projection, n==3 (opts.pilot.dims == 3)</td>
-</tr>
-<tr>
-<td><code>Y</code></td>
-<td>(ninst x nalgos) performance matrix</td>
-</tr>
-<tr>
-<td><code>opts</code></td>
-<td>struct with fields:</td>
-</tr>
-<tr>
-<td><code>opts.viewGroups</code></td>
-<td>cell array of algorithm index vectors, one viewpoint computed per group (default {} -&gt; one global viewpoint over all algorithms)</td>
-</tr>
-<tr>
-<td><code>opts.ntries</code></td>
-<td>BFGS multi-start restarts (default 10, same convention as opts.pilot.ntries)</td>
-</tr>
-<tr>
-<td><code>opts.X0</code></td>
-<td>optional (2n+2*numel(group)) x ntries user-supplied starting points, reused for every group whose size matches</td>
-</tr>
-<tr>
-<td>## Output Arguments</td>
-<td></td>
-</tr>
-<tr>
-<td>Argument</td>
-<td>Description</td>
-</tr>
-<tr>
-<td>---</td>
-<td>---</td>
-</tr>
-<tr>
-<td><code>out</code></td>
-<td>struct with fields:</td>
-</tr>
-<tr>
-<td><code>out.groups</code></td>
-<td>the resolved cell array of algorithm groups</td>
-</tr>
-<tr>
-<td><code>out.A</code></td>
-<td>(ngroups x 1) cell array of fitted 2xn view matrices [row1=v1; row2=v2] flattening Z onto the viewing plane</td>
-</tr>
-<tr>
-<td><code>out.azimuth</code></td>
-<td>(ngroups x 1) azimuth angle (radians) of the viewing direction cross(v1,v2), for view(az,el)</td>
-</tr>
-<tr>
-<td><code>out.elevation</code></td>
-<td>(ngroups x 1) elevation angle (radians)</td>
-</tr>
-</tbody>
-</table>
-<h2>References</h2>
-<ul>
-<li>Smith-Miles, K. &amp; Munoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. ACM Computing Surveys, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
-<li>Simpson, C., Munoz, M.A., Kandanaarachchi, S. &amp; Campello, R.J.G.B. (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis. Machine Learning, 114, 240. <a href="https://doi.org/10.1007/s10994-025-06871-5">https://doi.org/10.1007/s10994-025-06871-5</a></li>
-</ul>
-<hr class="footer-rule">
-<p class="copyright"><em>Copyright (c) 2026 Mario Andres Munoz Acosta and contributors,
-School of Computing and Information Systems, The University of Melbourne.
-Released under the PolyForm Noncommercial License 1.0.0.</em></p>
+<p class="purpose">Find the best viewing angles of a 3D instance space</p>
+</div>
+<section class="refsect" id="syntax"><h2>Syntax</h2><div class="syntax-block">
+<div class="syntax-line"><a href="#desc-1"><code>out = PILOTviewpoint(Z,Y,opts)</code></a></div>
+</div></section>
+<section class="refsect" id="description"><h2>Description</h2><p class="syntax-desc" id="desc-1"><code>out = PILOTviewpoint(Z,Y,opts)</code> finds, for each group of algorithms in <a class="code-link" href="OptionsReference.html#opts-pilot-viewgroups"><code>opts.viewGroups</code></a>, the 2D view of the 3D projection <code>Z</code> from which the performance of those algorithms is best explained. Each view is a pair of orthogonal directions <code>v1</code>, <code>v2</code>; the returned azimuth and elevation point the MATLAB camera along <code>cross(v1,v2)</code> (Simpson et al., 2025, Equation 2).</p>
+<p class="syntax-desc" id="desc-2"><a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> calls PILOTviewpoint after PILOT when <a class="code-link" href="OptionsReference.html#opts-pilot-dims"><code>opts.pilot.dims</code></a> is 3 and stores the result in <code>model.pilot.viewpoint</code>. <a class="code-link" href="scriptpng.html"><code>scriptpng</code></a> then renders 3D figures from these angles.</p></section>
+<section class="refsect" id="examples"><h2>Examples</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="example">Expand all</button></p><details class="example" id="example-view-a-3d-instance-space-from-its-best-angle" open><summary>View a 3D instance space from its best angle</summary><div class="example-body"><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>rootdir = <span class="str">'test/data/example/'</span>;
+<span class="kw">if</span> ~isfolder(rootdir), mkdir(rootdir); <span class="kw">end</span>
+copyfile(<span class="str">'test/data/metadata.csv'</span>, rootdir);
+opts.perf = struct(<span class="str">'MaxPerf'</span>, <span class="kw">false</span>, <span class="str">'AbsPerf'</span>, <span class="kw">true</span>, <span class="str">'epsilon'</span>, <span class="num">0.20</span>);
+opts.pilot.dims = <span class="num">3</span>;
+obj = InstanceSpace(rootdir, opts);
+obj = obj.build(<span class="str">'stages'</span>, {<span class="str">'prelim'</span>, <span class="str">'sifted'</span>, <span class="str">'pilot'</span>});
+
+Z = obj.model.pilot.Z;
+vp = PILOTviewpoint(Z, obj.model.data.Y, obj.opts.pilot);
+scatter3(Z(:,<span class="num">1</span>), Z(:,<span class="num">2</span>), Z(:,<span class="num">3</span>), <span class="num">12</span>, <span class="str">'filled'</span>)
+view(rad2deg(vp.azimuth(<span class="num">1</span>)), rad2deg(vp.elevation(<span class="num">1</span>)))</code></pre></div></div></details>
+<details class="example" id="example-one-viewpoint-per-group-of-algorithms"><summary>One viewpoint per group of algorithms</summary><div class="example-body"><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>pilotOpts = obj.opts.pilot;
+pilotOpts.viewGroups = {[<span class="num">1</span> <span class="num">2</span> <span class="num">3</span>], [<span class="num">4</span> <span class="num">5</span>], <span class="num">6</span>:<span class="num">10</span>};
+vp = PILOTviewpoint(Z, obj.model.data.Y, pilotOpts);
+rad2deg([vp.azimuth vp.elevation])</code></pre></div></div></details></section>
+<section class="refsect" id="input-arguments"><h2>Input Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="arg-z"><summary><code>Z</code> <span class="arg-desc">— 3D instance coordinates</span></summary><div class="arg-body"><p class="arg-type"><code>ninst</code>-by-3 numeric matrix</p>
+<p><code>model.pilot.Z</code> from a 3D build.</p></div></details>
+<details class="arg" id="arg-y"><summary><code>Y</code> <span class="arg-desc">— Performance matrix</span></summary><div class="arg-body"><p class="arg-type">numeric matrix</p>
+<p>Same number of rows as <code>Z</code>.</p></div></details>
+<details class="arg" id="arg-opts"><summary><code>opts</code> <span class="arg-desc">— Viewpoint options</span></summary><div class="arg-body"><p class="arg-type">structure</p>
+<p>Normally <code>obj.opts.pilot</code>.</p><details class="arg" id="arg-opts-viewgroups"><summary><code>opts.viewGroups</code> <span class="arg-desc">— Algorithm groups</span></summary><div class="arg-body"><p class="arg-type"><code>{}</code> (default) | cell array of index vectors</p>
+<p>One viewpoint is computed per group, from the columns of <code>Y</code> in that group. Empty means one viewpoint for all algorithms.</p></div></details>
+<details class="arg" id="arg-opts-ntries"><summary><code>opts.ntries</code> <span class="arg-desc">— Number of BFGS restarts</span></summary><div class="arg-body"><p class="arg-type"><code>10</code> (default) | positive integer</p></div></details>
+<details class="arg" id="arg-opts-seed"><summary><code>opts.seed</code> <span class="arg-desc">— Random seed</span></summary><div class="arg-body"><p class="arg-type"><a class="code-link" href="OptionsReference.html#opts-general-seed"><code>opts.general.seed</code></a> (default) | integer</p></div></details>
+<details class="arg" id="arg-opts-x0"><summary><code>opts.X0</code> <span class="arg-desc">— Starting points</span></summary><div class="arg-body"><p class="arg-type">numeric matrix</p>
+<p>Optional, <code>2*3 + 2*numel(group)</code> rows by one column per trial. Used for each group of matching size.</p></div></details></div></details></section>
+<section class="refsect" id="output-arguments"><h2>Output Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="out-out"><summary><code>out</code> <span class="arg-desc">— Viewpoints</span></summary><div class="arg-body"><p class="arg-type">structure</p><details class="arg" id="out-out-groups"><summary><code>out.groups</code> <span class="arg-desc">— Algorithm groups</span></summary><div class="arg-body"><p>The groups used, one cell per viewpoint.</p></div></details>
+<details class="arg" id="out-out-a"><summary><code>out.A</code> <span class="arg-desc">— View matrices</span></summary><div class="arg-body"><p>Cell array; each cell is a 2-by-3 matrix <code>[v1; v2]</code> that flattens <code>Z</code> onto the viewing plane.</p></div></details>
+<details class="arg" id="out-out-azimuth"><summary><code>out.azimuth</code>, <code>out.elevation</code> <span class="arg-desc">— Camera angles</span></summary><div class="arg-body"><p>In radians, one per group. Use <code>view(rad2deg(az), rad2deg(el))</code>.</p></div></details></div></details></section>
+<section class="refsect" id="algorithms"><h2>Algorithms</h2><p>For each group, PILOTviewpoint jointly fits the view <code>A</code> (2-by-3) and a performance reconstruction <code>C</code> by BFGS, minimising</p>
+<div class="code"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>||Y_group - (C*A*Z')'||^2 + 0.2*|dot(v1, v2)|</code></pre></div>
+<p>The second term keeps the two view directions orthogonal. Like PILOT, it keeps the trial whose view best preserves the pairwise distances of <code>Z</code>.</p></section>
+<section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="v0-9-0-introduced">v0.9.0 — Introduced</h3><p>Part of the 3D instance space (ISA3) support.</p></div></section>
+<section class="refsect" id="references"><h2>References</h2><ul>
+<li>Simpson, C., Muñoz, M.A., Kandanaarachchi, S. &amp; Campello, R.J.G.B. (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis. <em>Machine Learning</em>, 114, 240. <a href="https://doi.org/10.1007/s10994-025-06871-5">https://doi.org/10.1007/s10994-025-06871-5</a></li>
+</ul></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="PILOT.html"><code>PILOT</code></a> | <a class="code-link" href="ISArecallView.html"><code>ISArecallView</code></a> | <a class="code-link" href="scriptpng.html"><code>scriptpng</code></a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#syntax">Syntax</a></li><li><a href="#description">Description</a></li><li><a href="#examples">Examples</a></li><li><a href="#input-arguments">Input Arguments</a></li><li><a href="#output-arguments">Output Arguments</a></li><li><a href="#algorithms">Algorithms</a></li><li><a href="#version-history">Version History</a></li><li><a href="#references">References</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
 </div>
 </body>
 </html>

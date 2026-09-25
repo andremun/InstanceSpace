@@ -1,6 +1,6 @@
 # scriptweb
 
-Write colour-scaled CSV data for MATILDA's web tools to rootdir.
+Write colour-scaled data for the MATILDA web platform
 
 ## Syntax
 
@@ -10,21 +10,39 @@ scriptweb(container,rootdir)
 
 ## Description
 
-Only useful when opts.outputs.web=true, i.e. results will be served through matilda.unimelb.edu.au; not needed for local/offline use.
+`scriptweb(container,rootdir)` writes the features, performance and number of good algorithms as colour indices, with the colour table, to CSV files in `rootdir`. The [MATILDA](https://matilda.unimelb.edu.au) web platform uses these files to draw its interactive plots. You do not need them for local work.
+
+`InstanceSpace.build` and `InstanceSpace.explore` call scriptweb when both `opts.outputs.csv` and `opts.outputs.web` are `true`.
+
+| File | Contents |
+|---|---|
+| `color_table.csv` | the colour map |
+| `feature_raw_color.csv`, `feature_process_color.csv` | feature colour indices |
+| `algorithm_raw_color.csv`, `algorithm_process_color.csv` | performance colour indices, scaled over all algorithms |
+| `algorithm_raw_single_color.csv`, `algorithm_process_single_color.csv` | performance colour indices, scaled per algorithm |
+| `good_algos_color.csv` | colour index of the number of good algorithms |
+
+## Examples
+
+### Turn on the web output
+
+```matlab
+obj.opts.outputs.web = true;
+obj = obj.build();
+```
 
 ## Input Arguments
 
-| Argument | Description |
-|---|---|
-| `container` | `struct (model from buildIS/InstanceSpace.build() or a testResults entry from exploreIS/InstanceSpace.explore())` |
-| `rootdir` | `string (destination directory; trailing slash required)` |
+### `container` — Model or evaluation result
 
-## Output Arguments
+*structure*
 
-| Field | Description |
-|---|---|
-| `none` | writes colour-scaled CSV files to rootdir as a side effect (void function) |
+### `rootdir` — Output folder
 
-## References
+*character vector*
 
-- Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. ACM Computing Surveys, 55(12), Article 255. <https://doi.org/10.1145/3572895>
+Must exist and end with a file separator.
+
+## See Also
+
+`scriptcsv` | `InstanceSpace`

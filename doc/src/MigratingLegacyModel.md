@@ -1,64 +1,43 @@
-# MigratingLegacyModel
+# Migrating a Legacy Model
 
-## Introduction
+Use a model.mat created by a toolbox version before v0.9.0
 
-This guide is designed as a companion to the `ISAmigrateModel` reference page, providing a user-friendly explanation of when and why to migrate a legacy model. Specifically, this guide is relevant if you are using a `model.mat` file that was produced by a pre-v0.9.0 version of the toolkit (before the introduction of the InstanceSpace class). The goal of this migration process is to make these legacy models compatible with the current toolkit's `exploreIS` or `InstanceSpace.explore()` functions, or with output scripts and pipelines.
+Version 0.9.0 renamed several option groups and model fields and replaced the LIBSVM classifiers and the footprint algorithm. A `model.mat` saved by an earlier version therefore needs migrating before the current code can use it. In most cases this is automatic.
 
-## When to Migrate
+## Automatic Migration on Load
 
-You should consider migrating your legacy model when you are using a `model.mat` file that was created by a version of the toolkit prior to v0.9.0. This migration is necessary to ensure compatibility with the current version of the toolkit, which uses a different class-based structure.
+`InstanceSpace.load` and `exploreIS` migrate a legacy model in memory each time they load it. Nothing is written to disk:
 
-## Migration Methods
-
-There are two primary methods for migrating your legacy model:
-
-### File-based (Recommended)
-
-The recommended approach is to use the `ISAmigrateModel(rootdir)` function. This function reads the `model.mat` file located in `rootdir/model.mat`, backs up the original file to `model_legacy.mat`, and writes the migrated model back to `model.mat`.
-
-**Example:**
 ```matlab
-rootdir = '/path/to/model/directory';
-ISAmigrateModel(rootdir);
+obj = InstanceSpace.load('/path/to/old/run/');   % migrated in memory
+obj = obj.explore('/path/to/new/instances/');
 ```
 
-### In-memory
+## Converting the File Once
 
-If your legacy model is already loaded into the MATLAB workspace as a struct, you can use the `ISAmigrateModel(model)` function. This method performs the migration without any file I/O operations.
+To avoid repeating the migration, including any classifier retraining, on every load, convert the file:
 
-**Example:**
 ```matlab
-model = load('path/to/model.mat');
-migratedModel = ISAmigrateModel(model);
+ISAmigrateModel('/path/to/old/run/');
 ```
 
-## High-Level Summary of Changes
+The original is kept as `model_legacy.mat`. Choose another backup name with `ISAmigrateModel(rootdir,'backupSuffix','_v08')`.
 
-The migration process involves several changes to the legacy model's structure. A full field-by-field table is available on the `ISAmigrateModel` reference page. Below is a high-level summary of the changes:
+## What Changes
 
-- **Field renames:**
-  - `opts` struct updates:
-    - `opts.oracle`/`opts.pbldr`/`opts.sbound`/`opts.footprint` -> `opts.pythia`/`opts.pilot`/`opts.cloister`/`opts.trace`
-  - `opts` merges:
-    - `opts.corr.flag/.threshold` and `opts.clust.flag` merged into `opts.sifted`
-  - `opts` updates:
-    - `opts.perf.MaxMin` -> `opts.perf.MaxPerf`
-  - `model.data` updates:
-    - `model.data.bestPerformace` (typo) -> `model.data.Ybest`
-  - `model.pilot` updates:
-    - `model.pilot.A` without `B/C` -> warning only (not expected; not auto-fixable)
-  - `model.pythia` updates:
-    - `model.pythia.svm{i}` / `.knn{i}` -> `model.pythia.classifiers{i}`
-    - `model.pythia.boxcosnt` / `.kscale` -> `model.pythia.param1` / `.param2`
-  - `model.pythia` LIBSVM struct:
-    - Retrained via the current classifier registry (default 'knn')
-  - `model.trace` updates:
-    - Recomputed fresh via TRACE3, using `model.pythia.Yhat` when available (else `model.data.Ybin`)
-  - `model.completedStages` updates:
-    - Inferred from which sub-structs are present
+- **Options** are renamed to the current groups: `opts.oracle` → `opts.pythia`, `opts.pbldr` → `opts.pilot`, `opts.sbound` → `opts.cloister`, `opts.footprint` → `opts.trace`, and `opts.perf.MaxMin` → `opts.perf.MaxPerf`. The feature-selection flags of `opts.corr` and `opts.clust` move to `opts.sifted`.
+- **Classifiers.** LIBSVM models cannot be evaluated by the current code. They are retrained with the classifier in `opts.pythia.classifier` (`'knn'` if unset) on the training data stored in the model. Predictions of the retrained model can differ slightly from those of the original.
+- **Footprints** in the old DBSCAN/polyshape format are recomputed with TRACE3. Their areas, densities and purities can differ from the values reported by the old version.
+- **Field names** such as `data.bestPerformace` are corrected.
 
-After migration, the model can be passed to `PYTHIA` eval mode and `scriptcsv` -- i.e., it becomes usable with the current toolkit's `explore()`/output pipeline.
+The complete table is on the `ISAmigrateModel` reference page.
+
+## When Migration Cannot Complete
+
+- A projection without its reconstruction matrices (`model.pilot.B`, `model.pilot.C`) is kept as is, with a warning.
+- Retraining LIBSVM classifiers and recomputing footprints need the training data stored in the model (`model.pilot.Z` and `model.data`). When it is missing, the fields are renamed only, with a warning.
+- If a LIBSVM model has to be evaluated as-is, `PYTHIA` raises `ISA:PYTHIA:noLibsvm` unless the LIBSVM MEX files are on the path. The toolbox does not include them; get them from the [LIBSVM project](https://www.csie.ntu.edu.tw/~cjlin/libsvm/). Retraining is recommended instead.
 
 ## See Also
 
-For the full field-by-field migration table, see [ISAmigrateModel](ISAmigrateModel.html).
+`ISAmigrateModel` | `InstanceSpace` | [What's New](WhatsNew.html)

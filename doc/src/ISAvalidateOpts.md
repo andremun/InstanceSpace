@@ -1,6 +1,6 @@
 # ISAvalidateOpts
 
-Validate user-supplied opts fields before defaults are filled.
+Check the type and range of user-supplied options
 
 ## Syntax
 
@@ -10,20 +10,61 @@ opts = ISAvalidateOpts(opts)
 
 ## Description
 
-checks the type/range of every RECOGNISED opts field the caller actually supplied (the fixed set of fields this function knows about; see the body) and errors clearly (ISA:ISAvalidateOpts:*) on the first invalid one, instead of letting an out-of-range value surface many stages later as a confusing crash deep inside PRELIM/PILOT/PYTHIA/etc. An unrecognised field name (e.g. a typo like opts.piyhia.classifier) is NOT flagged -- it passes through silently, exactly like an unset one, since this function has no way to distinguish "not a real option" from "a future option it doesn't know about yet". Deliberately validates only fields that ARE present: this runs before ISAdefaults, so most fields are still absent at this point and are not this function's concern -- ISAdefaults supplies known-valid defaults for anything missing. "Present" is tracked explicitly (getf() returns a presence flag alongside the value), not inferred from isempty(v): a field explicitly supplied as opts.general.parallel = [] IS present and must be rejected as invalid, not silently skipped as if absent -- ISAdefaults only checks isfield(), so it would never replace that [] with the proper default, and later code expecting a logical scalar would fail far from the actual mistake. opts is returned unmodified; this function only ever errors or passes through, it never rewrites values (renaming/migrating legacy field names is ISAmigrateModel's job, not this one's).
+`opts = ISAvalidateOpts(opts)` checks each recognised field that is present in `opts` and raises an error on the first invalid one. Absent fields are not checked; `ISAdefaults` fills them afterwards. `opts` is returned unchanged.
+
+An error here names the field and the expected value, instead of failing later inside a stage. A field set to `[]` counts as present and is rejected. Field names the function does not recognise, including misspellings, are not reported.
+
+`InstanceSpace` calls ISAvalidateOpts when an object is created.
+
+## Examples
+
+### Catch an invalid value early
+
+```matlab
+opts.pilot.dims = 4;
+try
+    ISAvalidateOpts(opts);
+catch err
+    disp(err.identifier)   % ISA:ISAvalidateOpts:notMember
+    disp(err.message)
+end
+```
 
 ## Input Arguments
 
-| Argument | Description |
-|---|---|
-| `opts` | struct, user-supplied, possibly partial -- only the fields actually present are checked |
+### `opts` — Options
+
+*structure*
 
 ## Output Arguments
 
-| Argument | Description |
+### `opts` — Options
+
+*structure*
+
+The input, unchanged.
+
+## Tips
+
+Error identifiers, by the check that failed:
+
+| Identifier | Expected |
 |---|---|
-| `opts` | the same struct, unmodified. This function only ever errors (on the first invalid recognised field) or passes through -- it never rewrites values |
+| `ISA:ISAvalidateOpts:notStruct` | a structure, for `opts` and each group such as `opts.pilot` |
+| `ISA:ISAvalidateOpts:notLogical` | a logical scalar, or 0 or 1 |
+| `ISA:ISAvalidateOpts:notFiniteNumericScalar` | a finite real number |
+| `ISA:ISAvalidateOpts:notInteger` | a whole number |
+| `ISA:ISAvalidateOpts:notPositive` | a positive number (0 is allowed for seeds) |
+| `ISA:ISAvalidateOpts:notInUnitRange` | a number in [0, 1] |
+| `ISA:ISAvalidateOpts:notMember` | one of a fixed set of values |
+| `ISA:ISAvalidateOpts:notText` | a character vector or string |
+| `ISA:ISAvalidateOpts:notCellOfText` | a cell array of character vectors |
+| `ISA:ISAvalidateOpts:badViewGroups` | a cell array of algorithm index vectors |
 
-## References
+## Version History
 
-- Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. ACM Computing Surveys, 55(12), Article 255. <https://doi.org/10.1145/3572895>
+### v0.9.0 — Introduced
+
+## See Also
+
+`ISAdefaults` | `InstanceSpace` | [Options Reference](OptionsReference.html)

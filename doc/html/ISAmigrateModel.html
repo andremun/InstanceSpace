@@ -2,164 +2,153 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>ISAmigrateModel</title>
-<link rel="stylesheet" href="../style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ISAmigrateModel - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Update a model from an earlier toolbox version to the current layout">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
 </head>
 <body>
-<div class="sidebar">
-<h4>InstanceSpace</h4>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
 <ul>
-<li><a href="Landing.html">InstanceSpace</a></li>
-</ul>
-<h4>Getting Started</h4>
-<ul>
-<li><a href="GettingStarted.html">Getting Started</a></li>
-<li><a href="InteractiveWalkthrough.html">Interactive Walkthrough</a></li>
-</ul>
-<h4>Standalone pipeline functions</h4>
-<ul>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
 <li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
 <li><a href="SIFTED.html">SIFTED</a></li>
 <li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
 <li><a href="CLOISTER.html">CLOISTER</a></li>
 <li><a href="PYTHIA.html">PYTHIA</a></li>
 <li><a href="TRACE.html">TRACE</a></li>
-<li><a href="FILTER.html">FILTER</a></li>
-<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
-<li><a href="INIT.html">INIT</a></li>
-</ul>
-<h4>Class interface</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
 <li><a href="InstanceSpace.html">InstanceSpace</a></li>
-</ul>
-<h4>Backward-compatibility wrappers</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
 <li><a href="buildIS.html">buildIS</a></li>
 <li><a href="exploreIS.html">exploreIS</a></li>
-</ul>
-<h4>Utilities</h4>
-<ul>
+</ul></details></li>
+<li><details open><summary>Utilities</summary><ul>
 <li><a href="ISAdefaults.html">ISAdefaults</a></li>
 <li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
-<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
 <li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
-<li><span class="current-page">ISAmigrateModel</span></li>
-</ul>
-<h4>Output</h4>
-<ul>
+<li><a class="current" aria-current="page" href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
 <li><a href="scriptcsv.html">scriptcsv</a></li>
 <li><a href="scriptpng.html">scriptpng</a></li>
 <li><a href="scriptweb.html">scriptweb</a></li>
 <li><a href="ISArecallView.html">ISArecallView</a></li>
-</ul>
-<h4>Deprecated Functions</h4>
-<ul>
-<li><a href="Deprecated.html">Deprecated</a></li>
-</ul>
-<h4>Reference</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
 <li><a href="OptionsReference.html">Options Reference</a></li>
-<li><a href="MetadataFormat.html">Metadata File Format</a></li>
 <li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
-</ul>
-<h4>What's New</h4>
-<ul>
-<li><a href="WhatsNew.html">What's New</a></li>
-</ul>
-</div>
-<div class="content">
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> <a href="FunctionList.html">Utilities</a> <span class="sep">›</span> <span>ISAmigrateModel</span></nav>
+<div class="page-head function">
 <h1>ISAmigrateModel</h1>
-<p class="tagline">Migrate a legacy ISA model to the current field layout.</p>
-<p>Two calling conventions, dispatched on the type of the first argument:</p>
-<p>1) File-based (the primary/recommended form): pass a rootdir
-containing model.mat. The original file is backed up alongside it
-(default name: model_legacy.mat) and the migrated model is written
-back to model.mat in the same directory.</p>
-<pre class="syntax"><code>ISAmigrateModel(rootdir)
-ISAmigrateModel(rootdir, 'backupSuffix', '_v1')   % -&gt; model_v1.mat
-</code></pre>
-<p>2) In-memory: pass an already-loaded model struct and use the returned,
-migrated struct directly; no file I/O occurs. This form exists
-because exploreIS.m already holds the loaded model in memory (it
-calls load(modelfile) itself to migrate-then-fill-defaults in one
-pass) and has no reason to write the migrated model back to disk
-and re-read it on every explore() call — the file-based form is for
-one-time offline migration of a model.mat produced by an older
-toolkit version, not for use on every read.</p>
-<pre><code>model = ISAmigrateModel(model);
-</code></pre>
-<p>Both paths apply the complete legacy migration table below:</p>
-<ul>
-<li>opts struct renames<br />
-  opts.oracle/opts.pbldr/opts.sbound/opts.footprint<br />
-  -&gt; opts.pythia/opts.pilot/opts.cloister/opts.trace</li>
-<li>opts merges<br />
-  opts.corr.flag/.threshold and opts.clust.flag<br />
-  merged into opts.sifted</li>
-<li>opts.perf.MaxMin -&gt; opts.perf.MaxPerf</li>
-<li>model.data.bestPerformace (typo) -&gt; model.data.Ybest</li>
-<li>model.pilot.A without B/C -&gt; warning only (not expected; not auto-fixable)</li>
-<li>model.pythia.svm{i} / .knn{i} -&gt; model.pythia.classifiers{i}</li>
-<li>model.pythia.boxcosnt / .kscale -&gt; model.pythia.param1 / .param2</li>
-<li>LIBSVM struct in model.pythia -&gt; retrained via the current classifier
-  registry (opts.pythia.classifier, default 'knn'); a LIBSVM struct has no
-  predict() method, so unlike the plain field renames above it cannot simply
-  be relabelled</li>
-<li>model.trace in the pre-refactor DBSCAN+polyshape triangulation format<br />
-  -&gt; recomputed fresh via TRACE3, using model.pythia.Yhat when available (else
-  model.data.Ybin)</li>
-<li>missing model.completedStages -&gt; inferred from which sub-structs are
-  present (isfield only, same approach as InstanceSpace.load())</li>
-</ul>
-<p>After migration the model can be passed to PYTHIA eval mode and scriptcsv.</p>
-<p>Examples:
-```
-ISAmigrateModel('/path/to/rootdir/');            % migrates model.mat on disk
-m = load('model.mat'); m = ISAmigrateModel(m);   % migrates an in-memory struct</p>
-<h2>Input Arguments</h2>
-<table class="args">
+<p class="purpose">Update a model from an earlier toolbox version to the current layout</p>
+</div>
+<section class="refsect" id="syntax"><h2>Syntax</h2><div class="syntax-block">
+<div class="syntax-line"><a href="#desc-1"><code>model = ISAmigrateModel(rootdir)</code></a></div>
+<div class="syntax-line"><a href="#desc-2"><code>model = ISAmigrateModel(rootdir,'backupSuffix',suffix)</code></a></div>
+<div class="syntax-line"><a href="#desc-3"><code>model = ISAmigrateModel(model)</code></a></div>
+</div></section>
+<section class="refsect" id="description"><h2>Description</h2><p class="syntax-desc" id="desc-1"><code>model = ISAmigrateModel(rootdir)</code> migrates <code>rootdir/model.mat</code> in place. The original file is first copied to <code>model_legacy.mat</code> in the same folder. Use this form once, to convert a saved model.</p>
+<p class="syntax-desc" id="desc-2"><code>model = ISAmigrateModel(rootdir,'backupSuffix',suffix)</code> names the backup <code>model&lt;suffix&gt;.mat</code>. An existing backup is never overwritten; ISAmigrateModel raises <code>ISA:ISAmigrateModel:backupExists</code> instead.</p>
+<p class="syntax-desc" id="desc-3"><code>model = ISAmigrateModel(model)</code> migrates a model structure already in memory and writes no files. <code>InstanceSpace.load</code> and <a class="code-link" href="exploreIS.html"><code>exploreIS</code></a> use this form on every load, so a legacy <code>model.mat</code> also works without converting it first.</p></section>
+<section class="refsect" id="examples"><h2>Examples</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="example">Expand all</button></p><details class="example" id="example-convert-a-saved-model" open><summary>Convert a saved model</summary><div class="example-body"><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>ISAmigrateModel(<span class="str">'/path/to/old/run/'</span>);
+obj = InstanceSpace.load(<span class="str">'/path/to/old/run/'</span>);</code></pre></div></div></details>
+<details class="example" id="example-migrate-in-memory"><summary>Migrate in memory</summary><div class="example-body"><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>m = load(<span class="str">'/path/to/old/run/model.mat'</span>);
+m = ISAmigrateModel(m);
+m.pythia.classifiers</code></pre></div></div></details></section>
+<section class="refsect" id="input-arguments"><h2>Input Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="arg-rootdir"><summary><code>rootdir</code> <span class="arg-desc">— Folder containing model.mat</span></summary><div class="arg-body"><p class="arg-type">character vector | string scalar</p></div></details>
+<details class="arg" id="arg-model"><summary><code>model</code> <span class="arg-desc">— Model structure</span></summary><div class="arg-body"><p class="arg-type">structure</p>
+<p>A model loaded with <code>load('model.mat')</code>.</p></div></details>
+<details class="arg" id="arg-suffix"><summary><code>suffix</code> <span class="arg-desc">— Backup file suffix</span></summary><div class="arg-body"><p class="arg-type"><code>'_legacy'</code> (default) | character vector</p>
+<p>File form only.</p></div></details></section>
+<section class="refsect" id="output-arguments"><h2>Output Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="out-model"><summary><code>model</code> <span class="arg-desc">— Migrated model</span></summary><div class="arg-body"><p class="arg-type">structure</p></div></details></section>
+<section class="refsect" id="algorithms"><h2>Algorithms</h2><table class="doc-table">
 <thead>
 <tr>
-<th>Argument</th>
-<th>Description</th>
+<th>Legacy content</th>
+<th>Becomes</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>input</code></td>
-<td>either a rootdir (char/string) containing model.mat (file-based form), or an already-loaded model struct (in-memory form); dispatched on this argument's type.</td>
+<td><code>opts.oracle</code>, <code>opts.pbldr</code>, <code>opts.sbound</code>, <code>opts.footprint</code></td>
+<td><a class="code-link" href="OptionsReference.html#opts-pythia"><code>opts.pythia</code></a>, <a class="code-link" href="OptionsReference.html#opts-pilot"><code>opts.pilot</code></a>, <a class="code-link" href="OptionsReference.html#opts-cloister"><code>opts.cloister</code></a>, <a class="code-link" href="OptionsReference.html#opts-trace"><code>opts.trace</code></a></td>
 </tr>
 <tr>
-<td><code>varargin</code></td>
-<td>name-value pairs, optional; file-based form only. backupSuffix (char, default '_legacy') - suffix appended to the backup filename; must produce a filename different from model.mat, and refuses to overwrite an existing backup at that name.</td>
+<td><code>opts.corr.flag</code>, <code>opts.corr.threshold</code>, <code>opts.clust.flag</code></td>
+<td>fields of <a class="code-link" href="OptionsReference.html#opts-sifted"><code>opts.sifted</code></a></td>
+</tr>
+<tr>
+<td><a class="code-link" href="OptionsReference.html#opts-perf"><code>opts.perf.MaxMin</code></a></td>
+<td><a class="code-link" href="OptionsReference.html#opts-perf-maxperf"><code>opts.perf.MaxPerf</code></a></td>
+</tr>
+<tr>
+<td><code>model.data.bestPerformace</code></td>
+<td><code>model.data.Ybest</code></td>
+</tr>
+<tr>
+<td><code>model.pythia.svm{i}</code>, <code>model.pythia.knn{i}</code></td>
+<td><code>model.pythia.classifiers{i}</code></td>
+</tr>
+<tr>
+<td><code>model.pythia.boxcosnt</code>, <code>model.pythia.kscale</code></td>
+<td><code>model.pythia.param1</code>, <code>model.pythia.param2</code></td>
+</tr>
+<tr>
+<td>LIBSVM classifier structures</td>
+<td>retrained with <a class="code-link" href="OptionsReference.html#opts-pythia-classifier"><code>opts.pythia.classifier</code></a> (default <code>'knn'</code>), because LIBSVM structures have no <code>predict</code> method</td>
+</tr>
+<tr>
+<td><code>model.trace</code> in the DBSCAN/polyshape format</td>
+<td>recomputed with TRACE3, using <code>model.pythia.Yhat</code> when available, otherwise <code>model.data.Ybin</code></td>
+</tr>
+<tr>
+<td>no <code>completedStages</code></td>
+<td>inferred from the stage fields present</td>
 </tr>
 </tbody>
 </table>
-<h2>Output Arguments</h2>
-<table class="args">
-<thead>
-<tr>
-<th>Argument</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>modelOut</code></td>
-<td>the migrated model struct. File-based form also writes it back to model.mat in rootdir (after backing up the original) as a side effect; in-memory form performs no file I/O -- only the returned struct is migrated.</td>
-</tr>
-</tbody>
-</table>
-<h2>References</h2>
-<ul>
-<li>Smith-Miles, K. &amp; Munoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. ACM Computing Surveys, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
-</ul>
-<h2>See Also</h2>
-<p><a href="InstanceSpace.html">InstanceSpace</a> | <a href="MigratingLegacyModel.html">MigratingLegacyModel</a></p>
-<hr class="footer-rule">
-<p class="copyright"><em>Copyright (c) 2026 Mario Andres Munoz Acosta and contributors,
-School of Computing and Information Systems, The University of Melbourne.
-Released under the PolyForm Noncommercial License 1.0.0.</em></p>
+<p>A <code>model.pilot.A</code> without <code>B</code> and <code>C</code> cannot be repaired and raises a warning.</p></section>
+<section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="v0-9-0-introduced">v0.9.0 — Introduced</h3></div></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a> | <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> | <a class="code-link" href="exploreIS.html"><code>exploreIS</code></a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#syntax">Syntax</a></li><li><a href="#description">Description</a></li><li><a href="#examples">Examples</a></li><li><a href="#input-arguments">Input Arguments</a></li><li><a href="#output-arguments">Output Arguments</a></li><li><a href="#algorithms">Algorithms</a></li><li><a href="#version-history">Version History</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
 </div>
 </body>
 </html>

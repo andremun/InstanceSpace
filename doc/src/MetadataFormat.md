@@ -1,43 +1,59 @@
-# MetadataFormat
+# Metadata File Format
 
-## Overview
+Prepare metadata.csv for your own problem domain
 
-`metadata.csv` is used by `buildIS` in training mode, while `metadata_test.csv` is used by `exploreIS` in evaluation mode. Both files share an identical column layout.
+An instance space is built from one CSV file, `metadata.csv`, with one row per problem instance. Instances to evaluate later with `explore` go in `metadata_test.csv`, in the same format.
 
-## Column Schema
+## Columns
 
-### Instances
-The first column contains the instance label/identifier (string), with one row per instance.
+Columns are recognised by their header. The order of the column groups does not matter, and headers are case insensitive.
 
-### Feature Columns (`feature_*`)
-Numeric columns representing instance features. In the reference dataset, there are 10 such columns.
+| Header | Required | Contents |
+|---|---|---|
+| `Instances` | yes | Instance name. Text or numbers. |
+| `Source` | no | Where the instance comes from, for example the benchmark suite. Drawn by `obj.plot('sources')`. |
+| `feature_<name>` | at least two | Numeric feature value. |
+| `algo_<name>` | at least one | Numeric performance of the algorithm on the instance. |
 
-### Algorithm Columns (`algo_*`)
-Numeric columns representing an algorithm's raw performance value on that instance. In the reference dataset, there are 10 algorithm columns (NB, LDA, QDA, CART, J48, KNN, L_SVM, poly_SVM, RBF_SVM, RandF).
-
-### Optional Source Column
-An optional `source` column is used for per-instance provenance labels (not present in the reference dataset).
-
-## Configuration and Constraints
-
-### Column Selection
-`opts.selvars.feats` and `opts.selvars.algos` in `options.json` can restrict used columns by name.
-
-### Evaluation Mode Requirements
-For `metadata_test.csv` in evaluation mode:
-- Feature columns must match the training `metadata.csv` in both set and order (validated by `InstanceSpace.explore()/evaluateTestSet`).
-- Algorithm columns: Known algorithms match their trained column position; new algorithms present in the test file are appended as new columns.
+Other columns are ignored. Names after the prefix must be valid MATLAB identifiers: use underscores instead of spaces, for example `feature_edge_density` or `algo_simulated_annealing`.
 
 ## Example
 
-Confirmed via direct inspection of test/data/metadata.csv and test/data/metadata_test.csv's header row (identical in both files):
+The first rows of the reference data (`test/data/metadata.csv`), shortened to three features and three algorithms:
 
 ```
-Instances,feature_Max_Normalized_Entropy_attributes,feature_Normalized_Entropy_Class_Attribute,feature_Mean_Mutual_Information_Attribute_Class,feature_ErrorRate_Decision_Node,feature_WeightedDist_StdDev,feature_Max_Feature_Efficiency_F3,feature_Collective_Feature_Efficiency_F4,feature_Training_Error_Linear_Classifier_L2,feature_Fraction_Points_Class_Boundary_N1,feature_Nonlinearity_Nearest_Neighbor_Classifier_N4,algo_NB,algo_LDA,algo_QDA,algo_CART,algo_J48,algo_KNN,algo_L_SVM,algo_poly_SVM,algo_RBF_SVM,algo_RandF
+Instances,feature_Max_Normalized_Entropy_attributes,feature_ErrorRate_Decision_Node,feature_Training_Error_Linear_Classifier_L2,algo_NB,algo_KNN,algo_RandF
+abalone,0.332548382,0.386458668,0.260234614,0.280095763,0.256969153,0.234432252
+abalone_ori,0.332548382,0.210409617,0.035714286,0.164181841,0.167112964,0.895471859
 ```
 
-First data row (metadata.csv), showing the value format:
+## Missing Values
 
-```
-abalone,0.332548382,0.131686939,0.229928422,0.386458668,2.343235444,0.076929217,0.095203899,0.260234614,0.404836009,0.327388088,0.280095763,0.239715007,0.25401222,0.24533949,0.256491398,0.256969153,0.230584159,0.277410974,0.221197935,0.234432252
-```
+Leave a cell empty or write `NaN` for a missing value. A feature with at least `opts.prelim.nanThreshold` missing values is removed. A missing performance value never counts as good.
+
+Avoid `NA`, spreadsheet error codes such as `#DIV/0!`, and empty rows: they make MATLAB read the whole column as text, which then fails later in the pipeline.
+
+## Test Instances
+
+`metadata_test.csv` must contain the same `feature_` columns as `metadata.csv`, in the same order. It may contain:
+
+- a subset of the trained algorithms — the missing ones are not scored;
+- algorithms that were not trained — they are appended to the results, without a classifier.
+
+## Choosing Features
+
+The features determine what the instance space can reveal. Good features:
+
+- are cheap to compute compared with running the algorithms;
+- capture properties that plausibly affect how hard an instance is for each algorithm;
+- vary across the instances, with few repeated values.
+
+Start with more candidate features than you need; `SIFTED` removes the ones that do not explain performance. See Smith-Miles & Muñoz (2023) for guidance on feature design.
+
+## References
+
+- Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
+
+## See Also
+
+`INIT` | `InstanceSpace` | [Options Reference](OptionsReference.html)

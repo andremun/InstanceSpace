@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>All Functions - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Every function and class in the toolbox, by category.">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
+<ul>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul></details></li>
+<li><details><summary>Utilities</summary><ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a class="current" aria-current="page" href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> <span>All Functions</span></nav>
+<div class="page-head">
+<h1>All Functions</h1>
+<p class="purpose">Every function and class in the toolbox, by category.</p>
+</div>
+<section class="refsect" id="pipeline-stages"><h2>Pipeline Stages</h2><table class="doc-table">
+<thead>
+<tr>
+<th>Name</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="INIT.html"><code>INIT</code></a></td>
+<td>Read and filter instance metadata</td>
+</tr>
+<tr>
+<td><a href="PRELIM.html"><code>PRELIM</code></a></td>
+<td>Label good performance and normalise features and performance</td>
+</tr>
+<tr>
+<td><a href="FILTER.html"><code>FILTER</code></a></td>
+<td>Remove near-duplicate instances to even out the instance density</td>
+</tr>
+<tr>
+<td><a href="SIFTED.html"><code>SIFTED</code></a></td>
+<td>Select the features that best explain algorithm performance</td>
+</tr>
+<tr>
+<td><a href="PILOT.html"><code>PILOT</code></a></td>
+<td>Project instance features onto a 2D or 3D instance space</td>
+</tr>
+<tr>
+<td><a href="PILOTviewpoint.html"><code>PILOTviewpoint</code></a></td>
+<td>Find the best viewing angles of a 3D instance space</td>
+</tr>
+<tr>
+<td><a href="CLOISTER.html"><code>CLOISTER</code></a></td>
+<td>Estimate the boundary of the instance space</td>
+</tr>
+<tr>
+<td><a href="PYTHIA.html"><code>PYTHIA</code></a></td>
+<td>Train classifiers that predict which algorithms perform well</td>
+</tr>
+<tr>
+<td><a href="TRACE.html"><code>TRACE</code></a></td>
+<td>Compute algorithm footprints in the instance space</td>
+</tr>
+</tbody>
+</table></section>
+<section class="refsect" id="class-interface"><h2>Class Interface</h2><table class="doc-table">
+<thead>
+<tr>
+<th>Name</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="InstanceSpace.html"><code>InstanceSpace</code></a></td>
+<td>Build, explore and save an instance space</td>
+</tr>
+</tbody>
+</table></section>
+<section class="refsect" id="backward-compatible-wrappers"><h2>Backward-Compatible Wrappers</h2><table class="doc-table">
+<thead>
+<tr>
+<th>Name</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="buildIS.html"><code>buildIS</code></a></td>
+<td>Build an instance space from a folder (backward-compatible wrapper)</td>
+</tr>
+<tr>
+<td><a href="exploreIS.html"><code>exploreIS</code></a></td>
+<td>Evaluate a saved instance space on new instances (backward-compatible wrapper)</td>
+</tr>
+</tbody>
+</table></section>
+<section class="refsect" id="utilities"><h2>Utilities</h2><table class="doc-table">
+<thead>
+<tr>
+<th>Name</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="ISAdefaults.html"><code>ISAdefaults</code></a></td>
+<td>Fill in missing options with their default values</td>
+</tr>
+<tr>
+<td><a href="ISAvalidateOpts.html"><code>ISAvalidateOpts</code></a></td>
+<td>Check the type and range of user-supplied options</td>
+</tr>
+<tr>
+<td><a href="ISAgetClassifierFcn.html"><code>ISAgetClassifierFcn</code></a></td>
+<td>Look up a classifier in the PYTHIA registry</td>
+</tr>
+<tr>
+<td><a href="ISAmigrateModel.html"><code>ISAmigrateModel</code></a></td>
+<td>Update a model from an earlier toolbox version to the current layout</td>
+</tr>
+<tr>
+<td><a href="ISAsubsetData.html"><code>ISAsubsetData</code></a></td>
+<td>Keep a subset of the instances in a data structure</td>
+</tr>
+</tbody>
+</table></section>
+<section class="refsect" id="output"><h2>Output</h2><table class="doc-table">
+<thead>
+<tr>
+<th>Name</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="scriptcsv.html"><code>scriptcsv</code></a></td>
+<td>Write the results of an instance space to CSV files</td>
+</tr>
+<tr>
+<td><a href="scriptpng.html"><code>scriptpng</code></a></td>
+<td>Save figures of an instance space as PNG files</td>
+</tr>
+<tr>
+<td><a href="scriptweb.html"><code>scriptweb</code></a></td>
+<td>Write colour-scaled data for the MATILDA web platform</td>
+</tr>
+<tr>
+<td><a href="ISArecallView.html"><code>ISArecallView</code></a></td>
+<td>Return a 3D figure to its optimised viewpoint</td>
+</tr>
+</tbody>
+</table></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#pipeline-stages">Pipeline Stages</a></li><li><a href="#class-interface">Class Interface</a></li><li><a href="#backward-compatible-wrappers">Backward-Compatible Wrappers</a></li><li><a href="#utilities">Utilities</a></li><li><a href="#output">Output</a></li></ul></aside>
+</div>
+</body>
+</html>

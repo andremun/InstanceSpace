@@ -1,37 +1,50 @@
 # ISArecallView
 
-Snap an open 3D instance-space figure to its stored PILOTviewpoint camera angle for a given algorithm group.
+Return a 3D figure to its optimised viewpoint
 
 ## Syntax
 
 ```
-ISArecallView(fig, groupIdx)
-ISArecallView(fig)          % use the default/global viewpoint
+ISArecallView(fig)
+ISArecallView(fig,algoIdx)
 ```
 
 ## Description
 
-Useful after manually rotating a 3D footprint .fig while exploring it interactively, to return to the optimised viewpoint without having to recompute or look it up by hand.
+`ISArecallView(fig)` sets the camera of the 3D instance-space figure `fig` to the global viewpoint found by `PILOTviewpoint`. Use it after rotating a figure saved by `scriptpng`.
+
+`ISArecallView(fig,algoIdx)` uses the viewpoint of the group in `opts.pilot.viewGroups` that contains algorithm `algoIdx`, or the global viewpoint if no group contains it.
+
+The viewpoints are stored in the figure's `UserData` by `scriptpng`.
+
+## Examples
+
+### Restore the view of a saved footprint
+
+```matlab
+fig = openfig('test/data/example/footprint_KNN.fig');
+rotate3d(fig, 'on')        % explore the figure, then:
+ISArecallView(fig, 6)      % back to the viewpoint for algorithm 6
+```
 
 ## Input Arguments
 
-| Argument | Description |
-|---|---|
-| `fig` | handle to a figure (produced by scriptpng.m or a .fig file) containing viewpoint data in UserData. |
-| `groupIdx` | algorithm column index (from opts.pilot.viewGroups) to apply a specific viewpoint, or [] for the default/global viewpoint. |
+### `fig` — Figure
 
-## Output Arguments
+*figure handle*
 
-| Field | Description |
-|---|---|
-| `None` | rotates the camera to the stored viewpoint as a side effect. |
+A 3D figure saved by `scriptpng`.
 
-## References
+### `algoIdx` — Algorithm index
 
-- Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
-- Simpson, C., Munoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B. (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis. *Machine Learning*, 114, 240. <https://doi.org/10.1007/s10994-025-06871-5>
-- Munoz, M.A., Villanova, L., Baatar, D. & Smith-Miles, K. (2018). Instance spaces for machine learning classification. *Machine Learning*, 107(1), 109-147. <https://doi.org/10.1007/s10994-017-5629-5>
+*`[]` (default) | positive integer*
+
+Column of the algorithm in `model.data.algolabels`.
+
+## Version History
+
+### v0.9.0 — Introduced
 
 ## See Also
 
-[scriptpng](scriptpng.html) | [PILOTviewpoint](PILOTviewpoint.html)
+`PILOTviewpoint` | `scriptpng`

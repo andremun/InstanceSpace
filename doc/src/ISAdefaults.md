@@ -1,6 +1,6 @@
 # ISAdefaults
 
-Fill in missing opts fields with default values.
+Fill in missing options with their default values
 
 ## Syntax
 
@@ -10,24 +10,48 @@ opts = ISAdefaults(opts)
 
 ## Description
 
-ensures every pipeline function receives a complete options struct, eliminating scattered isfield chains across buildIS, PILOT, TRACE, and CLOISTER. Call once at the buildIS entry point after loading options.json.
+`opts = ISAdefaults(opts)` returns `opts` with every missing field set to its default, so that every stage receives a complete options structure. Fields already present are not changed. The defaults are listed in the [Options Reference](OptionsReference.html).
+
+ISAdefaults also maps a few legacy field names to their current names when the current name is absent: `opts.parallel.flag`/`.ncores` to `opts.general.parallel`/`.ncores`, `opts.pilot.ISA3D` to `opts.pilot.dims`, `opts.cloister.cthres` to `opts.cloister.corrThreshold`, `opts.pythia.cvfolds` to `opts.pythia.kFold`, and `opts.pythia.useknn = false` to `opts.pythia.classifier = 'svm'`.
+
+`InstanceSpace` calls ISAdefaults after `ISAvalidateOpts` when an object is created or loaded.
+
+## Examples
+
+### See every default
+
+```matlab
+opts = ISAdefaults(struct());
+opts.pilot
+```
+
+### Complete a partial options file
+
+```matlab
+opts = jsondecode(fileread('options.json'));
+opts = ISAdefaults(ISAvalidateOpts(opts));
+```
 
 ## Input Arguments
 
-| Argument | Description |
-|---|---|
-| `opts` | struct, potentially partial (e.g., freshly parsed from options.json with some fields absent or left as []) |
+### `opts` — Options
+
+*structure*
+
+Any subset of the options, for example as decoded from `options.json`.
 
 ## Output Arguments
 
-| Field | Description |
-|---|---|
-| `opts` | the same struct, with every pipeline-stage field guaranteed present. See the Options Reference page for the full field list and defaults. |
+### `opts` — Complete options
 
-## References
+*structure*
 
-- Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. ACM Computing Surveys, 55(12), Article 255. <https://doi.org/10.1145/3572895>
+## Version History
+
+### v0.9.0 — Introduced
+
+Defaults moved from each stage into one function.
 
 ## See Also
 
-[buildIS](buildIS.html) | [PILOT](PILOT.html) | [TRACE](TRACE.html) | [CLOISTER](CLOISTER.html)
+`ISAvalidateOpts` | `InstanceSpace` | [Options Reference](OptionsReference.html)

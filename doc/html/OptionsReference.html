@@ -2,76 +2,87 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>OptionsReference</title>
-<link rel="stylesheet" href="../style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Options Reference - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Every field of the options structure, with its default">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
 </head>
 <body>
-<div class="sidebar">
-<h4>InstanceSpace</h4>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
 <ul>
-<li><a href="Landing.html">InstanceSpace</a></li>
-</ul>
-<h4>Getting Started</h4>
-<ul>
-<li><a href="GettingStarted.html">Getting Started</a></li>
-<li><a href="InteractiveWalkthrough.html">Interactive Walkthrough</a></li>
-</ul>
-<h4>Standalone pipeline functions</h4>
-<ul>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
 <li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
 <li><a href="SIFTED.html">SIFTED</a></li>
 <li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
 <li><a href="CLOISTER.html">CLOISTER</a></li>
 <li><a href="PYTHIA.html">PYTHIA</a></li>
 <li><a href="TRACE.html">TRACE</a></li>
-<li><a href="FILTER.html">FILTER</a></li>
-<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
-<li><a href="INIT.html">INIT</a></li>
-</ul>
-<h4>Class interface</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
 <li><a href="InstanceSpace.html">InstanceSpace</a></li>
-</ul>
-<h4>Backward-compatibility wrappers</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
 <li><a href="buildIS.html">buildIS</a></li>
 <li><a href="exploreIS.html">exploreIS</a></li>
-</ul>
-<h4>Utilities</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Utilities</summary><ul>
 <li><a href="ISAdefaults.html">ISAdefaults</a></li>
 <li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
-<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
 <li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
 <li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
-</ul>
-<h4>Output</h4>
-<ul>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
 <li><a href="scriptcsv.html">scriptcsv</a></li>
 <li><a href="scriptpng.html">scriptpng</a></li>
 <li><a href="scriptweb.html">scriptweb</a></li>
 <li><a href="ISArecallView.html">ISArecallView</a></li>
-</ul>
-<h4>Deprecated Functions</h4>
-<ul>
-<li><a href="Deprecated.html">Deprecated</a></li>
-</ul>
-<h4>Reference</h4>
-<ul>
-<li><span class="current-page">Options Reference</span></li>
-<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details open><summary>Topics</summary><ul>
+<li><a class="current" aria-current="page" href="OptionsReference.html">Options Reference</a></li>
 <li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
-</ul>
-<h4>What's New</h4>
-<ul>
-<li><a href="WhatsNew.html">What's New</a></li>
-</ul>
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> Topics <span class="sep">›</span> <span>Options Reference</span></nav>
+<div class="page-head">
+<h1>Options Reference</h1>
+<p class="purpose">Every field of the options structure, with its default</p>
 </div>
-<div class="content">
-<h1>OptionsReference</h1>
-<p class="tagline">Documents every `opts.*` field across all pipeline stages, sourced from `utils/ISAdefaults.m` -- the single source of truth for defaults. Any field you don't set falls back to the default shown here.</p>
-<h2>opts.general</h2>
-<table class="args">
+<p>Options control every stage of the pipeline. Give them to <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> as a structure, or as an <code>options.json</code> file in the data folder with the same nesting:</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>opts.perf.MaxPerf = <span class="kw">false</span>;
+opts.pilot.dims = <span class="num">3</span>;
+obj = InstanceSpace(rootdir, opts);</code></pre></div>
+<div class="code"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>{"perf": {"MaxPerf": false}, "pilot": {"dims": 3}}</code></pre></div>
+<p>Set only the fields you want to change. <a class="code-link" href="ISAvalidateOpts.html"><code>ISAvalidateOpts</code></a> checks the fields you set, and <a class="code-link" href="ISAdefaults.html"><code>ISAdefaults</code></a> fills in the rest with the defaults below. Between staged <code>build</code> calls you can change <code>obj.opts</code> directly.</p>
+<section class="refsect" id="opts-general"><h2>opts.general</h2><p>Settings for the whole pipeline.</p>
+<table class="doc-table">
 <thead>
 <tr>
 <th>Field</th>
@@ -80,286 +91,26 @@
 </tr>
 </thead>
 <tbody>
-<tr>
-<td><code>seed</code></td>
-<td>42</td>
-<td>RNG seed</td>
+<tr id="opts-general-seed"><td><code>seed</code></td>
+<td><code>42</code></td>
+<td>Random seed. Every stochastic stage derives its seed from this value, so the same seed and data reproduce a run.</td>
 </tr>
-<tr>
-<td><code>verbose</code></td>
-<td>true</td>
-<td>Enable verbose output</td>
-</tr>
-<tr>
-<td><code>parallel</code></td>
-<td>false</td>
-<td>Use parallel processing (conservative default)</td>
-</tr>
-<tr>
-<td><code>ncores</code></td>
-<td>18</td>
-<td>Number of CPU cores to use for parallel processing</td>
-</tr>
-</tbody>
-</table>
-<h2>opts.perf</h2>
-<table class="args">
-<thead>
-<tr>
-<th>Field</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>MaxPerf</code></td>
-<td>false</td>
-<td>Maximize performance instead of minimizing</td>
-</tr>
-<tr>
-<td><code>AbsPerf</code></td>
-<td>false</td>
-<td>Use absolute performance threshold instead of relative</td>
-</tr>
-<tr>
-<td><code>epsilon</code></td>
-<td>0.05</td>
-<td>Good-performance threshold</td>
-</tr>
-<tr>
-<td><code>betaThreshold</code></td>
-<td>0.55</td>
-<td>Easy-instance fraction (fraction of instances that are easy to solve)</td>
-</tr>
-</tbody>
-</table>
-<h2>opts.prelim</h2>
-<table class="args">
-<thead>
-<tr>
-<th>Field</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>iqrMultiplier</code></td>
-<td>5</td>
-<td>Outlier bound = median +/- N*IQR</td>
-</tr>
-<tr>
-<td><code>nanThreshold</code></td>
-<td>0.20</td>
-<td>Maximum fraction of missing values before an instance/feature is dropped</td>
-</tr>
-</tbody>
-</table>
-<h2>opts.auto</h2>
-<table class="args">
-<thead>
-<tr>
-<th>Field</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>preproc</code></td>
-<td>true</td>
-<td>Run automatic pre-processing</td>
-</tr>
-</tbody>
-</table>
-<h2>opts.bound</h2>
-<table class="args">
-<thead>
-<tr>
-<th>Field</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>flag</code></td>
-<td>true</td>
-<td>Bound outliers</td>
-</tr>
-</tbody>
-</table>
-<h2>opts.norm</h2>
-<table class="args">
-<thead>
-<tr>
-<th>Field</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>flag</code></td>
-<td>true</td>
-<td>Apply Box-Cox + Z-score normalisation</td>
-</tr>
-</tbody>
-</table>
-<h2>opts.selvars</h2>
-<table class="args">
-<thead>
-<tr>
-<th>Field</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>smallscaleflag</code></td>
-<td>false</td>
-<td>Enable a small-scale experiment: randomly hold out a fraction of instances (via <code>cvpartition</code>)</td>
-</tr>
-<tr>
-<td><code>smallscale</code></td>
-<td>0.30</td>
-<td>Fraction of instances to keep when <code>smallscaleflag</code> is true</td>
-</tr>
-<tr>
-<td><code>fileidxflag</code></td>
-<td>false</td>
-<td>Enable instance subsetting from an explicit list of instance indices read from a file</td>
-</tr>
-<tr>
-<td><code>fileidx</code></td>
-<td>''</td>
-<td>Path to the file listing instance indices to keep, when <code>fileidxflag</code> is true</td>
-</tr>
-<tr>
-<td><code>densityflag</code></td>
-<td>false</td>
-<td>Enable density-based instance subsetting via FILTER</td>
-</tr>
-<tr>
-<td><code>mindistance</code></td>
-<td>0.10</td>
-<td>Feature-space distance threshold for FILTER's density-based instance subsetting, when <code>densityflag</code> is true</td>
-</tr>
-<tr>
-<td><code>type</code></td>
-<td>'Ftr&amp;Good'</td>
-<td>FILTER's redundancy condition: 'Ftr', 'Ftr&amp;AP', 'Ftr&amp;Good', or 'Ftr&amp;AP&amp;Good'</td>
-</tr>
-</tbody>
-</table>
-<h2>opts.sifted</h2>
-<table class="args">
-<thead>
-<tr>
-<th>Field</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>flag</code></td>
+<tr id="opts-general-verbose"><td><code>verbose</code></td>
 <td><code>true</code></td>
-<td>Automated feature selection on/off.</td>
+<td>Detailed progress output. Stage start and end messages are always printed.</td>
 </tr>
-<tr>
-<td><code>rho</code></td>
-<td><code>0.10</code></td>
-<td>Minimum absolute correlation to keep.</td>
-</tr>
-<tr>
-<td><code>pval</code></td>
-<td><code>0.05</code></td>
-<td>Significance level for correlation.</td>
-</tr>
-<tr>
-<td><code>K</code></td>
-<td><code>10</code></td>
-<td>Number of feature clusters.</td>
-</tr>
-<tr>
-<td><code>MaxIter</code></td>
-<td><code>1000</code></td>
-<td>K-means maximum iterations.</td>
-</tr>
-<tr>
-<td><code>Replicates</code></td>
-<td><code>100</code></td>
-<td>K-means replicates.</td>
-</tr>
-<tr>
-<td><code>seed</code></td>
-<td><code>opts.general.seed</code></td>
-<td>Defaults from the general seed.</td>
-</tr>
-</tbody>
-</table>
-<h2>opts.pilot</h2>
-<table class="args">
-<thead>
-<tr>
-<th>Field</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>analytic</code></td>
+<tr id="opts-general-parallel"><td><code>parallel</code></td>
 <td><code>false</code></td>
-<td>Use closed-form eigenvector solution when true.</td>
+<td>Use a parallel pool (Parallel Computing Toolbox) for SIFTED, PILOT, PYTHIA and TRACE.</td>
 </tr>
-<tr>
-<td><code>ntries</code></td>
-<td><code>10</code></td>
-<td>BFGS multi-start restarts.</td>
-</tr>
-<tr>
-<td><code>dims</code></td>
-<td><code>2</code></td>
-<td>Projection dimensionality, 2 or 3.</td>
-</tr>
-<tr>
-<td><code>method</code></td>
-<td><code>'standard'</code></td>
-<td>'standard' BFGS/analytic, or 'pls' Partial Least Squares.</td>
-</tr>
-<tr>
-<td><code>alpha</code></td>
-<td><code>1.0</code></td>
-<td>Performance-reconstruction cost weight.</td>
-</tr>
-<tr>
-<td><code>viewGroups</code></td>
-<td><code>{}</code></td>
-<td>Per-algorithm-group viewpoints for 3D.</td>
-</tr>
-<tr>
-<td><code>topoWeight</code></td>
-<td><code>0</code></td>
-<td>Reserved for future use.</td>
-</tr>
-<tr>
-<td><code>verbose</code></td>
-<td><code>opts.general.verbose</code></td>
-<td>Defaults from general.</td>
-</tr>
-<tr>
-<td><code>seed</code></td>
-<td><code>opts.general.seed</code></td>
-<td>Defaults from general.</td>
+<tr id="opts-general-ncores"><td><code>ncores</code></td>
+<td><code>18</code></td>
+<td>Number of workers of the parallel pool.</td>
 </tr>
 </tbody>
-</table>
-<h2>opts.cloister</h2>
-<table class="args">
+</table></section>
+<section class="refsect" id="opts-perf"><h2>opts.perf</h2><p>How performance is judged. Used by <a class="code-link" href="PRELIM.html"><code>PRELIM</code></a>.</p>
+<table class="doc-table">
 <thead>
 <tr>
 <th>Field</th>
@@ -368,25 +119,26 @@
 </tr>
 </thead>
 <tbody>
-<tr>
-<td><code>pval</code></td>
+<tr id="opts-perf-maxperf"><td><code>MaxPerf</code></td>
+<td><code>false</code></td>
+<td><code>true</code> if larger performance values are better; <code>false</code> for a cost such as error or run time.</td>
+</tr>
+<tr id="opts-perf-absperf"><td><code>AbsPerf</code></td>
+<td><code>false</code></td>
+<td><code>true</code>: good means better than <code>epsilon</code>. <code>false</code>: good means within a fraction <code>epsilon</code> of the best algorithm on the instance.</td>
+</tr>
+<tr id="opts-perf-epsilon"><td><code>epsilon</code></td>
 <td><code>0.05</code></td>
-<td>Significance level for feature correlations.</td>
+<td>Good-performance threshold. In [0, 1] when <code>AbsPerf</code> is <code>false</code>; any real number otherwise.</td>
 </tr>
-<tr>
-<td><code>corrThreshold</code></td>
-<td><code>0.70</code></td>
-<td></td>
-</tr>
-<tr>
-<td><code>maxFeatures</code></td>
-<td><code>20</code></td>
-<td>Feature-count guard before falling back to a plain convex hull.</td>
+<tr id="opts-perf-betathreshold"><td><code>betaThreshold</code></td>
+<td><code>0.55</code></td>
+<td>An instance is beta-easy when more than this fraction of the algorithms are good on it.</td>
 </tr>
 </tbody>
-</table>
-<h2>opts.pythia</h2>
-<table class="args">
+</table></section>
+<section class="refsect" id="opts-prelim"><h2>opts.prelim</h2><p>Data preparation. Used by <a class="code-link" href="INIT.html"><code>INIT</code></a> and <a class="code-link" href="PRELIM.html"><code>PRELIM</code></a>.</p>
+<table class="doc-table">
 <thead>
 <tr>
 <th>Field</th>
@@ -395,70 +147,154 @@
 </tr>
 </thead>
 <tbody>
-<tr>
-<td><code>flag</code></td>
-<td><code>true</code></td>
-<td>Enable the PYTHIA stage.</td>
-</tr>
-<tr>
-<td><code>kFold</code></td>
+<tr id="opts-prelim-iqrmultiplier"><td><code>iqrMultiplier</code></td>
 <td><code>5</code></td>
-<td>Cross-validation folds.</td>
+<td>Features are bounded to <code>median ± iqrMultiplier*IQR</code>.</td>
 </tr>
-<tr>
-<td><code>tuning</code></td>
-<td><code>'sobol'</code></td>
-<td>'sobol' scrambled Sobol search, 'bayes' MATLAB bayesopt, or pre-supplied params.</td>
+<tr id="opts-prelim-nanthreshold"><td><code>nanThreshold</code></td>
+<td><code>0.20</code></td>
+<td>A feature with at least this fraction of missing values is removed.</td>
 </tr>
+</tbody>
+</table></section>
+<section class="refsect" id="opts-auto"><h2>opts.auto</h2><p>Used by <a class="code-link" href="PRELIM.html"><code>PRELIM</code></a>.</p>
+<table class="doc-table">
+<thead>
 <tr>
-<td><code>nTuningIter</code></td>
-<td><code>20</code></td>
-<td>Sobol/Bayes evaluation budget.</td>
+<th>Field</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
-<tr>
-<td><code>params</code></td>
-<td><code>[]</code></td>
-<td>Pre-calculated hyperparameters, required when tuning='none'.</td>
+</thead>
+<tbody>
+<tr id="opts-auto-preproc"><td><code>preproc</code></td>
+<td><code>true</code></td>
+<td>Run the automatic outlier bounding and normalisation. <code>false</code> leaves the data as given.</td>
 </tr>
+</tbody>
+</table></section>
+<section class="refsect" id="opts-bound"><h2>opts.bound</h2><p>Used by <a class="code-link" href="PRELIM.html"><code>PRELIM</code></a>.</p>
+<table class="doc-table">
+<thead>
 <tr>
-<td><code>skip</code></td>
+<th>Field</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr id="opts-bound-flag"><td><code>flag</code></td>
+<td><code>true</code></td>
+<td>Bound feature outliers. Features with very little variation can have an IQR of zero; remove them or turn bounding off.</td>
+</tr>
+</tbody>
+</table></section>
+<section class="refsect" id="opts-norm"><h2>opts.norm</h2><p>Used by <a class="code-link" href="PRELIM.html"><code>PRELIM</code></a>.</p>
+<table class="doc-table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr id="opts-norm-flag"><td><code>flag</code></td>
+<td><code>true</code></td>
+<td>Apply Box-Cox and Z-score transforms, so features and performance are close to normally distributed. Recommended, because PILOT is a linear projection and <a class="code-link" href="CLOISTER.html"><code>CLOISTER</code></a> expects centred data.</td>
+</tr>
+</tbody>
+</table></section>
+<section class="refsect" id="opts-selvars"><h2>opts.selvars</h2><p>Which features, algorithms and instances to use. Used by <a class="code-link" href="INIT.html"><code>INIT</code></a>, <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> and <a class="code-link" href="FILTER.html"><code>FILTER</code></a>.</p>
+<table class="doc-table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr id="opts-selvars-feats"><td><code>feats</code></td>
+<td>all</td>
+<td>Cell array of feature column names to use, with their <code>feature_</code> prefix.</td>
+</tr>
+<tr id="opts-selvars-algos"><td><code>algos</code></td>
+<td>all</td>
+<td>Cell array of algorithm column names to use, with their <code>algo_</code> prefix.</td>
+</tr>
+<tr id="opts-selvars-smallscaleflag"><td><code>smallscaleflag</code></td>
 <td><code>false</code></td>
-<td>Bypass training entirely.</td>
+<td>Build from a random fraction of the instances. Useful to try settings on a large dataset.</td>
 </tr>
-<tr>
-<td><code>ispolykrnl</code></td>
+<tr id="opts-selvars-smallscale"><td><code>smallscale</code></td>
+<td><code>0.30</code></td>
+<td>Fraction of instances kept when <code>smallscaleflag</code> is <code>true</code>.</td>
+</tr>
+<tr id="opts-selvars-fileidxflag"><td><code>fileidxflag</code></td>
 <td><code>false</code></td>
-<td>SVM only: polynomial vs Gaussian kernel.</td>
+<td>Build from the instances listed in the file <code>fileidx</code>.</td>
 </tr>
-<tr>
-<td><code>useweights</code></td>
+<tr id="opts-selvars-fileidx"><td><code>fileidx</code></td>
+<td><code>''</code></td>
+<td>CSV file with one column of instance indices (row numbers of <code>metadata.csv</code>).</td>
+</tr>
+<tr id="opts-selvars-densityflag"><td><code>densityflag</code></td>
 <td><code>false</code></td>
-<td>Cost-sensitive classification.</td>
+<td>Remove near-duplicate instances with <a class="code-link" href="FILTER.html"><code>FILTER</code></a>.</td>
 </tr>
-<tr>
-<td><code>ensembleMethod</code></td>
-<td><code>'Bag'</code></td>
-<td>fitcensemble method.</td>
+<tr id="opts-selvars-mindistance"><td><code>mindistance</code></td>
+<td><code>0.10</code></td>
+<td><a class="code-link" href="FILTER.html"><code>FILTER</code></a> distance threshold in feature space.</td>
 </tr>
-<tr>
-<td><code>verbose</code></td>
-<td><code>opts.general.verbose</code></td>
-<td>Defaults from general.</td>
+<tr id="opts-selvars-type"><td><code>type</code></td>
+<td><code>'Ftr&amp;Good'</code></td>
+<td><a class="code-link" href="FILTER.html"><code>FILTER</code></a> removal condition: <code>'Ftr'</code>, <code>'Ftr&amp;AP'</code>, <code>'Ftr&amp;Good'</code> or <code>'Ftr&amp;AP&amp;Good'</code>.</td>
 </tr>
+</tbody>
+</table></section>
+<section class="refsect" id="opts-sifted"><h2>opts.sifted</h2><p>Feature selection. Used by <a class="code-link" href="SIFTED.html"><code>SIFTED</code></a>.</p>
+<table class="doc-table">
+<thead>
 <tr>
-<td><code>seed</code></td>
+<th>Field</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr id="opts-sifted-flag"><td><code>flag</code></td>
+<td><code>true</code></td>
+<td>Run SIFTED. <code>false</code> keeps every feature.</td>
+</tr>
+<tr id="opts-sifted-rho"><td><code>rho</code></td>
+<td><code>0.10</code></td>
+<td>Minimum absolute correlation between a feature and an algorithm's performance.</td>
+</tr>
+<tr id="opts-sifted-pval"><td><code>pval</code></td>
+<td><code>0.05</code></td>
+<td>Significance level of the correlations.</td>
+</tr>
+<tr id="opts-sifted-k"><td><code>K</code></td>
+<td><code>10</code></td>
+<td>Number of feature clusters, which is the number of features selected. We recommend 10 or fewer.</td>
+</tr>
+<tr id="opts-sifted-maxiter"><td><code>MaxIter</code></td>
+<td><code>1000</code></td>
+<td>Maximum k-means iterations.</td>
+</tr>
+<tr id="opts-sifted-replicates"><td><code>Replicates</code></td>
+<td><code>100</code></td>
+<td>Number of k-means replicates.</td>
+</tr>
+<tr id="opts-sifted-seed"><td><code>seed</code></td>
 <td><code>opts.general.seed</code></td>
-<td>Defaults from general.</td>
-</tr>
-<tr>
-<td><code>classifier</code></td>
-<td><code>'knn'</code></td>
-<td>Registry name: 'knn' default, also 'svm','tree','nb','linear','ensemble'.</td>
+<td>Random seed of SIFTED.</td>
 </tr>
 </tbody>
-</table>
-<h2>opts.trace</h2>
-<table class="args">
+</table></section>
+<section class="refsect" id="opts-pilot"><h2>opts.pilot</h2><p>Projection. Used by <a class="code-link" href="PILOT.html"><code>PILOT</code></a> and <a class="code-link" href="PILOTviewpoint.html"><code>PILOTviewpoint</code></a>.</p>
+<table class="doc-table">
 <thead>
 <tr>
 <th>Field</th>
@@ -467,71 +303,195 @@
 </tr>
 </thead>
 <tbody>
-<tr>
-<td><code>method</code></td>
-<td><code>'trace3'</code></td>
-<td>'trace3' default, or 'legacy' for the pre-refactor DBSCAN+alpha-shape algorithm.</td>
+<tr id="opts-pilot-dims"><td><code>dims</code></td>
+<td><code>2</code></td>
+<td>Dimension of the instance space, 2 or 3. The legacy <code>ISA3D = true</code> is read as <code>dims = 3</code>.</td>
 </tr>
-<tr>
-<td><code>PI</code></td>
-<td><code>0.6</code></td>
-<td>Minimum purity threshold.</td>
+<tr id="opts-pilot-method"><td><code>method</code></td>
+<td><code>'standard'</code></td>
+<td><code>'standard'</code> (analytic or BFGS) or <code>'pls'</code> (Partial Least Squares).</td>
 </tr>
-<tr>
-<td><code>minInstances</code></td>
-<td><code>4</code></td>
-<td>Minimum instances for a valid footprint.</td>
-</tr>
-<tr>
-<td><code>minAreaFrac</code></td>
-<td><code>0.01</code></td>
-<td>Footprint must exceed this fraction of space.</td>
-</tr>
-<tr>
-<td><code>contra</code></td>
-<td><code>false</code> (<code>true</code> when <code>method='legacy'</code>)</td>
-<td>Contradiction removal between best-algorithm footprints.</td>
-</tr>
-</tbody>
-</table>
-<h2>opts.outputs</h2>
-<table class="args">
-<thead>
-<tr>
-<th>Field</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>csv</code></td>
-<td><code>true</code></td>
-<td>Write CSV output files.</td>
-</tr>
-<tr>
-<td><code>png</code></td>
-<td><code>true</code></td>
-<td>Write PNG figure output files.</td>
-</tr>
-<tr>
-<td><code>fig</code></td>
-<td><code>true</code></td>
-<td>Write a .fig file alongside each 3D footprint PNG.</td>
-</tr>
-<tr>
-<td><code>web</code></td>
+<tr id="opts-pilot-analytic"><td><code>analytic</code></td>
 <td><code>false</code></td>
-<td>Write colour-scaled CSV data for MATILDA's web tools.</td>
+<td>Closed-form solution instead of BFGS. Faster, but can be poorly conditioned.</td>
+</tr>
+<tr id="opts-pilot-ntries"><td><code>ntries</code></td>
+<td><code>10</code></td>
+<td>Number of BFGS restarts, and of <a class="code-link" href="PILOTviewpoint.html"><code>PILOTviewpoint</code></a> restarts.</td>
+</tr>
+<tr id="opts-pilot-alpha"><td><code>alpha</code></td>
+<td><code>1.0</code></td>
+<td>Weight of performance reconstruction relative to feature reconstruction. Standard method only.</td>
+</tr>
+<tr id="opts-pilot-viewgroups"><td><code>viewGroups</code></td>
+<td><code>{}</code></td>
+<td>3D only: cell array of algorithm index vectors; one viewpoint is found per group. Empty means one viewpoint for all algorithms.</td>
+</tr>
+<tr id="opts-pilot-topoweight"><td><code>topoWeight</code></td>
+<td><code>0</code></td>
+<td>Reserved; has no effect in this version.</td>
+</tr>
+<tr id="opts-pilot-seed"><td><code>seed</code></td>
+<td><code>opts.general.seed</code></td>
+<td>Random seed of PILOT and PILOTviewpoint.</td>
+</tr>
+<tr id="opts-pilot-verbose"><td><code>verbose</code></td>
+<td><code>opts.general.verbose</code></td>
+<td>PILOT progress output.</td>
 </tr>
 </tbody>
-</table>
-<h2>See Also</h2>
-<p><a href="MetadataFormat.html">MetadataFormat</a> | <a href="MigratingLegacyModel.html">MigratingLegacyModel</a> | <a href="ISAdefaults.html">ISAdefaults</a></p>
-<hr class="footer-rule">
-<p class="copyright"><em>Copyright (c) 2026 Mario Andres Munoz Acosta and contributors,
-School of Computing and Information Systems, The University of Melbourne.
-Released under the PolyForm Noncommercial License 1.0.0.</em></p>
+</table></section>
+<section class="refsect" id="opts-cloister"><h2>opts.cloister</h2><p>Boundary estimation. Used by <a class="code-link" href="CLOISTER.html"><code>CLOISTER</code></a>.</p>
+<table class="doc-table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr id="opts-cloister-pval"><td><code>pval</code></td>
+<td><code>0.05</code></td>
+<td>Significance level of the feature correlations.</td>
+</tr>
+<tr id="opts-cloister-corrthreshold"><td><code>corrThreshold</code></td>
+<td><code>0.70</code></td>
+<td>Correlations stronger than this constrain the boundary. Lower values discard more corners and may fail to give a boundary.</td>
+</tr>
+<tr id="opts-cloister-maxfeatures"><td><code>maxFeatures</code></td>
+<td><code>20</code></td>
+<td>With more features, the convex hull of the instances is used as the boundary instead.</td>
+</tr>
+</tbody>
+</table></section>
+<section class="refsect" id="opts-pythia"><h2>opts.pythia</h2><p>Algorithm selection. Used by <a class="code-link" href="PYTHIA.html"><code>PYTHIA</code></a>.</p>
+<table class="doc-table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr id="opts-pythia-classifier"><td><code>classifier</code></td>
+<td><code>'knn'</code></td>
+<td><code>'knn'</code>, <code>'svm'</code>, <code>'tree'</code>, <code>'nb'</code>, <code>'linear'</code> or <code>'ensemble'</code>. See <a class="code-link" href="ISAgetClassifierFcn.html"><code>ISAgetClassifierFcn</code></a>.</td>
+</tr>
+<tr id="opts-pythia-tuning"><td><code>tuning</code></td>
+<td><code>'sobol'</code></td>
+<td>Hyperparameter search: <code>'sobol'</code>, <code>'bayes'</code> or <code>'none'</code> (use <code>params</code>).</td>
+</tr>
+<tr id="opts-pythia-ntuningiter"><td><code>nTuningIter</code></td>
+<td><code>20</code></td>
+<td>Number of hyperparameter candidates evaluated.</td>
+</tr>
+<tr id="opts-pythia-kfold"><td><code>kFold</code></td>
+<td><code>5</code></td>
+<td>Number of cross-validation folds.</td>
+</tr>
+<tr id="opts-pythia-params"><td><code>params</code></td>
+<td><code>[]</code></td>
+<td>Fixed hyperparameters, one row per algorithm and one column per hyperparameter (1 for <code>'tree'</code>, <code>'nb'</code>, <code>'linear'</code>; 2 otherwise). Required with <code>tuning = 'none'</code>.</td>
+</tr>
+<tr id="opts-pythia-useweights"><td><code>useweights</code></td>
+<td><code>false</code></td>
+<td>Cost-sensitive training, weighting instances by how far their performance is from the mean.</td>
+</tr>
+<tr id="opts-pythia-ispolykrnl"><td><code>ispolykrnl</code></td>
+<td><code>false</code></td>
+<td>SVM only: polynomial kernel instead of Gaussian.</td>
+</tr>
+<tr id="opts-pythia-ensemblemethod"><td><code>ensembleMethod</code></td>
+<td><code>'Bag'</code></td>
+<td><code>fitcensemble</code> method for <code>'ensemble'</code>.</td>
+</tr>
+<tr id="opts-pythia-skip"><td><code>skip</code></td>
+<td><code>false</code></td>
+<td>Skip training; <a class="code-link" href="TRACE.html"><code>TRACE</code></a> then uses the true labels only.</td>
+</tr>
+<tr id="opts-pythia-flag"><td><code>flag</code></td>
+<td><code>true</code></td>
+<td>Kept for compatibility with older option files; has no effect.</td>
+</tr>
+<tr id="opts-pythia-seed"><td><code>seed</code></td>
+<td><code>opts.general.seed</code></td>
+<td>Random seed of PYTHIA.</td>
+</tr>
+<tr id="opts-pythia-verbose"><td><code>verbose</code></td>
+<td><code>opts.general.verbose</code></td>
+<td>PYTHIA progress output.</td>
+</tr>
+</tbody>
+</table></section>
+<section class="refsect" id="opts-trace"><h2>opts.trace</h2><p>Footprints. Used by <a class="code-link" href="TRACE.html"><code>TRACE</code></a>.</p>
+<table class="doc-table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr id="opts-trace-method"><td><code>method</code></td>
+<td><code>'trace3'</code></td>
+<td><code>'trace3'</code>, or <code>'legacy'</code> for the earlier DBSCAN method (2D only).</td>
+</tr>
+<tr id="opts-trace-pi"><td><code>PI</code></td>
+<td><code>0.6</code></td>
+<td>Minimum purity of a footprint.</td>
+</tr>
+<tr id="opts-trace-mininstances"><td><code>minInstances</code></td>
+<td><code>4</code></td>
+<td>Minimum number of instances in a footprint.</td>
+</tr>
+<tr id="opts-trace-minareafrac"><td><code>minAreaFrac</code></td>
+<td><code>0.01</code></td>
+<td>Minimum footprint size as a fraction of the whole space.</td>
+</tr>
+<tr id="opts-trace-contra"><td><code>contra</code></td>
+<td><code>false</code></td>
+<td>Legacy method only: remove contradictions between best-algorithm footprints. <code>true</code> by default when <code>method</code> is <code>'legacy'</code>.</td>
+</tr>
+</tbody>
+</table></section>
+<section class="refsect" id="opts-outputs"><h2>opts.outputs</h2><p>Files written when <code>build</code> or <code>explore</code> completes. See <a class="code-link" href="scriptcsv.html"><code>scriptcsv</code></a>, <a class="code-link" href="scriptpng.html"><code>scriptpng</code></a> and <a class="code-link" href="scriptweb.html"><code>scriptweb</code></a>.</p>
+<table class="doc-table">
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr id="opts-outputs-csv"><td><code>csv</code></td>
+<td><code>true</code></td>
+<td>Write CSV files.</td>
+</tr>
+<tr id="opts-outputs-png"><td><code>png</code></td>
+<td><code>true</code></td>
+<td>Write PNG figures.</td>
+</tr>
+<tr id="opts-outputs-fig"><td><code>fig</code></td>
+<td><code>true</code></td>
+<td>3D only: also save footprint figures as <code>.fig</code> files.</td>
+</tr>
+<tr id="opts-outputs-web"><td><code>web</code></td>
+<td><code>false</code></td>
+<td>Write the colour files used by MATILDA. Needs <code>csv</code>.</td>
+</tr>
+</tbody>
+</table></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> | <a class="code-link" href="ISAdefaults.html"><code>ISAdefaults</code></a> | <a class="code-link" href="ISAvalidateOpts.html"><code>ISAvalidateOpts</code></a> | <a href="MetadataFormat.html">Metadata File Format</a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#opts-general">opts.general</a></li><li><a href="#opts-perf">opts.perf</a></li><li><a href="#opts-prelim">opts.prelim</a></li><li><a href="#opts-auto">opts.auto</a></li><li><a href="#opts-bound">opts.bound</a></li><li><a href="#opts-norm">opts.norm</a></li><li><a href="#opts-selvars">opts.selvars</a></li><li><a href="#opts-sifted">opts.sifted</a></li><li><a href="#opts-pilot">opts.pilot</a></li><li><a href="#opts-cloister">opts.cloister</a></li><li><a href="#opts-pythia">opts.pythia</a></li><li><a href="#opts-trace">opts.trace</a></li><li><a href="#opts-outputs">opts.outputs</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
 </div>
 </body>
 </html>

@@ -2,196 +2,153 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>PRELIM</title>
-<link rel="stylesheet" href="../style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PRELIM - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Label good performance and normalise features and performance">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
 </head>
 <body>
-<div class="sidebar">
-<h4>InstanceSpace</h4>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
 <ul>
-<li><a href="Landing.html">InstanceSpace</a></li>
-</ul>
-<h4>Getting Started</h4>
-<ul>
-<li><a href="GettingStarted.html">Getting Started</a></li>
-<li><a href="InteractiveWalkthrough.html">Interactive Walkthrough</a></li>
-</ul>
-<h4>Standalone pipeline functions</h4>
-<ul>
-<li><span class="current-page">PRELIM</span></li>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details open><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
+<li><a class="current" aria-current="page" href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
 <li><a href="SIFTED.html">SIFTED</a></li>
 <li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
 <li><a href="CLOISTER.html">CLOISTER</a></li>
 <li><a href="PYTHIA.html">PYTHIA</a></li>
 <li><a href="TRACE.html">TRACE</a></li>
-<li><a href="FILTER.html">FILTER</a></li>
-<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
-<li><a href="INIT.html">INIT</a></li>
-</ul>
-<h4>Class interface</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
 <li><a href="InstanceSpace.html">InstanceSpace</a></li>
-</ul>
-<h4>Backward-compatibility wrappers</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
 <li><a href="buildIS.html">buildIS</a></li>
 <li><a href="exploreIS.html">exploreIS</a></li>
-</ul>
-<h4>Utilities</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Utilities</summary><ul>
 <li><a href="ISAdefaults.html">ISAdefaults</a></li>
 <li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
-<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
 <li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
 <li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
-</ul>
-<h4>Output</h4>
-<ul>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
 <li><a href="scriptcsv.html">scriptcsv</a></li>
 <li><a href="scriptpng.html">scriptpng</a></li>
 <li><a href="scriptweb.html">scriptweb</a></li>
 <li><a href="ISArecallView.html">ISArecallView</a></li>
-</ul>
-<h4>Deprecated Functions</h4>
-<ul>
-<li><a href="Deprecated.html">Deprecated</a></li>
-</ul>
-<h4>Reference</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
 <li><a href="OptionsReference.html">Options Reference</a></li>
-<li><a href="MetadataFormat.html">Metadata File Format</a></li>
 <li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
-</ul>
-<h4>What's New</h4>
-<ul>
-<li><a href="WhatsNew.html">What's New</a></li>
-</ul>
-</div>
-<div class="content">
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> <a href="FunctionList.html">Pipeline Stages</a> <span class="sep">›</span> <span>PRELIM</span></nav>
+<div class="page-head function">
 <h1>PRELIM</h1>
-<p class="tagline">Pre-process instance-space data before projection.</p>
-<h2>Syntax</h2>
-<h3>Training mode (3 args)</h3>
-<pre class="syntax"><code>[X, Y, out] = PRELIM(X, Y, opts)
-</code></pre>
-<h3>Evaluation mode (4 args)</h3>
-<pre><code>[X, Y, out] = PRELIM(X, Y, opts, trainedPrelim)
-</code></pre>
-<h2>Description</h2>
-<p>Fits outlier bounds and Box-Cox+Z-score normalisation parameters fresh from X/Y and returns them in out.</p>
-<p>Applies a previously-fit trainedPrelim's bounds/normalisation parameters to new X/Y instead of re-fitting them -- trainedPrelim is a prior training-mode call's out struct.</p>
-<h2>Input Arguments</h2>
-<table class="args">
-<thead>
-<tr>
-<th>Argument</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>X</code></td>
-<td>(ninst x nfeats) feature matrix; may contain NaN</td>
-</tr>
-<tr>
-<td><code>Y</code></td>
-<td>(ninst x nalgos) performance matrix; may contain NaN</td>
-</tr>
-<tr>
-<td><code>opts</code></td>
-<td>struct with fields:</td>
-</tr>
-<tr>
-<td><code>opts.MaxPerf</code></td>
-<td>logical true = maximise performance (default false)</td>
-</tr>
-<tr>
-<td><code>opts.AbsPerf</code></td>
-<td>logical true = absolute threshold (default false)</td>
-</tr>
-<tr>
-<td><code>opts.epsilon</code></td>
-<td>double good-performance threshold (default 0.05)</td>
-</tr>
-<tr>
-<td><code>opts.betaThreshold</code></td>
-<td>double easy-instance fraction (default 0.55)</td>
-</tr>
-<tr>
-<td><code>opts.auto</code></td>
-<td>logical run auto pre-processing (default true)</td>
-</tr>
-<tr>
-<td><code>opts.bound</code></td>
-<td>logical bound outliers (default true)</td>
-</tr>
-<tr>
-<td><code>opts.norm</code></td>
-<td>logical Box-Cox + Z normalisation (default true)</td>
-</tr>
-<tr>
-<td><code>opts.iqrMultiplier</code></td>
-<td>double outlier bound = median +/- N*IQR (default 5)</td>
-</tr>
-<tr>
-<td><code>trainedPrelim</code></td>
-<td>(optional) a prior training-mode call's out struct; presence selects evaluation mode over training mode</td>
-</tr>
-</tbody>
-</table>
-<h2>Output Arguments</h2>
-<table class="args">
-<thead>
-<tr>
-<th>Argument</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>X</code></td>
-<td>pre-processed feature matrix</td>
-</tr>
-<tr>
-<td><code>Y</code></td>
-<td>pre-processed performance matrix</td>
-</tr>
-<tr>
-<td><code>out</code></td>
-<td>struct with fields:</td>
-</tr>
-<tr>
-<td><code>out.Ybest</code>, <code>out.Ybin</code>, <code>out.P</code>, <code>out.numGoodAlgos</code>, <code>out.beta</code></td>
-<td>(performance summary)</td>
-</tr>
-<tr>
-<td></td>
-<td>Training mode only, also:</td>
-</tr>
-<tr>
-<td><code>out.medval</code>, <code>out.iqrange</code>, <code>out.hibound</code>, <code>out.lobound</code></td>
-<td>(outlier bounds)</td>
-</tr>
-<tr>
-<td><code>out.minX</code>, <code>out.lambdaX</code>, <code>out.muX</code>, <code>out.sigmaX</code></td>
-<td>(feature normalisation)</td>
-</tr>
-<tr>
-<td><code>out.minY</code>, <code>out.lambdaY</code>, <code>out.muY</code>, <code>out.sigmaY</code></td>
-<td>(performance normalisation)</td>
-</tr>
-</tbody>
-</table>
-<h2>References</h2>
-<ul>
-<li>Smith-Miles, K. &amp; Munoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. ACM Computing Surveys, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
-</ul>
-<h2>See Also</h2>
-<p><a href="INIT.html">INIT</a> | <a href="FILTER.html">FILTER</a> | <a href="SIFTED.html">SIFTED</a> | <a href="InstanceSpace.html">InstanceSpace</a></p>
-<hr class="footer-rule">
-<p class="copyright"><em>Copyright (c) 2026 Mario Andres Munoz Acosta and contributors,
-School of Computing and Information Systems, The University of Melbourne.
-Released under the PolyForm Noncommercial License 1.0.0.</em></p>
+<p class="purpose">Label good performance and normalise features and performance</p>
+</div>
+<section class="refsect" id="syntax"><h2>Syntax</h2><div class="syntax-block">
+<div class="syntax-line"><a href="#desc-1"><code>[X,Y,out] = PRELIM(X,Y,opts)</code></a></div>
+<div class="syntax-line"><a href="#desc-2"><code>[X,Y,out] = PRELIM(X,Y,opts,trainedPrelim)</code></a></div>
+</div></section>
+<section class="refsect" id="description"><h2>Description</h2><p class="syntax-desc" id="desc-1"><code>[X,Y,out] = PRELIM(X,Y,opts)</code> fits the preprocessing to the training data and applies it. PRELIM labels each algorithm as <em>good</em> or <em>not good</em> on each instance, finds the best algorithm per instance, bounds feature outliers, and applies Box-Cox and Z-score transforms to the features and the performance. The fitted bounds and transform parameters are returned in <code>out</code>.</p>
+<p class="syntax-desc" id="desc-2"><code>[X,Y,out] = PRELIM(X,Y,opts,trainedPrelim)</code> applies the bounds and transforms of an earlier training call, <code>trainedPrelim</code>, to new data instead of fitting new ones. The good/best labelling is the same code in both modes, so training and evaluation label ties the same way.</p></section>
+<section class="refsect" id="examples"><h2>Examples</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="example">Expand all</button></p><details class="example" id="example-preprocess-a-performance-matrix" open><summary>Preprocess a performance matrix</summary><div class="example-body"><p>Misclassification error is a cost (<code>MaxPerf = false</code>). Call an algorithm good when its error is below 0.20.</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>T = readtable(<span class="str">'test/data/metadata.csv'</span>);
+X = T{:, startsWith(T.Properties.VariableNames, <span class="str">'feature_'</span>)};
+Y = T{:, startsWith(T.Properties.VariableNames, <span class="str">'algo_'</span>)};
+
+opts = struct(<span class="str">'MaxPerf'</span>, <span class="kw">false</span>, <span class="str">'AbsPerf'</span>, <span class="kw">true</span>, <span class="str">'epsilon'</span>, <span class="num">0.20</span>, ...
+              <span class="str">'betaThreshold'</span>, <span class="num">0.55</span>, <span class="str">'auto'</span>, <span class="kw">true</span>, <span class="str">'bound'</span>, <span class="kw">true</span>, ...
+              <span class="str">'norm'</span>, <span class="kw">true</span>, <span class="str">'iqrMultiplier'</span>, <span class="num">5</span>);
+[Xn, Yn, out] = PRELIM(X, Y, opts);
+
+fprintf(<span class="str">'%.0f%% of instances are beta-easy\n'</span>, <span class="num">100</span>*mean(out.beta))
+histogram(out.numGoodAlgos)</code></pre></div></div></details>
+<details class="example" id="example-apply-a-trained-preprocessing-to-new-instances"><summary>Apply a trained preprocessing to new instances</summary><div class="example-body"><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>T2 = readtable(<span class="str">'test/data/metadata_test.csv'</span>);
+X2 = T2{:, startsWith(T2.Properties.VariableNames, <span class="str">'feature_'</span>)};
+Y2 = T2{:, startsWith(T2.Properties.VariableNames, <span class="str">'algo_'</span>)};
+[X2n, Y2n, out2] = PRELIM(X2, Y2, opts, out);</code></pre></div></div></details></section>
+<section class="refsect" id="input-arguments"><h2>Input Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="arg-x"><summary><code>X</code> <span class="arg-desc">— Feature matrix</span></summary><div class="arg-body"><p class="arg-type">numeric matrix</p>
+<p>One row per instance, one column per feature. May contain <code>NaN</code>.</p></div></details>
+<details class="arg" id="arg-y"><summary><code>Y</code> <span class="arg-desc">— Performance matrix</span></summary><div class="arg-body"><p class="arg-type">numeric matrix</p>
+<p>One row per instance, one column per algorithm. May contain <code>NaN</code>; a missing value never counts as good.</p></div></details>
+<details class="arg" id="arg-opts"><summary><code>opts</code> <span class="arg-desc">— Preprocessing options</span></summary><div class="arg-body"><p class="arg-type">structure</p>
+<p>When PRELIM is called by <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a>, this structure is assembled from <a class="code-link" href="OptionsReference.html#opts-perf"><code>opts.perf</code></a>, <a class="code-link" href="OptionsReference.html#opts-auto"><code>opts.auto</code></a>, <a class="code-link" href="OptionsReference.html#opts-bound"><code>opts.bound</code></a>, <a class="code-link" href="OptionsReference.html#opts-norm"><code>opts.norm</code></a> and <a class="code-link" href="OptionsReference.html#opts-prelim"><code>opts.prelim</code></a>.</p><details class="arg" id="arg-opts-maxperf"><summary><code>opts.MaxPerf</code> <span class="arg-desc">— Performance direction</span></summary><div class="arg-body"><p class="arg-type"><code>false</code> (default) | <code>true</code></p>
+<p><code>true</code> if larger performance values are better (for example accuracy). <code>false</code> for a cost, such as run time or error. Set from <a class="code-link" href="OptionsReference.html#opts-perf-maxperf"><code>opts.perf.MaxPerf</code></a>.</p></div></details>
+<details class="arg" id="arg-opts-absperf"><summary><code>opts.AbsPerf</code> <span class="arg-desc">— Threshold type</span></summary><div class="arg-body"><p class="arg-type"><code>false</code> (default) | <code>true</code></p>
+<p><code>true</code>: an algorithm is good when its performance is better than <code>epsilon</code>. <code>false</code>: an algorithm is good when its performance is within a fraction <code>epsilon</code> of the best algorithm on that instance. Set from <a class="code-link" href="OptionsReference.html#opts-perf-absperf"><code>opts.perf.AbsPerf</code></a>.</p></div></details>
+<details class="arg" id="arg-opts-epsilon"><summary><code>opts.epsilon</code> <span class="arg-desc">— Good-performance threshold</span></summary><div class="arg-body"><p class="arg-type"><code>0.05</code> (default) | scalar</p>
+<p>Absolute threshold, or relative tolerance, depending on <code>AbsPerf</code>. Set from <a class="code-link" href="OptionsReference.html#opts-perf-epsilon"><code>opts.perf.epsilon</code></a>.</p></div></details>
+<details class="arg" id="arg-opts-betathreshold"><summary><code>opts.betaThreshold</code> <span class="arg-desc">— Easy-instance fraction</span></summary><div class="arg-body"><p class="arg-type"><code>0.55</code> (default) | scalar in [0, 1]</p>
+<p>An instance is <em>beta-easy</em> when more than this fraction of the algorithms are good on it. Set from <a class="code-link" href="OptionsReference.html#opts-perf-betathreshold"><code>opts.perf.betaThreshold</code></a>.</p></div></details>
+<details class="arg" id="arg-opts-auto"><summary><code>opts.auto</code> <span class="arg-desc">— Run the preprocessing</span></summary><div class="arg-body"><p class="arg-type"><code>true</code> (default) | <code>false</code></p>
+<p><code>false</code> skips the outlier bounds and the transforms; only the labelling runs. Set from <a class="code-link" href="OptionsReference.html#opts-auto-preproc"><code>opts.auto.preproc</code></a>.</p></div></details>
+<details class="arg" id="arg-opts-bound"><summary><code>opts.bound</code> <span class="arg-desc">— Bound outliers</span></summary><div class="arg-body"><p class="arg-type"><code>true</code> (default) | <code>false</code></p>
+<p>Clip each feature to <code>median ± iqrMultiplier*IQR</code>. Set from <a class="code-link" href="OptionsReference.html#opts-bound-flag"><code>opts.bound.flag</code></a>.</p></div></details>
+<details class="arg" id="arg-opts-norm"><summary><code>opts.norm</code> <span class="arg-desc">— Normalise</span></summary><div class="arg-body"><p class="arg-type"><code>true</code> (default) | <code>false</code></p>
+<p>Apply Box-Cox and then Z-score transforms to <code>X</code> and <code>Y</code>. Set from <a class="code-link" href="OptionsReference.html#opts-norm-flag"><code>opts.norm.flag</code></a>.</p></div></details>
+<details class="arg" id="arg-opts-iqrmultiplier"><summary><code>opts.iqrMultiplier</code> <span class="arg-desc">— Outlier bound width</span></summary><div class="arg-body"><p class="arg-type"><code>5</code> (default) | positive scalar</p>
+<p>Set from <a class="code-link" href="OptionsReference.html#opts-prelim-iqrmultiplier"><code>opts.prelim.iqrMultiplier</code></a>.</p></div></details></div></details>
+<details class="arg" id="arg-trainedprelim"><summary><code>trainedPrelim</code> <span class="arg-desc">— Trained preprocessing</span></summary><div class="arg-body"><p class="arg-type">structure</p>
+<p>The <code>out</code> of an earlier training-mode call. Its presence selects evaluation mode.</p></div></details></section>
+<section class="refsect" id="output-arguments"><h2>Output Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="out-x"><summary><code>X</code> <span class="arg-desc">— Preprocessed features</span></summary><div class="arg-body"><p class="arg-type">numeric matrix</p></div></details>
+<details class="arg" id="out-y"><summary><code>Y</code> <span class="arg-desc">— Preprocessed performance</span></summary><div class="arg-body"><p class="arg-type">numeric matrix</p>
+<p>With <code>AbsPerf = false</code>, <code>Y</code> is first converted to performance relative to the best algorithm, then normalised.</p></div></details>
+<details class="arg" id="out-out"><summary><code>out</code> <span class="arg-desc">— Labels and fitted parameters</span></summary><div class="arg-body"><p class="arg-type">structure</p><details class="arg" id="out-out-ybin"><summary><code>out.Ybin</code> <span class="arg-desc">— Good-performance labels</span></summary><div class="arg-body"><p><code>ninst</code>-by-<code>nalgos</code> logical matrix.</p></div></details>
+<details class="arg" id="out-out-ybest"><summary><code>out.Ybest</code> <span class="arg-desc">— Best performance</span></summary><div class="arg-body"><p>Best raw performance on each instance.</p></div></details>
+<details class="arg" id="out-out-p"><summary><code>out.P</code> <span class="arg-desc">— Best algorithm</span></summary><div class="arg-body"><p>Index of the best algorithm on each instance. Ties are broken at random.</p></div></details>
+<details class="arg" id="out-out-numgoodalgos"><summary><code>out.numGoodAlgos</code> <span class="arg-desc">— Number of good algorithms</span></summary><div class="arg-body"><p>Per instance.</p></div></details>
+<details class="arg" id="out-out-beta"><summary><code>out.beta</code> <span class="arg-desc">— Beta-easy instances</span></summary><div class="arg-body"><p>Logical vector; true when more than <code>betaThreshold</code> of the algorithms are good.</p></div></details>
+<details class="arg" id="out-out-hibound"><summary><code>out.hibound</code>, <code>out.lobound</code>, <code>out.medval</code>, <code>out.iqrange</code> <span class="arg-desc">— Outlier bounds</span></summary><div class="arg-body"><p>Training mode only.</p></div></details>
+<details class="arg" id="out-out-minx"><summary><code>out.minX</code>, <code>out.lambdaX</code>, <code>out.muX</code>, <code>out.sigmaX</code> <span class="arg-desc">— Feature transform</span></summary><div class="arg-body"><p>Training mode only. Shift, Box-Cox parameter, mean and standard deviation per feature.</p></div></details>
+<details class="arg" id="out-out-miny"><summary><code>out.minY</code>, <code>out.lambdaY</code>, <code>out.muY</code>, <code>out.sigmaY</code> <span class="arg-desc">— Performance transform</span></summary><div class="arg-body"><p>Training mode only. <code>minY</code> is one shift for the whole matrix; the others are per algorithm.</p></div></details></div></details></section>
+<section class="refsect" id="algorithms"><h2>Algorithms</h2><ol>
+<li><strong>Labelling.</strong> Missing performance values are treated as the worst possible value. With <code>MaxPerf</code> and <code>AbsPerf</code> both false, algorithm <em>j</em> is good on instance <em>i</em> when <code>Y(i,j)/Ybest(i) - 1 &lt;= epsilon</code>.</li>
+<li><strong>Bounding.</strong> Each feature is clipped to <code>median ± iqrMultiplier*IQR</code>.</li>
+<li><strong>Normalisation.</strong> Each feature is shifted to a minimum of 1, and the whole performance matrix to a small positive minimum. Each column is then Box-Cox transformed with its own fitted λ and standardised to zero mean and unit variance.</li>
+</ol>
+<p>In evaluation mode, PRELIM warns (<code>ISA:InstanceSpace:outOfDistribution</code>) when more than 5% of the new instances fall outside the training bounds.</p></section>
+<section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="v0-9-1-evaluation-mode">v0.9.1 — Evaluation mode</h3><p>The fourth argument, <code>trainedPrelim</code>, applies a trained preprocessing to new data. <code>InstanceSpace.explore</code> uses it, so training and evaluation share one implementation.</p></div>
+<div class="history"><h3 id="v0-9-0-outlier-bound-option">v0.9.0 — Outlier bound option</h3><p><a class="code-link" href="OptionsReference.html#opts-prelim-iqrmultiplier"><code>opts.prelim.iqrMultiplier</code></a> replaces the fixed outlier-bound width.</p></div></section>
+<section class="refsect" id="references"><h2>References</h2><ul>
+<li>Smith-Miles, K. &amp; Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. <em>ACM Computing Surveys</em>, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
+</ul></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="INIT.html"><code>INIT</code></a> | <a class="code-link" href="FILTER.html"><code>FILTER</code></a> | <a class="code-link" href="SIFTED.html"><code>SIFTED</code></a> | <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#syntax">Syntax</a></li><li><a href="#description">Description</a></li><li><a href="#examples">Examples</a></li><li><a href="#input-arguments">Input Arguments</a></li><li><a href="#output-arguments">Output Arguments</a></li><li><a href="#algorithms">Algorithms</a></li><li><a href="#version-history">Version History</a></li><li><a href="#references">References</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
 </div>
 </body>
 </html>

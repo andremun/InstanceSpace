@@ -1,31 +1,125 @@
 # FILTER
-Density-based instance subsetting for small-scale experiments.
+
+Remove near-duplicate instances to even out the instance density
+
+<!-- opts: selvars -->
+
 ## Syntax
+
 ```
 [subsetIndex,isDissimilar,isVISA,unif] = FILTER(X,Y,Ybin,opts)
 ```
+
 ## Description
-For every pair of instances closer than opts.mindistance in feature space, the second is marked redundant according to opts.type (see below); the caller (buildIS/InstanceSpace) typically keeps the complement of subsetIndex, i.e. drops the redundant instances.
+
+`[subsetIndex,isDissimilar,isVISA,unif] = FILTER(X,Y,Ybin,opts)` marks instances as redundant when they are closer than `opts.mindistance` in feature space to an instance already kept, and they also meet the condition in `opts.type`. Removing them gives a smaller, more evenly spread set of instances, which reduces the bias of densely sampled regions on the projection and the footprints (Alipour et al., 2023).
+
+`InstanceSpace` calls FILTER when `opts.selvars.densityflag` is `true`: once on all features during PRELIM, and again after SIFTED on the selected features only.
+
+## Examples
+
+### Filter the reference data
+
+```matlab
+rootdir = 'test/data/example/';
+if ~isfolder(rootdir), mkdir(rootdir); end
+copyfile('test/data/metadata.csv', rootdir);
+opts.perf = struct('MaxPerf', false, 'AbsPerf', true, 'epsilon', 0.20);
+obj = InstanceSpace(rootdir, opts);
+obj = obj.build('stages', {'prelim'});
+d = obj.model.data;
+
+fopts = struct('mindistance', 0.5, 'type', 'Ftr&Good');
+[redundant, ~, ~, unif] = FILTER(d.X, d.Y, d.Ybin, fopts);
+fprintf('Kept %d of %d instances, uniformity %.2f\n', sum(~redundant), numel(redundant), unif)
+```
+
+### Filter inside the pipeline
+
+```matlab
+obj.opts.selvars.densityflag = true;
+obj.opts.selvars.mindistance = 0.5;
+obj = obj.build();
+```
+
 ## Input Arguments
-| Argument | Description |
+
+### `X` — Feature matrix
+
+*numeric matrix*
+
+Preprocessed features, one row per instance.
+
+### `Y` — Performance matrix
+
+*numeric matrix*
+
+### `Ybin` — Good-performance labels
+
+*logical matrix*
+
+### `opts` — Filter options
+
+*structure*
+
+Normally `obj.opts.selvars`.
+
+#### `opts.mindistance` — Distance threshold
+
+*`0.10` (default) | positive scalar*
+
+Instances closer than this in feature space are candidates for removal.
+
+#### `opts.type` — Removal condition
+
+*`'Ftr&Good'` (default) | `'Ftr'` | `'Ftr&AP'` | `'Ftr&AP&Good'`*
+
+Condition, in addition to feature closeness, for an instance to be removed:
+
+| Value | The instance is removed when |
 |---|---|
-| `X, Y, Ybin` | `(ninst x nfeats)/(ninst x nalgos)/(ninst x nalgos) feature, performance, and good-performance matrices` |
-| `opts` | struct with fields: |
-| `opts.mindistance` | `double feature-space distance threshold below which two instances are considered too close` |
-| `opts.type` | `char extra condition (on top of feature closeness) required before an instance is marked redundant: 'Ftr' (none), 'Ftr&AP' (similar algorithm performance too), 'Ftr&Good' (both instances good on every algorithm), or 'Ftr&AP&Good' (both)` |
+| `'Ftr'` | it is close in feature space |
+| `'Ftr&AP'` | the two performance vectors are also within `sqrt(nalgos/nfeats)*mindistance` |
+| `'Ftr&Good'` | every algorithm is also good on both instances |
+| `'Ftr&AP&Good'` | both of the above |
+
 ## Output Arguments
-| Argument | Description |
-|---|---|
-| `subsetIndex` | `(ninst x 1) logical; true where the instance was found redundant against an earlier, kept instance` |
-| `isDissimilar` | `(ninst x 1) logical; false where an instance triggered a feature-space-closeness check against another` |
-| `isVISA` | `(ninst x 1) logical; true where two instances were feature-close but did not meet opts.type's extra condition, so neither was marked redundant despite the proximity ("visually important, but not subsetted away")` |
-| `unif` | `feature-space uniformity of the retained (non-redundant) subset: 1 minus the coefficient of variation of nearest-neighbour distances (closer to 1 = more evenly spread, closer to 0 = clustered). Previously computed but assigned to an undefined workspace variable (model.data.unif) and discarded; now a real output.` |
+
+### `subsetIndex` — Redundant instances
+
+*logical vector*
+
+`true` for each instance marked redundant. Keep `~subsetIndex`.
+
+### `isDissimilar` — Isolated instances
+
+*logical vector*
+
+`false` for each instance that was close to another instance.
+
+### `isVISA` — Close but kept
+
+*logical vector*
+
+`true` for an instance that was close to a kept instance in feature space but did not meet the `opts.type` condition, so it was kept.
+
+### `unif` — Uniformity of the kept set
+
+*scalar*
+
+One minus the coefficient of variation of the nearest-neighbour distances of the kept instances. Values near 1 mean an even spread.
+
+## Version History
+
+### v0.9.0 — Uniformity output
+
+`unif` is returned; before, it was computed and discarded.
 
 ## References
 
-- Smith-Miles, K. & Munoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. ACM Computing Surveys, 55(12), Article 255. <https://doi.org/10.1145/3572895>
-- Alipour, H., Munoz, M.A. & Smith-Miles, K. (2023). Enhanced instance space analysis for the maximum flow problem. European Journal of Operational Research, 304(2), 411-428. <https://doi.org/10.1016/j.ejor.2022.04.012>
+- Alipour, H., Muñoz, M.A. & Smith-Miles, K. (2023). Enhanced instance space analysis for the maximum flow problem. *European Journal of Operational Research*, 304(2), 411–428. <https://doi.org/10.1016/j.ejor.2022.04.012>
+- Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
 
 ## See Also
 
-[PRELIM](PRELIM.html) | [SIFTED](SIFTED.html) | [InstanceSpace](InstanceSpace.html)
+`ISAsubsetData` | `PRELIM` | `SIFTED` | [Options Reference](OptionsReference.html#opts-selvars)

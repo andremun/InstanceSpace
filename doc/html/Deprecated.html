@@ -2,90 +2,121 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Deprecated</title>
-<link rel="stylesheet" href="../style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deprecated Functions - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Functions kept only for compatibility with older code">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
 </head>
 <body>
-<div class="sidebar">
-<h4>InstanceSpace</h4>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
 <ul>
-<li><a href="Landing.html">InstanceSpace</a></li>
-</ul>
-<h4>Getting Started</h4>
-<ul>
-<li><a href="GettingStarted.html">Getting Started</a></li>
-<li><a href="InteractiveWalkthrough.html">Interactive Walkthrough</a></li>
-</ul>
-<h4>Standalone pipeline functions</h4>
-<ul>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
 <li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
 <li><a href="SIFTED.html">SIFTED</a></li>
 <li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
 <li><a href="CLOISTER.html">CLOISTER</a></li>
 <li><a href="PYTHIA.html">PYTHIA</a></li>
 <li><a href="TRACE.html">TRACE</a></li>
-<li><a href="FILTER.html">FILTER</a></li>
-<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
-<li><a href="INIT.html">INIT</a></li>
-</ul>
-<h4>Class interface</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
 <li><a href="InstanceSpace.html">InstanceSpace</a></li>
-</ul>
-<h4>Backward-compatibility wrappers</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
 <li><a href="buildIS.html">buildIS</a></li>
 <li><a href="exploreIS.html">exploreIS</a></li>
-</ul>
-<h4>Utilities</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Utilities</summary><ul>
 <li><a href="ISAdefaults.html">ISAdefaults</a></li>
 <li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
-<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
 <li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
 <li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
-</ul>
-<h4>Output</h4>
-<ul>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
 <li><a href="scriptcsv.html">scriptcsv</a></li>
 <li><a href="scriptpng.html">scriptpng</a></li>
 <li><a href="scriptweb.html">scriptweb</a></li>
 <li><a href="ISArecallView.html">ISArecallView</a></li>
-</ul>
-<h4>Deprecated Functions</h4>
-<ul>
-<li><span class="current-page">Deprecated</span></li>
-</ul>
-<h4>Reference</h4>
-<ul>
+</ul></details></li>
+<li><details open><summary>Topics</summary><ul>
 <li><a href="OptionsReference.html">Options Reference</a></li>
-<li><a href="MetadataFormat.html">Metadata File Format</a></li>
 <li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
-</ul>
-<h4>What's New</h4>
-<ul>
-<li><a href="WhatsNew.html">What's New</a></li>
-</ul>
+<li><a class="current" aria-current="page" href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> <a href="OptionsReference.html">Topics</a> <span class="sep">›</span> <span>Deprecated Functions</span></nav>
+<div class="page-head">
+<h1>Deprecated Functions</h1>
+<p class="purpose">Functions kept only for compatibility with older code</p>
 </div>
-<div class="content">
-<h1>Deprecated</h1>
-<p class="tagline">This page combines three deprecated backward-compatibility wrapper functions located in the `deprecated/` directory. New code should not call any of these functions directly.</p>
-<h2>PYTHIA2</h2>
-<p><strong>Signature:</strong> <code>out = PYTHIA2(Z, Y, Ybin, Ybest, algolabels, opts)</code></p>
-<p><strong>Replacement Guidance:</strong> Use <code>PYTHIA</code> with <code>opts.classifier = 'knn'</code>.</p>
-<p><strong>Context:</strong> This is a backward-compatibility wrapper; all new code should call <code>PYTHIA</code> directly with the desired classifier type set in <code>opts.classifier</code>.</p>
-<h2>PYTHIAtest</h2>
-<p><strong>Signature:</strong> <code>out = PYTHIAtest(model, Z, Y, Ybin, Ybest, algolabels)</code></p>
-<p><strong>Replacement Guidance:</strong> Use <code>PYTHIA</code> with a trained model (7-arg eval mode).</p>
-<p><strong>Context:</strong> This exists only for backward compatibility. New code calling <code>exploreIS</code> should use <code>PYTHIA</code> eval mode directly.</p>
-<h2>SIFTED2</h2>
-<p><strong>Signature:</strong> <code>[X, out] = SIFTED2(X, Y, Ybin, featlabels, opts)</code></p>
-<p><strong>Replacement Guidance:</strong> Use <code>SIFTED</code>.</p>
-<p><strong>Context:</strong> SIFTED2 was renamed to SIFTED, with this thin alias kept in its place. All new code should call <code>SIFTED</code> directly.</p>
-<hr class="footer-rule">
-<p class="copyright"><em>Copyright (c) 2026 Mario Andres Munoz Acosta and contributors,
-School of Computing and Information Systems, The University of Melbourne.
-Released under the PolyForm Noncommercial License 1.0.0.</em></p>
+<p>These functions still work but print a warning and forward to their replacement. Do not use them in new code.</p>
+<table class="doc-table">
+<thead>
+<tr>
+<th>Function</th>
+<th>Replacement</th>
+<th>Deprecated in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PYTHIA2(Z,Y,Ybin,Ybest,algolabels,opts)</code></td>
+<td><a class="code-link" href="PYTHIA.html"><code>PYTHIA</code></a> with <code>opts.classifier = 'knn'</code></td>
+<td>v0.9.0</td>
+</tr>
+<tr>
+<td><code>PYTHIAtest(model,Z,Y,Ybin,Ybest,algolabels)</code></td>
+<td><a class="code-link" href="PYTHIA.html"><code>PYTHIA(Z,Y,Ybin,Ybest,algolabels,opts,model)</code></a> (evaluation mode)</td>
+<td>v0.9.0</td>
+</tr>
+<tr>
+<td><code>SIFTED2(X,Y,Ybin,featlabels,opts)</code></td>
+<td><a class="code-link" href="SIFTED.html"><code>SIFTED</code></a> (renamed)</td>
+<td>v0.9.0</td>
+</tr>
+</tbody>
+</table>
+<section class="refsect" id="updating-your-code"><h2>Updating Your Code</h2><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code><span class="com">% Before</span>
+out = PYTHIA2(Z, Y, Ybin, Ybest, algolabels, opts);
+res = PYTHIAtest(out, Znew, Ynew, Ybinnew, Ybestnew, algolabels);
+
+<span class="com">% After</span>
+opts.classifier = <span class="str">'knn'</span>;
+out = PYTHIA(Z, Y, Ybin, Ybest, algolabels, opts);
+res = PYTHIA(Znew, Ynew, Ybinnew, Ybestnew, algolabels, opts, out);</code></pre></div></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="PYTHIA.html"><code>PYTHIA</code></a> | <a class="code-link" href="SIFTED.html"><code>SIFTED</code></a> | <a href="WhatsNew.html">What's New</a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+
 </div>
 </body>
 </html>

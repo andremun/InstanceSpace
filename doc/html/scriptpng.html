@@ -2,122 +2,145 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>scriptpng</title>
-<link rel="stylesheet" href="../style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>scriptpng - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Save figures of an instance space as PNG files">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
 </head>
 <body>
-<div class="sidebar">
-<h4>InstanceSpace</h4>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
 <ul>
-<li><a href="Landing.html">InstanceSpace</a></li>
-</ul>
-<h4>Getting Started</h4>
-<ul>
-<li><a href="GettingStarted.html">Getting Started</a></li>
-<li><a href="InteractiveWalkthrough.html">Interactive Walkthrough</a></li>
-</ul>
-<h4>Standalone pipeline functions</h4>
-<ul>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
 <li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
 <li><a href="SIFTED.html">SIFTED</a></li>
 <li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
 <li><a href="CLOISTER.html">CLOISTER</a></li>
 <li><a href="PYTHIA.html">PYTHIA</a></li>
 <li><a href="TRACE.html">TRACE</a></li>
-<li><a href="FILTER.html">FILTER</a></li>
-<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
-<li><a href="INIT.html">INIT</a></li>
-</ul>
-<h4>Class interface</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
 <li><a href="InstanceSpace.html">InstanceSpace</a></li>
-</ul>
-<h4>Backward-compatibility wrappers</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
 <li><a href="buildIS.html">buildIS</a></li>
 <li><a href="exploreIS.html">exploreIS</a></li>
-</ul>
-<h4>Utilities</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Utilities</summary><ul>
 <li><a href="ISAdefaults.html">ISAdefaults</a></li>
 <li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
-<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
 <li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
 <li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
-</ul>
-<h4>Output</h4>
-<ul>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details open><summary>Output</summary><ul>
 <li><a href="scriptcsv.html">scriptcsv</a></li>
-<li><span class="current-page">scriptpng</span></li>
+<li><a class="current" aria-current="page" href="scriptpng.html">scriptpng</a></li>
 <li><a href="scriptweb.html">scriptweb</a></li>
 <li><a href="ISArecallView.html">ISArecallView</a></li>
-</ul>
-<h4>Deprecated Functions</h4>
-<ul>
-<li><a href="Deprecated.html">Deprecated</a></li>
-</ul>
-<h4>Reference</h4>
-<ul>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
 <li><a href="OptionsReference.html">Options Reference</a></li>
-<li><a href="MetadataFormat.html">Metadata File Format</a></li>
 <li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
-</ul>
-<h4>What's New</h4>
-<ul>
-<li><a href="WhatsNew.html">What's New</a></li>
-</ul>
-</div>
-<div class="content">
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> <a href="FunctionList.html">Output</a> <span class="sep">›</span> <span>scriptpng</span></nav>
+<div class="page-head function">
 <h1>scriptpng</h1>
-<p class="tagline">Write a model or explore() result to PNG figures in rootdir.</p>
-<h2>Syntax</h2>
-<pre class="syntax"><code>scriptpng(container, rootdir)
-</code></pre>
-<h2>Description</h2>
-<p>Produces per-feature and per-algorithm distribution plots, portfolio selection and footprint plots, using scriptfcn.m's drawing helpers. Renders in 3D and applies the optimised camera viewpoint (container.pilot.viewpoint, see PILOTviewpoint.m) when the projection is 3D and one was computed. For 3D projections, also writes a .fig file alongside each footprint PNG (footprint_<algo>.fig, footprint_portfolio.fig) for interactive rotation in MATLAB, unless container.opts.outputs.fig is false. Every figure carries the viewpoint struct in its UserData so ISArecallView can snap a reopened .fig back to its optimised camera angle later.</p>
-<h2>Input Arguments</h2>
-<table class="args">
+<p class="purpose">Save figures of an instance space as PNG files</p>
+</div>
+<section class="refsect" id="syntax"><h2>Syntax</h2><div class="syntax-block">
+<div class="syntax-line"><a href="#desc-1"><code>scriptpng(container,rootdir)</code></a></div>
+</div></section>
+<section class="refsect" id="description"><h2>Description</h2><p class="syntax-desc" id="desc-1"><code>scriptpng(container,rootdir)</code> draws the standard views of a trained model or an evaluation result and saves them in <code>rootdir</code>: each feature, each algorithm's performance, good/bad labels, predictions, footprints, the algorithm portfolio, the number of good algorithms, the beta score, instance sources, and the CLOISTER boundary.</p>
+<p>For a 3D space the figures use the viewpoints found by <a class="code-link" href="PILOTviewpoint.html"><code>PILOTviewpoint</code></a>. Each footprint is also saved as a MATLAB figure (<code>footprint_&lt;algo&gt;.fig</code>, <code>footprint_portfolio.fig</code>) for interactive rotation, unless <a class="code-link" href="OptionsReference.html#opts-outputs-fig"><code>opts.outputs.fig</code></a> is <code>false</code>. <a class="code-link" href="ISArecallView.html"><code>ISArecallView</code></a> returns a rotated figure to its stored viewpoint.</p>
+<p class="syntax-desc" id="desc-2"><code>InstanceSpace.build</code> and <code>InstanceSpace.explore</code> call scriptpng when <a class="code-link" href="OptionsReference.html#opts-outputs-png"><code>opts.outputs.png</code></a> is <code>true</code>.</p>
+<table class="doc-table">
 <thead>
 <tr>
-<th>Argument</th>
-<th>Description</th>
+<th>File</th>
+<th>Figure</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>container</code></td>
-<td><code>struct</code> (model from <code>buildIS/InstanceSpace.build()</code> or a <code>testResults</code> entry from <code>exploreIS/InstanceSpace.explore()</code>).</td>
+<td><code>distribution_feature_&lt;feat&gt;.png</code></td>
+<td>feature value over the space</td>
 </tr>
 <tr>
-<td><code>rootdir</code></td>
-<td><code>string</code> (destination directory; trailing slash required).</td>
+<td><code>distribution_performance_global_normalized_&lt;algo&gt;.png</code>, <code>..._individual_normalized_&lt;algo&gt;.png</code></td>
+<td>performance, scaled over all algorithms or per algorithm</td>
+</tr>
+<tr>
+<td><code>binary_performance_&lt;algo&gt;.png</code>, <code>binary_classifier_&lt;algo&gt;.png</code></td>
+<td>good/bad labels, and PYTHIA's predictions</td>
+</tr>
+<tr>
+<td><code>footprint_&lt;algo&gt;.png</code>, <code>footprint_portfolio.png</code></td>
+<td>footprints</td>
+</tr>
+<tr>
+<td><code>distribution_portfolio.png</code>, <code>distribution_svm_portfolio.png</code></td>
+<td>best and selected algorithm</td>
+</tr>
+<tr>
+<td><code>distribution_number_good_algos.png</code>, <code>distribution_beta_score.png</code></td>
+<td>number of good algorithms, beta-easy instances</td>
+</tr>
+<tr>
+<td><code>distribution_sources.png</code></td>
+<td>instance sources, if the metadata has a <code>source</code> column</td>
+</tr>
+<tr>
+<td><code>distribution_boundary.png</code></td>
+<td>CLOISTER boundary (training only)</td>
 </tr>
 </tbody>
-</table>
-<h2>Output Arguments</h2>
-<table class="args">
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>none</code></td>
-<td>writes PNG (and, for 3D projections, .fig) files to rootdir as a side effect (void function).</td>
-</tr>
-</tbody>
-</table>
-<h2>References</h2>
-<ul>
-<li>Smith-Miles, K. &amp; Munoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. ACM Computing Surveys, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
-<li>Simpson, C., Munoz, M.A., Kandanaarachchi, S. &amp; Campello, R.J.G.B. (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis. Machine Learning, 114, 240. <a href="https://doi.org/10.1007/s10994-025-06871-5">https://doi.org/10.1007/s10994-025-06871-5</a></li>
-</ul>
-<hr class="footer-rule">
-<p class="copyright"><em>Copyright (c) 2026 Mario Andres Munoz Acosta and contributors,
-School of Computing and Information Systems, The University of Melbourne.
-Released under the PolyForm Noncommercial License 1.0.0.</em></p>
+</table></section>
+<section class="refsect" id="examples"><h2>Examples</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="example">Expand all</button></p><details class="example" id="example-save-figures-at-a-larger-font-size" open><summary>Save figures at a larger font size</summary><div class="example-body"><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>outdir = <span class="str">'results/figures/'</span>;
+<span class="kw">if</span> ~isfolder(outdir), mkdir(outdir); <span class="kw">end</span>
+set(groot, <span class="str">'defaultAxesFontSize'</span>, <span class="num">14</span>)
+scriptpng(obj.model, outdir);</code></pre></div></div></details></section>
+<section class="refsect" id="input-arguments"><h2>Input Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="arg-container"><summary><code>container</code> <span class="arg-desc">— Model or evaluation result</span></summary><div class="arg-body"><p class="arg-type">structure</p>
+<p><code>obj.model</code> or an element of <code>obj.testResults</code>.</p></div></details>
+<details class="arg" id="arg-rootdir"><summary><code>rootdir</code> <span class="arg-desc">— Output folder</span></summary><div class="arg-body"><p class="arg-type">character vector</p>
+<p>Must exist and end with a file separator.</p></div></details></section>
+<section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="v0-9-2-3d-boundary-figure">v0.9.2 — 3D boundary figure</h3><p><code>distribution_boundary.png</code> is also drawn for a 3D space.</p></div>
+<div class="history"><h3 id="v0-9-1-boundary-figure">v0.9.1 — Boundary figure</h3><p>Adds <code>distribution_boundary.png</code>.</p></div>
+<div class="history"><h3 id="v0-9-0-3d-figures">v0.9.0 — 3D figures</h3><p>3D spaces are drawn from their optimised viewpoints and saved as <code>.fig</code> files too.</p></div></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="scriptcsv.html"><code>scriptcsv</code></a> | <a class="code-link" href="ISArecallView.html"><code>ISArecallView</code></a> | <a class="code-link" href="PILOTviewpoint.html"><code>PILOTviewpoint</code></a> | <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#syntax">Syntax</a></li><li><a href="#description">Description</a></li><li><a href="#examples">Examples</a></li><li><a href="#input-arguments">Input Arguments</a></li><li><a href="#version-history">Version History</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
 </div>
 </body>
 </html>

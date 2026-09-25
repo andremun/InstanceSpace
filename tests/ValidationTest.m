@@ -143,6 +143,36 @@ classdef ValidationTest < matlab.unittest.TestCase
                 'ISA:ISAmigrateModel:ignoredArgs');
         end
 
+        function testMigratePythiaFieldNames(testCase)
+            % Legacy classifier and hyperparameter field names.
+            m = ISAmigrateModel(struct('pythia', struct('knn', {{1, 2}}, ...
+                'boxcosnt', [1; 2], 'kscale', [3; 4], 'mu', 0, 'sigma', 1)));
+            testCase.verifyEqual(m.pythia.classifiers, {1, 2});
+            testCase.verifyEqual(m.pythia.classifierType, 'knn');
+            testCase.verifyEqual([m.pythia.param1 m.pythia.param2], [1 3; 2 4]);
+            testCase.verifyFalse(any(isfield(m.pythia, {'knn', 'boxcosnt', 'kscale'})));
+
+            m = ISAmigrateModel(struct('pythia', struct('classifier', {{1}}, 'mu', 0, 'sigma', 1)));
+            testCase.verifyEqual(m.pythia.classifiers, {1});
+
+            testCase.verifyWarning(@() ISAmigrateModel(struct('pythia', struct('classifiers', {{1}}))), ...
+                'ISA:ISAmigrateModel:noZscore');
+        end
+
+        function testMigrateWarnsWhenItCannotRebuild(testCase)
+            % LIBSVM classifiers and legacy footprints need the training
+            % data to be rebuilt; without it they are left as they are.
+            libsvm = struct('pythia', struct('svm', {{struct('SVs', 1)}}, 'mu', 0, 'sigma', 1));
+            m = testCase.verifyWarning(@() ISAmigrateModel(libsvm), ...
+                'ISA:ISAmigrateModel:cannotRetrainPythia');
+            testCase.verifyTrue(isstruct(m.pythia.classifiers{1}));
+
+            oldTrace = struct('trace', struct('space', struct('area', 1)));
+            m = testCase.verifyWarning(@() ISAmigrateModel(oldTrace), ...
+                'ISA:ISAmigrateModel:cannotRecomputeTrace');
+            testCase.verifyEqual(m.trace.space.area, 1);
+        end
+
         function testSubsetData(testCase)
             data = syntheticData(6, 4, 3);
             data.S = categorical({'a'; 'b'; 'a'; 'b'; 'a'; 'b'});

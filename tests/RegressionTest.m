@@ -451,8 +451,9 @@ classdef RegressionTest < matlab.unittest.TestCase
                 'An algorithm with no observed test data should report NaN accuracy/precision/recall, not a fabricated score.');
             testCase.verifyTrue(all(isfinite(out.accuracy(2:end))), ...
                 'Algorithms with observed test data should still be scored.');
-            testCase.verifyTrue(isnan(out.summary{2, 4}), ...
-                'The summary''s Probability_of_good must be NaN, not 0, for an algorithm with no observed data.');
+            % buildSummary blanks every NaN cell ([]), the table's "no data" marker.
+            testCase.verifyEmpty(out.summary{2, 4}, ...
+                'The summary''s Probability_of_good must be blank (no data), not 0, for an algorithm with no observed data.');
 
             % Partially observed column: only the observed rows are scored.
             Y = m.data.Yraw;

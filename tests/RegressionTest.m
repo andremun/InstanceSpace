@@ -451,6 +451,8 @@ classdef RegressionTest < matlab.unittest.TestCase
                 'An algorithm with no observed test data should report NaN accuracy/precision/recall, not a fabricated score.');
             testCase.verifyTrue(all(isfinite(out.accuracy(2:end))), ...
                 'Algorithms with observed test data should still be scored.');
+            testCase.verifyTrue(isnan(out.summary{2, 4}), ...
+                'The summary''s Probability_of_good must be NaN, not 0, for an algorithm with no observed data.');
 
             % Partially observed column: only the observed rows are scored.
             Y = m.data.Yraw;
@@ -459,6 +461,8 @@ classdef RegressionTest < matlab.unittest.TestCase
                           m.opts.pythia, m.pythia);
             testCase.verifyEqual(sum(out2.cvcmat(2,:)), size(Y,1) - 5, ...
                 'Only instances with observed performance should enter the confusion matrix.');
+            testCase.verifyEqual(out2.summary{3, 4}, round(mean(m.data.Ybin(6:end, 2)), 3), ...
+                'Probability_of_good should be computed over the observed instances only.');
         end
 
         function testPythiaOracleProbabilityOfGood(testCase)

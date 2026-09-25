@@ -16,7 +16,7 @@ out = CLOISTER(X,A,opts)
 
 Parts of the boundary far from any instance show where new test instances would extend the benchmark.
 
-For a 2D projection the boundary is a closed polygon. For a 3D projection it is a triangulated convex surface.
+For a 2D projection the boundary is a closed polygon. For a 3D projection it is a triangulated convex surface; when the projected corners all lie on one plane (for example, a 3D projection of only two features), it is the flat polygon, triangulated.
 
 ## Examples
 

@@ -128,8 +128,22 @@ function [V, F] = boundaryHull(Z)
 %   2D: V is the closed polygon (first vertex repeated last, as convhull
 %       returns it) and F is empty -- the same Zedge as before.
 %   3D: V holds the hull's unique vertices and F is the (nfaces x 3)
-%       triangulation, with indices into the rows of V.
-if size(Z, 2) == 3
+%       triangulation, with indices into the rows of V. Coplanar points
+%       give a flat, fan-triangulated polygon.
+if size(Z, 2) == 3 && rank(Z - mean(Z, 1)) < 3
+    % Coplanar points (e.g. a 3D projection of only two features) have no
+    % volumetric hull, and convhull would error. Their hull is a flat
+    % polygon: find it in the plane's own 2D coordinates and triangulate it
+    % as a fan, so the output keeps the 3D vertices-plus-faces format.
+    Zc = Z - mean(Z, 1);
+    [~, ~, basis] = svd(Zc, 'econ');
+    P = Zc*basis(:, 1:2);
+    K = convhull(P(:,1), P(:,2));
+    K = K(1:end-1);                 % drop the repeated closing vertex
+    V = Z(K, :);
+    n = numel(K);
+    F = [ones(n-2, 1), (2:n-1)', (3:n)'];
+elseif size(Z, 2) == 3
     K = convhull(Z(:,1), Z(:,2), Z(:,3));
     [vidx, ~, F] = unique(K(:));
     V = Z(vidx, :);

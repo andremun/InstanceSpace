@@ -806,6 +806,13 @@ sel0 = bsxfun(@eq, out.selection0, 1:nalgos);
 sel1 = bsxfun(@eq, out.selection1, 1:nalgos);
 avgperf = nanmean(Y);
 stdperf = nanstd(Y);
+% Probability of good performance over the instances with observed
+% performance only; NaN for an algorithm with none, e.g. a trained
+% algorithm absent from metadata_test.csv (whose Ybin column is all false
+% only because NaN compares as false). Same rule as the scoring in
+% PYTHIAevalMode (#58).
+observed = ~isnan(Y);
+pgoodAlgo = sum(Ybin & observed, 1) ./ sum(observed, 1);
 Yfull = Y; Ysvms = Y;
 Y(~sel0)     = NaN;
 Yfull(~sel1) = NaN;
@@ -842,7 +849,7 @@ summary(2:end, 3) = num2cell(round([stdperf(:);        nanstd(Ybest);   nanstd(Y
 % is good. Exactly 1 for relative performance (the best algorithm always
 % clears its own threshold), but below 1 when opts.perf.AbsPerf=true and
 % no algorithm meets the absolute threshold on some instances (#59).
-summary(2:end, 4) = num2cell(round([mean(Ybin)';       mean(any(Ybin, 2)); pgood],          3));
+summary(2:end, 4) = num2cell(round([pgoodAlgo';        mean(any(Ybin, 2)); pgood],          3));
 summary(2:end, 5) = num2cell(round([nanmean(Ysvms)';   NaN;             nanmean(Y(:))],     3));
 summary(2:end, 6) = num2cell(round([nanstd(Ysvms)';    NaN;             nanstd(Y(:))],      3));
 summary(2:end, 7) = num2cell(round(100.*[out.accuracy;  NaN;            NaN],               1));

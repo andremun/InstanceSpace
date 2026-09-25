@@ -246,6 +246,20 @@ classdef StageUnitTest < matlab.unittest.TestCase
             testCase.verifyEqual(size(out3.ZedgeFaces, 2), 3, 'The 3D fallback is a triangulated hull.');
         end
 
+        function testCloisterCoplanar3D(testCase)
+            % A 3D projection of two features puts every corner on one
+            % plane: there is no volumetric hull, so CLOISTER must return
+            % the flat polygon, triangulated, instead of failing in
+            % convhull.
+            [X, ~] = syntheticMetadata(40, 2, 2);
+            out = CLOISTER(X, randn(3, 2), testCase.Defaults.cloister);
+            testCase.verifyEqual(size(out.Zedge, 2), 3);
+            testCase.verifyEqual(size(out.ZedgeFaces, 2), 3);
+            testCase.verifyEqual(size(out.ZedgeFaces, 1), size(out.Zedge, 1) - 2, ...
+                'A fan triangulation of an n-gon has n-2 triangles.');
+            testCase.verifyLessThanOrEqual(max(out.ZedgeFaces(:)), size(out.Zedge, 1));
+        end
+
         function testCloisterStrictThresholdFallsBack(testCase)
             % Perfectly correlated features and a zero threshold discard all
             % but two corners, too few for a hull: Zecorr falls back to Zedge.

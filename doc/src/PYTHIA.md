@@ -192,7 +192,7 @@ Index of the selected algorithm per instance. `selection0` is 0 where no algorit
 
 #### `out.summary` — Summary table
 
-Cell array with one row per algorithm plus rows for the *Oracle* (always the best algorithm) and the *Selector*. Columns: mean and standard deviation of performance on all instances, probability of good performance, mean and standard deviation on the instances where the algorithm is selected, cross-validation accuracy, precision and recall, and (training mode) the hyperparameters. Written to `classifier_table.csv` by `scriptcsv`.
+Cell array with one row per algorithm plus rows for the *Oracle* (always the best algorithm) and the *Selector*. Columns: mean and standard deviation of performance on all instances, probability of good performance (over the instances with observed performance; `NaN` when there are none), mean and standard deviation on the instances where the algorithm is selected, cross-validation accuracy, precision and recall, and (training mode) the hyperparameters. Written to `classifier_table.csv` by `scriptcsv`.
 
 ## Version History
 

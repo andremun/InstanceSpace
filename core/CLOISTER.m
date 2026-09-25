@@ -24,11 +24,16 @@ function out = CLOISTER(X, A, opts)
 %
 %   Outputs
 %     out  - struct with fields:
-%              Zedge   boundary polygon vertices using every corner
-%              Zecorr  boundary polygon vertices using only
-%                      correlation-consistent corners (same as Zedge when
-%                      the correlation threshold rejects nothing, or when
-%                      maxFeatures triggers the convex-hull fallback)
+%              Zedge   boundary vertices using every corner. 2D: a closed
+%                      polygon (first vertex repeated last). 3D: the
+%                      convex hull's vertices
+%              Zecorr  boundary vertices using only correlation-consistent
+%                      corners (same as Zedge when the correlation
+%                      threshold rejects nothing, or when maxFeatures
+%                      triggers the convex-hull fallback)
+%              ZedgeFaces, ZecorrFaces
+%                      3D only: (nfaces x 3) hull triangulation, indices
+%                      into the rows of Zedge/Zecorr. Empty in 2D
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit
@@ -70,10 +75,9 @@ if nfeats > MAX_FEATS
     warning('ISA:CLOISTER:tooManyFeatures', ...
         'CLOISTER skipped: %d features exceeds limit of %d. Using convex hull as boundary.', ...
         nfeats, MAX_FEATS);
-    Zall = X*A';
-    Kedge = convhull(Zall(:,1), Zall(:,2));
-    out.Zedge  = Zall(Kedge,:);
-    out.Zecorr = out.Zedge;
+    [out.Zedge, out.ZedgeFaces] = boundaryHull(X*A');
+    out.Zecorr      = out.Zedge;
+    out.ZecorrFaces = out.ZedgeFaces;
     fprintf('[CLOISTER] CLOISTER has completed.\n');
     return;
 end
@@ -102,19 +106,36 @@ for i=1:ncomb
        end
    end
 end
-Zedge = Xedge*A';
-Kedge = convhull(Zedge(:,1),Zedge(:,2));
-out.Zedge = Zedge(Kedge,:);
+[out.Zedge, out.ZedgeFaces] = boundaryHull(Xedge*A');
 
 try
-    Xecorr = Xedge(~remove,:);
-    Zecorr = Xecorr*A';
-    Kecorr = convhull(Zecorr(:,1),Zecorr(:,2));
-    out.Zecorr = Zecorr(Kecorr,:);
+    [out.Zecorr, out.ZecorrFaces] = boundaryHull(Xedge(~remove,:)*A');
 catch
     fprintf('[CLOISTER] The acceptable correlation threshold was too strict.\n');
     fprintf('[CLOISTER] The features are weakly correlated.\n');
     fprintf('[CLOISTER] Please consider increasing it.\n');
-    out.Zecorr = out.Zedge;
+    out.Zecorr      = out.Zedge;
+    out.ZecorrFaces = out.ZedgeFaces;
 end
 fprintf('[CLOISTER] CLOISTER has completed.\n');
+end
+
+% =========================================================================
+function [V, F] = boundaryHull(Z)
+% Convex hull of the projected points in the projection's own
+% dimensionality (#50). Before, the hull always used Z(:,1:2), so a 3D
+% projection got a boundary that ignored its third coordinate.
+%   2D: V is the closed polygon (first vertex repeated last, as convhull
+%       returns it) and F is empty -- the same Zedge as before.
+%   3D: V holds the hull's unique vertices and F is the (nfaces x 3)
+%       triangulation, with indices into the rows of V.
+if size(Z, 2) == 3
+    K = convhull(Z(:,1), Z(:,2), Z(:,3));
+    [vidx, ~, F] = unique(K(:));
+    V = Z(vidx, :);
+    F = reshape(F, size(K));
+else
+    K = convhull(Z(:,1), Z(:,2));
+    V = Z(K, :);
+    F = [];
+end

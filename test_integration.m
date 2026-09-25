@@ -49,6 +49,7 @@ import matlab.unittest.TestSuite
 import matlab.unittest.TestRunner
 import matlab.unittest.plugins.CodeCoveragePlugin
 import matlab.unittest.plugins.codecoverage.CoberturaFormat
+import matlab.unittest.plugins.XMLPlugin
 
 % buildIS.m/exploreIS.m/InstanceSpace.m live at the repo root and, unlike
 % core/output/utils (self-added to the path the first time InstanceSpace
@@ -86,6 +87,11 @@ sourceFolders = {repoRoot, fullfile(repoRoot, 'core'), fullfile(repoRoot, 'outpu
 runner.addPlugin(CodeCoveragePlugin.forFolder(sourceFolders, ...
     'IncludingSubfolders', false, 'Producing', CoberturaFormat(coverageReportFile)));
 
+% JUnit-format test results (pass/fail/duration per test), for Codecov
+% Test Analytics and the CI artifact (#57).
+junitReportFile = fullfile(repoRoot, 'junit.xml');
+runner.addPlugin(XMLPlugin.producingJUnitFormat(junitReportFile));
+
 results = runner.run(suite);
 
 fprintf('\n[TEST] ================= Summary =================\n');
@@ -101,6 +107,7 @@ nPassed = sum([results.Passed]);
 nCases  = numel(results);
 fprintf('[TEST] %d/%d cases passed.\n', nPassed, nCases);
 fprintf('[TEST] Code coverage report written to %s.\n', coverageReportFile);
+fprintf('[TEST] JUnit test report written to %s.\n', junitReportFile);
 
 if nPassed == nCases
     fprintf('EOF:SUCCESS\n');

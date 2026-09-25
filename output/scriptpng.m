@@ -226,12 +226,18 @@ exportgraphics(fig, [rootdir 'distribution_beta_score.png']);
 % Drawing CLOISTER's empirical space boundary, if computed (#32). Not
 % present in an explore()/evaluateTestSet result (CLOISTER is a
 % training-time-only artifact, never recomputed at explore time -- see
-% #38's audit). 2D only for now: CLOISTER's Zedge/Zecorr use a 2D-only
-% convex hull (core/CLOISTER.m) even for a 3D projection, so an accurate
-% 3D boundary isn't available yet.
-if isfield(container, 'cloist') && ~is3D
+% #38's audit). A 3D model needs CLOISTER's hull triangulation (#50); a
+% 3D model built before that has none, so no boundary is drawn for it.
+hasBoundary = isfield(container, 'cloist') && ...
+    (~is3D || (isfield(container.cloist, 'ZedgeFaces') && ~isempty(container.cloist.ZedgeFaces)));
+if hasBoundary
     clf;
-    drawBoundary(container.pilot.Z, container.cloist.Zedge, 'CLOISTER empirical bound');
+    if is3D
+        drawBoundary(container.pilot.Z, container.cloist.Zedge, 'CLOISTER empirical bound', ...
+                     container.cloist.ZedgeFaces, globalView);
+    else
+        drawBoundary(container.pilot.Z, container.cloist.Zedge, 'CLOISTER empirical bound');
+    end
     exportgraphics(fig, [rootdir 'distribution_boundary.png']);
 elseif isfile([rootdir 'distribution_boundary.png'])
     % A prior build in this same rootdir may have written this file (e.g.

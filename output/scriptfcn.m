@@ -408,27 +408,39 @@ applyView(is3D, viewAngle);
 
 end
 % =========================================================================
-function handle = drawBoundary(Z, Zedge, titlelabel)
-% Draws CLOISTER's empirical space boundary (Zedge, a closed polygon --
-% see core/CLOISTER.m) as a red outline over a grey scatter of every
+function handle = drawBoundary(Z, Zedge, titlelabel, faces, viewAngle)
+% Draws CLOISTER's empirical space boundary over a grey scatter of every
 % instance, so the boundary can be read against the point cloud it
-% bounds (spec deferred item, #32).
-%
-% 2D only: CLOISTER's Zedge/Zecorr are computed via a 2D-only convex hull
-% (core/CLOISTER.m's convhull(Z(:,1),Z(:,2))) even when the projection
-% itself is 3D, so an accurate 3D boundary isn't available yet -- callers
-% must not invoke this for a 3D projection (opts.pilot.dims==3); see #32.
-handle = scatter(Z(:,1), Z(:,2), dotArea(), [0.7 0.7 0.7], 'filled');
-hold on;
-idxClosed = [1:size(Zedge,1), 1]; % close the polygon back to its first vertex
-plot(Zedge(idxClosed,1), Zedge(idxClosed,2), 'r-', 'LineWidth', 1.5, ...
-    'DisplayName', 'CLOISTER empirical bound');
+% bounds (#32).
+%   2D: Zedge is a closed polygon (core/CLOISTER.m), drawn as a red
+%       outline; faces is ignored.
+%   3D: Zedge holds the convex hull's vertices and faces its triangulation
+%       (CLOISTER's ZedgeFaces, #50), drawn as a translucent red surface.
+%       A 3D model without faces (built before #50) must not be passed
+%       here -- the caller checks for that.
+if nargin < 4, faces = []; end
+if nargin < 5, viewAngle = []; end
+is3D = size(Z, 2) == 3;
+if is3D
+    handle = scatter3(Z(:,1), Z(:,2), Z(:,3), dotArea(), [0.7 0.7 0.7], 'filled');
+    hold on;
+    trisurf(faces, Zedge(:,1), Zedge(:,2), Zedge(:,3), ...
+        'FaceColor', 'r', 'FaceAlpha', 0.1, 'EdgeColor', 'r', ...
+        'DisplayName', 'CLOISTER empirical bound');
+else
+    handle = scatter(Z(:,1), Z(:,2), dotArea(), [0.7 0.7 0.7], 'filled');
+    hold on;
+    idxClosed = [1:size(Zedge,1), 1]; % close the polygon back to its first vertex
+    plot(Zedge(idxClosed,1), Zedge(idxClosed,2), 'r-', 'LineWidth', 1.5, ...
+        'DisplayName', 'CLOISTER empirical bound');
+end
 hold off;
-labelAxes(false); title(titlelabel);
+labelAxes(is3D); title(titlelabel);
 legend('Location', 'NorthEastOutside');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 axis square; axis(axisLimits(Z)); grid on;
+applyView(is3D, viewAngle);
 end
 % =========================================================================
 function pts = getPolygonPoints(polygon)
@@ -494,18 +506,20 @@ end
 end
 % =========================================================================
 function verts = traceOneRegion(bf, bv)
-% Trace an ordered closed polygon from a single region's boundary-facets
-% edge list. bf: (m x 2) edge index pairs into bv's rows (bv may be the
-% full alphaShape's point list rather than one scoped to this region
-% alone; only the vertices bf actually references matter here). Works
-% correctly for a simple, single connected boundary -- traceAlphaBoundary
-% calls this once per region rather than once for a whole (possibly
-% multi-region) shape, which is what makes that assumption safe again.
+% Trace every closed boundary cycle of a single region from its
+% boundary-facets edge list. bf: (m x 2) edge index pairs into bv's rows
+% (bv may be the full alphaShape's point list rather than one scoped to
+% this region alone; only the vertices bf actually references matter).
+%
+% A region with a hole (e.g. an annulus) is one region by numRegions's
+% count but has two or more disconnected boundary cycles: the outer ring
+% and one per hole. Each cycle is traced in turn, starting from a vertex
+% no earlier cycle reached, and the cycles are separated by a NaN row --
+% the same convention traceAlphaBoundary uses between regions (#52).
 regionVertIdx = unique(bf(:));
-nRegionVerts = numel(regionVertIdx);
-if nRegionVerts == 0, verts = []; return; end
-% Build adjacency: each vertex has exactly 2 neighbours on this region's
-% boundary. Sized to the largest referenced index (not size(bv,1)) since
+if isempty(regionVertIdx), verts = []; return; end
+% Build adjacency: each vertex has exactly 2 neighbours on its boundary
+% cycle. Sized to the largest referenced index (not size(bv,1)) since
 % bf's indices may only be a subset of bv's full row range.
 maxIdx = max(regionVertIdx);
 adj = zeros(maxIdx, 2);
@@ -517,47 +531,30 @@ for k = 1:size(bf, 1)
     cnt(v2) = cnt(v2)+1;
     if cnt(v2) <= 2, adj(v2, cnt(v2)) = v1; end
 end
-% Trace starting from a vertex actually in THIS region (bf(1,1)), not a
-% hardcoded global index 1 -- vertex 1 of the whole shape may belong to a
-% different region entirely once bf is scoped to region r.
-order = zeros(nRegionVerts, 1);
-order(1) = bf(1,1);
-prev = 0; curr = order(1);
-for k = 2:nRegionVerts
-    nxt = adj(curr, adj(curr,:) ~= prev & adj(curr,:) ~= 0);
-    % Also stop on returning to the start vertex, not just on a dead end:
-    % without this, a closed cycle shorter than nRegionVerts (i.e. this
-    % region has a hole -- see below) never actually halts the walk, since
-    % excluding only `prev` still leaves the "next" vertex available once
-    % back at the start. It would just keep re-treading the same cycle
-    % until order filled up completely, leaving `valid` all true and the
-    % omitted-hole warning below silently never firing.
-    if isempty(nxt) || nxt(1) == order(1), break; end
-    order(k) = nxt(1);
-    prev = curr;
-    curr = order(k);
-end
-valid = order ~= 0;
-% A region with a hole (e.g. an annulus) has TWO disconnected boundary
-% cycles -- outer ring and hole -- even though numRegions/boundaryFacets
-% still treat it as one region. This tracer only follows the single cycle
-% starting at bf(1,1); it breaks out above once that cycle closes, never
-% reaching the other cycle's vertices, since they're graph-disconnected
-% from it. Warn rather than silently drop the untraced cycle -- tracing
-% every cycle within a region is a real algorithmic addition, tracked
-% separately as #52 (out of v0.9.1 scope) rather than attempted here.
-if ~all(valid)
-    nOmitted = sum(~valid);
-    if nOmitted == 1
-        vertexWord = 'vertex';
-    else
-        vertexWord = 'vertices';
+visited = false(maxIdx, 1);
+verts = [];
+% Start from bf(1,1) (a vertex of THIS region, not global index 1), then
+% from each vertex that no earlier cycle reached.
+for startIdx = [bf(1,1); regionVertIdx(:)]'
+    if visited(startIdx), continue; end
+    order = startIdx;
+    visited(startIdx) = true;
+    prev = 0; curr = startIdx;
+    while true
+        nxt = adj(curr, adj(curr,:) ~= prev & adj(curr,:) ~= 0);
+        % Stop when the cycle closes (back at its start) or at a dead end.
+        % Checking only `prev` is not enough: once back at the start, the
+        % start's other neighbour is still available and the walk would
+        % re-tread the same cycle.
+        if isempty(nxt) || nxt(1) == startIdx || visited(nxt(1)), break; end
+        prev = curr;
+        curr = nxt(1);
+        visited(curr) = true;
+        order(end+1, 1) = curr; %#ok<AGROW>
     end
-    warning('ISA:scriptfcn:boundaryHoleOmitted', ...
-        ['This region''s boundary has %d %s not reachable from its outer ring -- ' ...
-         'likely a hole (a second, disconnected boundary cycle). Only the outer ring is ' ...
-         'included in the traced output; the hole is omitted, not just approximated.'], ...
-        nOmitted, vertexWord);
+    if ~isempty(verts)
+        verts = [verts; NaN(1, size(bv, 2))]; %#ok<AGROW>
+    end
+    verts = [verts; bv(order, :)]; %#ok<AGROW>
 end
-verts = bv(order(valid), :);
 end

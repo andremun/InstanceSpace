@@ -51,7 +51,7 @@ Error identifiers, by the check that failed:
 | Identifier | Expected |
 |---|---|
 | `ISA:ISAvalidateOpts:notStruct` | a structure, for `opts` and each group such as `opts.pilot` |
-| `ISA:ISAvalidateOpts:notLogical` | a logical scalar, or 0 or 1 |
+| `ISA:ISAvalidateOpts:notLogical` | a logical scalar, `true` or `false` (not 0 or 1) |
 | `ISA:ISAvalidateOpts:notFiniteNumericScalar` | a finite real number |
 | `ISA:ISAvalidateOpts:notInteger` | a whole number |
 | `ISA:ISAvalidateOpts:notPositive` | a positive number (0 is allowed for seeds) |

@@ -76,7 +76,10 @@ ax = findall(fig, 'Type', 'axes');
 % Tag casing for these internal legend/colorbar axes isn't a documented,
 % version-stable guarantee; compare case-insensitively rather than risk
 % a mismatch letting one slip through on some MATLAB version/configuration.
-tags = lower(arrayfun(@(a) string(get(a, 'Tag')), ax));
+% string(...) around the arrayfun result, not inside it: for a figure with
+% no axes, arrayfun over an empty handle array returns an empty double,
+% which ismember rejects before the noAxes check below can report it.
+tags = lower(string(arrayfun(@(a) get(a, 'Tag'), ax, 'UniformOutput', false)));
 ax = ax(~ismember(tags, ["legend", "colorbar"]));
 if isempty(ax)
     error('ISA:ISArecallView:noAxes', 'fig has no plot axes to apply the view to.');

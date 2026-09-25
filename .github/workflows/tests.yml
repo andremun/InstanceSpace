@@ -57,6 +57,13 @@ jobs:
           path: coverage.xml
           retention-days: 14
 
+      # Per-file coverage table in the job log and the run summary, so the
+      # numbers can be read without downloading the artifact or relying on
+      # Codecov being linked.
+      - name: Coverage summary
+        if: always()
+        run: python3 .github/scripts/coverage_summary.py coverage.xml | tee -a "$GITHUB_STEP_SUMMARY"
+
       # Feeds the Codecov badge in README.md. fail_ci_if_error: false is
       # deliberate: a Codecov outage or a missing/misconfigured
       # CODECOV_TOKEN secret should not fail the actual test run -- the

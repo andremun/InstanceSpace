@@ -114,6 +114,7 @@ trisurf(c.ZedgeFaces, c.Zedge(:,<span class="num">1</span>), c.Zedge(:,<span cla
 <section class="refsect" id="tips"><h2>Tips</h2><ul>
 <li>CLOISTER expects mean-centred features. <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> warns (<code>ISA:InstanceSpace:cloisterNotMeanCentred</code>) when <a class="code-link" href="OptionsReference.html#opts-auto-preproc"><code>opts.auto.preproc</code></a> or <a class="code-link" href="OptionsReference.html#opts-norm-flag"><code>opts.norm.flag</code></a> is <code>false</code>.</li>
 <li><a class="code-link" href="scriptcsv.html"><code>scriptcsv</code></a> writes <code>Zedge</code> to <code>bounds.csv</code> and <code>Zecorr</code> to <code>bounds_prunned.csv</code>.</li>
+<li>If every projected corner lies on one line (a degenerate projection matrix or features), there is no region to bound and CLOISTER raises <code>ISA:CLOISTER:degenerateBoundary</code>.</li>
 </ul></section>
 <section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="v0-9-2-3d-boundary">v0.9.2 — 3D boundary</h3><p>A 3D projection now gets a 3D convex hull, with <code>ZedgeFaces</code> and <code>ZecorrFaces</code>. Before, the hull used only the first two coordinates.</p></div>
 <div class="history"><h3 id="v0-9-0-feature-limit">v0.9.0 — Feature limit</h3><p><a class="code-link" href="OptionsReference.html#opts-cloister-maxfeatures"><code>opts.maxFeatures</code></a> guards against an intractable number of corners.</p></div></section>

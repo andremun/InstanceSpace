@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Fail if a page in doc/html links to a missing page, asset or anchor,
-or repeats an element id.
+"""Fail if a page in doc/html links to (href) or loads (src) a missing
+page, asset or anchor, or repeats an element id.
 
 Usage: python3 .github/scripts/check_doc_links.py [doc/html]
 """
@@ -19,7 +19,7 @@ def main(root):
         dups = sorted({i for i in ids[name] if ids[name].count(i) > 1})
         if dups:
             problems.append(f"{name}: duplicate ids {dups}")
-        for href in re.findall(r'href="([^"]+)"', text):
+        for href in re.findall(r'(?:href|src)="([^"]+)"', text):
             if href.startswith(("http://", "https://", "mailto:")):
                 continue
             target, _, anchor = href.partition("#")

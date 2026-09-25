@@ -130,12 +130,22 @@ function [V, F] = boundaryHull(Z)
 %   3D: V holds the hull's unique vertices and F is the (nfaces x 3)
 %       triangulation, with indices into the rows of V. Coplanar points
 %       give a flat, fan-triangulated polygon.
-if size(Z, 2) == 3 && rank(Z - mean(Z, 1)) < 3
+Zc = Z - mean(Z, 1);
+r = rank(Zc);
+if r < 2
+    % Collinear or coincident points enclose no area, so no boundary exists
+    % in any dimension. Raise a clear error rather than convhull's; the
+    % Zecorr call site catches it and falls back to Zedge.
+    error('ISA:CLOISTER:degenerateBoundary', ...
+        ['The projected points span %d dimension(s), so they enclose no region ' ...
+         'and CLOISTER cannot form a boundary. Check that the projection matrix A ' ...
+         'and the features in X are not degenerate.'], r);
+end
+if size(Z, 2) == 3 && r < 3
     % Coplanar points (e.g. a 3D projection of only two features) have no
     % volumetric hull, and convhull would error. Their hull is a flat
     % polygon: find it in the plane's own 2D coordinates and triangulate it
     % as a fan, so the output keeps the 3D vertices-plus-faces format.
-    Zc = Z - mean(Z, 1);
     [~, ~, basis] = svd(Zc, 'econ');
     P = Zc*basis(:, 1:2);
     K = convhull(P(:,1), P(:,2));

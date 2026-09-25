@@ -107,6 +107,7 @@ Same format as `Zedge`. Equals `Zedge` when no corner is discarded, when too man
 
 - CLOISTER expects mean-centred features. `InstanceSpace` warns (`ISA:InstanceSpace:cloisterNotMeanCentred`) when `opts.auto.preproc` or `opts.norm.flag` is `false`.
 - `scriptcsv` writes `Zedge` to `bounds.csv` and `Zecorr` to `bounds_prunned.csv`.
+- If every projected corner lies on one line (a degenerate projection matrix or features), there is no region to bound and CLOISTER raises `ISA:CLOISTER:degenerateBoundary`.
 
 ## Version History
 

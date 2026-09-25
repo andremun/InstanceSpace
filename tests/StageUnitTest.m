@@ -260,6 +260,17 @@ classdef StageUnitTest < matlab.unittest.TestCase
             testCase.verifyLessThanOrEqual(max(out.ZedgeFaces(:)), size(out.Zedge, 1));
         end
 
+        function testCloisterDegenerateProjection(testCase)
+            % A rank-1 projection maps every corner onto one line: no
+            % region, so CLOISTER raises its own error, in 2D and in 3D.
+            [X, ~] = syntheticMetadata(40, 3, 2);
+            opts = testCase.Defaults.cloister;
+            testCase.verifyError(@() CLOISTER(X, [1 1 1; 2 2 2], opts), ...
+                'ISA:CLOISTER:degenerateBoundary');
+            testCase.verifyError(@() CLOISTER(X, [1 1 1; 2 2 2; 3 3 3], opts), ...
+                'ISA:CLOISTER:degenerateBoundary');
+        end
+
         function testCloisterStrictThresholdFallsBack(testCase)
             % Perfectly correlated features and a zero threshold discard all
             % but two corners, too few for a hull: Zecorr falls back to Zedge.

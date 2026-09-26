@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What&#x27;s New - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Changes in recent versions of the toolbox">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
+<ul>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul></details></li>
+<li><details><summary>Utilities</summary><ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details open><summary>Release Notes</summary><ul>
+<li><a class="current" aria-current="page" href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> Release Notes <span class="sep">›</span> <span>What&#x27;s New</span></nav>
+<div class="page-head">
+<h1>What&#x27;s New</h1>
+<p class="purpose">Changes in recent versions of the toolbox</p>
+</div>
+<p>The complete list of changes, including every bug fix, is in <code>RELEASE_NOTES.md</code> in the repository root.</p>
+<section class="refsect" id="v0-9-2-in-development"><h2>v0.9.2 (in development)</h2><h3 id="bug-fixes">Bug Fixes</h3>
+<ul>
+<li><a class="code-link" href="PYTHIA.html"><code>PYTHIA</code></a> evaluation scores each algorithm only on the new instances with observed performance, and reports <code>NaN</code> for a trained algorithm that the new data does not cover. Before, such an algorithm was scored against labels that were never measured.</li>
+<li>The Oracle row of the PYTHIA summary reports the fraction of instances on which any algorithm is good. Before, it was always 1, which is wrong when <a class="code-link" href="OptionsReference.html#opts-perf-absperf"><code>opts.perf.AbsPerf</code></a> is <code>true</code>.</li>
+<li><a class="code-link" href="CLOISTER.html"><code>CLOISTER</code></a> computes a 3D boundary for a 3D instance space; <code>obj.plot('boundary')</code> and <a class="code-link" href="scriptpng.html"><code>scriptpng</code></a> draw it. Before, the boundary ignored the third coordinate.</li>
+<li>Footprint boundaries written by <a class="code-link" href="scriptcsv.html"><code>scriptcsv</code></a> include the boundaries of holes inside a footprint region.</li>
+</ul>
+<h3 id="documentation">Documentation</h3>
+<ul>
+<li>Reference documentation in the MATLAB Help browser and on the web, with examples for every function.</li>
+</ul></section>
+<section class="refsect" id="v0-9-1"><h2>v0.9.1</h2><p>Engineering release; results of the pipeline are unchanged.</p>
+<ul>
+<li><code>build</code> and <code>explore</code> accept an <code>'onStage'</code> callback, called after each stage.</li>
+<li><code>obj.plot('boundary')</code> and <code>distribution_boundary.png</code> show the CLOISTER boundary of a 2D space.</li>
+<li><a class="code-link" href="INIT.html"><code>INIT</code></a> reads the metadata for both training and evaluation, and <a class="code-link" href="PRELIM.html"><code>PRELIM</code></a> gained an evaluation mode, so evaluation now breaks ties exactly as training does.</li>
+<li><a class="code-link" href="OptionsReference.html#opts-general-seed"><code>opts.general.seed</code></a> now also controls <a class="code-link" href="PILOT.html"><code>PILOT</code></a> and <a class="code-link" href="SIFTED.html"><code>SIFTED</code></a>.</li>
+<li><a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> checks that each stage's inputs exist before running it.</li>
+<li>Continuous integration and a <code>matlab.unittest</code> test suite.</li>
+</ul></section>
+<section class="refsect" id="v0-9-0"><h2>v0.9.0</h2><p>Complete refactor of the toolbox.</p>
+<ul>
+<li>The <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> class is the main interface; <a class="code-link" href="buildIS.html"><code>buildIS</code></a> and <a class="code-link" href="exploreIS.html"><code>exploreIS</code></a> remain as wrappers.</li>
+<li>3D instance spaces (<a class="code-link" href="OptionsReference.html#opts-pilot-dims"><code>opts.pilot.dims = 3</code></a>) with optimised viewpoints (<a class="code-link" href="PILOTviewpoint.html"><code>PILOTviewpoint</code></a>).</li>
+<li>Partial Least Squares projection (<a class="code-link" href="OptionsReference.html#opts-pilot-method"><code>opts.pilot.method = 'pls'</code></a>).</li>
+<li>Classifier registry for <a class="code-link" href="PYTHIA.html"><code>PYTHIA</code></a> (<a class="code-link" href="OptionsReference.html#opts-pythia-classifier"><code>opts.pythia.classifier</code></a>) with Sobol or Bayesian tuning, replacing LIBSVM.</li>
+<li>TRACE3 footprints for 2D and 3D spaces.</li>
+<li><a class="code-link" href="ISAmigrateModel.html"><code>ISAmigrateModel</code></a>, <a class="code-link" href="ISAvalidateOpts.html"><code>ISAvalidateOpts</code></a> and <a class="code-link" href="ISAdefaults.html"><code>ISAdefaults</code></a>.</li>
+<li><strong>Licence change</strong>: from GPL v3 to the PolyForm Noncommercial License 1.0.0.</li>
+</ul></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a> | <a href="Deprecated.html">Deprecated Functions</a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#v0-9-2-in-development">v0.9.2 (in development)</a></li><li><a href="#v0-9-1">v0.9.1</a></li><li><a href="#v0-9-0">v0.9.0</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
+</div>
+</body>
+</html>

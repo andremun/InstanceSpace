@@ -3,13 +3,15 @@ function scriptcsv(container,rootdir)
 %
 %   scriptcsv(container,rootdir)
 %
-%   container - model struct from buildIS/InstanceSpace.build(), or a
-%               testResults entry from exploreIS/InstanceSpace.explore()
-%   rootdir   - destination directory (trailing slash required)
-%
 %   Writes projected coordinates, feature/performance tables, algorithm
 %   selections, and footprint boundary points, sized for 2D or 3D
 %   projections according to size(container.pilot.Z,2).
+%
+%   Inputs
+%     container - model struct from buildIS/InstanceSpace.build() or a testResults entry from exploreIS/InstanceSpace.explore().
+%     rootdir - destination directory (trailing slash required).
+%   Outputs
+%     none - writes CSV files to rootdir as a side effect.
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit

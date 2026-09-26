@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Instance Space Analysis Toolbox - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Objective algorithm testing through the instance space of a problem">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home current" href="index.html">Instance Space Analysis Toolbox</a>
+<ul>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul></details></li>
+<li><details><summary>Utilities</summary><ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a></nav>
+<div class="page-head">
+<h1>Instance Space Analysis Toolbox</h1>
+<p class="purpose">Objective algorithm testing through the instance space of a problem</p>
+</div>
+<p>The Instance Space Analysis (ISA) Toolbox relates the structural features of problem instances to the performance of a portfolio of algorithms. It projects every instance into a 2D or 3D <em>instance space</em>, shows where each algorithm performs well (its <em>footprint</em>), predicts which algorithm to use for a new instance, and estimates where in the space no instances have been observed yet.</p>
+<p>The toolbox implements the methodology in Smith-Miles &amp; Muñoz (2023), including the 3D extension (ISA3) of Simpson et al. (2025). It runs in MATLAB R2025a or later and powers the <a href="https://matilda.unimelb.edu.au">MATILDA</a> web platform.</p>
+<div class="figure">
+<svg viewBox="0 0 860 150" role="img" aria-labelledby="pipe-title" xmlns="http://www.w3.org/2000/svg">
+<title id="pipe-title">The ISA pipeline: INIT and PRELIM prepare the metadata, SIFTED selects features, PILOT projects them, then CLOISTER, PYTHIA and TRACE work in the projected space.</title>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+<g font-family="sans-serif" font-size="13" text-anchor="middle" fill="currentColor" stroke="currentColor">
+<g stroke-width="1.2" fill="none">
+<rect x="10" y="50" width="110" height="50" rx="6"/><rect x="150" y="50" width="110" height="50" rx="6"/>
+<rect x="290" y="50" width="110" height="50" rx="6"/><rect x="430" y="50" width="110" height="50" rx="6"/>
+<rect x="590" y="5" width="120" height="40" rx="6"/><rect x="590" y="55" width="120" height="40" rx="6"/>
+<rect x="590" y="105" width="120" height="40" rx="6"/><rect x="740" y="55" width="110" height="40" rx="6"/>
+<path d="M120,75 H148" marker-end="url(#arr)"/><path d="M260,75 H288" marker-end="url(#arr)"/>
+<path d="M400,75 H428" marker-end="url(#arr)"/><path d="M540,75 L588,25" marker-end="url(#arr)"/>
+<path d="M540,75 H588" marker-end="url(#arr)"/><path d="M540,75 L588,125" marker-end="url(#arr)"/>
+<path d="M710,75 H738" marker-end="url(#arr)"/><path d="M650,95 V103" />
+</g>
+<g stroke="none">
+<text x="65" y="72" font-weight="bold">INIT</text><text x="65" y="89" font-size="11">read metadata</text>
+<text x="205" y="72" font-weight="bold">PRELIM</text><text x="205" y="89" font-size="11">label &amp; normalise</text>
+<text x="345" y="72" font-weight="bold">SIFTED</text><text x="345" y="89" font-size="11">select features</text>
+<text x="485" y="72" font-weight="bold">PILOT</text><text x="485" y="89" font-size="11">project to 2D/3D</text>
+<text x="650" y="23" font-weight="bold">CLOISTER</text><text x="650" y="38" font-size="11">empirical bounds</text>
+<text x="650" y="73" font-weight="bold">PYTHIA</text><text x="650" y="88" font-size="11">predict algorithms</text>
+<text x="650" y="123" font-weight="bold">TRACE</text><text x="650" y="138" font-size="11">footprints</text>
+<text x="795" y="73" font-weight="bold">Outputs</text><text x="795" y="88" font-size="11">CSV · PNG · .mat</text>
+</g></g></svg>
+<p class="caption">The ISA pipeline. <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> runs the stages in this order; each stage is also a standalone function.</p>
+</div>
+<section class="refsect" id="get-started"><h2>Get Started</h2><div class="tiles">
+<div class="tile"><h3 id="getting-started"><a href="GettingStarted.html">Getting Started</a></h3><p>Build and explore an instance space from the bundled reference data in a few lines.</p></div>
+<div class="tile"><h3 id="stage-by-stage-walkthrough"><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></h3><p>Run each stage separately and inspect what it produces.</p></div>
+<div class="tile"><h3 id="metadata-file-format"><a href="MetadataFormat.html">Metadata File Format</a></h3><p>Prepare <code>metadata.csv</code> for your own problem domain.</p></div>
+<div class="tile"><h3 id="options-reference"><a href="OptionsReference.html">Options Reference</a></h3><p>Every field of <code>opts</code> and <code>options.json</code>, with defaults.</p></div>
+</div></section>
+<section class="refsect" id="functions-and-classes"><h2>Functions and Classes</h2><div class="tiles">
+<div class="tile"><h3 id="instancespace"><a href="InstanceSpace.html">InstanceSpace</a></h3><p>Build, explore, save, load and plot an instance space. The main entry point.</p></div>
+<div class="tile"><h3 id="pipeline-stages"><a href="FunctionList.html#pipeline-stages">Pipeline Stages</a></h3><p>INIT, PRELIM, FILTER, SIFTED, PILOT, PILOTviewpoint, CLOISTER, PYTHIA, TRACE.</p></div>
+<div class="tile"><h3 id="utilities"><a href="FunctionList.html#utilities">Utilities</a></h3><p>Option defaults and validation, classifier registry, legacy-model migration.</p></div>
+<div class="tile"><h3 id="output"><a href="FunctionList.html#output">Output</a></h3><p>Write CSV files and figures, and restore 3D viewpoints.</p></div>
+</div></section>
+<section class="refsect" id="topics"><h2>Topics</h2><ul>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a> — use a <code>model.mat</code> from a version before v0.9.0.</li>
+<li><a href="buildIS.html">Backward-Compatible Wrappers</a> — <a class="code-link" href="buildIS.html"><code>buildIS</code></a> and <a class="code-link" href="exploreIS.html"><code>exploreIS</code></a>, used by MATILDA.</li>
+<li><a href="Deprecated.html">Deprecated Functions</a> — <code>PYTHIA2</code>, <code>PYTHIAtest</code>, <code>SIFTED2</code>.</li>
+<li><a href="WhatsNew.html">What's New</a> — release notes.</li>
+</ul></section>
+<section class="refsect" id="installation"><h2>Installation</h2><p>Clone or download the repository, then add it to the MATLAB path from its root folder:</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>cd InstanceSpace
+addpath(pwd)     <span class="com">% the class, the wrappers, and info.xml for the Help browser</span>
+startup          <span class="com">% adds core/, utils/, output/ and deprecated/</span></code></pre></div>
+<p>Required products: MATLAB R2025a or later with the Statistics and Machine Learning, Optimization, Global Optimization, Parallel Computing, and Financial toolboxes.</p>
+<p>With the repository root on the path, this documentation also appears in the MATLAB Help browser under <strong>Supplemental Software</strong>.</p></section>
+<section class="refsect" id="references"><h2>References</h2><ul>
+<li>Smith-Miles, K. &amp; Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. <em>ACM Computing Surveys</em>, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
+<li>Simpson, C., Muñoz, M.A., Kandanaarachchi, S. &amp; Campello, R.J.G.B. (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis. <em>Machine Learning</em>, 114, 240. <a href="https://doi.org/10.1007/s10994-025-06871-5">https://doi.org/10.1007/s10994-025-06871-5</a></li>
+</ul></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#get-started">Get Started</a></li><li><a href="#functions-and-classes">Functions and Classes</a></li><li><a href="#topics">Topics</a></li><li><a href="#installation">Installation</a></li><li><a href="#references">References</a></li></ul></aside>
+</div>
+</body>
+</html>

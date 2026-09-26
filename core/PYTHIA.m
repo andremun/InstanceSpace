@@ -395,7 +395,11 @@ ninst  = size(Znorm, 1);
 
 out.Yhat   = false(ninst, nalgos);
 out.Pr0hat = zeros(ninst, nalgos);
-out.cvcmat = zeros(nalgos, 4);
+% NaN rows mean "not scored": algorithms beyond modelalgos (no classifier)
+% and trained algorithms the test set has no performance data for keep
+% NaN, so precision/recall/accuracy come out NaN instead of a fabricated
+% score (#58).
+out.cvcmat = NaN(nalgos, 4);
 
 for ii = 1:modelalgos
     clf = clfs{ii};
@@ -433,7 +437,17 @@ for ii = 1:modelalgos
         out.Yhat(:,ii) = logical(out.Yhat(:,ii));
         if size(aux,2) >= 1; out.Pr0hat(:,ii) = aux(:,1); end
     end
-    cm = confusionmat(logical(Ybin(:,ii)), out.Yhat(:,ii), 'Order', [false true]);
+    % Score only the instances with observed performance for this
+    % algorithm (#58). INIT's reconciliation leaves NaN in Y for a trained
+    % algorithm that metadata_test.csv does not cover, and PRELIM turns
+    % that NaN into Ybin=false (any comparison with NaN is false). Scoring
+    % those rows would compare the prediction against a truth value that
+    % was never measured.
+    observed = ~isnan(Y(:,ii));
+    if ~any(observed)
+        continue;
+    end
+    cm = confusionmat(logical(Ybin(observed,ii)), out.Yhat(observed,ii), 'Order', [false true]);
     out.cvcmat(ii,:) = cm(:)';
 end
 % Algorithms beyond modelalgos have no trained classifier (new in the test
@@ -447,7 +461,7 @@ tn = out.cvcmat(1:modelalgos,1); fp = out.cvcmat(1:modelalgos,3);
 fn = out.cvcmat(1:modelalgos,2); tp = out.cvcmat(1:modelalgos,4);
 out.precision(1:modelalgos) = tp ./ (tp + fp);
 out.recall(1:modelalgos)    = tp ./ (tp + fn);
-out.accuracy(1:modelalgos)  = (tp + tn) ./ ninst;
+out.accuracy(1:modelalgos)  = (tp + tn) ./ (tp + tn + fp + fn);
 
 % Use the training-time precision for selection weighting if available; fall back
 % to the freshly computed eval precision so old/migrated models still work.
@@ -792,6 +806,13 @@ sel0 = bsxfun(@eq, out.selection0, 1:nalgos);
 sel1 = bsxfun(@eq, out.selection1, 1:nalgos);
 avgperf = nanmean(Y);
 stdperf = nanstd(Y);
+% Probability of good performance over the instances with observed
+% performance only; NaN for an algorithm with none, e.g. a trained
+% algorithm absent from metadata_test.csv (whose Ybin column is all false
+% only because NaN compares as false). Same rule as the scoring in
+% PYTHIAevalMode (#58).
+observed = ~isnan(Y);
+pgoodAlgo = sum(Ybin & observed, 1) ./ sum(observed, 1);
 Yfull = Y; Ysvms = Y;
 Y(~sel0)     = NaN;
 Yfull(~sel1) = NaN;
@@ -824,7 +845,11 @@ summary(1, 2:end) = colheads';
 % Column vectors (nalgos+2)×1 assembled with ; — required for 2D cell-slice assignment.
 summary(2:end, 2) = num2cell(round([avgperf(:);        nanmean(Ybest);  nanmean(Yfull(:))], 3));
 summary(2:end, 3) = num2cell(round([stdperf(:);        nanstd(Ybest);   nanstd(Yfull(:))],  3));
-summary(2:end, 4) = num2cell(round([mean(Ybin)';       1;               pgood],             3));
+% Oracle row: the fraction of instances on which at least one algorithm
+% is good. Exactly 1 for relative performance (the best algorithm always
+% clears its own threshold), but below 1 when opts.perf.AbsPerf=true and
+% no algorithm meets the absolute threshold on some instances (#59).
+summary(2:end, 4) = num2cell(round([pgoodAlgo';        mean(any(Ybin, 2)); pgood],          3));
 summary(2:end, 5) = num2cell(round([nanmean(Ysvms)';   NaN;             nanmean(Y(:))],     3));
 summary(2:end, 6) = num2cell(round([nanstd(Ysvms)';    NaN;             nanstd(Y(:))],      3));
 summary(2:end, 7) = num2cell(round(100.*[out.accuracy;  NaN;            NaN],               1));

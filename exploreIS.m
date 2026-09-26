@@ -9,6 +9,11 @@ function out = exploreIS(rootdir)
 %   obj = InstanceSpace.load(rootdir);
 %   obj = obj.explore(rootdir);
 %   out  = obj.getResults(1);
+%
+%   Inputs
+%     rootdir - string/path to the directory containing model.mat and metadata_test.csv
+%   Outputs
+%     out - the most recent test-results entry (specifically obj.testResults{end})
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit

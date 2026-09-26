@@ -4,6 +4,11 @@ function opts = ISAdefaults(opts)
 %   complete options struct, eliminating scattered isfield chains across
 %   buildIS, PILOT, TRACE, and CLOISTER. Call once at the buildIS entry
 %   point after loading options.json.
+%
+%   Inputs
+%     opts - struct, potentially partial (e.g., freshly parsed from options.json with some fields absent or left as [])
+%   Outputs
+%     opts - the same struct, with every pipeline-stage field guaranteed present. See the Options Reference page for the full field list and defaults.
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit

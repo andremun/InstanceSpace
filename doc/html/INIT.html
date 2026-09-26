@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>INIT - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Read and filter instance metadata">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
+<ul>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details open><summary>Pipeline Stages</summary><ul>
+<li><a class="current" aria-current="page" href="INIT.html">INIT</a></li>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul></details></li>
+<li><details><summary>Utilities</summary><ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> <a href="FunctionList.html">Pipeline Stages</a> <span class="sep">›</span> <span>INIT</span></nav>
+<div class="page-head function">
+<h1>INIT</h1>
+<p class="purpose">Read and filter instance metadata</p>
+</div>
+<section class="refsect" id="syntax"><h2>Syntax</h2><div class="syntax-block">
+<div class="syntax-line"><a href="#desc-1"><code>[data,extra] = INIT(rootdir,opts)</code></a></div>
+<div class="syntax-line"><a href="#desc-2"><code>[data,extra] = INIT(rootdir,opts,trainedModel)</code></a></div>
+</div></section>
+<section class="refsect" id="description"><h2>Description</h2><p class="syntax-desc" id="desc-1"><code>[data,extra] = INIT(rootdir,opts)</code> reads <code>rootdir/metadata.csv</code>, keeps the features and algorithms listed in <a class="code-link" href="OptionsReference.html#opts-selvars-feats"><code>opts.selvars.feats</code></a> and <a class="code-link" href="OptionsReference.html#opts-selvars-algos"><code>opts.selvars.algos</code></a> (all of them when these fields are absent), and returns the matrices the other stages need.</p>
+<p class="syntax-desc" id="desc-2"><code>[data,extra] = INIT(rootdir,opts,trainedModel)</code> reads <code>rootdir/metadata_test.csv</code> for evaluation. It checks that the test file has the trained model's features in the same order, and aligns the algorithm columns with the trained model: known algorithms go to their trained position, new algorithms are appended, and trained algorithms missing from the test file get a column of <code>NaN</code>.</p></section>
+<section class="refsect" id="examples"><h2>Examples</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="example">Expand all</button></p><details class="example" id="example-read-the-reference-metadata" open><summary>Read the reference metadata</summary><div class="example-body"><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>opts = ISAdefaults(struct());
+data = INIT(<span class="str">'test/data/'</span>, opts);
+size(data.X)          <span class="com">% instances x features</span>
+data.algolabels       <span class="com">% algorithm names, without the algo_ prefix</span></code></pre></div></div></details>
+<details class="example" id="example-read-only-some-algorithms"><summary>Read only some algorithms</summary><div class="example-body"><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>opts.selvars.algos = {<span class="str">'algo_NB'</span>, <span class="str">'algo_KNN'</span>, <span class="str">'algo_RandF'</span>};
+data = INIT(<span class="str">'test/data/'</span>, opts);</code></pre></div></div></details></section>
+<section class="refsect" id="input-arguments"><h2>Input Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="arg-rootdir"><summary><code>rootdir</code> <span class="arg-desc">— Data folder</span></summary><div class="arg-body"><p class="arg-type">character vector</p>
+<p>Folder that contains <code>metadata.csv</code> (training) or <code>metadata_test.csv</code> (evaluation). Must end with a file separator.</p></div></details>
+<details class="arg" id="arg-opts"><summary><code>opts</code> <span class="arg-desc">— Toolbox options</span></summary><div class="arg-body"><p class="arg-type">structure</p>
+<p>The complete options structure. INIT reads <a class="code-link" href="OptionsReference.html#opts-selvars-feats"><code>opts.selvars.feats</code></a> and <a class="code-link" href="OptionsReference.html#opts-selvars-algos"><code>opts.selvars.algos</code></a>, cell arrays of column names including their <code>feature_</code>/<code>algo_</code> prefix.</p></div></details>
+<details class="arg" id="arg-trainedmodel"><summary><code>trainedModel</code> <span class="arg-desc">— Trained model</span></summary><div class="arg-body"><p class="arg-type">structure</p>
+<p>The <code>model</code> property of a built <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> object. Its presence selects evaluation mode.</p></div></details></section>
+<section class="refsect" id="output-arguments"><h2>Output Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="out-data"><summary><code>data</code> <span class="arg-desc">— Metadata</span></summary><div class="arg-body"><p class="arg-type">structure</p><details class="arg" id="out-data-instlabels"><summary><code>data.instlabels</code> <span class="arg-desc">— Instance names</span></summary><div class="arg-body"><p>From the <code>Instances</code> column.</p></div></details>
+<details class="arg" id="out-data-x"><summary><code>data.X</code>, <code>data.Xraw</code> <span class="arg-desc">— Features</span></summary><div class="arg-body"><p>Numeric matrix; both are the unprocessed values at this point.</p></div></details>
+<details class="arg" id="out-data-y"><summary><code>data.Y</code>, <code>data.Yraw</code> <span class="arg-desc">— Performance</span></summary><div class="arg-body"><p>Numeric matrix; both are the unprocessed values at this point.</p></div></details>
+<details class="arg" id="out-data-algolabels"><summary><code>data.algolabels</code> <span class="arg-desc">— Algorithm names</span></summary><div class="arg-body"><p>Without the <code>algo_</code> prefix.</p></div></details>
+<details class="arg" id="out-data-featlabels"><summary><code>data.featlabels</code> <span class="arg-desc">— Feature names</span></summary><div class="arg-body"><p>Training mode only, without the <code>feature_</code> prefix.</p></div></details>
+<details class="arg" id="out-data-s"><summary><code>data.S</code> <span class="arg-desc">— Instance sources</span></summary><div class="arg-body"><p>Categorical vector, present only when the file has a <code>source</code> column.</p></div></details></div></details>
+<details class="arg" id="out-extra"><summary><code>extra</code> <span class="arg-desc">— Evaluation bookkeeping</span></summary><div class="arg-body"><p class="arg-type">structure</p>
+<p>Empty in training mode. In evaluation mode: <code>featlabelsAll</code>, <code>modelalgos</code> (number of trained algorithms), <code>newalgos</code> (algorithms new in the test file), <code>nalgos</code> and <code>ninst</code>.</p></div></details></section>
+<section class="refsect" id="tips"><h2>Tips</h2><ul>
+<li>See <a href="MetadataFormat.html">Metadata File Format</a> for the file layout.</li>
+<li>Evaluation fails with <code>ISA:InstanceSpace:featureOrderMismatch</code> when <code>metadata_test.csv</code> lists its features in a different order from the training file.</li>
+</ul></section>
+<section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="v0-9-1-introduced">v0.9.1 — Introduced</h3><p>Replaces two separate readers inside <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> (build and explore) with one function.</p></div></section>
+<section class="refsect" id="references"><h2>References</h2><ul>
+<li>Smith-Miles, K. &amp; Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. <em>ACM Computing Surveys</em>, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
+</ul></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="PRELIM.html"><code>PRELIM</code></a> | <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> | <a href="MetadataFormat.html">Metadata File Format</a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#syntax">Syntax</a></li><li><a href="#description">Description</a></li><li><a href="#examples">Examples</a></li><li><a href="#input-arguments">Input Arguments</a></li><li><a href="#output-arguments">Output Arguments</a></li><li><a href="#tips">Tips</a></li><li><a href="#version-history">Version History</a></li><li><a href="#references">References</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
+</div>
+</body>
+</html>

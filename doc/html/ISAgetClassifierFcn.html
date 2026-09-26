@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ISAgetClassifierFcn - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Look up a classifier in the PYTHIA registry">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
+<ul>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul></details></li>
+<li><details open><summary>Utilities</summary><ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a class="current" aria-current="page" href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> <a href="FunctionList.html">Utilities</a> <span class="sep">›</span> <span>ISAgetClassifierFcn</span></nav>
+<div class="page-head function">
+<h1>ISAgetClassifierFcn</h1>
+<p class="purpose">Look up a classifier in the PYTHIA registry</p>
+</div>
+<section class="refsect" id="syntax"><h2>Syntax</h2><div class="syntax-block">
+<div class="syntax-line"><a href="#desc-1"><code>[fitFcn,p1label,p2label] = ISAgetClassifierFcn(name)</code></a></div>
+</div></section>
+<section class="refsect" id="description"><h2>Description</h2><p class="syntax-desc" id="desc-1"><code>[fitFcn,p1label,p2label] = ISAgetClassifierFcn(name)</code> returns the Statistics and Machine Learning Toolbox fitting function for the classifier <code>name</code>, and the names of the hyperparameters that <a class="code-link" href="PYTHIA.html"><code>PYTHIA</code></a> tunes for it. <code>name</code> is the value of <a class="code-link" href="OptionsReference.html#opts-pythia-classifier"><code>opts.pythia.classifier</code></a>.</p>
+<table class="doc-table">
+<thead>
+<tr>
+<th><code>name</code></th>
+<th>Fitting function</th>
+<th>First hyperparameter (search range)</th>
+<th>Second hyperparameter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>'knn'</code></td>
+<td><code>fitcknn</code></td>
+<td><code>NumNeighbors</code> [1, 25]</td>
+<td><code>Distance</code> (categorical)</td>
+</tr>
+<tr>
+<td><code>'svm'</code></td>
+<td><code>fitcsvm</code></td>
+<td><code>BoxConstraint</code> (log2 scale)</td>
+<td><code>KernelScale</code> (log2 scale)</td>
+</tr>
+<tr>
+<td><code>'tree'</code></td>
+<td><code>fitctree</code></td>
+<td><code>MinLeafSize</code> [1, 100]</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>'nb'</code></td>
+<td><code>fitcnb</code></td>
+<td><code>Bandwidth</code> (log10 scale)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>'linear'</code></td>
+<td><code>fitclinear</code></td>
+<td><code>Lambda</code> (log10 scale)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>'ensemble'</code></td>
+<td><code>fitcensemble</code></td>
+<td><code>NumLearningCycles</code> [10, 200]</td>
+<td><code>MinLeafSize</code> [1, 20]</td>
+</tr>
+</tbody>
+</table>
+<p>Each classifier is binary: PYTHIA trains one per algorithm, so multiclass learners such as <code>fitcecoc</code> are not needed.</p></section>
+<section class="refsect" id="examples"><h2>Examples</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="example">Expand all</button></p><details class="example" id="example-look-up-the-svm-entry" open><summary>Look up the SVM entry</summary><div class="example-body"><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>[fitFcn, p1, p2] = ISAgetClassifierFcn(<span class="str">'svm'</span>)</code></pre></div>
+<div class="code"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>fitFcn = @fitcsvm
+p1 = 'BoxConstraint'
+p2 = 'KernelScale'</code></pre></div></div></details>
+<details class="example" id="example-supply-fixed-hyperparameters-for-a-single-parameter-classifier"><summary>Supply fixed hyperparameters for a single-parameter classifier</summary><div class="example-body"><p>With <a class="code-link" href="OptionsReference.html#opts-pythia-tuning"><code>opts.pythia.tuning = 'none'</code></a>, <a class="code-link" href="OptionsReference.html#opts-pythia-params"><code>opts.pythia.params</code></a> needs one column per hyperparameter.</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>[~, ~, p2] = ISAgetClassifierFcn(<span class="str">'tree'</span>);
+nparams = <span class="num">1</span> + ~strcmp(p2, <span class="str">'N/A'</span>);     <span class="com">% 1 for a tree</span>
+opts.pythia.classifier = <span class="str">'tree'</span>;
+opts.pythia.tuning = <span class="str">'none'</span>;
+opts.pythia.params = repmat(<span class="num">10</span>, <span class="num">10</span>, nparams);   <span class="com">% MinLeafSize 10 for 10 algorithms</span></code></pre></div></div></details></section>
+<section class="refsect" id="input-arguments"><h2>Input Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="arg-name"><summary><code>name</code> <span class="arg-desc">— Classifier name</span></summary><div class="arg-body"><p class="arg-type"><code>'knn'</code> | <code>'svm'</code> | <code>'tree'</code> | <code>'nb'</code> | <code>'linear'</code> | <code>'ensemble'</code></p>
+<p>Case insensitive. Any other value raises <code>ISA:ISAgetClassifierFcn:unknownClassifier</code>.</p></div></details></section>
+<section class="refsect" id="output-arguments"><h2>Output Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="out-fitfcn"><summary><code>fitFcn</code> <span class="arg-desc">— Fitting function</span></summary><div class="arg-body"><p class="arg-type">function handle</p></div></details>
+<details class="arg" id="out-p1label"><summary><code>p1label</code> <span class="arg-desc">— First hyperparameter name</span></summary><div class="arg-body"><p class="arg-type">character vector</p></div></details>
+<details class="arg" id="out-p2label"><summary><code>p2label</code> <span class="arg-desc">— Second hyperparameter name</span></summary><div class="arg-body"><p class="arg-type">character vector</p>
+<p><code>'N/A'</code> for classifiers with one hyperparameter.</p></div></details></section>
+<section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="v0-9-0-introduced">v0.9.0 — Introduced</h3></div></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="PYTHIA.html"><code>PYTHIA</code></a> | <a href="OptionsReference.html#opts-pythia">Options Reference</a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#syntax">Syntax</a></li><li><a href="#description">Description</a></li><li><a href="#examples">Examples</a></li><li><a href="#input-arguments">Input Arguments</a></li><li><a href="#output-arguments">Output Arguments</a></li><li><a href="#version-history">Version History</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
+</div>
+</body>
+</html>

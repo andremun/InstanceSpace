@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migrating a Legacy Model - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Use a model.mat created by a toolbox version before v0.9.0">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
+<ul>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul></details></li>
+<li><details><summary>Utilities</summary><ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul></details></li>
+<li><details open><summary>Topics</summary><ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a class="current" aria-current="page" href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> <a href="OptionsReference.html">Topics</a> <span class="sep">›</span> <span>Migrating a Legacy Model</span></nav>
+<div class="page-head">
+<h1>Migrating a Legacy Model</h1>
+<p class="purpose">Use a model.mat created by a toolbox version before v0.9.0</p>
+</div>
+<p>Version 0.9.0 renamed several option groups and model fields and replaced the LIBSVM classifiers and the footprint algorithm. A <code>model.mat</code> saved by an earlier version therefore needs migrating before the current code can use it. In most cases this is automatic.</p>
+<section class="refsect" id="automatic-migration-on-load"><h2>Automatic Migration on Load</h2><p><code>InstanceSpace.load</code> and <a class="code-link" href="exploreIS.html"><code>exploreIS</code></a> migrate a legacy model in memory each time they load it. Nothing is written to disk:</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>obj = InstanceSpace.load(<span class="str">'/path/to/old/run/'</span>);   <span class="com">% migrated in memory</span>
+obj = obj.explore(<span class="str">'/path/to/new/instances/'</span>);</code></pre></div></section>
+<section class="refsect" id="converting-the-file-once"><h2>Converting the File Once</h2><p>To avoid repeating the migration, including any classifier retraining, on every load, convert the file:</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>ISAmigrateModel(<span class="str">'/path/to/old/run/'</span>);</code></pre></div>
+<p>The original is kept as <code>model_legacy.mat</code>. Choose another backup name with <a class="code-link" href="ISAmigrateModel.html"><code>ISAmigrateModel(rootdir,'backupSuffix','_v08')</code></a>.</p></section>
+<section class="refsect" id="what-changes"><h2>What Changes</h2><ul>
+<li><strong>Options</strong> are renamed to the current groups: <code>opts.oracle</code> → <a class="code-link" href="OptionsReference.html#opts-pythia"><code>opts.pythia</code></a>, <code>opts.pbldr</code> → <a class="code-link" href="OptionsReference.html#opts-pilot"><code>opts.pilot</code></a>, <code>opts.sbound</code> → <a class="code-link" href="OptionsReference.html#opts-cloister"><code>opts.cloister</code></a>, <code>opts.footprint</code> → <a class="code-link" href="OptionsReference.html#opts-trace"><code>opts.trace</code></a>, and <a class="code-link" href="OptionsReference.html#opts-perf"><code>opts.perf.MaxMin</code></a> → <a class="code-link" href="OptionsReference.html#opts-perf-maxperf"><code>opts.perf.MaxPerf</code></a>. The feature-selection flags of <code>opts.corr</code> and <code>opts.clust</code> move to <a class="code-link" href="OptionsReference.html#opts-sifted"><code>opts.sifted</code></a>.</li>
+<li><strong>Classifiers.</strong> LIBSVM models cannot be evaluated by the current code. They are retrained with the classifier in <a class="code-link" href="OptionsReference.html#opts-pythia-classifier"><code>opts.pythia.classifier</code></a> (<code>'knn'</code> if unset) on the training data stored in the model. Predictions of the retrained model can differ slightly from those of the original.</li>
+<li><strong>Footprints</strong> in the old DBSCAN/polyshape format are recomputed with TRACE3. Their areas, densities and purities can differ from the values reported by the old version.</li>
+<li><strong>Field names</strong> such as <code>data.bestPerformace</code> are corrected.</li>
+</ul>
+<p>The complete table is on the <a class="code-link" href="ISAmigrateModel.html"><code>ISAmigrateModel</code></a> reference page.</p></section>
+<section class="refsect" id="when-migration-cannot-complete"><h2>When Migration Cannot Complete</h2><ul>
+<li>A projection without its reconstruction matrices (<code>model.pilot.B</code>, <code>model.pilot.C</code>) is kept as is, with a warning.</li>
+<li>Retraining LIBSVM classifiers and recomputing footprints need the training data stored in the model (<code>model.pilot.Z</code> and <code>model.data</code>). When it is missing, the fields are renamed only, with a warning.</li>
+<li>If a LIBSVM model has to be evaluated as-is, <a class="code-link" href="PYTHIA.html"><code>PYTHIA</code></a> raises <code>ISA:PYTHIA:noLibsvm</code> unless the LIBSVM MEX files are on the path. The toolbox does not include them; get them from the <a href="https://www.csie.ntu.edu.tw/~cjlin/libsvm/">LIBSVM project</a>. Retraining is recommended instead.</li>
+</ul></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="ISAmigrateModel.html"><code>ISAmigrateModel</code></a> | <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> | <a href="WhatsNew.html">What's New</a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#automatic-migration-on-load">Automatic Migration on Load</a></li><li><a href="#converting-the-file-once">Converting the File Once</a></li><li><a href="#what-changes">What Changes</a></li><li><a href="#when-migration-cannot-complete">When Migration Cannot Complete</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
+</div>
+</body>
+</html>

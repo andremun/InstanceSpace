@@ -1,3 +1,34 @@
+# Instance Space Analysis Toolkit — v0.9.2 (in development)
+
+Bug fixes from the v0.9.2 backlog, a reference documentation site, and test infrastructure. It targets **MATLAB R2025a or later**.
+
+---
+
+## New functionality
+
+**Reference documentation site.** `doc/html/` holds a MATLAB-toolbox-style reference: one page per function and for the `InstanceSpace` class (syntax, description, examples, expandable argument lists, version history), plus getting-started, walkthrough, metadata-format, options-reference and migration guides, with search. The same pages open in the MATLAB Help browser through `info.xml` (**Supplemental Software → Instance Space Analysis Toolbox**) and are published to GitHub Pages from `master` by `.github/workflows/docs-pages.yml`. Pages are written in Markdown under `doc/src/` and built by `doc/generate.py`; CI fails if the committed HTML does not match its sources or has a broken link ([#53](https://github.com/andremun/InstanceSpace/issues/53)).
+
+**3D CLOISTER boundary.** For a 3D projection, `CLOISTER` now computes a 3D convex hull and returns its triangulation in `model.cloist.ZedgeFaces`/`ZecorrFaces`. `obj.plot('boundary')` and `scriptpng`'s `distribution_boundary.png` draw it as a translucent surface. If the projected corners are coplanar (e.g. a 3D projection of two features), the boundary is the flat polygon, triangulated. A 3D model built with an earlier version still raises `ISA:InstanceSpace:boundaryNot3D`, since its stored boundary ignores the third coordinate; rebuild the `cloister` stage to fix it ([#50](https://github.com/andremun/InstanceSpace/issues/50)).
+
+---
+
+## Better engineering
+
+- **JUnit test report.** `test_integration.m` writes `junit.xml` next to `coverage.xml`; CI uploads it to Codecov Test Analytics and keeps it with the coverage artifact ([#57](https://github.com/andremun/InstanceSpace/issues/57)).
+- **Coverage table in CI.** The Tests workflow prints per-file line coverage, with the uncovered line ranges, in the job log and the run summary.
+
+---
+
+## Bug fixes
+
+- **PYTHIA evaluation scored algorithms against data that was never observed.** In `PYTHIA`'s evaluation mode, a trained algorithm absent from `metadata_test.csv` has an all-`NaN` performance column, which `PRELIM` turns into all-false labels; accuracy, precision and recall were then computed against those labels. Only instances with observed performance are now scored, and an algorithm with none reports `NaN`. Accuracy is divided by the number of scored instances, and the summary's per-algorithm `Probability_of_good` is also computed over observed instances only (blank when there are none) ([#58](https://github.com/andremun/InstanceSpace/issues/58)).
+- **Oracle probability of good performance was always 1.** The Oracle row of `PYTHIA`'s summary now reports `mean(any(Ybin,2))`, the fraction of instances on which any algorithm is good. This is below 1 when `opts.perf.AbsPerf = true` and no algorithm meets the threshold on some instances ([#59](https://github.com/andremun/InstanceSpace/issues/59)).
+- **`TRACE` failed when called without PYTHIA predictions.** `TRACE`'s documentation allows `Yhat = []`, falling back to the true labels, but the footprint loop indexed `Yhat(:,i)` inside a `parfor`, which slices it for every iteration and so failed with an out-of-bounds index. The pipeline itself never passed `[]`, so only direct callers were affected. Predictions are now split per algorithm before the loop.
+- **`ISArecallView` on a figure with no axes** failed inside `ismember` instead of raising its own `ISA:ISArecallView:noAxes` error.
+- **Footprint holes were dropped from the traced boundary.** `traceOneRegion` followed only the boundary cycle that contained its start vertex, so the boundary of a hole inside a footprint region was omitted (with the `ISA:scriptfcn:boundaryHoleOmitted` warning). Every cycle is now traced, and cycles are separated by a `NaN` row as regions already were; the warning is removed ([#52](https://github.com/andremun/InstanceSpace/issues/52)).
+
+---
+
 # Instance Space Analysis Toolkit — v0.9.1
 
 This release is an engineering-quality, architecture, and infrastructure follow-up to v0.9.0 — deliberately scoped to avoid changing any pipeline algorithm's actual behaviour (see the `v0.9.1` GitHub milestone). What did land: two small, additive API surfaces (a per-stage inspection callback, and finally rendering a boundary CLOISTER had computed all along), `opts.pilot.seed`/`opts.sifted.seed` (new fields, but only to make the already-documented `opts.general.seed` behave as promised for two stages that were silently ignoring it — not a new capability), a real architectural clean-up of data ingestion, and a batch of confirmed correctness fixes found via a full-repository audit against the project's own established conventions. It targets **MATLAB R2025a or later**.

@@ -327,7 +327,7 @@ classdef InstanceSpace
             %   'portfolio' drawPortfolioSelections(Z, P, algolabels, ...)
             %   'good'      drawBinaryPerformance(Z, Ybin(:,algoIdx), ...)
             %   'footprint' drawGoodBadFootprint(Z, good{algoIdx}, Ybin(:,algoIdx), ...)
-            %   'boundary'  drawBoundary(Z, cloist.Zedge, ...)     (needs model.cloist; 2D only, #32)
+            %   'boundary'  drawBoundary(Z, cloist.Zedge, ...)     (needs model.cloist; 2D or 3D)
             % algoIdx (1-based, into model.data.algolabels) is required
             % for 'good'/'footprint'.
             narginchk(2, 3);
@@ -360,15 +360,21 @@ classdef InstanceSpace
                         error('ISA:InstanceSpace:noCloister', ...
                             'model.cloist is not available -- call build(''stages'',{...,''cloister''}) first.');
                     end
+                    faces = [];
                     if size(Z, 2) == 3
-                        % CLOISTER's Zedge/Zecorr use a 2D-only convex hull
-                        % (core/CLOISTER.m) even for a 3D projection, so an
-                        % accurate 3D boundary isn't available yet (#50).
-                        error('ISA:InstanceSpace:boundaryNot3D', ...
-                            ['The ''boundary'' view is 2D only: CLOISTER''s empirical bound is not ' ...
-                             'yet computed for 3D projections (opts.pilot.dims==3). See issue #50.']);
+                        % A 3D boundary needs CLOISTER's hull triangulation
+                        % (#50). A model built before that fix only has a
+                        % 2D hull of the first two coordinates, which would
+                        % be wrong to draw in 3D.
+                        if ~isfield(obj.model.cloist, 'ZedgeFaces') || isempty(obj.model.cloist.ZedgeFaces)
+                            error('ISA:InstanceSpace:boundaryNot3D', ...
+                                ['This 3D model has no 3D CLOISTER boundary (it was built with a ' ...
+                                 'version whose boundary ignored the third coordinate). Rebuild ' ...
+                                 'the ''cloister'' stage to compute it.']);
+                        end
+                        faces = obj.model.cloist.ZedgeFaces;
                     end
-                    drawBoundary(Z, obj.model.cloist.Zedge, 'CLOISTER empirical bound');
+                    drawBoundary(Z, obj.model.cloist.Zedge, 'CLOISTER empirical bound', faces);
                 otherwise
                     error('ISA:InstanceSpace:unknownView', ...
                         'Unknown plot view ''%s''. Valid views: sources, portfolio, good, footprint, boundary.', viewName);

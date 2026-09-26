@@ -49,6 +49,7 @@ import matlab.unittest.TestSuite
 import matlab.unittest.TestRunner
 import matlab.unittest.plugins.CodeCoveragePlugin
 import matlab.unittest.plugins.codecoverage.CoberturaFormat
+import matlab.unittest.plugins.XMLPlugin
 
 % buildIS.m/exploreIS.m/InstanceSpace.m live at the repo root and, unlike
 % core/output/utils (self-added to the path the first time InstanceSpace
@@ -81,10 +82,26 @@ end
 suite = TestSuite.fromFolder(fullfile(repoRoot, 'tests'), 'IncludingSubfolders', true);
 runner = TestRunner.withTextOutput();
 
+% Coverage is measured on the toolkit's library code: every file in
+% core/, output/ and utils/, plus the three entry points at the repo root.
+% The root folder also holds scripts that no test can run -- example.m and
+% liveDemoIS.m (demos; CI runs example.m separately, outside this runner),
+% startup.m, Contents.m, and this runner itself -- so it is listed file by
+% file rather than as a folder.
 coverageReportFile = fullfile(repoRoot, 'coverage.xml');
-sourceFolders = {repoRoot, fullfile(repoRoot, 'core'), fullfile(repoRoot, 'output'), fullfile(repoRoot, 'utils')};
-runner.addPlugin(CodeCoveragePlugin.forFolder(sourceFolders, ...
-    'IncludingSubfolders', false, 'Producing', CoberturaFormat(coverageReportFile)));
+libFiles = {};
+for d = {'core', 'output', 'utils'}
+    listing = dir(fullfile(repoRoot, d{1}, '*.m'));
+    libFiles = [libFiles, fullfile({listing.folder}, {listing.name})]; %#ok<AGROW>
+end
+libFiles = [libFiles, fullfile(repoRoot, {'InstanceSpace.m', 'buildIS.m', 'exploreIS.m'})];
+runner.addPlugin(CodeCoveragePlugin.forFile(libFiles, ...
+    'Producing', CoberturaFormat(coverageReportFile)));
+
+% JUnit-format test results (pass/fail/duration per test), for Codecov
+% Test Analytics and the CI artifact (#57).
+junitReportFile = fullfile(repoRoot, 'junit.xml');
+runner.addPlugin(XMLPlugin.producingJUnitFormat(junitReportFile));
 
 results = runner.run(suite);
 
@@ -101,6 +118,7 @@ nPassed = sum([results.Passed]);
 nCases  = numel(results);
 fprintf('[TEST] %d/%d cases passed.\n', nPassed, nCases);
 fprintf('[TEST] Code coverage report written to %s.\n', coverageReportFile);
+fprintf('[TEST] JUnit test report written to %s.\n', junitReportFile);
 
 if nPassed == nCases
     fprintf('EOF:SUCCESS\n');

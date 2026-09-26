@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIFTED - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Select the features that best explain algorithm performance">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
+<ul>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details open><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a class="current" aria-current="page" href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul></details></li>
+<li><details><summary>Utilities</summary><ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> <a href="FunctionList.html">Pipeline Stages</a> <span class="sep">›</span> <span>SIFTED</span></nav>
+<div class="page-head function">
+<h1>SIFTED</h1>
+<p class="purpose">Select the features that best explain algorithm performance</p>
+</div>
+<section class="refsect" id="syntax"><h2>Syntax</h2><div class="syntax-block">
+<div class="syntax-line"><a href="#desc-1"><code>[X,out] = SIFTED(X,Y,Ybin,featlabels,opts)</code></a></div>
+</div></section>
+<section class="refsect" id="description"><h2>Description</h2><p class="syntax-desc" id="desc-1"><code>[X,out] = SIFTED(X,Y,Ybin,featlabels,opts)</code> returns the columns of <code>X</code> that best explain algorithm performance, and the indices of those columns in <code>out.selvars</code>. Selection has two steps:</p>
+<ol>
+<li><strong>Correlation filter.</strong> For every algorithm, keep the feature most correlated with its performance. Also keep every feature whose absolute Pearson correlation with the performance of at least one algorithm is at least <a class="code-link" href="OptionsReference.html#opts-sifted-rho"><code>opts.rho</code></a> and significant at level <a class="code-link" href="OptionsReference.html#opts-sifted-pval"><code>opts.pval</code></a>.</li>
+<li><strong>Clustering and genetic search.</strong> Group the remaining features into <a class="code-link" href="OptionsReference.html#opts-sifted-k"><code>opts.K</code></a> clusters by correlation distance (k-means). A genetic algorithm then picks one feature per cluster, scoring each candidate set by how well a <em>k</em>-nearest-neighbour classifier predicts <code>Ybin</code> in a <a class="code-link" href="PILOT.html"><code>PILOT</code></a> projection of those features.</li>
+</ol>
+<p>Step 2 is skipped when three or fewer features remain, or when no more than <a class="code-link" href="OptionsReference.html#opts-sifted-k"><code>opts.K</code></a> remain.</p></section>
+<section class="refsect" id="examples"><h2>Examples</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="example">Expand all</button></p><details class="example" id="example-select-features-from-the-reference-data" open><summary>Select features from the reference data</summary><div class="example-body"><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>rootdir = <span class="str">'test/data/example/'</span>;
+<span class="kw">if</span> ~isfolder(rootdir), mkdir(rootdir); <span class="kw">end</span>
+copyfile(<span class="str">'test/data/metadata.csv'</span>, rootdir);
+opts.perf = struct(<span class="str">'MaxPerf'</span>, <span class="kw">false</span>, <span class="str">'AbsPerf'</span>, <span class="kw">true</span>, <span class="str">'epsilon'</span>, <span class="num">0.20</span>);
+obj = InstanceSpace(rootdir, opts);
+obj = obj.build(<span class="str">'stages'</span>, {<span class="str">'prelim'</span>});
+
+d = obj.model.data;
+siftedOpts = obj.opts.sifted;
+siftedOpts.K = <span class="num">5</span>;
+[Xs, out] = SIFTED(d.X, d.Y, d.Ybin, d.featlabels, siftedOpts);
+d.featlabels(out.selvars)</code></pre></div></div></details>
+<details class="example" id="example-check-the-choice-of-k"><summary>Check the choice of K</summary><div class="example-body"><p><code>out.eva</code> holds the silhouette value for each number of clusters. When the value for <a class="code-link" href="OptionsReference.html#opts-sifted-k"><code>opts.K</code></a> is poor, SIFTED also suggests a better <code>K</code>.</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>plot(out.eva.InspectedK, out.eva.CriterionValues, <span class="str">'-o'</span>)
+xlabel(<span class="str">'K'</span>), ylabel(<span class="str">'Mean silhouette'</span>)
+<span class="kw">if</span> isfield(out, <span class="str">'Ksuggested'</span>), disp(out.Ksuggested), <span class="kw">end</span></code></pre></div></div></details></section>
+<section class="refsect" id="input-arguments"><h2>Input Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="arg-x"><summary><code>X</code> <span class="arg-desc">— Feature matrix</span></summary><div class="arg-body"><p class="arg-type">numeric matrix</p>
+<p>Preprocessed features, one row per instance.</p></div></details>
+<details class="arg" id="arg-y"><summary><code>Y</code> <span class="arg-desc">— Performance matrix</span></summary><div class="arg-body"><p class="arg-type">numeric matrix</p>
+<p>Preprocessed performance, one row per instance.</p></div></details>
+<details class="arg" id="arg-ybin"><summary><code>Ybin</code> <span class="arg-desc">— Good-performance labels</span></summary><div class="arg-body"><p class="arg-type">logical matrix</p>
+<p>From <a class="code-link" href="PRELIM.html"><code>PRELIM</code></a>. Used by the genetic search's fitness function.</p></div></details>
+<details class="arg" id="arg-featlabels"><summary><code>featlabels</code> <span class="arg-desc">— Feature names</span></summary><div class="arg-body"><p class="arg-type">cell array of character vectors</p></div></details>
+<details class="arg" id="arg-opts"><summary><code>opts</code> <span class="arg-desc">— Selection options</span></summary><div class="arg-body"><p class="arg-type">structure</p>
+<p>Normally <code>obj.opts.sifted</code>.</p><details class="arg" id="arg-opts-rho"><summary><code>opts.rho</code> <span class="arg-desc">— Minimum correlation</span></summary><div class="arg-body"><p class="arg-type"><code>0.10</code> (default) | scalar in [0, 1]</p></div></details>
+<details class="arg" id="arg-opts-pval"><summary><code>opts.pval</code> <span class="arg-desc">— Significance level</span></summary><div class="arg-body"><p class="arg-type"><code>0.05</code> (default) | scalar in (0, 1)</p></div></details>
+<details class="arg" id="arg-opts-k"><summary><code>opts.K</code> <span class="arg-desc">— Number of clusters</span></summary><div class="arg-body"><p class="arg-type"><code>10</code> (default) | positive integer</p>
+<p>Number of features SIFTED selects. When no more than <code>K</code> features pass the correlation filter, all of them are kept.</p></div></details>
+<details class="arg" id="arg-opts-maxiter"><summary><code>opts.MaxIter</code> <span class="arg-desc">— k-means iterations</span></summary><div class="arg-body"><p class="arg-type"><code>1000</code> (default) | positive integer</p></div></details>
+<details class="arg" id="arg-opts-replicates"><summary><code>opts.Replicates</code> <span class="arg-desc">— k-means replicates</span></summary><div class="arg-body"><p class="arg-type"><code>100</code> (default) | positive integer</p></div></details>
+<details class="arg" id="arg-opts-seed"><summary><code>opts.seed</code> <span class="arg-desc">— Random seed</span></summary><div class="arg-body"><p class="arg-type"><a class="code-link" href="OptionsReference.html#opts-general-seed"><code>opts.general.seed</code></a> (default) | integer</p>
+<p>Seeds k-means, the cross-validation partition, and the genetic algorithm.</p></div></details>
+<details class="arg" id="arg-opts-dims"><summary><code>opts.dims</code> <span class="arg-desc">— Projection dimension for the fitness function</span></summary><div class="arg-body"><p class="arg-type"><code>2</code> (default) | <code>3</code></p>
+<p><a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> sets this from <a class="code-link" href="OptionsReference.html#opts-pilot-dims"><code>opts.pilot.dims</code></a>, so features are chosen for the same dimension as the final projection.</p></div></details></div></details></section>
+<section class="refsect" id="output-arguments"><h2>Output Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="out-x"><summary><code>X</code> <span class="arg-desc">— Selected features</span></summary><div class="arg-body"><p class="arg-type">numeric matrix</p>
+<p>The columns <code>out.selvars</code> of the input <code>X</code>.</p></div></details>
+<details class="arg" id="out-out"><summary><code>out</code> <span class="arg-desc">— Selection details</span></summary><div class="arg-body"><p class="arg-type">structure</p><details class="arg" id="out-out-selvars"><summary><code>out.selvars</code> <span class="arg-desc">— Selected feature indices</span></summary><div class="arg-body"><p>Indices into the columns of the input <code>X</code>.</p></div></details>
+<details class="arg" id="out-out-rho"><summary><code>out.rho</code>, <code>out.p</code> <span class="arg-desc">— Correlations</span></summary><div class="arg-body"><p>Correlation of each feature with each algorithm's performance, and the p-values.</p></div></details>
+<details class="arg" id="out-out-eva"><summary><code>out.eva</code> <span class="arg-desc">— Cluster evaluation</span></summary><div class="arg-body"><p><code>evalclusters</code> result with the silhouette value for each number of clusters.</p></div></details>
+<details class="arg" id="out-out-clust"><summary><code>out.clust</code> <span class="arg-desc">— Cluster membership</span></summary><div class="arg-body"><p><code>nfeats</code>-by-<code>K</code> logical matrix.</p></div></details>
+<details class="arg" id="out-out-ksuggested"><summary><code>out.Ksuggested</code> <span class="arg-desc">— Suggested number of clusters</span></summary><div class="arg-body"><p>Present only when the silhouette value for <a class="code-link" href="OptionsReference.html#opts-sifted-k"><code>opts.K</code></a> is below 0.5.</p></div></details></div></details></section>
+<section class="refsect" id="tips"><h2>Tips</h2><ul>
+<li><a class="code-link" href="OptionsReference.html#opts-sifted-flag"><code>opts.sifted.flag = false</code></a> skips SIFTED in <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> and keeps every feature.</li>
+<li>SIFTED is the slowest stage. Set <a class="code-link" href="OptionsReference.html#opts-general-parallel"><code>opts.general.parallel = true</code></a> to evaluate the genetic algorithm's population in parallel.</li>
+</ul></section>
+<section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="v0-9-1-seed-control">v0.9.1 — Seed control</h3><p>k-means, the partition and the genetic algorithm use <a class="code-link" href="OptionsReference.html#opts-sifted-seed"><code>opts.seed</code></a>.</p></div>
+<div class="history"><h3 id="v0-9-0-renamed-from-sifted2">v0.9.0 — Renamed from SIFTED2</h3><p><code>SIFTED2</code> remains as a deprecated alias.</p></div></section>
+<section class="refsect" id="references"><h2>References</h2><ul>
+<li>Smith-Miles, K. &amp; Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. <em>ACM Computing Surveys</em>, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
+</ul></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="PRELIM.html"><code>PRELIM</code></a> | <a class="code-link" href="PILOT.html"><code>PILOT</code></a> | <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#syntax">Syntax</a></li><li><a href="#description">Description</a></li><li><a href="#examples">Examples</a></li><li><a href="#input-arguments">Input Arguments</a></li><li><a href="#output-arguments">Output Arguments</a></li><li><a href="#tips">Tips</a></li><li><a href="#version-history">Version History</a></li><li><a href="#references">References</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
+</div>
+</body>
+</html>

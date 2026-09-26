@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stage-by-Stage Walkthrough - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Run each stage of the pipeline and inspect its output">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
+<ul>
+<li><details open><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a class="current" aria-current="page" href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul></details></li>
+<li><details><summary>Utilities</summary><ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> <a href="GettingStarted.html">Getting Started</a> <span class="sep">›</span> <span>Stage-by-Stage Walkthrough</span></nav>
+<div class="page-head">
+<h1>Stage-by-Stage Walkthrough</h1>
+<p class="purpose">Run each stage of the pipeline and inspect its output</p>
+</div>
+<p>This walkthrough builds the instance space one stage at a time so you can see what each stage produces. It follows <code>liveDemoIS.m</code> in the repository root, which you can open in the Live Editor and run section by section. It uses the same reference data and performance settings as <a href="GettingStarted.html">Getting Started</a>.</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>rootdir = <span class="str">'test/data/liveDemo/'</span>;
+<span class="kw">if</span> ~isfolder(rootdir), mkdir(rootdir); <span class="kw">end</span>
+copyfile(<span class="str">'test/data/metadata.csv'</span>, rootdir);
+copyfile(<span class="str">'test/data/metadata_test.csv'</span>, rootdir);
+
+opts.perf = struct(<span class="str">'MaxPerf'</span>, <span class="kw">false</span>, <span class="str">'AbsPerf'</span>, <span class="kw">true</span>, <span class="str">'epsilon'</span>, <span class="num">0.20</span>);
+obj = InstanceSpace(rootdir, opts);
+obj.completedStages          <span class="com">% empty: nothing has run yet</span></code></pre></div>
+<section class="refsect" id="prelim-label-and-normalise"><h2>PRELIM: Label and Normalise</h2><p><a class="code-link" href="PRELIM.html"><code>PRELIM</code></a> decides which algorithms are good on each instance, bounds outlying feature values, and normalises features and performance.</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>obj = obj.build(<span class="str">'stages'</span>, {<span class="str">'prelim'</span>});
+fprintf(<span class="str">'%d instances, %d features, %d algorithms\n'</span>, ...
+    size(obj.model.data.X,<span class="num">1</span>), size(obj.model.data.X,<span class="num">2</span>), size(obj.model.data.Y,<span class="num">2</span>));
+fprintf(<span class="str">'Fraction of beta-easy instances: %.2f\n'</span>, mean(obj.model.data.beta));</code></pre></div>
+<p>An instance is <em>beta-easy</em> when more than <a class="code-link" href="OptionsReference.html#opts-perf-betathreshold"><code>opts.perf.betaThreshold</code></a> of the algorithms are good on it.</p></section>
+<section class="refsect" id="sifted-select-features"><h2>SIFTED: Select Features</h2><p><a class="code-link" href="SIFTED.html"><code>SIFTED</code></a> keeps the features that best explain performance: a correlation filter, then a genetic algorithm that picks one feature from each cluster of correlated features.</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>obj = obj.build(<span class="str">'stages'</span>, {<span class="str">'sifted'</span>});
+disp(obj.model.featsel.labels)       <span class="com">% before</span>
+disp(obj.model.data.featlabels)      <span class="com">% after</span></code></pre></div>
+<p>Set <a class="code-link" href="OptionsReference.html#opts-sifted-flag"><code>opts.sifted.flag = false</code></a> to keep every feature.</p></section>
+<section class="refsect" id="pilot-project-to-2d"><h2>PILOT: Project to 2D</h2><p><a class="code-link" href="PILOT.html"><code>PILOT</code></a> finds the linear projection <code>Z = X*A'</code> from which features and performance can best be reconstructed. <code>Z</code> is the instance space.</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>obj = obj.build(<span class="str">'stages'</span>, {<span class="str">'pilot'</span>});
+figure
+scatter(obj.model.pilot.Z(:,<span class="num">1</span>), obj.model.pilot.Z(:,<span class="num">2</span>), <span class="num">20</span>, obj.model.data.numGoodAlgos, <span class="str">'filled'</span>)
+xlabel(<span class="str">'z_1'</span>), ylabel(<span class="str">'z_2'</span>), colorbar
+title(<span class="str">'Number of good algorithms per instance'</span>)</code></pre></div>
+<p><a class="code-link" href="OptionsReference.html#opts-pilot-dims"><code>opts.pilot.dims = 3</code></a> gives a 3D space; <a class="code-link" href="OptionsReference.html#opts-pilot-method"><code>opts.pilot.method = 'pls'</code></a> uses Partial Least Squares.</p></section>
+<section class="refsect" id="cloister-estimate-the-boundary"><h2>CLOISTER: Estimate the Boundary</h2><p><a class="code-link" href="CLOISTER.html"><code>CLOISTER</code></a> estimates where instances could exist, given the ranges and correlations of the features. Empty areas inside the boundary are candidates for new test instances.</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>obj = obj.build(<span class="str">'stages'</span>, {<span class="str">'cloister'</span>});
+figure, obj.plot(<span class="str">'boundary'</span>)</code></pre></div></section>
+<section class="refsect" id="pythia-predict-good-algorithms"><h2>PYTHIA: Predict Good Algorithms</h2><p><a class="code-link" href="PYTHIA.html"><code>PYTHIA</code></a> trains one classifier per algorithm that predicts, from an instance's position, whether the algorithm is good there, and combines them into an algorithm selector.</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>obj = obj.build(<span class="str">'stages'</span>, {<span class="str">'pythia'</span>});
+disp(obj.model.pythia.summary)
+figure
+scatter(obj.model.pilot.Z(:,<span class="num">1</span>), obj.model.pilot.Z(:,<span class="num">2</span>), <span class="num">20</span>, obj.model.pythia.selection0, <span class="str">'filled'</span>)
+colorbar, title(<span class="str">'Selected algorithm'</span>)</code></pre></div></section>
+<section class="refsect" id="trace-find-the-footprints"><h2>TRACE: Find the Footprints</h2><p><a class="code-link" href="TRACE.html"><code>TRACE</code></a> finds the region where each algorithm is good (its footprint) and where it is best, and measures their size, density and purity.</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>obj = obj.build(<span class="str">'stages'</span>, {<span class="str">'trace'</span>});
+disp(obj.model.trace.summary)
+figure, obj.plot(<span class="str">'footprint'</span>, <span class="num">6</span>)</code></pre></div></section>
+<section class="refsect" id="save-and-explore"><h2>Save and Explore</h2><p>Once every stage has run, <code>build</code> has already saved <code>model.mat</code> and written the output files. <code>explore</code> evaluates new instances with the trained model:</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>obj = obj.explore(rootdir);
+test = obj.getResults(<span class="num">1</span>);
+disp(test.pythia.summary)
+disp(test.trace.summary)</code></pre></div>
+<p>To change a setting later, edit <code>obj.opts</code> and re-run from the stage it affects, for example <code>obj = obj.build('stages', {'pythia','trace'})</code> after changing <a class="code-link" href="OptionsReference.html#opts-pythia-classifier"><code>opts.pythia.classifier</code></a>. Re-running a stage discards the results of later stages.</p></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> | <a href="GettingStarted.html">Getting Started</a> | <a href="OptionsReference.html">Options Reference</a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#prelim-label-and-normalise">PRELIM: Label and Normalise</a></li><li><a href="#sifted-select-features">SIFTED: Select Features</a></li><li><a href="#pilot-project-to-2d">PILOT: Project to 2D</a></li><li><a href="#cloister-estimate-the-boundary">CLOISTER: Estimate the Boundary</a></li><li><a href="#pythia-predict-good-algorithms">PYTHIA: Predict Good Algorithms</a></li><li><a href="#trace-find-the-footprints">TRACE: Find the Footprints</a></li><li><a href="#save-and-explore">Save and Explore</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
+</div>
+</body>
+</html>

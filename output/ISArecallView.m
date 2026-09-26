@@ -5,17 +5,6 @@ function ISArecallView(fig, groupIdx)
 %   ISArecallView(fig, groupIdx)
 %   ISArecallView(fig)          % use the default/global viewpoint
 %
-%   fig      - handle to a figure produced by scriptpng.m, or a .fig file
-%              it wrote reopened via openfig/uiopen -- the viewpoint is
-%              stored in the figure's UserData (scriptpng.m sets
-%              fig.UserData.isaViewpoint), so it survives a save/load
-%              round-trip through a .fig file even in a different MATLAB
-%              session.
-%   groupIdx - algorithm column index (as used in opts.pilot.viewGroups)
-%              whose stored viewpoint to apply. Omit or pass [] for the
-%              default/global viewpoint (the one feature/portfolio-level
-%              plots use).
-%
 %   Useful after manually rotating a 3D footprint .fig while exploring it
 %   interactively, to return to the optimised viewpoint without having to
 %   recompute or look it up by hand.
@@ -23,6 +12,12 @@ function ISArecallView(fig, groupIdx)
 %   Example:
 %     fig = openfig('footprint_KNN.fig');
 %     ISArecallView(fig, 3);   % back to the stored view for algorithm 3
+%
+%   Inputs
+%     fig - handle to a figure (produced by scriptpng.m or a .fig file) containing viewpoint data in UserData.
+%     groupIdx - algorithm column index (from opts.pilot.viewGroups) to apply a specific viewpoint, or [] for the default/global viewpoint.
+%   Outputs
+%     None -- rotates the camera to the stored viewpoint as a side effect.
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit
@@ -81,7 +76,10 @@ ax = findall(fig, 'Type', 'axes');
 % Tag casing for these internal legend/colorbar axes isn't a documented,
 % version-stable guarantee; compare case-insensitively rather than risk
 % a mismatch letting one slip through on some MATLAB version/configuration.
-tags = lower(arrayfun(@(a) string(get(a, 'Tag')), ax));
+% string(...) around the arrayfun result, not inside it: for a figure with
+% no axes, arrayfun over an empty handle array returns an empty double,
+% which ismember rejects before the noAxes check below can report it.
+tags = lower(string(arrayfun(@(a) get(a, 'Tag'), ax, 'UniformOutput', false)));
 ax = ax(~ismember(tags, ["legend", "colorbar"]));
 if isempty(ax)
     error('ISA:ISArecallView:noAxes', 'fig has no plot axes to apply the view to.');

@@ -3,6 +3,13 @@ function data = ISAsubsetData(data, subsetIndex, featIdx)
 %   data = ISAsubsetData(data, subsetIndex) subsets all row-indexed fields.
 %   data = ISAsubsetData(data, subsetIndex, featIdx) also selects feature
 %   columns featIdx from data.X (used in the post-SIFTED density path).
+%
+%   Inputs
+%     data - struct containing fields X, Y, Xraw, Yraw, Ybin, beta, numGoodAlgos, Ybest, P, instlabels, and optionally S.
+%     subsetIndex - index or logical vector for row selection.
+%     featIdx - optional column indices for data.X and data.featlabels.
+%   Outputs
+%     data - the subsetted struct with corresponding fields and columns updated.
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit

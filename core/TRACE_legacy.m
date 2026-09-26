@@ -10,6 +10,17 @@ function out = TRACE_legacy(Z, Ybin, P, beta, algolabels, opts, useContra)
 %
 %   Inputs / outputs mirror the old TRACE.m interface. Footprint structs use
 %   .area (not .measure); TRACE.m normalises naming after calling this function.
+%
+%   Inputs
+%     Z - (ninst x ndim) projected instance coordinates.
+%     Ybin - (ninst x nalgos) true binary performance labels.
+%     P - (ninst x 1) best-algorithm index per instance.
+%     beta - (ninst x 1) logical, indicates if an instance is easy.
+%     algolabels - (1 x nalgos) cell array of algorithm name strings.
+%     opts - struct, options structure.
+%     useContra - logical, controls contradiction removal between best-algorithm footprints (defaults to true if omitted).
+%   Outputs
+%     out - struct containing fields space (convex-hull space footprint), good (cell array of good-performance footprints), best (cell array of best-algorithm footprints), and hard (beta-hard footprint). Footprint areas are stored in .area, not .measure; TRACE.m normalises this naming difference after calling TRACE_legacy, so callers of TRACE.m never see the discrepancy.
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit

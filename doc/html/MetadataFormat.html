@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Metadata File Format - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Prepare metadata.csv for your own problem domain">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
+<ul>
+<li><details open><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a class="current" aria-current="page" href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul></details></li>
+<li><details><summary>Utilities</summary><ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> <a href="GettingStarted.html">Getting Started</a> <span class="sep">›</span> <span>Metadata File Format</span></nav>
+<div class="page-head">
+<h1>Metadata File Format</h1>
+<p class="purpose">Prepare metadata.csv for your own problem domain</p>
+</div>
+<p>An instance space is built from one CSV file, <code>metadata.csv</code>, with one row per problem instance. Instances to evaluate later with <code>explore</code> go in <code>metadata_test.csv</code>, in the same format.</p>
+<section class="refsect" id="columns"><h2>Columns</h2><p>Columns are recognised by their header. The order of the column groups does not matter, and headers are case insensitive.</p>
+<table class="doc-table">
+<thead>
+<tr>
+<th>Header</th>
+<th>Required</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Instances</code></td>
+<td>yes</td>
+<td>Instance name. Text or numbers.</td>
+</tr>
+<tr>
+<td><code>Source</code></td>
+<td>no</td>
+<td>Where the instance comes from, for example the benchmark suite. Drawn by <code>obj.plot('sources')</code>.</td>
+</tr>
+<tr>
+<td><code>feature_&lt;name&gt;</code></td>
+<td>at least two</td>
+<td>Numeric feature value.</td>
+</tr>
+<tr>
+<td><code>algo_&lt;name&gt;</code></td>
+<td>at least one</td>
+<td>Numeric performance of the algorithm on the instance.</td>
+</tr>
+</tbody>
+</table>
+<p>Other columns are ignored. Names after the prefix must be valid MATLAB identifiers: use underscores instead of spaces, for example <code>feature_edge_density</code> or <code>algo_simulated_annealing</code>.</p></section>
+<section class="refsect" id="example"><h2>Example</h2><p>The first rows of the reference data (<code>test/data/metadata.csv</code>), shortened to three features and three algorithms:</p>
+<div class="code"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>Instances,feature_Max_Normalized_Entropy_attributes,feature_ErrorRate_Decision_Node,feature_Training_Error_Linear_Classifier_L2,algo_NB,algo_KNN,algo_RandF
+abalone,0.332548382,0.386458668,0.260234614,0.280095763,0.256969153,0.234432252
+abalone_ori,0.332548382,0.210409617,0.035714286,0.164181841,0.167112964,0.895471859</code></pre></div></section>
+<section class="refsect" id="missing-values"><h2>Missing Values</h2><p>Leave a cell empty or write <code>NaN</code> for a missing value. A feature with at least <a class="code-link" href="OptionsReference.html#opts-prelim-nanthreshold"><code>opts.prelim.nanThreshold</code></a> missing values is removed. A missing performance value never counts as good.</p>
+<p>Avoid <code>NA</code>, spreadsheet error codes such as <code>#DIV/0!</code>, and empty rows: they make MATLAB read the whole column as text, which then fails later in the pipeline.</p></section>
+<section class="refsect" id="test-instances"><h2>Test Instances</h2><p><code>metadata_test.csv</code> must contain the same <code>feature_</code> columns as <code>metadata.csv</code>, in the same order. It may contain:</p>
+<ul>
+<li>a subset of the trained algorithms — the missing ones are not scored;</li>
+<li>algorithms that were not trained — they are appended to the results, without a classifier.</li>
+</ul></section>
+<section class="refsect" id="choosing-features"><h2>Choosing Features</h2><p>The features determine what the instance space can reveal. Good features:</p>
+<ul>
+<li>are cheap to compute compared with running the algorithms;</li>
+<li>capture properties that plausibly affect how hard an instance is for each algorithm;</li>
+<li>vary across the instances, with few repeated values.</li>
+</ul>
+<p>Start with more candidate features than you need; <a class="code-link" href="SIFTED.html"><code>SIFTED</code></a> removes the ones that do not explain performance. See Smith-Miles &amp; Muñoz (2023) for guidance on feature design.</p></section>
+<section class="refsect" id="references"><h2>References</h2><ul>
+<li>Smith-Miles, K. &amp; Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. <em>ACM Computing Surveys</em>, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
+</ul></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="INIT.html"><code>INIT</code></a> | <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> | <a href="OptionsReference.html">Options Reference</a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#columns">Columns</a></li><li><a href="#example">Example</a></li><li><a href="#missing-values">Missing Values</a></li><li><a href="#test-instances">Test Instances</a></li><li><a href="#choosing-features">Choosing Features</a></li><li><a href="#references">References</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
+</div>
+</body>
+</html>

@@ -1,0 +1,68 @@
+name: Documentation
+
+# doc/html is generated from doc/src by doc/generate.py and committed, so
+# that the MATLAB Help browser can show it from a plain clone. This
+# workflow checks that the committed pages match their sources and have
+# no broken links, and publishes doc/html to GitHub Pages from master.
+#
+# One-time repository setting: Settings > Pages > Build and deployment >
+# Source = "GitHub Actions".
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'doc/**'
+      - 'Contents.m'
+      - '.github/workflows/docs-pages.yml'
+      - '.github/scripts/check_doc_links.py'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'doc/**'
+      - 'Contents.m'
+      - '.github/workflows/docs-pages.yml'
+      - '.github/scripts/check_doc_links.py'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r doc/requirements.txt
+      - name: Pages match their sources
+        run: python doc/generate.py --check
+      - name: No broken links or anchors
+        run: python .github/scripts/check_doc_links.py doc/html
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        with:
+          path: doc/html
+
+  deploy:
+    needs: check
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PILOT - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Project instance features onto a 2D or 3D instance space">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
+<ul>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details open><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a class="current" aria-current="page" href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul></details></li>
+<li><details><summary>Utilities</summary><ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> <a href="FunctionList.html">Pipeline Stages</a> <span class="sep">›</span> <span>PILOT</span></nav>
+<div class="page-head function">
+<h1>PILOT</h1>
+<p class="purpose">Project instance features onto a 2D or 3D instance space</p>
+</div>
+<section class="refsect" id="syntax"><h2>Syntax</h2><div class="syntax-block">
+<div class="syntax-line"><a href="#desc-1"><code>out = PILOT(X,Y,featlabels,opts)</code></a></div>
+</div></section>
+<section class="refsect" id="description"><h2>Description</h2><p class="syntax-desc" id="desc-1"><code>out = PILOT(X,Y,featlabels,opts)</code> finds a linear projection <code>Z = X*A'</code> of the feature matrix <code>X</code> into <a class="code-link" href="OptionsReference.html#opts-pilot-dims"><code>opts.dims</code></a> dimensions, chosen so that both the features and the algorithm performance <code>Y</code> can be reconstructed from <code>Z</code> as well as possible (Prediction-based Linear Dimensionality Reduction). Instances with similar features and similar performance land close together, so trends in performance become visible as directions in the space.</p>
+<p>PILOT has three solvers, selected by <a class="code-link" href="OptionsReference.html#opts-pilot-method"><code>opts.method</code></a> and <a class="code-link" href="OptionsReference.html#opts-pilot-analytic"><code>opts.analytic</code></a>:</p>
+<ul>
+<li><strong>Numerical</strong> (default): BFGS minimisation of the reconstruction error of <code>X</code> and <code>Y</code> from <code>Z</code> (see Algorithms), restarted <a class="code-link" href="OptionsReference.html#opts-pilot-ntries"><code>opts.ntries</code></a> times. The trial whose projection best preserves the pairwise distances of the original data is kept.</li>
+<li><strong>Analytic</strong>: the closed-form eigenvector solution. Fast and deterministic. If <code>X</code> is rank deficient, PILOT falls back to the numerical solver.</li>
+<li><strong>PLS</strong>: Partial Least Squares regression of <code>Y</code> on <code>X</code> with <code>plsregress</code>. <a class="code-link" href="OptionsReference.html#opts-pilot-alpha"><code>opts.alpha</code></a> does not apply.</li>
+</ul></section>
+<section class="refsect" id="examples"><h2>Examples</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="example">Expand all</button></p><details class="example" id="example-project-the-reference-data-in-2d" open><summary>Project the reference data in 2D</summary><div class="example-body"><p>Prepare the features with the earlier pipeline stages, then call PILOT directly.</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>rootdir = <span class="str">'test/data/example/'</span>;
+<span class="kw">if</span> ~isfolder(rootdir), mkdir(rootdir); <span class="kw">end</span>
+copyfile(<span class="str">'test/data/metadata.csv'</span>, rootdir);
+opts.perf = struct(<span class="str">'MaxPerf'</span>, <span class="kw">false</span>, <span class="str">'AbsPerf'</span>, <span class="kw">true</span>, <span class="str">'epsilon'</span>, <span class="num">0.20</span>);
+obj = InstanceSpace(rootdir, opts);
+obj = obj.build(<span class="str">'stages'</span>, {<span class="str">'prelim'</span>, <span class="str">'sifted'</span>});
+
+d = obj.model.data;
+out = PILOT(d.X, d.Y, d.featlabels, obj.opts.pilot);
+scatter(out.Z(:,<span class="num">1</span>), out.Z(:,<span class="num">2</span>), <span class="num">12</span>, <span class="str">'filled'</span>)
+xlabel(<span class="str">'z_1'</span>), ylabel(<span class="str">'z_2'</span>)</code></pre></div></div></details>
+<details class="example" id="example-compare-the-solvers"><summary>Compare the solvers</summary><div class="example-body"><p>The analytic solver is deterministic and much faster than BFGS. Compare how well each reconstructs the data.</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>pilotOpts = obj.opts.pilot;
+pilotOpts.analytic = <span class="kw">true</span>;
+outA = PILOT(d.X, d.Y, d.featlabels, pilotOpts);
+
+pilotOpts.analytic = <span class="kw">false</span>;
+pilotOpts.method = <span class="str">'pls'</span>;
+outP = PILOT(d.X, d.Y, d.featlabels, pilotOpts);
+
+fprintf(<span class="str">'Analytic error: %.3f   PLS error: %.3f\n'</span>, outA.error, outP.error)</code></pre></div></div></details>
+<details class="example" id="example-build-a-3d-instance-space"><summary>Build a 3D instance space</summary><div class="example-body"><p>Set <a class="code-link" href="OptionsReference.html#opts-pilot-dims"><code>opts.pilot.dims</code></a> to 3 before building. <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> then also calls <a class="code-link" href="PILOTviewpoint.html"><code>PILOTviewpoint</code></a> to find the best 2D viewing angles.</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>obj.opts.pilot.dims = <span class="num">3</span>;
+obj = obj.build(<span class="str">'stages'</span>, {<span class="str">'pilot'</span>});
+Z = obj.model.pilot.Z;
+scatter3(Z(:,<span class="num">1</span>), Z(:,<span class="num">2</span>), Z(:,<span class="num">3</span>), <span class="num">12</span>, <span class="str">'filled'</span>)</code></pre></div></div></details></section>
+<section class="refsect" id="input-arguments"><h2>Input Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="arg-x"><summary><code>X</code> <span class="arg-desc">— Feature matrix</span></summary><div class="arg-body"><p class="arg-type">numeric matrix</p>
+<p>Instance features, one row per instance and one column per feature, normally the output of <a class="code-link" href="PRELIM.html"><code>PRELIM</code></a> and <a class="code-link" href="SIFTED.html"><code>SIFTED</code></a>.</p></div></details>
+<details class="arg" id="arg-y"><summary><code>Y</code> <span class="arg-desc">— Performance matrix</span></summary><div class="arg-body"><p class="arg-type">numeric matrix</p>
+<p>Algorithm performance, one row per instance and one column per algorithm. Must have the same number of rows as <code>X</code>.</p></div></details>
+<details class="arg" id="arg-featlabels"><summary><code>featlabels</code> <span class="arg-desc">— Feature names</span></summary><div class="arg-body"><p class="arg-type">cell array of character vectors</p>
+<p>One name per column of <code>X</code>. Used for the row labels of <code>out.summary</code>.</p></div></details>
+<details class="arg" id="arg-opts"><summary><code>opts</code> <span class="arg-desc">— Projection options</span></summary><div class="arg-body"><p class="arg-type">structure</p>
+<p>Normally <code>obj.opts.pilot</code>. Missing fields take the defaults set by <a class="code-link" href="ISAdefaults.html"><code>ISAdefaults</code></a>.</p><details class="arg" id="arg-opts-dims"><summary><code>opts.dims</code> <span class="arg-desc">— Number of dimensions</span></summary><div class="arg-body"><p class="arg-type"><code>2</code> (default) | <code>3</code></p>
+<p>Dimension of the instance space.</p></div></details>
+<details class="arg" id="arg-opts-method"><summary><code>opts.method</code> <span class="arg-desc">— Projection method</span></summary><div class="arg-body"><p class="arg-type"><code>'standard'</code> (default) | <code>'pls'</code></p>
+<p><code>'standard'</code> uses the analytic or numerical PILOT solution. <code>'pls'</code> uses Partial Least Squares.</p></div></details>
+<details class="arg" id="arg-opts-analytic"><summary><code>opts.analytic</code> <span class="arg-desc">— Use the closed-form solution</span></summary><div class="arg-body"><p class="arg-type"><code>false</code> (default) | <code>true</code></p>
+<p>Only used when <a class="code-link" href="OptionsReference.html#opts-pilot-method"><code>opts.method</code></a> is <code>'standard'</code>. Falls back to the numerical solver when <code>X</code> is rank deficient.</p></div></details>
+<details class="arg" id="arg-opts-ntries"><summary><code>opts.ntries</code> <span class="arg-desc">— Number of BFGS restarts</span></summary><div class="arg-body"><p class="arg-type"><code>10</code> (default) | positive integer</p>
+<p>More restarts reduce the chance of a poor local minimum and take proportionally longer.</p></div></details>
+<details class="arg" id="arg-opts-alpha"><summary><code>opts.alpha</code> <span class="arg-desc">— Weight of the performance term</span></summary><div class="arg-body"><p class="arg-type"><code>1.0</code> (default) | positive scalar</p>
+<p>Weight of <code>||Y - C*Z||^2</code> relative to the feature term. Larger values favour a projection that explains performance over one that explains features. Not used by <code>'pls'</code>.</p></div></details>
+<details class="arg" id="arg-opts-seed"><summary><code>opts.seed</code> <span class="arg-desc">— Random seed</span></summary><div class="arg-body"><p class="arg-type"><a class="code-link" href="OptionsReference.html#opts-general-seed"><code>opts.general.seed</code></a> (default) | integer</p>
+<p>Seeds the BFGS starting points, so repeated runs give the same projection.</p></div></details>
+<details class="arg" id="arg-opts-verbose"><summary><code>opts.verbose</code> <span class="arg-desc">— Report progress</span></summary><div class="arg-body"><p class="arg-type"><a class="code-link" href="OptionsReference.html#opts-general-verbose"><code>opts.general.verbose</code></a> (default) | logical</p></div></details>
+<details class="arg" id="arg-opts-x0"><summary><code>opts.X0</code> <span class="arg-desc">— Starting points</span></summary><div class="arg-body"><p class="arg-type">numeric matrix</p>
+<p>Optional user-supplied BFGS starting points, one column per trial.</p></div></details>
+<details class="arg" id="arg-opts-precalcalpha"><summary><code>opts.precalcAlpha</code> <span class="arg-desc">— Precomputed solution</span></summary><div class="arg-body"><p class="arg-type">numeric vector</p>
+<p>Optional full BFGS solution vector from an earlier run. Skips the optimisation.</p></div></details></div></details></section>
+<section class="refsect" id="output-arguments"><h2>Output Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="out-out"><summary><code>out</code> <span class="arg-desc">— Projection</span></summary><div class="arg-body"><p class="arg-type">structure</p><details class="arg" id="out-out-a"><summary><code>out.A</code> <span class="arg-desc">— Projection matrix</span></summary><div class="arg-body"><p><code>dims</code>-by-<code>nfeats</code> matrix. Project new, identically preprocessed instances with <code>Z = Xnew*out.A'</code>.</p></div></details>
+<details class="arg" id="out-out-z"><summary><code>out.Z</code> <span class="arg-desc">— Instance coordinates</span></summary><div class="arg-body"><p><code>ninst</code>-by-<code>dims</code> coordinates of each instance in the instance space.</p></div></details>
+<details class="arg" id="out-out-b"><summary><code>out.B</code>, <code>out.C</code> <span class="arg-desc">— Reconstruction matrices</span></summary><div class="arg-body"><p>Reconstruct the features and the performance from <code>Z</code>.</p></div></details>
+<details class="arg" id="out-out-error"><summary><code>out.error</code> <span class="arg-desc">— Reconstruction error</span></summary><div class="arg-body"><p>Sum of squared errors of the reconstruction of <code>[X Y]</code>.</p></div></details>
+<details class="arg" id="out-out-r2"><summary><code>out.R2</code> <span class="arg-desc">— Coefficient of determination</span></summary><div class="arg-body"><p><code>R^2</code> of the reconstruction of each column of <code>[X Y]</code>.</p></div></details>
+<details class="arg" id="out-out-summary"><summary><code>out.summary</code> <span class="arg-desc">— Projection table</span></summary><div class="arg-body"><p>Cell array showing <code>A</code> with the feature labels. Also written to <code>projection_matrix.csv</code> by <a class="code-link" href="scriptcsv.html"><code>scriptcsv</code></a>.</p></div></details>
+<details class="arg" id="out-out-alpha"><summary><code>out.alpha</code>, <code>out.X0</code>, <code>out.eoptim</code>, <code>out.perf</code> <span class="arg-desc">— Trial results</span></summary><div class="arg-body"><p>Numerical solver only: the solution, start point, cost, and distance-preservation score of every trial.</p></div></details></div></details></section>
+<section class="refsect" id="algorithms"><h2>Algorithms</h2><p>For the standard method, PILOT solves</p>
+<div class="code"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>min  ||X - Z*B'||^2 + alpha*||Y - Z*C||^2    subject to  Z = X*A'</code></pre></div>
+<p>where <code>X</code> and <code>Y</code> are the preprocessed feature and performance matrices. The analytic solution takes the leading <code>dims</code> eigenvectors of <code>[X Y]'*[X Y]</code>, with the <code>Y</code> block weighted by <code>sqrt(alpha)</code> (Muñoz et al., 2018). The numerical solution runs BFGS (<code>fminunc</code>) from <a class="code-link" href="OptionsReference.html#opts-pilot-ntries"><code>opts.ntries</code></a> random starts and keeps the trial with the highest correlation between the pairwise distances of the instances before and after projection, so the chosen space also preserves the topology of the data.</p></section>
+<section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="v0-9-0-3d-projections-and-pls">v0.9.0 — 3D projections and PLS</h3><p><a class="code-link" href="OptionsReference.html#opts-pilot-dims"><code>opts.dims = 3</code></a> produces a 3D instance space (ISA3). <a class="code-link" href="OptionsReference.html#opts-pilot-method"><code>opts.method = 'pls'</code></a> adds Partial Least Squares as an alternative projection.</p></div>
+<div class="history"><h3 id="v0-9-1-seed-control">v0.9.1 — Seed control</h3><p>The BFGS starting points use <a class="code-link" href="OptionsReference.html#opts-pilot-seed"><code>opts.seed</code></a>, so a changed <a class="code-link" href="OptionsReference.html#opts-general-seed"><code>opts.general.seed</code></a> changes the projection and the same seed reproduces it.</p></div></section>
+<section class="refsect" id="references"><h2>References</h2><ul>
+<li>Muñoz, M.A., Villanova, L., Baatar, D. &amp; Smith-Miles, K. (2018). Instance spaces for machine learning classification. <em>Machine Learning</em>, 107(1), 109–147. <a href="https://doi.org/10.1007/s10994-017-5629-5">https://doi.org/10.1007/s10994-017-5629-5</a></li>
+<li>Smith-Miles, K. &amp; Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. <em>ACM Computing Surveys</em>, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
+<li>Simpson, C., Muñoz, M.A., Kandanaarachchi, S. &amp; Campello, R.J.G.B. (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis. <em>Machine Learning</em>, 114, 240. <a href="https://doi.org/10.1007/s10994-025-06871-5">https://doi.org/10.1007/s10994-025-06871-5</a></li>
+</ul></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="SIFTED.html"><code>SIFTED</code></a> | <a class="code-link" href="PILOTviewpoint.html"><code>PILOTviewpoint</code></a> | <a class="code-link" href="CLOISTER.html"><code>CLOISTER</code></a> | <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#syntax">Syntax</a></li><li><a href="#description">Description</a></li><li><a href="#examples">Examples</a></li><li><a href="#input-arguments">Input Arguments</a></li><li><a href="#output-arguments">Output Arguments</a></li><li><a href="#algorithms">Algorithms</a></li><li><a href="#version-history">Version History</a></li><li><a href="#references">References</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
+</div>
+</body>
+</html>

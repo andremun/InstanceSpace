@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PYTHIA - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Train classifiers that predict which algorithms perform well">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
+<ul>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details open><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a class="current" aria-current="page" href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul></details></li>
+<li><details><summary>Utilities</summary><ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> <a href="FunctionList.html">Pipeline Stages</a> <span class="sep">›</span> <span>PYTHIA</span></nav>
+<div class="page-head function">
+<h1>PYTHIA</h1>
+<p class="purpose">Train classifiers that predict which algorithms perform well</p>
+</div>
+<section class="refsect" id="syntax"><h2>Syntax</h2><div class="syntax-block">
+<div class="syntax-line"><a href="#desc-1"><code>out = PYTHIA(Z,Y,Ybin,Ybest,algolabels,opts)</code></a></div>
+<div class="syntax-line"><a href="#desc-2"><code>out = PYTHIA(Z,Y,Ybin,Ybest,algolabels,opts,trainedModel)</code></a></div>
+</div></section>
+<section class="refsect" id="description"><h2>Description</h2><p class="syntax-desc" id="desc-1"><code>out = PYTHIA(Z,Y,Ybin,Ybest,algolabels,opts)</code> trains one binary classifier per algorithm that predicts, from an instance's coordinates <code>Z</code>, whether the algorithm is good on it (Performance Yielding Heuristic Identification of Algorithms). Hyperparameters are tuned by <em>k</em>-fold cross-validation. PYTHIA then combines the predictions into an algorithm selector: for each instance it picks the algorithm predicted to be good that has the highest cross-validated precision.</p>
+<p class="syntax-desc" id="desc-2"><code>out = PYTHIA(Z,Y,Ybin,Ybest,algolabels,opts,trainedModel)</code> applies the classifiers of an earlier training call to new instances and reports how accurate they are there. Classifiers are not retrained.</p>
+<p>The classifier type is set by <a class="code-link" href="OptionsReference.html#opts-pythia-classifier"><code>opts.classifier</code></a>; see <a class="code-link" href="ISAgetClassifierFcn.html"><code>ISAgetClassifierFcn</code></a> for the registry and the tuned hyperparameters.</p></section>
+<section class="refsect" id="examples"><h2>Examples</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="example">Expand all</button></p><details class="example" id="example-train-k-nn-classifiers-on-a-2d-instance-space" open><summary>Train k-NN classifiers on a 2D instance space</summary><div class="example-body"><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>rootdir = <span class="str">'test/data/example/'</span>;
+<span class="kw">if</span> ~isfolder(rootdir), mkdir(rootdir); <span class="kw">end</span>
+copyfile(<span class="str">'test/data/metadata.csv'</span>, rootdir);
+opts.perf = struct(<span class="str">'MaxPerf'</span>, <span class="kw">false</span>, <span class="str">'AbsPerf'</span>, <span class="kw">true</span>, <span class="str">'epsilon'</span>, <span class="num">0.20</span>);
+obj = InstanceSpace(rootdir, opts);
+obj = obj.build(<span class="str">'stages'</span>, {<span class="str">'prelim'</span>, <span class="str">'sifted'</span>, <span class="str">'pilot'</span>});
+d = obj.model.data;
+
+out = PYTHIA(obj.model.pilot.Z, d.Yraw, d.Ybin, d.Ybest, d.algolabels, obj.opts.pythia);
+disp(out.summary)</code></pre></div></div></details>
+<details class="example" id="example-use-an-svm-with-bayesian-optimisation"><summary>Use an SVM with Bayesian optimisation</summary><div class="example-body"><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>pythiaOpts = obj.opts.pythia;
+pythiaOpts.classifier = <span class="str">'svm'</span>;
+pythiaOpts.tuning = <span class="str">'bayes'</span>;
+pythiaOpts.nTuningIter = <span class="num">30</span>;
+out = PYTHIA(obj.model.pilot.Z, d.Yraw, d.Ybin, d.Ybest, d.algolabels, pythiaOpts);</code></pre></div></div></details>
+<details class="example" id="example-evaluate-trained-classifiers-on-new-instances"><summary>Evaluate trained classifiers on new instances</summary><div class="example-body"><p><code>InstanceSpace.explore</code> does this for you. The explicit call is:</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>copyfile(<span class="str">'test/data/metadata_test.csv'</span>, rootdir);
+obj = obj.build();                  <span class="com">% train every stage</span>
+obj = obj.explore(rootdir);         <span class="com">% reads rootdir/metadata_test.csv</span>
+res = obj.getResults(<span class="num">1</span>);
+res.pythia.summary</code></pre></div></div></details></section>
+<section class="refsect" id="input-arguments"><h2>Input Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="arg-z"><summary><code>Z</code> <span class="arg-desc">— Instance coordinates</span></summary><div class="arg-body"><p class="arg-type">numeric matrix</p>
+<p><code>model.pilot.Z</code>. PYTHIA standardises it internally and stores the mean and standard deviation.</p></div></details>
+<details class="arg" id="arg-y"><summary><code>Y</code> <span class="arg-desc">— Raw performance matrix</span></summary><div class="arg-body"><p class="arg-type">numeric matrix</p>
+<p><code>model.data.Yraw</code>. Used for the performance columns of the summary and, with <a class="code-link" href="OptionsReference.html#opts-pythia-useweights"><code>opts.useweights</code></a>, for the class weights. <code>NaN</code> marks a missing value.</p></div></details>
+<details class="arg" id="arg-ybin"><summary><code>Ybin</code> <span class="arg-desc">— Good-performance labels</span></summary><div class="arg-body"><p class="arg-type">logical matrix</p>
+<p>The classification targets.</p></div></details>
+<details class="arg" id="arg-ybest"><summary><code>Ybest</code> <span class="arg-desc">— Best performance per instance</span></summary><div class="arg-body"><p class="arg-type">numeric vector</p></div></details>
+<details class="arg" id="arg-algolabels"><summary><code>algolabels</code> <span class="arg-desc">— Algorithm names</span></summary><div class="arg-body"><p class="arg-type">cell array of character vectors</p></div></details>
+<details class="arg" id="arg-opts"><summary><code>opts</code> <span class="arg-desc">— Classifier options</span></summary><div class="arg-body"><p class="arg-type">structure</p>
+<p>Normally <code>obj.opts.pythia</code>.</p><details class="arg" id="arg-opts-classifier"><summary><code>opts.classifier</code> <span class="arg-desc">— Classifier type</span></summary><div class="arg-body"><p class="arg-type"><code>'knn'</code> (default) | <code>'svm'</code> | <code>'tree'</code> | <code>'nb'</code> | <code>'linear'</code> | <code>'ensemble'</code></p></div></details>
+<details class="arg" id="arg-opts-tuning"><summary><code>opts.tuning</code> <span class="arg-desc">— Hyperparameter search</span></summary><div class="arg-body"><p class="arg-type"><code>'sobol'</code> (default) | <code>'bayes'</code> | <code>'none'</code></p>
+<p><code>'sobol'</code>: a scrambled Sobol sequence of <code>nTuningIter</code> candidates. <code>'bayes'</code>: <code>bayesopt</code> with the same budget. <code>'none'</code>: use <a class="code-link" href="OptionsReference.html#opts-pythia-params"><code>opts.params</code></a>.</p></div></details>
+<details class="arg" id="arg-opts-ntuningiter"><summary><code>opts.nTuningIter</code> <span class="arg-desc">— Search budget</span></summary><div class="arg-body"><p class="arg-type"><code>20</code> (default) | positive integer</p></div></details>
+<details class="arg" id="arg-opts-kfold"><summary><code>opts.kFold</code> <span class="arg-desc">— Cross-validation folds</span></summary><div class="arg-body"><p class="arg-type"><code>5</code> (default) | positive integer</p></div></details>
+<details class="arg" id="arg-opts-params"><summary><code>opts.params</code> <span class="arg-desc">— Fixed hyperparameters</span></summary><div class="arg-body"><p class="arg-type"><code>[]</code> (default) | <code>nalgos</code>-by-<code>nparams</code> matrix</p>
+<p>Required when <a class="code-link" href="OptionsReference.html#opts-pythia-tuning"><code>opts.tuning</code></a> is <code>'none'</code>; one row per algorithm.</p></div></details>
+<details class="arg" id="arg-opts-useweights"><summary><code>opts.useweights</code> <span class="arg-desc">— Cost-sensitive training</span></summary><div class="arg-body"><p class="arg-type"><code>false</code> (default) | <code>true</code></p>
+<p>Weight each instance by how far its performance is from the mean performance.</p></div></details>
+<details class="arg" id="arg-opts-ispolykrnl"><summary><code>opts.ispolykrnl</code> <span class="arg-desc">— Polynomial kernel</span></summary><div class="arg-body"><p class="arg-type"><code>false</code> (default) | <code>true</code></p>
+<p>SVM only. <code>false</code> uses a Gaussian kernel.</p></div></details>
+<details class="arg" id="arg-opts-ensemblemethod"><summary><code>opts.ensembleMethod</code> <span class="arg-desc">— Ensemble method</span></summary><div class="arg-body"><p class="arg-type"><code>'Bag'</code> (default) | any <code>fitcensemble</code> method</p>
+<p>Only for <code>'ensemble'</code>.</p></div></details>
+<details class="arg" id="arg-opts-skip"><summary><code>opts.skip</code> <span class="arg-desc">— Skip training</span></summary><div class="arg-body"><p class="arg-type"><code>false</code> (default) | <code>true</code></p>
+<p>Return empty predictions without training. <a class="code-link" href="TRACE.html"><code>TRACE</code></a> then uses <code>Ybin</code> directly.</p></div></details>
+<details class="arg" id="arg-opts-seed"><summary><code>opts.seed</code> <span class="arg-desc">— Random seed</span></summary><div class="arg-body"><p class="arg-type"><a class="code-link" href="OptionsReference.html#opts-general-seed"><code>opts.general.seed</code></a> (default) | integer</p></div></details>
+<details class="arg" id="arg-opts-verbose"><summary><code>opts.verbose</code> <span class="arg-desc">— Report progress</span></summary><div class="arg-body"><p class="arg-type"><a class="code-link" href="OptionsReference.html#opts-general-verbose"><code>opts.general.verbose</code></a> (default) | logical</p></div></details></div></details>
+<details class="arg" id="arg-trainedmodel"><summary><code>trainedModel</code> <span class="arg-desc">— Trained classifiers</span></summary><div class="arg-body"><p class="arg-type">structure</p>
+<p>The <code>out</code> of an earlier training call (<code>model.pythia</code>). Its presence selects evaluation mode.</p></div></details></section>
+<section class="refsect" id="output-arguments"><h2>Output Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="out-out"><summary><code>out</code> <span class="arg-desc">— Classifiers, predictions and summary</span></summary><div class="arg-body"><p class="arg-type">structure</p><details class="arg" id="out-out-classifiers"><summary><code>out.classifiers</code> <span class="arg-desc">— Trained classifiers</span></summary><div class="arg-body"><p>Cell array with one <code>ClassificationModel</code> per algorithm.</p></div></details>
+<details class="arg" id="out-out-yhat"><summary><code>out.Yhat</code> <span class="arg-desc">— Predicted labels</span></summary><div class="arg-body"><p><code>ninst</code>-by-<code>nalgos</code> logical matrix. In training mode these are the predictions of the final model on the training data.</p></div></details>
+<details class="arg" id="out-out-pr0hat"><summary><code>out.Pr0hat</code> <span class="arg-desc">— Predicted probabilities</span></summary><div class="arg-body"><p>Probability that each algorithm is <em>not</em> good on each instance.</p></div></details>
+<details class="arg" id="out-out-ysub"><summary><code>out.Ysub</code>, <code>out.Pr0sub</code> <span class="arg-desc">— Cross-validated predictions</span></summary><div class="arg-body"><p>Training mode only.</p></div></details>
+<details class="arg" id="out-out-accuracy"><summary><code>out.accuracy</code>, <code>out.precision</code>, <code>out.recall</code>, <code>out.cvcmat</code> <span class="arg-desc">— Classifier performance</span></summary><div class="arg-body"><p>Per algorithm. Training mode: from cross-validation. Evaluation mode: on the new instances with observed performance; <code>NaN</code> for an algorithm the new data does not cover or that has no trained classifier.</p></div></details>
+<details class="arg" id="out-out-param1"><summary><code>out.param1</code>, <code>out.param2</code> <span class="arg-desc">— Selected hyperparameters</span></summary><div class="arg-body"><p>Per algorithm. Training mode only.</p></div></details>
+<details class="arg" id="out-out-selection0"><summary><code>out.selection0</code>, <code>out.selection1</code> <span class="arg-desc">— Selected algorithm</span></summary><div class="arg-body"><p>Index of the selected algorithm per instance. <code>selection0</code> is 0 where no algorithm is predicted good; <code>selection1</code> uses the algorithm with the most good instances there instead.</p></div></details>
+<details class="arg" id="out-out-mu"><summary><code>out.mu</code>, <code>out.sigma</code> <span class="arg-desc">— Standardisation of Z</span></summary><div class="arg-body"></div></details>
+<details class="arg" id="out-out-summary"><summary><code>out.summary</code> <span class="arg-desc">— Summary table</span></summary><div class="arg-body"><p>Cell array with one row per algorithm plus rows for the <em>Oracle</em> (always the best algorithm) and the <em>Selector</em>. Columns: mean and standard deviation of performance on all instances, probability of good performance (over the instances with observed performance), mean and standard deviation on the instances where the algorithm is selected, cross-validation accuracy, precision and recall, and (training mode) the hyperparameters. Cells with no data, such as the accuracy of an algorithm without a classifier, are empty (<code>[]</code>). Written to <code>classifier_table.csv</code> by <a class="code-link" href="scriptcsv.html"><code>scriptcsv</code></a>.</p></div></details></div></details></section>
+<section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="v0-9-2-evaluation-and-oracle-fixes">v0.9.2 — Evaluation and Oracle fixes</h3><p>Evaluation mode scores only the instances with observed performance for each algorithm, and reports <code>NaN</code> for a trained algorithm that the new data does not cover. The Oracle's probability of good performance is the fraction of instances on which any algorithm is good, instead of a fixed 1.</p></div>
+<div class="history"><h3 id="v0-9-0-classifier-registry">v0.9.0 — Classifier registry</h3><p><a class="code-link" href="OptionsReference.html#opts-pythia-classifier"><code>opts.classifier</code></a> selects any registered classifier, with Sobol or Bayesian tuning. Replaces the LIBSVM-based SVM and <code>PYTHIA2</code>.</p></div></section>
+<section class="refsect" id="references"><h2>References</h2><ul>
+<li>Smith-Miles, K. &amp; Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. <em>ACM Computing Surveys</em>, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
+</ul></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="ISAgetClassifierFcn.html"><code>ISAgetClassifierFcn</code></a> | <a class="code-link" href="TRACE.html"><code>TRACE</code></a> | <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> | <a href="Deprecated.html">Deprecated Functions</a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#syntax">Syntax</a></li><li><a href="#description">Description</a></li><li><a href="#examples">Examples</a></li><li><a href="#input-arguments">Input Arguments</a></li><li><a href="#output-arguments">Output Arguments</a></li><li><a href="#version-history">Version History</a></li><li><a href="#references">References</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
+</div>
+</body>
+</html>

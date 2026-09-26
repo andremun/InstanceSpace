@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ISAdefaults - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Fill in missing options with their default values">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
+<ul>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul></details></li>
+<li><details open><summary>Utilities</summary><ul>
+<li><a class="current" aria-current="page" href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> <a href="FunctionList.html">Utilities</a> <span class="sep">›</span> <span>ISAdefaults</span></nav>
+<div class="page-head function">
+<h1>ISAdefaults</h1>
+<p class="purpose">Fill in missing options with their default values</p>
+</div>
+<section class="refsect" id="syntax"><h2>Syntax</h2><div class="syntax-block">
+<div class="syntax-line"><a href="#desc-1"><code>opts = ISAdefaults(opts)</code></a></div>
+</div></section>
+<section class="refsect" id="description"><h2>Description</h2><p class="syntax-desc" id="desc-1"><code>opts = ISAdefaults(opts)</code> returns <code>opts</code> with every missing field set to its default, so that every stage receives a complete options structure. Fields already present are not changed. The defaults are listed in the <a href="OptionsReference.html">Options Reference</a>.</p>
+<p>ISAdefaults also maps a few legacy field names to their current names when the current name is absent: <code>opts.parallel.flag</code>/<code>.ncores</code> to <a class="code-link" href="OptionsReference.html#opts-general-parallel"><code>opts.general.parallel</code></a>/<code>.ncores</code>, <a class="code-link" href="OptionsReference.html#opts-pilot"><code>opts.pilot.ISA3D</code></a> to <a class="code-link" href="OptionsReference.html#opts-pilot-dims"><code>opts.pilot.dims</code></a>, <a class="code-link" href="OptionsReference.html#opts-cloister"><code>opts.cloister.cthres</code></a> to <a class="code-link" href="OptionsReference.html#opts-cloister-corrthreshold"><code>opts.cloister.corrThreshold</code></a>, <a class="code-link" href="OptionsReference.html#opts-pythia"><code>opts.pythia.cvfolds</code></a> to <a class="code-link" href="OptionsReference.html#opts-pythia-kfold"><code>opts.pythia.kFold</code></a>, and <a class="code-link" href="OptionsReference.html#opts-pythia"><code>opts.pythia.useknn = false</code></a> to <a class="code-link" href="OptionsReference.html#opts-pythia-classifier"><code>opts.pythia.classifier = 'svm'</code></a>.</p>
+<p class="syntax-desc" id="desc-2"><a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> calls ISAdefaults after <a class="code-link" href="ISAvalidateOpts.html"><code>ISAvalidateOpts</code></a> when an object is created or loaded.</p></section>
+<section class="refsect" id="examples"><h2>Examples</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="example">Expand all</button></p><details class="example" id="example-see-every-default" open><summary>See every default</summary><div class="example-body"><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>opts = ISAdefaults(struct());
+opts.pilot</code></pre></div></div></details>
+<details class="example" id="example-complete-a-partial-options-file"><summary>Complete a partial options file</summary><div class="example-body"><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>opts = jsondecode(fileread(<span class="str">'options.json'</span>));
+opts = ISAdefaults(ISAvalidateOpts(opts));</code></pre></div></div></details></section>
+<section class="refsect" id="input-arguments"><h2>Input Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="arg-opts"><summary><code>opts</code> <span class="arg-desc">— Options</span></summary><div class="arg-body"><p class="arg-type">structure</p>
+<p>Any subset of the options, for example as decoded from <code>options.json</code>.</p></div></details></section>
+<section class="refsect" id="output-arguments"><h2>Output Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="out-opts"><summary><code>opts</code> <span class="arg-desc">— Complete options</span></summary><div class="arg-body"><p class="arg-type">structure</p></div></details></section>
+<section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="v0-9-0-introduced">v0.9.0 — Introduced</h3><p>Defaults moved from each stage into one function.</p></div></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="ISAvalidateOpts.html"><code>ISAvalidateOpts</code></a> | <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> | <a href="OptionsReference.html">Options Reference</a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#syntax">Syntax</a></li><li><a href="#description">Description</a></li><li><a href="#examples">Examples</a></li><li><a href="#input-arguments">Input Arguments</a></li><li><a href="#output-arguments">Output Arguments</a></li><li><a href="#version-history">Version History</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
+</div>
+</body>
+</html>

@@ -1,6 +1,6 @@
 classdef RegressionTest < matlab.unittest.TestCase
 % RegressionTest  Targeted regressions for specific fixed bugs (#41, #44,
-% #28, #37/#38), each verifying a fix rather than exercising an option.
+% #28, #37/#38, #58, #59), each verifying a fix rather than exercising an option.
 % Migrated from test_integration.m's bespoke post-testCases blocks (#39).
 
 % -------------------------------------------------------------------------
@@ -256,18 +256,68 @@ classdef RegressionTest < matlab.unittest.TestCase
         end
 
         function testBoundaryDisplayRejects3D(testCase)
-            % The 'boundary' view must refuse a 3D projection rather than
-            % draw an inaccurate boundary: CLOISTER's Zedge/Zecorr are
-            % computed via a 2D-only convex hull (core/CLOISTER.m) even
-            % when the projection itself is 3D (#32's own scope note).
-            % Synthesised directly (no full 3D build) since only
-            % obj.model.pilot.Z's column count and obj.model.cloist's
-            % presence are checked before this error is raised.
+            % A 3D model without CLOISTER's hull triangulation (built
+            % before #50, when the boundary ignored the third coordinate)
+            % must be refused rather than drawn wrongly. Synthesised
+            % directly: only obj.model.pilot.Z's column count and
+            % obj.model.cloist's fields are checked before this error.
             obj = InstanceSpace(testCase.CaseDir, testCase.BaseOpts);
             obj.model.pilot.Z = zeros(5, 3);
             obj.model.cloist = struct('Zedge', zeros(5, 2));
             testCase.verifyError(@() obj.plot('boundary'), 'ISA:InstanceSpace:boundaryNot3D', ...
-                'plot(''boundary'') on a 3D model should raise ISA:InstanceSpace:boundaryNot3D, not draw an inaccurate boundary.');
+                'plot(''boundary'') on a 3D model without a 3D hull should raise ISA:InstanceSpace:boundaryNot3D.');
+        end
+
+        function testCloister3DHull(testCase)
+            % #50: CLOISTER used convhull(Z(:,1),Z(:,2)) even for a 3D
+            % projection. A 3D projection matrix must now give a 3D hull
+            % (vertices + triangulation) that contains every projected
+            % instance: each instance lies inside the feature-bounds
+            % hypercube, and a linear map keeps it inside the hull of the
+            % projected corners.
+            m = testCase.BaseModel;
+            X = m.data.X;
+            rng(3, 'twister');
+            A3 = [m.pilot.A; randn(1, size(X, 2))];
+            out = CLOISTER(X, A3, m.opts.cloister);
+            testCase.verifyEqual(size(out.Zedge, 2), 3, 'A 3D projection should give 3D hull vertices.');
+            testCase.verifyEqual(size(out.ZedgeFaces, 2), 3, 'The 3D hull should come with a triangulation.');
+            testCase.verifyGreaterThanOrEqual(size(out.ZedgeFaces, 1), 4);
+            testCase.verifyLessThanOrEqual(max(out.ZedgeFaces(:)), size(out.Zedge, 1), ...
+                'Face indices should point into the rows of Zedge.');
+            testCase.verifyEqual(size(out.Zecorr, 2), 3);
+            testCase.verifyLessThanOrEqual(max(out.ZecorrFaces(:)), size(out.Zecorr, 1));
+
+            % Every instance inside the hull. Shrink the points slightly
+            % towards the hull's vertex centroid (an interior point) so
+            % instances that sit exactly on a face do not fail on rounding.
+            Z = X*A3';
+            c = mean(out.Zedge, 1);
+            Zin = c + 0.999*(Z - c);
+            simplex = tsearchn(out.Zedge, delaunayn(out.Zedge), Zin);
+            testCase.verifyFalse(any(isnan(simplex)), ...
+                'Every projected instance should lie inside the 3D CLOISTER hull.');
+
+            % The 3D boundary can now be drawn.
+            obj = InstanceSpace(testCase.CaseDir, testCase.BaseOpts);
+            obj.model = m;
+            obj.model.pilot.Z = Z;
+            obj.model.cloist = out;
+            fig = figure('Visible', 'off');
+            testCase.addTeardown(@() close(fig));
+            obj.plot('boundary');
+        end
+
+        function testCloister2DUnchanged(testCase)
+            % #50: the 2D boundary stays a closed polygon with no faces.
+            m = testCase.BaseModel;
+            out = CLOISTER(m.data.X, m.pilot.A, m.opts.cloister);
+            testCase.verifyEqual(size(out.Zedge, 2), 2);
+            testCase.verifyEqual(out.Zedge(1,:), out.Zedge(end,:), ...
+                'The 2D boundary should stay a closed polygon (first vertex repeated last).');
+            testCase.verifyEmpty(out.ZedgeFaces);
+            testCase.verifyEqual(out.Zedge, m.cloist.Zedge, 'AbsTol', 1e-12, ...
+                'CLOISTER should reproduce the stored 2D boundary for the same X and A.');
         end
 
         function testTraceAlphaBoundaryMultiRegion(testCase)
@@ -339,35 +389,97 @@ classdef RegressionTest < matlab.unittest.TestCase
                 'PRELIM eval-mode normalisation produced non-finite values after algorithm pruning -- likely misapplied a wrong algorithm''s Box-Cox/Z-score transform.');
         end
 
-        function testTraceOneRegionHoleWarning(testCase)
-            % PR #51 review (round 4): traceOneRegion's walk had no
-            % "returned to the start vertex" stop condition -- only
-            % isempty(nxt). For a region with a hole (two disconnected
-            % boundary cycles), the walk didn't actually halt when the
-            % outer cycle closed; excluding just `prev` still leaves a
-            % "next" vertex available once back at the start, so it kept
-            % re-treading the SAME cycle until order filled up completely.
-            % That left `valid` all true and the ISA:scriptfcn:
-            % boundaryHoleOmitted warning added for exactly this case
-            % silently never firing. Tested directly against a synthetic
-            % two-cycle edge list (an outer 4-cycle plus a disconnected
-            % inner 3-cycle) rather than a geometric alphaShape, for full
-            % control over the exact adjacency without depending on
-            % alphaShape's own region/facet algorithm to produce a
-            % specific hole shape.
-            scriptfcn; % injects traceOneRegion into this function's workspace
+        function testTraceOneRegionTracesHoles(testCase)
+            % #52: traceOneRegion followed only the cycle containing its
+            % start vertex, so a region with a hole lost the hole's
+            % boundary (it only warned, ISA:scriptfcn:boundaryHoleOmitted).
+            % Every cycle is now traced and NaN-separated. Tested first on
+            % a synthetic two-cycle edge list (an outer 4-cycle plus a
+            % disconnected inner 3-cycle) for full control over the
+            % adjacency; the walk must also stop when each cycle closes
+            % instead of re-treading it (PR #51 review, round 4).
+            scriptfcn; % injects traceOneRegion/traceAlphaBoundary into this workspace
             bf = [1 2; 2 3; 3 4; 4 1; ...  % outer 4-cycle
                   5 6; 6 7; 7 5];          % disconnected inner 3-cycle (the "hole")
             bv = [0 0; 4 0; 4 4; 0 4; ...  % outer square corners
                   1.5 1.5; 2.5 1.5; 2 2.5]; % inner triangle corners
 
-            testCase.verifyWarning(@() traceOneRegion(bf, bv), ... %#ok<NODEF> -- injected by scriptfcn above
-                'ISA:scriptfcn:boundaryHoleOmitted', ...
-                'traceOneRegion should warn when part of a region''s boundary (a hole) is unreachable from its outer ring, not silently stay quiet.');
+            verts = testCase.verifyWarningFree(@() traceOneRegion(bf, bv)); %#ok<NODEF> -- injected by scriptfcn above
+            sep = find(all(isnan(verts), 2));
+            testCase.verifyEqual(numel(sep), 1, 'Two cycles should be separated by exactly one NaN row.');
+            testCase.verifyEqual(size(verts, 1), 4 + 1 + 3, ...
+                'Both cycles should be returned once each: 4 outer + NaN + 3 hole vertices.');
+            testCase.verifyEqual(sortrows(verts(~any(isnan(verts), 2), :)), sortrows(bv), ...
+                'Every boundary vertex should appear exactly once.');
 
-            verts = traceOneRegion(bf, bv);
-            testCase.verifyEqual(size(verts, 1), 4, ...
-                'traceOneRegion should return exactly the outer 4-cycle''s vertices (no duplicates from re-treading the same cycle, no hole vertices it never actually reached).');
+            % A genuine annulus-shaped alphaShape: a dense ring of points
+            % with an empty gap in the middle.
+            [r, t] = meshgrid(linspace(2, 3, 6), linspace(0, 2*pi, 61));
+            t = t(1:end-1, :); r = r(1:end-1, :); % drop the duplicate 2*pi row
+            pts = [r(:).*cos(t(:)), r(:).*sin(t(:))];
+            as = alphaShape(pts, 0.6);
+            testCase.assumeEqual(numRegions(as), 1, 'This check needs a single-region annulus.');
+            [bfA, bvA] = boundaryFacets(as, 1);
+            vertsA = traceOneRegion(bfA, bvA);
+            radii = hypot(vertsA(:,1), vertsA(:,2));
+            testCase.verifyTrue(any(radii < 2.2) && any(radii > 2.8), ...
+                'The traced annulus boundary should include both the outer ring and the hole.');
+            testCase.verifyTrue(any(all(isnan(vertsA), 2)), ...
+                'The outer ring and the hole should be separated by a NaN row.');
+        end
+
+        function testPythiaEvalSkipsUnobservedAlgorithm(testCase)
+            % #58: PYTHIA's eval mode scored every trained classifier,
+            % including one for an algorithm the test set has no data for.
+            % INIT leaves that column all-NaN in Y and PRELIM turns it into
+            % an all-false Ybin column, so the "accuracy" was a comparison
+            % against truth values that were never observed. Simulated here
+            % by blanking one algorithm's column in the training data and
+            % re-evaluating the trained classifiers on it.
+            m = testCase.BaseModel;
+            testCase.assumeTrue(numel(m.data.algolabels) >= 2, ...
+                'This check needs at least 2 trained algorithms.');
+            Y = m.data.Yraw;
+            Ybin = m.data.Ybin;
+            Y(:,1) = NaN;
+            Ybin(:,1) = false;
+            out = PYTHIA(m.pilot.Z, Y, Ybin, m.data.Ybest, m.data.algolabels, ...
+                         m.opts.pythia, m.pythia);
+            testCase.verifyTrue(all(isnan(out.cvcmat(1,:))), ...
+                'An algorithm with no observed test data should have an all-NaN confusion row.');
+            testCase.verifyTrue(isnan(out.accuracy(1)) && isnan(out.precision(1)) && isnan(out.recall(1)), ...
+                'An algorithm with no observed test data should report NaN accuracy/precision/recall, not a fabricated score.');
+            testCase.verifyTrue(all(isfinite(out.accuracy(2:end))), ...
+                'Algorithms with observed test data should still be scored.');
+            % buildSummary blanks every NaN cell ([]), the table's "no data" marker.
+            testCase.verifyEmpty(out.summary{2, 4}, ...
+                'The summary''s Probability_of_good must be blank (no data), not 0, for an algorithm with no observed data.');
+
+            % Partially observed column: only the observed rows are scored.
+            Y = m.data.Yraw;
+            Y(1:5,2) = NaN;
+            out2 = PYTHIA(m.pilot.Z, Y, m.data.Ybin, m.data.Ybest, m.data.algolabels, ...
+                          m.opts.pythia, m.pythia);
+            testCase.verifyEqual(sum(out2.cvcmat(2,:)), size(Y,1) - 5, ...
+                'Only instances with observed performance should enter the confusion matrix.');
+            testCase.verifyEqual(out2.summary{3, 4}, round(mean(m.data.Ybin(6:end, 2)), 3), ...
+                'Probability_of_good should be computed over the observed instances only.');
+        end
+
+        function testPythiaOracleProbabilityOfGood(testCase)
+            % #59: the summary's Oracle row hardcoded Probability_of_good=1.
+            % With absolute performance (testDefaultOpts uses AbsPerf=true),
+            % an instance where no algorithm meets the threshold has an
+            % all-false Ybin row, and the Oracle cannot be good there.
+            m = testCase.BaseModel;
+            Ybin = m.data.Ybin;
+            Ybin(1:3,:) = false; % force instances where no algorithm is good
+            out = PYTHIA(m.pilot.Z, m.data.Yraw, Ybin, m.data.Ybest, m.data.algolabels, ...
+                         m.opts.pythia, m.pythia);
+            expected = round(mean(any(Ybin, 2)), 3);
+            testCase.verifyLessThan(expected, 1);
+            testCase.verifyEqual(out.summary{end-1, 4}, expected, ...
+                'The Oracle''s Probability_of_good should be the fraction of instances with at least one good algorithm.');
         end
     end
 end

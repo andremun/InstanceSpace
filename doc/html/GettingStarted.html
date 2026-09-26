@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Getting Started with Instance Space Analysis - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Build and explore your first instance space">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
+<ul>
+<li><details open><summary>Getting Started</summary><ul>
+<li><a class="current" aria-current="page" href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul></details></li>
+<li><details><summary>Utilities</summary><ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> Getting Started <span class="sep">›</span> <span>Getting Started with Instance Space Analysis</span></nav>
+<div class="page-head">
+<h1>Getting Started with Instance Space Analysis</h1>
+<p class="purpose">Build and explore your first instance space</p>
+</div>
+<p>This example builds an instance space for the reference dataset shipped with the toolbox: 212 classification problems (the <em>instances</em>), described by 10 features, on which 10 classification algorithms were scored by misclassification error (Muñoz et al., 2018). A further 23 instances are held out for testing. The same steps apply to your own data once it is in the <a href="MetadataFormat.html">metadata format</a>.</p>
+<p><code>example.m</code> in the repository root runs this example from start to finish.</p>
+<section class="refsect" id="prepare-a-folder"><h2>Prepare a Folder</h2><p>The toolbox reads its inputs from, and writes its outputs to, one folder. Copy the reference metadata into a new folder:</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>rootdir = <span class="str">'test/data/example/'</span>;
+<span class="kw">if</span> ~isfolder(rootdir), mkdir(rootdir); <span class="kw">end</span>
+copyfile(<span class="str">'test/data/metadata.csv'</span>, rootdir);
+copyfile(<span class="str">'test/data/metadata_test.csv'</span>, rootdir);</code></pre></div></section>
+<section class="refsect" id="describe-the-performance-measure"><h2>Describe the Performance Measure</h2><p>The one decision you must always make is how to judge performance. Here performance is an error rate, so lower is better, and an algorithm counts as <em>good</em> on an instance when its error is below 20%:</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>opts.perf.MaxPerf = <span class="kw">false</span>;   <span class="com">% a cost: lower is better</span>
+opts.perf.AbsPerf = <span class="kw">true</span>;    <span class="com">% compare with a fixed threshold</span>
+opts.perf.epsilon = <span class="num">0.20</span>;    <span class="com">% the threshold</span></code></pre></div>
+<p>With <code>AbsPerf = false</code>, an algorithm is good when it is within <code>epsilon</code> (a fraction) of the best algorithm on that instance. Every other option has a default; see the <a href="OptionsReference.html">Options Reference</a>.</p></section>
+<section class="refsect" id="build-the-instance-space"><h2>Build the Instance Space</h2><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>obj = InstanceSpace(rootdir, opts);
+obj = obj.build();</code></pre></div>
+<p><code>build</code> runs the whole pipeline: <a class="code-link" href="PRELIM.html"><code>PRELIM</code></a> labels and normalises the data, <a class="code-link" href="SIFTED.html"><code>SIFTED</code></a> selects features, <a class="code-link" href="PILOT.html"><code>PILOT</code></a> projects the instances to 2D, <a class="code-link" href="CLOISTER.html"><code>CLOISTER</code></a> estimates the boundary of the space, <a class="code-link" href="PYTHIA.html"><code>PYTHIA</code></a> trains a classifier per algorithm, and <a class="code-link" href="TRACE.html"><code>TRACE</code></a> finds the footprints. It then saves <code>model.mat</code> and writes CSV and PNG files to <code>rootdir</code>. It takes a few minutes, most of it in SIFTED and PYTHIA.</p></section>
+<section class="refsect" id="look-at-the-results"><h2>Look at the Results</h2><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>figure, obj.plot(<span class="str">'portfolio'</span>)        <span class="com">% best algorithm on each instance</span>
+figure, obj.plot(<span class="str">'footprint'</span>, <span class="num">6</span>)     <span class="com">% footprint of the 6th algorithm</span>
+disp(obj.model.trace.summary)        <span class="com">% footprint area, density and purity</span>
+disp(obj.model.pythia.summary)       <span class="com">% classifier accuracy and the selector</span></code></pre></div>
+<p>The PNG files in <code>rootdir</code> show the same views for every feature and algorithm.</p></section>
+<section class="refsect" id="evaluate-new-instances"><h2>Evaluate New Instances</h2><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>obj = obj.explore(rootdir);          <span class="com">% reads rootdir/metadata_test.csv</span>
+test = obj.getResults(<span class="num">1</span>);
+scatter(test.pilot.Z(:,<span class="num">1</span>), test.pilot.Z(:,<span class="num">2</span>), <span class="num">30</span>, test.pythia.selection0, <span class="str">'filled'</span>)</code></pre></div>
+<p><code>explore</code> applies the trained preprocessing, projection, classifiers and footprints to the new instances; nothing is refitted.</p></section>
+<section class="refsect" id="next-steps"><h2>Next Steps</h2><ul>
+<li>Change an option and re-run only the affected stages — see <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a>.</li>
+<li>Run and inspect each stage in turn — see the <a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a>.</li>
+<li>Build a 3D instance space with <a class="code-link" href="OptionsReference.html#opts-pilot-dims"><code>opts.pilot.dims = 3</code></a> — see <a class="code-link" href="PILOT.html"><code>PILOT</code></a> and <a class="code-link" href="PILOTviewpoint.html"><code>PILOTviewpoint</code></a>.</li>
+<li>Use your own data — see <a href="MetadataFormat.html">Metadata File Format</a>.</li>
+</ul></section>
+<section class="refsect" id="references"><h2>References</h2><ul>
+<li>Muñoz, M.A., Villanova, L., Baatar, D. &amp; Smith-Miles, K. (2018). Instance spaces for machine learning classification. <em>Machine Learning</em>, 107(1), 109–147. <a href="https://doi.org/10.1007/s10994-017-5629-5">https://doi.org/10.1007/s10994-017-5629-5</a></li>
+<li>Smith-Miles, K. &amp; Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. <em>ACM Computing Surveys</em>, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
+</ul></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#prepare-a-folder">Prepare a Folder</a></li><li><a href="#describe-the-performance-measure">Describe the Performance Measure</a></li><li><a href="#build-the-instance-space">Build the Instance Space</a></li><li><a href="#look-at-the-results">Look at the Results</a></li><li><a href="#evaluate-new-instances">Evaluate New Instances</a></li><li><a href="#next-steps">Next Steps</a></li><li><a href="#references">References</a></li></ul></aside>
+</div>
+</body>
+</html>

@@ -3,12 +3,14 @@ function scriptweb(container,rootdir)
 %
 %   scriptweb(container,rootdir)
 %
-%   container - model struct from buildIS/InstanceSpace.build(), or a
-%               testResults entry from exploreIS/InstanceSpace.explore()
-%   rootdir   - destination directory (trailing slash required)
-%
 %   Only useful when opts.outputs.web=true, i.e. results will be served
 %   through matilda.unimelb.edu.au; not needed for local/offline use.
+%
+%   Inputs
+%     container - struct (model from buildIS/InstanceSpace.build() or a testResults entry from exploreIS/InstanceSpace.explore()).
+%     rootdir - string (destination directory; trailing slash required).
+%   Outputs
+%     none - writes colour-scaled CSV files to rootdir as a side effect (void function).
 
 % -------------------------------------------------------------------------
 % Instance Space Analysis (ISA) Toolkit

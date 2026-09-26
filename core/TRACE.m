@@ -200,10 +200,18 @@ end
 fprintf('[TRACE] TRACE3 is calculating the algorithm footprints.\n');
 good = cell(1, nalgos);
 best = cell(1, nalgos);
+% One cell per algorithm, empty when there are no predictions. Indexing
+% Yhat(:,i) inside the parfor would make Yhat a sliced variable, which
+% parfor slices for every iteration even when the branch that reads it is
+% not taken -- so Yhat=[] (documented as allowed) failed with an
+% out-of-bounds index before the fallback could run.
+yhatCols = cell(1, nalgos);
+if pythiaAvailable
+    yhatCols = num2cell(Yhat, 1);
+end
 parfor (i = 1:nalgos, nworkers)
     t = tic;
-    yhat_i = [];
-    if pythiaAvailable, yhat_i = Yhat(:,i); end
+    yhat_i = yhatCols{i};
     fprintf('[TRACE] Good performance footprint for ''%s''\n', algolabels{i});
     good{i} = TRACEbuild3(Z, Ybin(:,i), yhat_i, spaceArea, opts);
     fprintf('[TRACE] Best performance footprint for ''%s''\n', algolabels{i});

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ISAvalidateOpts - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Check the type and range of user-supplied options">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.1</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
+<ul>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul></details></li>
+<li><details open><summary>Utilities</summary><ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a class="current" aria-current="page" href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> <a href="FunctionList.html">Utilities</a> <span class="sep">›</span> <span>ISAvalidateOpts</span></nav>
+<div class="page-head function">
+<h1>ISAvalidateOpts</h1>
+<p class="purpose">Check the type and range of user-supplied options</p>
+</div>
+<section class="refsect" id="syntax"><h2>Syntax</h2><div class="syntax-block">
+<div class="syntax-line"><a href="#desc-1"><code>opts = ISAvalidateOpts(opts)</code></a></div>
+</div></section>
+<section class="refsect" id="description"><h2>Description</h2><p class="syntax-desc" id="desc-1"><code>opts = ISAvalidateOpts(opts)</code> checks each recognised field that is present in <code>opts</code> and raises an error on the first invalid one. Absent fields are not checked; <a class="code-link" href="ISAdefaults.html"><code>ISAdefaults</code></a> fills them afterwards. <code>opts</code> is returned unchanged.</p>
+<p>An error here names the field and the expected value, instead of failing later inside a stage. A field set to <code>[]</code> counts as present and is rejected. Field names the function does not recognise, including misspellings, are not reported.</p>
+<p class="syntax-desc" id="desc-2"><a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> calls ISAvalidateOpts when an object is created.</p></section>
+<section class="refsect" id="examples"><h2>Examples</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="example">Expand all</button></p><details class="example" id="example-catch-an-invalid-value-early" open><summary>Catch an invalid value early</summary><div class="example-body"><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>opts.pilot.dims = <span class="num">4</span>;
+<span class="kw">try</span>
+    ISAvalidateOpts(opts);
+<span class="kw">catch</span> err
+    disp(err.identifier)   <span class="com">% ISA:ISAvalidateOpts:notMember</span>
+    disp(err.message)
+<span class="kw">end</span></code></pre></div></div></details></section>
+<section class="refsect" id="input-arguments"><h2>Input Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="arg-opts"><summary><code>opts</code> <span class="arg-desc">— Options</span></summary><div class="arg-body"><p class="arg-type">structure</p></div></details></section>
+<section class="refsect" id="output-arguments"><h2>Output Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="out-opts"><summary><code>opts</code> <span class="arg-desc">— Options</span></summary><div class="arg-body"><p class="arg-type">structure</p>
+<p>The input, unchanged.</p></div></details></section>
+<section class="refsect" id="tips"><h2>Tips</h2><p>Error identifiers, by the check that failed:</p>
+<table class="doc-table">
+<thead>
+<tr>
+<th>Identifier</th>
+<th>Expected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ISA:ISAvalidateOpts:notStruct</code></td>
+<td>a structure, for <code>opts</code> and each group such as <a class="code-link" href="OptionsReference.html#opts-pilot"><code>opts.pilot</code></a></td>
+</tr>
+<tr>
+<td><code>ISA:ISAvalidateOpts:notLogical</code></td>
+<td>a logical scalar, <code>true</code> or <code>false</code> (not 0 or 1)</td>
+</tr>
+<tr>
+<td><code>ISA:ISAvalidateOpts:notFiniteNumericScalar</code></td>
+<td>a finite real number</td>
+</tr>
+<tr>
+<td><code>ISA:ISAvalidateOpts:notInteger</code></td>
+<td>a whole number</td>
+</tr>
+<tr>
+<td><code>ISA:ISAvalidateOpts:notPositive</code></td>
+<td>a positive number (0 is allowed for seeds)</td>
+</tr>
+<tr>
+<td><code>ISA:ISAvalidateOpts:notInUnitRange</code></td>
+<td>a number in [0, 1]</td>
+</tr>
+<tr>
+<td><code>ISA:ISAvalidateOpts:notMember</code></td>
+<td>one of a fixed set of values</td>
+</tr>
+<tr>
+<td><code>ISA:ISAvalidateOpts:notText</code></td>
+<td>a character vector or string</td>
+</tr>
+<tr>
+<td><code>ISA:ISAvalidateOpts:notCellOfText</code></td>
+<td>a cell array of character vectors</td>
+</tr>
+<tr>
+<td><code>ISA:ISAvalidateOpts:badViewGroups</code></td>
+<td>a cell array of algorithm index vectors</td>
+</tr>
+</tbody>
+</table></section>
+<section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="v0-9-0-introduced">v0.9.0 — Introduced</h3></div></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="ISAdefaults.html"><code>ISAdefaults</code></a> | <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> | <a href="OptionsReference.html">Options Reference</a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#syntax">Syntax</a></li><li><a href="#description">Description</a></li><li><a href="#examples">Examples</a></li><li><a href="#input-arguments">Input Arguments</a></li><li><a href="#output-arguments">Output Arguments</a></li><li><a href="#tips">Tips</a></li><li><a href="#version-history">Version History</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
+</div>
+</body>
+</html>

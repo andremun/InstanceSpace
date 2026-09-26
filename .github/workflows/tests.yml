@@ -54,8 +54,17 @@ jobs:
         if: always()
         with:
           name: coverage-report
-          path: coverage.xml
+          path: |
+            coverage.xml
+            junit.xml
           retention-days: 14
+
+      # Per-file coverage table in the job log and the run summary, so the
+      # numbers can be read without downloading the artifact or relying on
+      # Codecov being linked.
+      - name: Coverage summary
+        if: always()
+        run: python3 .github/scripts/coverage_summary.py coverage.xml | tee -a "$GITHUB_STEP_SUMMARY"
 
       # Feeds the Codecov badge in README.md. fail_ci_if_error: false is
       # deliberate: a Codecov outage or a missing/misconfigured
@@ -67,4 +76,16 @@ jobs:
         with:
           files: coverage.xml
           token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+      # Codecov Test Analytics (#57): per-test pass/fail/duration from the
+      # JUnit report test_integration.m writes. !cancelled() (Codecov's
+      # recommendation) still uploads after a test failure, which is when
+      # the failed-test report matters most; it only skips a cancelled run.
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: junit.xml
           fail_ci_if_error: false

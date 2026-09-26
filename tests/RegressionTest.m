@@ -508,6 +508,8 @@ classdef RegressionTest < matlab.unittest.TestCase
                            m.data.algolabels, seedOptsA);
             testCase.verifyEqual(outA1.Pr0hat, outA2.Pr0hat, ...
                 'Two SVM training runs with the same opts.seed must produce bit-identical Pr0hat (posterior probabilities).');
+            testCase.verifyEqual(outA1.Pr0sub, outA2.Pr0sub, ...
+                'Two SVM training runs with the same opts.seed must produce bit-identical Pr0sub (cross-validated posterior probabilities).');
 
             seedOptsB = svmOpts;
             seedOptsB.seed = 2;
@@ -515,6 +517,8 @@ classdef RegressionTest < matlab.unittest.TestCase
                           m.data.algolabels, seedOptsB);
             testCase.verifyNotEqual(outA1.Pr0hat, outB.Pr0hat, ...
                 'Different opts.seed values must still produce different SVM posterior output.');
+            testCase.verifyNotEqual(outA1.Pr0sub, outB.Pr0sub, ...
+                'Different opts.seed values must still produce different cross-validated SVM posterior output.');
         end
     end
 end

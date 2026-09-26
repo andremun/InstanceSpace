@@ -515,7 +515,12 @@ for fold = 1:cp.NumTestSets
     % (P1(j),P2(j)). Varying the seed by fold (not by candidate) is still
     % wanted: folds are supposed to differ, only candidates within a fold
     % should be compared on identical random substrate.
-    foldSeed = baseSeed*1e5 + fold*1e3;
+    % mod by 2^32: rng('twister') only accepts seeds in [0, 2^32-1], but
+    % opts.seed is validated only as a nonnegative integer (ISAvalidateOpts),
+    % so baseSeed*1e5 alone can already exceed that range for a realistic
+    % seed (e.g. opts.seed=50000 gives 5e9). Folding into range keeps the
+    % per-fold value still deterministic and distinct across folds.
+    foldSeed = mod(baseSeed*1e5 + fold*1e3, 2^32);
     parfor (j = 1:nsobol, nworkers)
         rng(foldSeed, 'twister');
         [Yfold(:,j), Pfold(:,j)] = evalFoldClassifier( ...

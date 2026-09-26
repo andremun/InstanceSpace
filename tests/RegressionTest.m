@@ -1,6 +1,7 @@
 classdef RegressionTest < matlab.unittest.TestCase
 % RegressionTest  Targeted regressions for specific fixed bugs (#41, #44,
-% #28, #37/#38, #58, #59), each verifying a fix rather than exercising an option.
+% #28, #37/#38, #58, #59, #61), each verifying a fix rather than exercising
+% an option.
 % Migrated from test_integration.m's bespoke post-testCases blocks (#39).
 
 % -------------------------------------------------------------------------
@@ -480,6 +481,44 @@ classdef RegressionTest < matlab.unittest.TestCase
             testCase.verifyLessThan(expected, 1);
             testCase.verifyEqual(out.summary{end-1, 4}, expected, ...
                 'The Oracle''s Probability_of_good should be the fraction of instances with at least one good algorithm.');
+        end
+
+        function testPythiaSvmPosteriorSeeded(testCase)
+            % #61: fitSVMPosterior was never reseeded after fitcsvm, so its
+            % sigmoid-calibration draws depended on however many random
+            % numbers fitcsvm's SMO solver happened to consume -- making
+            % Pr0hat non-reproducible across runs even with a fixed
+            % opts.seed. Fixed by reseeding to the same per-algorithm seed
+            % immediately before fitSVMPosterior (mirrors #41's fix for
+            % PILOT/SIFTED/PILOTviewpoint). tuning='none' with pre-supplied
+            % params isolates trainFinalClassifier's own fitOneClassifier
+            % call, keeping the test fast and targeted at that call site.
+            m = testCase.BaseModel;
+            nalgos = numel(m.data.algolabels);
+            svmOpts = m.opts.pythia;
+            svmOpts.classifier = 'svm';
+            svmOpts.tuning = 'none';
+            svmOpts.params = repmat([1, 1], nalgos, 1);
+
+            seedOptsA = svmOpts;
+            seedOptsA.seed = 1;
+            outA1 = PYTHIA(m.pilot.Z, m.data.Yraw, m.data.Ybin, m.data.Ybest, ...
+                           m.data.algolabels, seedOptsA);
+            outA2 = PYTHIA(m.pilot.Z, m.data.Yraw, m.data.Ybin, m.data.Ybest, ...
+                           m.data.algolabels, seedOptsA);
+            testCase.verifyEqual(outA1.Pr0hat, outA2.Pr0hat, ...
+                'Two SVM training runs with the same opts.seed must produce bit-identical Pr0hat (posterior probabilities).');
+            testCase.verifyEqual(outA1.Pr0sub, outA2.Pr0sub, ...
+                'Two SVM training runs with the same opts.seed must produce bit-identical Pr0sub (cross-validated posterior probabilities).');
+
+            seedOptsB = svmOpts;
+            seedOptsB.seed = 2;
+            outB = PYTHIA(m.pilot.Z, m.data.Yraw, m.data.Ybin, m.data.Ybest, ...
+                          m.data.algolabels, seedOptsB);
+            testCase.verifyNotEqual(outA1.Pr0hat, outB.Pr0hat, ...
+                'Different opts.seed values must still produce different SVM posterior output.');
+            testCase.verifyNotEqual(outA1.Pr0sub, outB.Pr0sub, ...
+                'Different opts.seed values must still produce different cross-validated SVM posterior output.');
         end
     end
 end

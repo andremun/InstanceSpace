@@ -275,7 +275,7 @@ for i = 1:nalgos
             % CV predictions with the pre-supplied params.
             [out.Ysub(:,i), out.Pr0sub(:,i)] = crossValPredict( ...
                 classifierType, Znorm, yi, W(:,i), out.cp{i}, ...
-                p1_best, p2_best, opts);
+                p1_best, p2_best, opts, opts.seed + i);
         elseif strcmp(opts.tuning, 'bayes')
             % MATLAB bayesopt (Gaussian-process surrogate) over the same
             % classifier/CV-fold evaluation used by 'sobol'.
@@ -311,7 +311,7 @@ for i = 1:nalgos
         rng(opts.seed + i, 'twister');
         [out.classifiers{i}, out.Yhat(:,i), out.Pr0hat(:,i)] = ...
             trainFinalClassifier(classifierType, Znorm, yi, W(:,i), ...
-                                 p1_best, p2_best, opts);
+                                 p1_best, p2_best, opts, opts.seed + i);
     end
 
     out.param1(i) = p1_best;
@@ -515,11 +515,16 @@ for fold = 1:cp.NumTestSets
     % (P1(j),P2(j)). Varying the seed by fold (not by candidate) is still
     % wanted: folds are supposed to differ, only candidates within a fold
     % should be compared on identical random substrate.
-    foldSeed = baseSeed*1e5 + fold*1e3;
+    % mod by 2^32: rng('twister') only accepts seeds in [0, 2^32-1], but
+    % opts.seed is validated only as a nonnegative integer (ISAvalidateOpts),
+    % so baseSeed*1e5 alone can already exceed that range for a realistic
+    % seed (e.g. opts.seed=50000 gives 5e9). Folding into range keeps the
+    % per-fold value still deterministic and distinct across folds.
+    foldSeed = mod(baseSeed*1e5 + fold*1e3, 2^32);
     parfor (j = 1:nsobol, nworkers)
         rng(foldSeed, 'twister');
         [Yfold(:,j), Pfold(:,j)] = evalFoldClassifier( ...
-            type, Ztrain, Ytrain, Wtrain, Ztest, P1(j), P2(j), opts);
+            type, Ztrain, Ytrain, Wtrain, Ztest, P1(j), P2(j), opts, foldSeed);
     end
     Ysub_all(itest,:) = Yfold;
     Psub_all(itest,:) = Pfold;
@@ -569,7 +574,7 @@ if hasP2
 else
     p2_best = 1;
 end
-[Ysub, Psub] = crossValPredict(type, Z, Ybin, W, cp, p1_best, p2_best, opts);
+[Ysub, Psub] = crossValPredict(type, Z, Ybin, W, cp, p1_best, p2_best, opts, baseSeed);
 end
 
 % -------------------------------------------------------------------------
@@ -588,7 +593,7 @@ if hasP2
 else
     p2 = 1;
 end
-[Ysub_cand, Psub_cand] = crossValPredict(type, Z, Ybin, W, cp, p1, p2, opts);
+[Ysub_cand, Psub_cand] = crossValPredict(type, Z, Ybin, W, cp, p1, p2, opts, baseSeed);
 if any(isnan(Psub_cand))
     % At least one fold failed to train this candidate (see
     % evalFoldClassifier); report the worst possible error so bayesopt
@@ -637,8 +642,9 @@ end
 end
 
 % -------------------------------------------------------------------------
-function [Ysub, Psub] = crossValPredict(type, Z, Ybin, W, cp, p1, p2, opts)
+function [Ysub, Psub] = crossValPredict(type, Z, Ybin, W, cp, p1, p2, opts, seed)
 % Run k-fold CV with fixed hyperparameters; return fold-level predictions.
+if nargin < 9; seed = opts.seed; end
 ninst    = size(Z, 1);
 nworkers = getParallelWorkers();
 Ysub = false(ninst, 1);
@@ -649,17 +655,18 @@ for fold = 1:cp.NumTestSets
     itest  = logical(cp.test(fold));
     Ztrain = Z(itrain,:);  Ytrain = logical(Ybin(itrain));  Wtrain = W(itrain);
     Ztest  = Z(itest,:);
-    [Yfold, Pfold] = evalFoldClassifier(type, Ztrain, Ytrain, Wtrain, Ztest, p1, p2, opts);
+    [Yfold, Pfold] = evalFoldClassifier(type, Ztrain, Ytrain, Wtrain, Ztest, p1, p2, opts, seed);
     Ysub(itest) = Yfold;
     Psub(itest) = Pfold;
 end
 end
 
 % -------------------------------------------------------------------------
-function [Yp, Pp] = evalFoldClassifier(type, Ztrain, Ytrain, Wtrain, Ztest, p1, p2, opts)
+function [Yp, Pp] = evalFoldClassifier(type, Ztrain, Ytrain, Wtrain, Ztest, p1, p2, opts, seed)
 % Train one classifier on a CV fold and predict on the test fold.
+if nargin < 9; seed = opts.seed; end
 try
-    clf = fitOneClassifier(type, Ztrain, Ytrain, Wtrain, p1, p2, opts);
+    clf = fitOneClassifier(type, Ztrain, Ytrain, Wtrain, p1, p2, opts, false, seed);
     [Yp, Pp] = predictClassifier(clf, Ztest);
 catch ME
     if opts.verbose
@@ -673,16 +680,18 @@ end
 end
 
 % -------------------------------------------------------------------------
-function [clf, Yhat, Phat] = trainFinalClassifier(type, Z, Ybin, W, p1, p2, opts)
+function [clf, Yhat, Phat] = trainFinalClassifier(type, Z, Ybin, W, p1, p2, opts, seed)
 % Train the final model on all data with the best hyperparameters.
-clf = fitOneClassifier(type, Z, Ybin, W, p1, p2, opts, true);
+if nargin < 8; seed = opts.seed; end
+clf = fitOneClassifier(type, Z, Ybin, W, p1, p2, opts, true, seed);
 [Yhat, Phat] = predictClassifier(clf, Z);
 end
 
 % -------------------------------------------------------------------------
-function clf = fitOneClassifier(type, Z, Y, W, p1, p2, opts, isFinal)
+function clf = fitOneClassifier(type, Z, Y, W, p1, p2, opts, isFinal, seed)
 % Dispatch training call to the appropriate MATLAB fitc* function.
 if nargin < 8; isFinal = false; end
+if nargin < 9; seed = opts.seed; end
 
 switch lower(type)
     case 'knn'
@@ -702,6 +711,15 @@ switch lower(type)
         if isFinal; args = [args, {'RemoveDuplicates', true}]; end
         clf = fitcsvm(Z, Y, args{:});
         try
+            % fitSVMPosterior fits its own sigmoid calibration (internally
+            % cross-validated), which draws from the global RNG stream.
+            % fitcsvm's SMO solver above already consumed an unpredictable,
+            % convergence-path-dependent number of draws from that same
+            % stream, so without reseeding here fitSVMPosterior's output is
+            % not reproducible across runs even with a fixed opts.seed
+            % (mirrors the #41 "reseed immediately before every stochastic
+            % call" fix for PILOT/SIFTED/PILOTviewpoint).
+            rng(seed, 'twister');
             clf = fitSVMPosterior(clf);
         catch ME
             warning('ISA:PYTHIA:posteriorFailed', ...

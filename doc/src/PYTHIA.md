@@ -196,9 +196,9 @@ Cell array with one row per algorithm plus rows for the *Oracle* (always the bes
 
 ## Version History
 
-### v0.9.2 — Evaluation and Oracle fixes
+### v0.9.2 — Evaluation, Oracle, and SVM reproducibility fixes
 
-Evaluation mode scores only the instances with observed performance for each algorithm, and reports `NaN` for a trained algorithm that the new data does not cover. The Oracle's probability of good performance is the fraction of instances on which any algorithm is good, instead of a fixed 1.
+Evaluation mode scores only the instances with observed performance for each algorithm, and reports `NaN` for a trained algorithm that the new data does not cover. The Oracle's probability of good performance is the fraction of instances on which any algorithm is good, instead of a fixed 1. With `opts.classifier = 'svm'`, the posterior probabilities (`Pr0hat`/`Pr0sub`) are now reproducible for a fixed `opts.seed` — the classifier is reseeded immediately before fitting its sigmoid calibration, rather than inheriting whatever random state `fitcsvm`'s solver left behind. This changes `Pr0hat`/`Pr0sub` for existing SVM runs, but not the thresholded predictions (`Yhat`/`Ysub`).
 
 ### v0.9.0 — Classifier registry
 

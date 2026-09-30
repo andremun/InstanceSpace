@@ -21,6 +21,12 @@ classdef ReviewFixTest < matlab.unittest.TestCase
 
 
     methods (Test)
+        function testRegretWeights(tc)
+            opts = ISAdefaults(struct()); opts.pythia.useweights = true;
+            Y = [1 11;3 8;2 4;4 10]; Ybest = min(Y,[],2);
+            out = PYTHIA([1 0;0 1;1 1;2 1],Y,true(4,2),Ybest,{'a','b'},opts.pythia);
+            tc.verifyEqual(out.W,[2 10;2 5;2 2;2 6]);
+        end
         function testSelectorRecall(tc)
             opts = ISAdefaults(struct());
             trained.classifiers = {struct('constant',true,'value',true),struct('constant',true,'value',true)};

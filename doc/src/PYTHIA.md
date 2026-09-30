@@ -217,3 +217,5 @@ Evaluation uses the saved training fallback algorithm and precision weights. Leg
 Training summaries use out-of-fold predictions for both algorithm and selector rows. `selection0CV` and `selection1CV` retain these selections. `Yhat`, `selection0`, and `selection1` remain fitted-data outputs for footprints and training plots. These CV metrics condition on the fitted preprocessing, projection, and selected hyperparameters. They are not an unbiased cross-validation estimate of the complete ISA pipeline. Exploration summaries label their metrics as `Test_model_*`.
 
 Selector recall is the fraction of instances with an observed good algorithm on which the non-fallback selection is good. Successful selections are not also counted as missed opportunities when other algorithms are good.
+
+Cost-sensitive weights are `abs(Y-Ybest)` per instance. Zero regrets use the smallest positive regret in the training matrix to keep every observed example trainable. If all regrets are zero, weights are uniform.

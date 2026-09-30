@@ -146,7 +146,7 @@ end
 
 if opts.useweights
     fprintf('[PYTHIA] Using cost-sensitive classification.\n');
-    W = abs(Y - nanmean(Y(:)));
+    W = abs(Y - Ybest);
     if any(W(:)~=0 & ~isnan(W(:)))
         W(W==0) = min(W(W~=0));
         W(isnan(W)) = max(W(~isnan(W)));

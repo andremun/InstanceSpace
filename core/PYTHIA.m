@@ -349,7 +349,8 @@ fprintf('[PYTHIA] Average CV precision: %.1f%%\n', 100.*nanmean(out.precision));
 fprintf('[PYTHIA] Average CV accuracy : %.1f%%\n', 100.*nanmean(out.accuracy));
 fprintf('[PYTHIA] Completed in %.1f s.\n', toc(t));
 
-out = computeSelection(out, nalgos, Ybin);
+[~, out.defaultAlgorithm] = max(mean(Ybin, 1));
+out = computeSelection(out, nalgos, out.defaultAlgorithm);
 out.summary = buildSummary(out, algolabels, nalgos, ninst, ...
                            Y, Ybin, Ybest, p1label, p2label);
 fprintf('[PYTHIA] PYTHIA has completed! Performance of the models:\n\n');
@@ -463,18 +464,21 @@ out.precision(1:modelalgos) = tp ./ (tp + fp);
 out.recall(1:modelalgos)    = tp ./ (tp + fn);
 out.accuracy(1:modelalgos)  = (tp + tn) ./ (tp + tn + fp + fn);
 
-% Use the training-time precision for selection weighting if available; fall back
-% to the freshly computed eval precision so old/migrated models still work.
-% Either way, pad to the full nalgos with 0 for algorithms beyond
-% modelalgos so computeSelection (bsxfun over out.Yhat, which IS full
-% width) never favours an algorithm with no classifier signal.
+% Selection weights come only from training. Legacy models without stored
+% precision use equal weights for trained algorithms.
+selPrecision = zeros(nalgos, 1);
 if isfield(trained, 'precision') && ~isempty(trained.precision)
-    selPrecision = zeros(nalgos, 1);
     selPrecision(1:modelalgos) = trained.precision(:);
-    out = computeSelection(out, nalgos, Ybin, selPrecision);
 else
-    out = computeSelection(out, nalgos, Ybin);
+    selPrecision(1:modelalgos) = 1;
 end
+% Legacy models lack the training fallback. Use the first trained algorithm
+% rather than deriving a recommendation from the test outcomes.
+out.defaultAlgorithm = 1;
+if isfield(trained, 'defaultAlgorithm')
+    out.defaultAlgorithm = trained.defaultAlgorithm;
+end
+out = computeSelection(out, nalgos, out.defaultAlgorithm, selPrecision);
 % Eval-mode summary has 9 columns (no hyperparameter columns).
 out.summary = buildSummary(out, algolabels, nalgos, ninst, ...
                            Y, Ybin, Ybest, [], []);
@@ -795,7 +799,7 @@ end
 end
 
 % -------------------------------------------------------------------------
-function out = computeSelection(out, nalgos, Ybin, trainPrecision)
+function out = computeSelection(out, nalgos, default, trainPrecision)
 % Compute algorithm selection vectors using CV-precision-weighted voting.
 if nargin < 4; trainPrecision = out.precision; end
 trainPrecision = trainPrecision(:);
@@ -807,7 +811,6 @@ else
     best = out.Yhat;
     out.selection0 = double(out.Yhat);
 end
-[~, default] = max(mean(Ybin));
 out.selection1 = out.selection0;
 out.selection0(best <= 0) = 0;
 out.selection1(best <= 0) = default;

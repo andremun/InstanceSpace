@@ -148,6 +148,15 @@ model = migrateOptsMerges(model);
 model = migrateDataFieldNames(model);
 model = migratePilotFields(model);
 model = migratePythiaFields(model);
+if isfield(model, 'pythia') && isfield(model, 'data') && isfield(model.data, 'Ybin')
+    if ~isfield(model.pythia, 'defaultAlgorithm')
+        [~, model.pythia.defaultAlgorithm] = max(mean(model.data.Ybin, 1));
+    end
+    if ~isfield(model.pythia, 'precision') && isfield(model.pythia, 'Ysub')
+        predicted = model.pythia.Ysub;
+        model.pythia.precision = (sum(predicted & model.data.Ybin, 1) ./ sum(predicted, 1))';
+    end
+end
 model = migrateTraceFields(model);
 model = inferCompletedStages(model);
 end

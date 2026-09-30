@@ -211,3 +211,5 @@ Evaluation mode scores only the instances with observed performance for each alg
 ## See Also
 
 `ISAgetClassifierFcn` | `TRACE` | `InstanceSpace` | [Deprecated Functions](Deprecated.html)
+
+Evaluation uses the saved training fallback algorithm and precision weights. Legacy models without these fields use the first trained algorithm as fallback and equal voting weights. Test outcomes never determine recommendations.

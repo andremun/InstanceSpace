@@ -43,7 +43,8 @@ classdef ReviewFixTest < matlab.unittest.TestCase
             opts = ISAdefaults(struct()); opts.pythia.classifier = 'svm';
             opts.pythia.params = [1 1]; opts.pythia.kFold = 2;
             out = PYTHIA(Z,Y,Y<0.5,Y,{'a'},opts.pythia);
-            tc.verifyEqual(out.scoreTypeCV,{'decision-score'});
+            tc.verifyEqual(out.scoreTypeCV,{'probability'});
+            tc.verifyTrue(all(out.Pr0subIsProbability));
             tc.verifyEqual(out.scoreType,{'probability'});
             tc.verifyTrue(all(out.Pr0hat>=0 & out.Pr0hat<=1));
         end

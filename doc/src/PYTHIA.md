@@ -218,7 +218,7 @@ Selector recall is the fraction of instances with an observed good algorithm on 
 
 Cost-sensitive weights are `abs(Y-Ybest)` per instance. Zero regrets use the smallest positive regret in the training matrix to keep every observed example trainable. If all regrets are zero, weights are uniform.
 
-`scoreType` describes each `Pr0hat` column and `scoreTypeCV` describes `Pr0sub`. Values are `probability`, `decision-score`, `class-score`, or `unavailable` (`unknown` for old classifiers without metadata). Scores are mapped through classifier class names. SVM candidate folds use decision scores and omit posterior calibration. The selected final SVM is calibrated, and a failed calibration is labelled as decision scores. Failed CV candidates cannot produce a successful model: all failed candidates or an invalid selected CV result raise an error. A single-class training fold predicts its observed class.
+`scoreType` describes each `Pr0hat` column and `scoreTypeCV` describes `Pr0sub`. Values are `probability`, `decision-score`, `class-score`, or `unavailable` (`unknown` for old classifiers without metadata). Scores are mapped through classifier class names. SVM folds and the final model retain posterior calibration. A failed calibration is labelled as decision scores. `Pr0subIsProbability` identifies calibrated or probabilistic CV scores per prediction, and `scoreTypeCV` is `mixed` when folds use different score types. Failed CV candidates cannot produce a successful model: all failed candidates or an invalid selected CV result raise an error. A single-class training fold predicts its observed class.
 
 ## See Also
 

@@ -216,6 +216,7 @@ out.cvcmat         = zeros(nalgos, 4);
 out.Ysub           = false(ninst, nalgos);
 out.Yhat           = false(ninst, nalgos);
 out.Pr0sub         = zeros(ninst, nalgos);
+out.Pr0subIsProbability = false(ninst,nalgos);
 out.Pr0hat         = zeros(ninst, nalgos);
 out.scoreType = repmat({'class-score'},1,nalgos);
 out.scoreTypeCV = repmat({'class-score'},1,nalgos);
@@ -271,6 +272,7 @@ for i = 1:nalgos
         % NOT "probability of the observed label". 1 when always-bad, 0 when
         % always-good.
         out.Pr0sub(:,i)     = double(~yi(1));
+        out.Pr0subIsProbability(:,i) = true;
         % Sentinel (not a real classifier object or a legacy LIBSVM struct):
         % PYTHIAevalMode checks the 'constant' field before its isstruct/LIBSVM
         % dispatch, so a degenerate-label algorithm still predicts correctly
@@ -292,13 +294,13 @@ for i = 1:nalgos
                 p2_best = 1;  % placeholder; ignored by fitOneClassifier for single-param classifiers
             end
             % CV predictions with the pre-supplied params.
-            [out.Ysub(:,i), out.Pr0sub(:,i)] = crossValPredict( ...
+            [out.Ysub(:,i), out.Pr0sub(:,i), out.Pr0subIsProbability(:,i)] = crossValPredict( ...
                 classifierType, Znorm, yi, W(:,i), out.cp{i}, ...
                 p1_best, p2_best, opts, mod(double(opts.seed) + i, 2^32));
         elseif strcmp(opts.tuning, 'bayes')
             % MATLAB bayesopt (Gaussian-process surrogate) over the same
             % classifier/CV-fold evaluation used by 'sobol'.
-            [out.Ysub(:,i), out.Pr0sub(:,i), p1_best, p2_best] = ...
+            [out.Ysub(:,i), out.Pr0sub(:,i), p1_best, p2_best, out.Pr0subIsProbability(:,i)] = ...
                 bayesSearch(classifierType, Znorm, yi, W(:,i), out.cp{i}, opts, mod(double(opts.seed) + i, 2^32));
         else
             % Scrambled Sobol search. Scrambling must be applied via the
@@ -312,7 +314,7 @@ for i = 1:nalgos
             X  = net(ss, nIter);
             [P1, P2] = sobolToParams(classifierType, X);
 
-            [out.Ysub(:,i), out.Pr0sub(:,i), p1_best, p2_best] = ...
+            [out.Ysub(:,i), out.Pr0sub(:,i), p1_best, p2_best, out.Pr0subIsProbability(:,i)] = ...
                 sobolSearch(classifierType, Znorm, yi, W(:,i), ...
                             out.cp{i}, P1, P2, opts, mod(double(opts.seed) + i, 2^32));
         end
@@ -337,6 +339,11 @@ for i = 1:nalgos
                                  p1_best, p2_best, opts, mod(double(opts.seed) + i, 2^32));
     end
 
+    if all(out.Pr0subIsProbability(:,i))
+        out.scoreTypeCV{i} = 'probability';
+    elseif any(out.Pr0subIsProbability(:,i))
+        out.scoreTypeCV{i} = 'mixed';
+    end
     out.param1(i) = p1_best;
     out.param2(i) = p2_best;
     if ~degenerateLabel && strcmpi(classifierType, 'knn')
@@ -523,7 +530,7 @@ end
 %  SUBFUNCTIONS
 % =========================================================================
 
-function [Ysub, Psub, p1_best, p2_best] = sobolSearch( ...
+function [Ysub, Psub, p1_best, p2_best, isProbability] = sobolSearch( ...
         type, Z, Ybin, W, cp, P1, P2, opts, baseSeed)
 % Evaluate nIter Sobol candidates via k-fold CV and return best params + CV predictions.
 if nargin < 9; baseSeed = opts.seed; end
@@ -533,6 +540,7 @@ nworkers = getParallelWorkers(opts);
 
 Ysub_all = false(ninst, nsobol);
 Psub_all = zeros(ninst, nsobol);
+Csub_all = false(ninst, nsobol);
 
 for fold = 1:cp.NumTestSets
     itrain = logical(cp.training(fold));
@@ -542,6 +550,7 @@ for fold = 1:cp.NumTestSets
 
     Yfold = false(ntest, nsobol);
     Pfold = zeros(ntest, nsobol);
+    Cfold = false(ntest, nsobol);
     % Same fixed seed for every candidate within this fold ("common random
     % numbers", matching bayesSearch's treatment): parfor workers don't
     % inherit the client's RNG stream, so each still needs an explicit seed
@@ -560,11 +569,12 @@ for fold = 1:cp.NumTestSets
     foldSeed = mod(baseSeed*1e5 + fold*1e3, 2^32);
     parfor (j = 1:nsobol, nworkers)
         rng(foldSeed, 'twister');
-        [Yfold(:,j), Pfold(:,j)] = evalFoldClassifier( ...
+        [Yfold(:,j), Pfold(:,j), Cfold(:,j)] = evalFoldClassifier( ...
             type, Ztrain, Ytrain, Wtrain, Ztest, P1(j), P2(j), opts, foldSeed);
     end
     Ysub_all(itest,:) = Yfold;
     Psub_all(itest,:) = Pfold;
+    Csub_all(itest,:) = Cfold;
 end
 
 Ybin_rep = repmat(logical(Ybin), 1, nsobol);
@@ -578,12 +588,13 @@ end
 [~, best] = min(errs);
 Ysub   = Ysub_all(:, best);
 Psub   = Psub_all(:, best);
+isProbability = Csub_all(:,best);
 p1_best = P1(best);
 p2_best = P2(best);
 end
 
 % -------------------------------------------------------------------------
-function [Ysub, Psub, p1_best, p2_best] = bayesSearch(type, Z, Ybin, W, cp, opts, baseSeed)
+function [Ysub, Psub, p1_best, p2_best, isProbability] = bayesSearch(type, Z, Ybin, W, cp, opts, baseSeed)
 % Bayesian-optimisation hyperparameter search (opts.tuning='bayes').
 % Uses MATLAB's bayesopt (Gaussian process surrogate) over the same
 % per-candidate k-fold CV evaluator as sobolSearch (crossValPredict), so
@@ -610,7 +621,7 @@ if hasP2
 else
     p2_best = 1;
 end
-[Ysub, Psub] = crossValPredict(type, Z, Ybin, W, cp, p1_best, p2_best, opts, baseSeed);
+[Ysub, Psub, isProbability] = crossValPredict(type, Z, Ybin, W, cp, p1_best, p2_best, opts, baseSeed);
 end
 
 % -------------------------------------------------------------------------
@@ -678,36 +689,41 @@ end
 end
 
 % -------------------------------------------------------------------------
-function [Ysub, Psub] = crossValPredict(type, Z, Ybin, W, cp, p1, p2, opts, seed)
+function [Ysub, Psub, isProbability] = crossValPredict(type, Z, Ybin, W, cp, p1, p2, opts, seed)
 % Run k-fold CV with fixed hyperparameters; return fold-level predictions.
 if nargin < 9; seed = opts.seed; end
 ninst    = size(Z, 1);
 nworkers = getParallelWorkers(opts);
 Ysub = false(ninst, 1);
 Psub = zeros(ninst, 1);
+isProbability = false(ninst,1);
 
 for fold = 1:cp.NumTestSets
     itrain = logical(cp.training(fold));
     itest  = logical(cp.test(fold));
     Ztrain = Z(itrain,:);  Ytrain = logical(Ybin(itrain));  Wtrain = W(itrain);
     Ztest  = Z(itest,:);
-    [Yfold, Pfold] = evalFoldClassifier(type, Ztrain, Ytrain, Wtrain, Ztest, p1, p2, opts, seed);
+    [Yfold, Pfold, Cfold] = evalFoldClassifier(type, Ztrain, Ytrain, Wtrain, Ztest, p1, p2, opts, seed);
     Ysub(itest) = Yfold;
     Psub(itest) = Pfold;
+    isProbability(itest) = Cfold;
 end
 end
 
 % -------------------------------------------------------------------------
-function [Yp, Pp] = evalFoldClassifier(type, Ztrain, Ytrain, Wtrain, Ztest, p1, p2, opts, seed)
+function [Yp, Pp, isProbability] = evalFoldClassifier(type, Ztrain, Ytrain, Wtrain, Ztest, p1, p2, opts, seed)
 % Train one classifier on a CV fold and predict on the test fold.
 if nargin < 9; seed = opts.seed; end
+isProbability = false(size(Ztest,1),1);
 if numel(unique(Ytrain)) == 1
     Yp = repmat(logical(Ytrain(1)),size(Ztest,1),1);
     Pp = double(~Yp);
+    isProbability(:) = true;
     return;
 end
 try
-    clf = fitOneClassifier(type, Ztrain, Ytrain, Wtrain, p1, p2, opts, false, seed);
+    [clf, scoreType] = fitOneClassifier(type, Ztrain, Ytrain, Wtrain, p1, p2, opts, false, seed);
+    isProbability(:) = strcmp(scoreType, 'probability');
     [Yp, Pp] = predictClassifier(clf, Ztest);
 catch ME
     if opts.verbose
@@ -754,7 +770,6 @@ switch lower(type)
         if isFinal; args = [args, {'RemoveDuplicates', true}]; end
         clf = fitcsvm(Z, Y, args{:});
         scoreType = 'decision-score';
-        if isFinal
         try
             % fitSVMPosterior fits its own sigmoid calibration (internally
             % cross-validated), which draws from the global RNG stream.
@@ -771,7 +786,6 @@ switch lower(type)
             warning('ISA:PYTHIA:posteriorFailed', ...
                 'fitSVMPosterior failed; predict will return raw decision scores: %s', ...
                 ME.message);
-        end
         end
 
     case 'tree'
@@ -963,6 +977,7 @@ out.cvcmat         = zeros(nalgos, 4);
 out.Ysub           = false(ninst, nalgos);
 out.Yhat           = false(ninst, nalgos);
 out.Pr0sub         = zeros(ninst, nalgos);
+out.Pr0subIsProbability = false(ninst,nalgos);
 out.Pr0hat         = zeros(ninst, nalgos);
 out.precision      = NaN(nalgos, 1);   % column vector — matches training/eval orientation
 out.recall         = NaN(nalgos, 1);

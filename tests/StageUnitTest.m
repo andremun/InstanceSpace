@@ -427,10 +427,10 @@ classdef StageUnitTest < matlab.unittest.TestCase
             scatter3(ax, rand(10,1), rand(10,1), rand(10,1));
             ISArecallView(fig, 3);                  % algorithm 3 is in group 2
             [az, el] = view(ax);
-            testCase.verifyEqual([az el], rad2deg([1.0 0.4]), 'AbsTol', 1e-6);
+            testCase.verifyEqual([az el], rad2deg([1.0+pi/2 0.4]), 'AbsTol', 1e-6);
             ISArecallView(fig);                     % global viewpoint
             [az, el] = view(ax);
-            testCase.verifyEqual([az el], rad2deg([0.5 0.2]), 'AbsTol', 1e-6);
+            testCase.verifyEqual([az el], rad2deg([0.5+pi/2 0.2]), 'AbsTol', 1e-6);
         end
     end
 end

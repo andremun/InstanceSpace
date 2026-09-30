@@ -85,6 +85,7 @@ if isempty(ax)
     error('ISA:ISArecallView:noAxes', 'fig has no plot axes to apply the view to.');
 end
 for i = 1:numel(ax)
+    daspect(ax(i), [1 1 1]);
     view(ax(i), viewAngle(1), viewAngle(2));
 end
 end

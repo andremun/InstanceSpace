@@ -135,14 +135,12 @@ if isEvalMode
         data.X = data.X(:,isselfeat);
         featlabelsAll = featlabelsAll(isselfeat);
     end
-    % Validate against trainedModel.prelim.lambdaX (one Box-Cox lambda
-    % per feature PRELIM actually fit at training time, i.e. after both
-    % opts.selvars.feats AND any opts.prelim.nanThreshold-triggered
-    % column drops -- the latter isn't mirrored above, since which
-    % columns those were isn't retained anywhere in the model). A count
-    % mismatch here means metadata_test.csv doesn't match the training
-    % feature set, and would otherwise surface many rows down as an
-    % opaque bsxfun dimension-mismatch error.
+    if isfield(trainedModel.data, 'discardedFeatures')
+        keep = ~ismember(featlabelsAll, trainedModel.data.discardedFeatures);
+        data.X = data.X(:,keep);
+        featlabelsAll = featlabelsAll(keep);
+    end
+    % The retained schema must match the fitted transform width.
     if numel(featlabelsAll) ~= numel(trainedModel.prelim.lambdaX)
         error('ISA:InstanceSpace:featureCountMismatch', ...
             ['metadata_test.csv has %d feature column(s) after applying ' ...
@@ -249,6 +247,7 @@ else
         end
     end
     idx = mean(isnan(data.X), 1) >= opts.prelim.nanThreshold;
+    data.discardedFeatures = data.featlabels(idx);
     if any(idx)
         warning('-> There are features with too many missing values. They are being removed to increase speed.');
         data.X = data.X(:,~idx);
@@ -264,6 +263,16 @@ else
     data.Yraw = data.Y;
     data.featlabels = strrep(data.featlabels, 'feature_', '');
     data.algolabels = strrep(data.algolabels, 'algo_', '');
+end
+
+% Projection requires complete features. Missing test outcomes remain valid
+% and are excluded from classifier scoring. Training outcomes must be observed.
+bad = any(~isfinite(data.X), 2);
+if ~isEvalMode, bad = bad | any(~isfinite(data.Y), 2); end
+if any(bad)
+    error('ISA:INIT:incompleteData', ...
+        'Resolve missing/non-finite features or training outcomes for instances: %s.', ...
+        strjoin(cellstr(string(data.instlabels(bad))), ', '));
 end
 
 end

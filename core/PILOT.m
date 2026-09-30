@@ -101,6 +101,10 @@ if ~(isnumeric(opts.alpha) && isscalar(opts.alpha) && isfinite(opts.alpha) && op
 end
 d = opts.dims;
 costWeight = opts.alpha;
+if any(~isfinite(X(:))) || any(~isfinite(Y(:)))
+    error('ISA:PILOT:incompleteData', ...
+        'PILOT requires finite features and training outcomes. Resolve missing values before projection.');
+end
 
 n = size(X, 2); % Number of features
 Xbar = [X Y];

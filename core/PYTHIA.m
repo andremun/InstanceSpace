@@ -126,6 +126,10 @@ end
 hasP2 = ~strcmp(p2label, 'N/A');  % tree/nb/linear have only one tunable parameter
 
 fprintf('[PYTHIA] Initializing PYTHIA.\n');
+if any(~isfinite(Y(:))) || any(~isfinite(Z(:)))
+    error('ISA:PYTHIA:incompleteTrainingData', ...
+        'Resolve missing training outcomes and non-finite coordinates before fitting classifiers.');
+end
 [Znorm, out.mu, out.sigma] = zscore(Z);
 out.sigma(out.sigma == 0) = 1;
 [ninst, nalgos] = size(Ybin);

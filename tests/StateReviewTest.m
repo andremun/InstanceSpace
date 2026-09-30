@@ -39,6 +39,22 @@ classdef StateReviewTest < matlab.unittest.TestCase
         end
     end
     methods (Test)
+        function testDroppedFeatureReplay(tc)
+            file = fullfile(tc.Folder,'metadata.csv'); T = readtable(file);
+            T.feature_b(:) = NaN; writetable(T,file);
+            obj = InstanceSpace(tc.Folder,tc.Opts).build('stages',{'prelim'});
+            T.feature_b(:) = 10; writetable(T,fullfile(tc.Folder,'metadata_test.csv'));
+            [data,~] = INIT([tc.Folder filesep],obj.opts,obj.model);
+            tc.verifyEqual(data.X,obj.model.data.Xraw);
+            tc.verifyEqual(size(data.X,2),3);
+        end
+        function testSparseMissingDataRejected(tc)
+            file = fullfile(tc.Folder,'metadata.csv'); T = readtable(file);
+            T.feature_a(1) = NaN; writetable(T,file);
+            tc.verifyError(@() InstanceSpace(tc.Folder,tc.Opts).build('stages',{'prelim'}),'ISA:INIT:incompleteData');
+            T.feature_a(1) = 1; T.algo_a(1) = NaN; writetable(T,file);
+            tc.verifyError(@() InstanceSpace(tc.Folder,tc.Opts).build('stages',{'prelim'}),'ISA:INIT:incompleteData');
+        end
         function testSiftedRestoresInput(tc)
             obj = InstanceSpace(tc.Folder,tc.Opts).build('stages',{'prelim','sifted'});
             original = obj.model.data;

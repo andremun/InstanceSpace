@@ -191,3 +191,5 @@ The fourth argument, `trainedPrelim`, applies a trained preprocessing to new dat
 ## See Also
 
 `INIT` | `FILTER` | `SIFTED` | `InstanceSpace`
+
+Constant columns use a unit divisor for Z-score normalisation. Evaluation applies the same policy to zero scales saved by older models.

@@ -127,6 +127,7 @@ hasP2 = ~strcmp(p2label, 'N/A');  % tree/nb/linear have only one tunable paramet
 
 fprintf('[PYTHIA] Initializing PYTHIA.\n');
 [Znorm, out.mu, out.sigma] = zscore(Z);
+out.sigma(out.sigma == 0) = 1;
 [ninst, nalgos] = size(Ybin);
 classifierType = opts.classifier;
 
@@ -364,7 +365,9 @@ function out = PYTHIAevalMode(Z, Y, Ybin, Ybest, algolabels, opts, trained)
 % Apply trained classifiers to new (test) data.
 
 if isfield(trained, 'mu') && isfield(trained, 'sigma')
-    Znorm = (Z - trained.mu) ./ trained.sigma;
+    scale = trained.sigma;
+    scale(scale == 0) = 1;
+    Znorm = (Z - trained.mu) ./ scale;
 else
     Znorm = Z;
 end

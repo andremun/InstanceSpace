@@ -173,6 +173,9 @@ if isEvalMode
                                     bsxfun(@times, lomask, trainedPrelim.lobound);
     end
 
+    % Match zscore's unit divisor for constant columns, including old models.
+    trainedPrelim.sigmaX(trainedPrelim.sigmaX == 0) = 1;
+    trainedPrelim.sigmaY(trainedPrelim.sigmaY == 0) = 1;
     modelalgos = numel(trainedPrelim.lambdaY);
     if opts.auto && opts.norm
         fprintf('[PRELIM] Auto-normalizing the data using Box-Cox and Z transformations.\n');
@@ -189,7 +192,9 @@ if isEvalMode
             end
             X(:,i) = x;
         end
-        X = bsxfun(@rdivide, bsxfun(@minus, X, trainedPrelim.muX), trainedPrelim.sigmaX);
+        scaleX = trainedPrelim.sigmaX;
+        scaleX(scaleX == 0) = 1;
+        X = bsxfun(@rdivide, bsxfun(@minus, X, trainedPrelim.muX), scaleX);
 
         % Shifts the WHOLE of Y (not just the first modelalgos columns),
         % matching the original: any columns beyond modelalgos (algorithms
@@ -247,6 +252,7 @@ else
             idx = isnan(aux);
             [aux, out.lambdaX(i)] = boxcox(aux(~idx));
             [aux, out.muX(i), out.sigmaX(i)] = zscore(aux);
+            if out.sigmaX(i) == 0, out.sigmaX(i) = 1; end
             X(~idx, i) = aux;
         end
 
@@ -256,6 +262,7 @@ else
             idx = isnan(aux);
             [aux, out.lambdaY(i)] = boxcox(aux(~idx));
             [aux, out.muY(i), out.sigmaY(i)] = zscore(aux);
+            if out.sigmaY(i) == 0, out.sigmaY(i) = 1; end
             Y(~idx, i) = aux;
         end
     end

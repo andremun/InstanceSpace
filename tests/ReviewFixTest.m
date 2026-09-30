@@ -21,6 +21,18 @@ classdef ReviewFixTest < matlab.unittest.TestCase
 
 
     methods (Test)
+        function testConstantScale(tc)
+            opts = ISAdefaults(struct());
+            p = opts.perf; p.AbsPerf = true; p.auto = true; p.bound = true; p.norm = true;
+            X = [ones(20,1), (1:20)']; Y = [2*ones(20,1), (1:20)'];
+            [a,b,t] = PRELIM(X,Y,p);
+            [c,d] = PRELIM(X,Y,p,t);
+            tc.verifyEqual(a,c,'AbsTol',1e-8); tc.verifyEqual(b,d,'AbsTol',1e-8);
+            tc.verifyEqual(t.sigmaX(1),1); tc.verifyEqual(t.sigmaY(1),1);
+            opts.pythia.skip = true;
+            q = PYTHIA(X,Y,Y<5,min(Y,[],2),{'a','b'},opts.pythia);
+            tc.verifyEqual(q.sigma(1),1);
+        end
         function testPLSProjectionMean(tc)
             rng(12);
             X = rand(30,4)+[4 8 2 6]; Y = rand(30,3);

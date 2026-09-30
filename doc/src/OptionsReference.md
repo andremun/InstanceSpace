@@ -29,7 +29,7 @@ Settings for the whole pipeline.
 
 ## opts.perf
 
-How performance is judged. Used by `PRELIM`.
+How performance is judged. Used by `PRELIM`. Observed raw performance must be finite and nonnegative. Zero is allowed; negative scores are rejected in both absolute and relative modes. Relative mode substitutes machine epsilon for exact zero numerators and denominators; see [PRELIM](PRELIM.html) for the resulting zero-reference convention.
 
 | Field | Default | Description |
 |---|---|---|

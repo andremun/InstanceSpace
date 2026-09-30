@@ -17,7 +17,7 @@ function [X, Y, out] = PRELIM(X, Y, opts, trainedPrelim)
 %
 %   Inputs
 %     X     - (ninst x nfeats) feature matrix; may contain NaN
-%     Y     - (ninst x nalgos) performance matrix; may contain NaN
+%     Y     - (ninst x nalgos) nonnegative performance matrix; NaN is unobserved
 %     opts  - struct with fields:
 %               MaxPerf       logical  true = maximise performance (default false)
 %               AbsPerf       logical  true = absolute threshold (default false)
@@ -70,6 +70,10 @@ if ~isstruct(opts)
     error('ISA:PRELIM:badOpts', 'opts must be a struct.');
 end
 if ~isfield(opts, 'iqrMultiplier'), opts.iqrMultiplier = 5; end
+if any(Y(:) < 0 | isinf(Y(:)))
+    error('ISA:PRELIM:invalidPerformance', ...
+        'Observed raw performance must be finite and nonnegative; NaN denotes an unobserved outcome.');
+end
 
 Yraw = Y;
 nalgos = size(Y, 2);
@@ -86,13 +90,15 @@ if opts.MaxPerf
     Yaux = Y;
     Yaux(isnan(Yaux)) = -Inf;
     [out.Ybest, out.P] = max(Yaux, [], 2);
-    YbestTie = out.Ybest;  % pre-eps-substitution snapshot, used for tie detection below
+    YbestTie = out.Ybest;  % preserve raw values for tie detection
     if opts.AbsPerf
         out.Ybin = Yaux >= opts.epsilon;
         msg = [msg 'higher than ' num2str(opts.epsilon)];
     else
-        scale = max(abs(out.Ybest), eps);
-        Y = (out.Ybest - Y) ./ scale;
+        denominator = out.Ybest;
+        denominator(denominator == 0) = eps;
+        Y(Y == 0) = eps;
+        Y = 1 - bsxfun(@rdivide, Y, denominator);
         out.Ybin = Y <= opts.epsilon;
         msg = [msg 'within ' num2str(round(100.*opts.epsilon)) '% of the best.'];
     end
@@ -100,22 +106,28 @@ else
     Yaux = Y;
     Yaux(isnan(Yaux)) = Inf;
     [out.Ybest, out.P] = min(Yaux, [], 2);
-    YbestTie = out.Ybest;  % pre-eps-substitution snapshot, used for tie detection below
+    YbestTie = out.Ybest;  % preserve raw values for tie detection
     if opts.AbsPerf
         out.Ybin = Yaux <= opts.epsilon;
         msg = [msg 'less than ' num2str(opts.epsilon)];
     else
-        scale = max(abs(out.Ybest), eps);
-        Y = (Y - out.Ybest) ./ scale;
+        denominator = out.Ybest;
+        denominator(denominator == 0) = eps;
+        Y(Y == 0) = eps;
+        Y = bsxfun(@rdivide, Y, denominator) - 1;
         out.Ybin = Y <= opts.epsilon;
         msg = [msg 'within ' num2str(round(100.*opts.epsilon)) '% of the best.'];
     end
 end
+if ~opts.AbsPerf && mean(out.Ybest == 0) > 0.05
+    warning('ISA:PRELIM:manyZeroBest', ...
+        ['More than 5%% of instances have zero best performance. Relative ' ...
+         'performance uses machine epsilon for zero scores; consider an absolute threshold.']);
+end
 fprintf('[PRELIM] %s\n', msg);
 % -------------------------------------------------------------------------
 % Testing for ties. If there is a tie in performance, we pick an algorithm
-% at random. Compared against YbestTie (captured before the eps
-% substitution above) so exact-zero best scores are still matched correctly.
+% at random. Compare raw values so zero best scores remain exact ties.
 bestAlgos = bsxfun(@eq, Yraw, YbestTie);
 multipleBestAlgos = sum(bestAlgos, 2) > 1;
 aidx = 1:nalgos;

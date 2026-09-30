@@ -19,6 +19,8 @@ copyfile('test/data/metadata_test.csv', rootdir);
 
 ## Describe the Performance Measure
 
+Raw algorithm performance must be finite and nonnegative. Zero is allowed; negative values are rejected. Missing test outcomes can be represented by `NaN`. This restriction applies to raw performance, not features or transformed coordinates.
+
 The one decision you must always make is how to judge performance. Here performance is an error rate, so lower is better, and an algorithm counts as *good* on an instance when its error is below 20%:
 
 ```matlab

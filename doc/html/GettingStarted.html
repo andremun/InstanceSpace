@@ -82,7 +82,8 @@
 <span class="kw">if</span> ~isfolder(rootdir), mkdir(rootdir); <span class="kw">end</span>
 copyfile(<span class="str">'test/data/metadata.csv'</span>, rootdir);
 copyfile(<span class="str">'test/data/metadata_test.csv'</span>, rootdir);</code></pre></div></section>
-<section class="refsect" id="describe-the-performance-measure"><h2>Describe the Performance Measure</h2><p>The one decision you must always make is how to judge performance. Here performance is an error rate, so lower is better, and an algorithm counts as <em>good</em> on an instance when its error is below 20%:</p>
+<section class="refsect" id="describe-the-performance-measure"><h2>Describe the Performance Measure</h2><p>Raw algorithm performance must be finite and nonnegative. Zero is allowed; negative values are rejected. Missing test outcomes can be represented by <code>NaN</code>. This restriction applies to raw performance, not features or transformed coordinates.</p>
+<p>The one decision you must always make is how to judge performance. Here performance is an error rate, so lower is better, and an algorithm counts as <em>good</em> on an instance when its error is below 20%:</p>
 <div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>opts.perf.MaxPerf = <span class="kw">false</span>;   <span class="com">% a cost: lower is better</span>
 opts.perf.AbsPerf = <span class="kw">true</span>;    <span class="com">% compare with a fixed threshold</span>
 opts.perf.epsilon = <span class="num">0.20</span>;    <span class="com">% the threshold</span></code></pre></div>

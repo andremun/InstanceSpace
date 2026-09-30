@@ -56,7 +56,7 @@ One row per instance, one column per feature. May contain `NaN`.
 
 *numeric matrix*
 
-One row per instance, one column per algorithm. May contain `NaN`; a missing value never counts as good.
+One row per instance, one column per algorithm. Observed raw performance must be finite and nonnegative in both training and evaluation. Zero is allowed; negative values raise `ISA:PRELIM:invalidPerformance`. May contain `NaN`; a missing value never counts as good.
 
 ### `opts` — Preprocessing options
 
@@ -192,7 +192,9 @@ The fourth argument, `trainedPrelim`, applies a trained preprocessing to new dat
 
 Constant columns use a unit divisor for Z-score normalisation. Evaluation applies the same policy to zero scales saved by older models.
 
-Relative performance is nonnegative regret divided by `max(abs(Ybest),eps)`: `(Y-Ybest)/scale` for minimisation and `(Ybest-Y)/scale` for maximisation. This supports negative scores and zero best scores. Exact ties at zero have zero regret and are good. `Ybest` always retains the raw best performance.
+Relative performance retains the original expressions: `Y/Ybest - 1` for minimisation and `1 - Y/Ybest` for maximisation, applied per instance. An algorithm is good when this value is at most `epsilon`. For positive scores these are equivalent to `Y <= (1+epsilon)*Ybest` and `Y >= (1-epsilon)*Ybest`, respectively. The code retains the ratio expressions to preserve floating-point behavior at the threshold.
+
+For relative calculations only, exact zeros in the numerator and denominator are replaced by machine epsilon, as in the original method. Positive values, including values smaller than machine epsilon, are not clipped. Both transformed performance and binary labels use the same calculation, so all-zero ties are good in either direction. `Ybest` retains the raw best performance. A warning is issued when more than 5% of best scores are zero. This numerical convention is not a meaningful percentage of zero and is sensitive to measurement units; use an absolute threshold when zero-reference comparisons matter. Negative raw scores are rejected rather than assigned a new relative-performance definition.
 
 Evaluation rows with no observed algorithm outcomes have `P=0` and `Ybest=NaN`. They are excluded from Oracle probability estimates.
 

@@ -126,3 +126,5 @@ A 3D projection now gets a 3D convex hull, with `ZedgeFaces` and `ZecorrFaces`. 
 ## See Also
 
 `PILOT` | `InstanceSpace` | `scriptcsv`
+
+An optional fourth argument, `Xmean`, applies the fitted PLS feature centring during projection. The three-argument call uses a zero mean.

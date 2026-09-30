@@ -1,4 +1,4 @@
-function out = CLOISTER(X, A, opts)
+function out = CLOISTER(X, A, opts, Xmean)
 % CLOISTER  Estimate the empirical boundary of the instance space.
 %
 %   out = CLOISTER(X, A, opts)
@@ -66,6 +66,7 @@ rho = rho.*(pval<opts.pval);
 % threshold keeps its remaining NaN entries through PRELIM/SIFTED/PILOT).
 % Without omitnan, min/max would return NaN for that column and propagate
 % through Xedge/Zedge into convhull, which errors on NaN input.
+if nargin < 4, Xmean = zeros(1, size(X,2)); end
 Xbnds = [min(X,[],1,'omitnan'); max(X,[],1,'omitnan')];
 % Guard: if too many features, the bit-matrix enumeration below would
 % produce an intractable matrix. Use convex hull of Z as a safe fallback.
@@ -75,7 +76,7 @@ if nfeats > MAX_FEATS
     warning('ISA:CLOISTER:tooManyFeatures', ...
         'CLOISTER skipped: %d features exceeds limit of %d. Using convex hull as boundary.', ...
         nfeats, MAX_FEATS);
-    [out.Zedge, out.ZedgeFaces] = boundaryHull(X*A');
+    [out.Zedge, out.ZedgeFaces] = boundaryHull((X-Xmean)*A');
     out.Zecorr      = out.Zedge;
     out.ZecorrFaces = out.ZedgeFaces;
     fprintf('[CLOISTER] CLOISTER has completed.\n');
@@ -106,10 +107,10 @@ for i=1:ncomb
        end
    end
 end
-[out.Zedge, out.ZedgeFaces] = boundaryHull(Xedge*A');
+[out.Zedge, out.ZedgeFaces] = boundaryHull((Xedge-Xmean)*A');
 
 try
-    [out.Zecorr, out.ZecorrFaces] = boundaryHull(Xedge(~remove,:)*A');
+    [out.Zecorr, out.ZecorrFaces] = boundaryHull((Xedge(~remove,:)-Xmean)*A');
 catch
     fprintf('[CLOISTER] The acceptable correlation threshold was too strict.\n');
     fprintf('[CLOISTER] The features are weakly correlated.\n');

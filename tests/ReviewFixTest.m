@@ -21,6 +21,16 @@ classdef ReviewFixTest < matlab.unittest.TestCase
 
 
     methods (Test)
+        function testPLSProjectionMean(tc)
+            rng(12);
+            X = rand(30,4)+[4 8 2 6]; Y = rand(30,3);
+            opts = ISAdefaults(struct()); opts.pilot.method = 'pls';
+            out = PILOT(X,Y,{'a','b','c','d'},opts.pilot);
+            tc.verifyEqual((X-out.Xmean)*out.A', out.Z, 'AbsTol', 1e-10);
+            b = CLOISTER(X,out.A,opts.cloister,out.Xmean);
+            a = CLOISTER(X,out.A,opts.cloister);
+            tc.verifyEqual(b.Zedge, a.Zedge-out.Xmean*out.A', 'AbsTol', 1e-10);
+        end
         function testSelectionIgnoresTestLabels(tc)
             opts = ISAdefaults(struct());
             trained.classifiers = {struct('constant',true,'value',false), ...

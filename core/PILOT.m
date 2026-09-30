@@ -148,9 +148,10 @@ if strcmpi(opts.method, 'pls')
         fprintf('[PILOT] PILOT is using partial least squares (opts.pilot.method=''pls'').\n');
     end
     Xmean = mean(X, 1);
+    out.Xmean = Xmean;
     Ymean = mean(Y, 1);
     [XL, YL, XS, ~, ~, ~, ~, stats] = plsregress(X, Y, d);
-    out.A = stats.W';  % Ar = W' (d x n) -- used by exploreIS to reproject new instances via Z=X*A'
+    out.A = stats.W';  % Z = (X - out.Xmean)*A'
     out.B = XL;          % Br = P (n x d)
     out.C = YL';          % Cr = Q' (d x q)
     out.Z = XS;

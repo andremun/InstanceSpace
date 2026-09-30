@@ -247,6 +247,14 @@ end
 
 % =========================================================================
 function model = migratePilotFields(model)
+if isfield(model, 'pilot') && ~isfield(model.pilot, 'Xmean') && ...
+        isfield(model, 'opts') && isfield(model.opts, 'pilot') && ...
+        isfield(model.opts.pilot, 'method') && strcmpi(model.opts.pilot.method, 'pls')
+    if ~isfield(model, 'data') || ~isfield(model.data, 'X')
+        error('ISA:ISAmigrateModel:missingPLSMean', 'Retrain this PLS model: its training features are missing.');
+    end
+    model.pilot.Xmean = mean(model.data.X, 1);
+end
 % model.pilot.A without B/C is not expected in any production model -- B
 % and C are always assigned in the same code block as A -- so there is no
 % automatic fix, only a warning that the model may be corrupted or from an

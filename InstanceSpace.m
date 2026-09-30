@@ -706,7 +706,9 @@ classdef InstanceSpace
                      'false for this build. The sign-based filter may silently degrade for any ' ...
                      'feature that is naturally all one sign in its raw scale.']);
             end
-            obj.model.cloist = CLOISTER(obj.model.data.X, obj.model.pilot.A, obj.opts.cloister);
+            Xmean = zeros(1, size(obj.model.data.X, 2));
+            if isfield(obj.model.pilot, 'Xmean'), Xmean = obj.model.pilot.Xmean; end
+            obj.model.cloist = CLOISTER(obj.model.data.X, obj.model.pilot.A, obj.opts.cloister, Xmean);
         end
 
         function obj = runPythia(obj)
@@ -895,7 +897,9 @@ classdef InstanceSpace
                 onStage('sifted', out);
             end
 
-            out.pilot.Z = out.data.X*model.pilot.A';
+            Xmean = zeros(1, size(out.data.X, 2));
+            if isfield(model.pilot, 'Xmean'), Xmean = model.pilot.Xmean; end
+            out.pilot.Z = (out.data.X-Xmean)*model.pilot.A';
             if ~isempty(onStage)
                 onStage('pilot', out);
             end

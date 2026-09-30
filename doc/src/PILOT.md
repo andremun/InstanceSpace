@@ -208,3 +208,5 @@ The BFGS starting points use `opts.seed`, so a changed `opts.general.seed` chang
 ## See Also
 
 `SIFTED` | `PILOTviewpoint` | `CLOISTER` | `InstanceSpace`
+
+PLS stores `out.Xmean`. Apply its projection as `(X-out.Xmean)*out.A'` for new instances. Standard PILOT projections do not subtract a mean.

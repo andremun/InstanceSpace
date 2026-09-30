@@ -71,6 +71,8 @@ function out = PILOT(X, Y, featlabels, opts)
 % -------------------------------------------------------------------------
 
 if ~isfield(opts, 'verbose'), opts.verbose = true; end
+if ~isfield(opts, 'analytic'), opts.analytic = false; end
+if ~isfield(opts, 'ntries'), opts.ntries = 10; end
 % ISAdefaults sets this to opts.general.seed for a call routed through
 % InstanceSpace; a standalone PILOT(...) call (CLAUDE.md: every core
 % pipeline function must remain independently callable) needs its own
@@ -109,7 +111,6 @@ end
 n = size(X, 2); % Number of features
 Xbar = [X Y];
 m = size(Xbar, 2);
-Hd = pdist(X)';
 if exist('gcp','file')==2
     mypool = gcp('nocreate');
     if ~isempty(mypool)
@@ -183,8 +184,8 @@ elseif opts.analytic
     V = V(:,idx(1:d));         % top-d eigenvectors, (m x d)
     out.B = V(1:n,:);           % (n x d)
     out.C = V(n+1:m,:)'./sqrt(costWeight); % (d x q), rescaled back to true Y units
-    Xr = Xt'/(Xt*Xt');           % pseudo-inverse of Xt (rank-checked above), (ninst x n)
-    out.A = V'*XbarwT*Xr;         % (d x n)
+    % Solve least squares directly instead of squaring X's condition number.
+    out.A = (X \ (Xbarw * V))';
     Zt = out.A*Xt;                 % (d x ninst)
     out.Z = Zt';                   % (ninst x d) -- matches the numerical branch's convention
     Xhat = [out.B*Zt; out.C'*Zt];  % (m x ninst), same orientation as XbarT
@@ -201,6 +202,7 @@ else
         idx = 1;
         out.alpha = opts.precalcAlpha;
     else
+        Hd = pdist(X)'; % Only numerical restart ranking uses pairwise distances.
         if isfield(opts,'X0') && isnumeric(opts.X0) && ...
                 size(opts.X0,1)==d*m+d*n && size(opts.X0,2)>=1
             if opts.verbose

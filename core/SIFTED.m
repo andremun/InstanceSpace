@@ -176,7 +176,7 @@ fprintf('[SIFTED] Constructing %d clusters of features.\n', opts.K);
 fprintf('[SIFTED] Using a GA+LookUpTable to find an optimal combination.\n');
 % -------------------------------------------------------------------------
 cvpart  = cvpartition(size(Xaux,1), 'Kfold', Kfolds);
-fcnwrap = @(x) costfcn(x, Xaux, Y, Ybin, out.clust, cvpart, featlabels(out.selvars), opts.dims);
+fcnwrap = @(x) costfcn(x, Xaux, Y, Ybin, out.clust, cvpart, featlabels(out.selvars), opts.dims, opts.seed);
 % GA population fitness evaluations are parallelised at the GA level
 % (UseParallel) rather than inside costfcn: a parfor over the ~10
 % algorithm columns nested inside a fitness function called hundreds of
@@ -205,7 +205,7 @@ fprintf('[SIFTED] Keeping %d out of %d features (clustering).\n', size(X,2), nfe
 
 end
 % =========================================================================
-function y = costfcn(ind, X, Y, Ybin, clust, cvpart, featlabels, dims)
+function y = costfcn(ind, X, Y, Ybin, clust, cvpart, featlabels, dims, seed)
     % A call without inputs resets this process's cache before a new run.
     persistent mymap
     if nargin == 0 || isempty(mymap)
@@ -236,7 +236,7 @@ function y = costfcn(ind, X, Y, Ybin, clust, cvpart, featlabels, dims)
         % (dozens to hundreds of times per SIFTED call), so PILOT's normal
         % per-run status/summary output would flood the console.
         out = PILOT(X(:,idx), Y, featlabels(idx), ...
-            struct('analytic', analytic, 'dims', dims, 'verbose', false));
+            struct('analytic', analytic, 'dims', dims, 'verbose', false, 'seed', seed));
         Z = out.Z;
         y = -Inf;
         % Plain loop, not parfor: costfcn is itself called in parallel by

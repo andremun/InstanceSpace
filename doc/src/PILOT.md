@@ -210,3 +210,5 @@ The BFGS starting points use `opts.seed`, so a changed `opts.general.seed` chang
 `SIFTED` | `PILOTviewpoint` | `CLOISTER` | `InstanceSpace`
 
 PLS stores `out.Xmean`. Apply its projection as `(X-out.Xmean)*out.A'` for new instances. Standard PILOT projections do not subtract a mean.
+
+Standalone calls fill numerical fallback defaults (`ntries=10`, `seed=42`). Analytic projection solves least squares directly. Pairwise feature distances are computed only when numerical restarts need ranking.

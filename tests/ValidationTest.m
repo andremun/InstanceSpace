@@ -225,7 +225,6 @@ c = {
     'pilotNtries',         'pilot',    'ntries',        0,          'notPositive'
     'pilotAlphaZero',      'pilot',    'alpha',         0,          'notPositive'
     'pilotTopoNegative',   'pilot',    'topoWeight',    -1,         'notPositive'
-    'viewGroupsNumeric',   'pilot',    'viewGroups',    [1 2],      'badViewGroups'
     'viewGroupsZero',      'pilot',    'viewGroups',    {[1 0]},    'badViewGroups'
     'cloisterPval',        'cloister', 'pval',          1.5,        'notInUnitRange'
     'cloisterMaxFeatures', 'cloister', 'maxFeatures',   -3,         'notPositive'

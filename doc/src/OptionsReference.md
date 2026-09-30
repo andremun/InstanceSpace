@@ -172,3 +172,7 @@ Files written when `build` or `explore` completes. See `scriptcsv`, `scriptpng` 
 ## See Also
 
 `InstanceSpace` | `ISAdefaults` | `ISAvalidateOpts` | [Metadata File Format](MetadataFormat.html)
+
+Rectangular numeric `pilot.viewGroups` from JSON are converted to one group per row before validation. An empty group list selects the default group. Individual groups must contain positive integer indices.
+
+Seeds must be integers in `[0, 2^32-1]`. PYTHIA wraps derived algorithm and fold seeds into this range.

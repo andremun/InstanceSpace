@@ -53,6 +53,23 @@ if ~isstruct(opts)
     error('ISA:ISAvalidateOpts:notStruct', 'opts must be a struct; got a %s.', class(opts));
 end
 
+% JSON decodes rectangular groups as a numeric matrix, one group per row.
+if isfield(opts, 'pilot') && isstruct(opts.pilot) && isfield(opts.pilot, 'viewGroups') && isnumeric(opts.pilot.viewGroups)
+    groups = opts.pilot.viewGroups;
+    if isempty(groups)
+        opts.pilot.viewGroups = {};
+    else
+        opts.pilot.viewGroups = num2cell(groups, 2);
+    end
+end
+
+for stage = {'general','pilot','sifted','pythia'}
+    checkPosInt(opts, stage{1}, 'seed', true);
+    [seed, present] = getf(opts, stage{1}, 'seed');
+    if present && seed > 2^32-1
+        error('ISA:ISAvalidateOpts:seedRange', 'opts.%s.seed must not exceed 2^32-1.', stage{1});
+    end
+end
 checkLogical(opts, 'general', 'verbose');
 checkLogical(opts, 'general', 'parallel');
 checkPosInt(opts, 'general', 'seed', true); % 0 allowed

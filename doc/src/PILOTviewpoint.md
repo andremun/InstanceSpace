@@ -125,3 +125,5 @@ Part of the 3D instance space (ISA3) support.
 ## See Also
 
 `PILOT` | `ISArecallView` | `scriptpng`
+
+Azimuth and elevation use the `cart2sph` convention in radians. Plot helpers convert azimuth to the MATLAB camera convention and use equal data-axis scales to preserve the fitted plane.

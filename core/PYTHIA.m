@@ -104,6 +104,10 @@ if ~isfield(opts, 'params'),          opts.params          = [];       end
 if ~isfield(opts, 'skip'),            opts.skip            = false;    end
 if ~isfield(opts, 'ensembleMethod'),  opts.ensembleMethod  = 'Bag';    end
 if ~isfield(opts, 'seed'),            opts.seed            = 42;       end
+if ~(isnumeric(opts.seed) && isscalar(opts.seed) && isfinite(opts.seed) && ...
+        opts.seed >= 0 && opts.seed <= 2^32-1 && opts.seed == floor(opts.seed))
+    error('ISA:PYTHIA:badSeed', 'opts.seed must be an integer in [0, 2^32-1].');
+end
 % Handle deprecated flags.
 if isfield(opts, 'uselibsvm') && opts.uselibsvm
     warning('ISA:PYTHIA:libsvmDeprecated', ...
@@ -226,8 +230,8 @@ rngGuard = onCleanup(@() rng(prevRNG)); %#ok<NASGU>
 t = tic;
 for i = 1:nalgos
     tic;
-    % Per-algorithm reproducible seed: opts.seed + i (per spec §6.2).
-    rng(opts.seed + i, 'twister');
+    % Per-algorithm reproducible seed: mod(double(opts.seed) + i, 2^32) (per spec §6.2).
+    rng(mod(double(opts.seed) + i, 2^32), 'twister');
 
     yi = logical(Ybin(:,i));
     degenerateLabel = all(yi) || all(~yi);
@@ -280,12 +284,12 @@ for i = 1:nalgos
             % CV predictions with the pre-supplied params.
             [out.Ysub(:,i), out.Pr0sub(:,i)] = crossValPredict( ...
                 classifierType, Znorm, yi, W(:,i), out.cp{i}, ...
-                p1_best, p2_best, opts, opts.seed + i);
+                p1_best, p2_best, opts, mod(double(opts.seed) + i, 2^32));
         elseif strcmp(opts.tuning, 'bayes')
             % MATLAB bayesopt (Gaussian-process surrogate) over the same
             % classifier/CV-fold evaluation used by 'sobol'.
             [out.Ysub(:,i), out.Pr0sub(:,i), p1_best, p2_best] = ...
-                bayesSearch(classifierType, Znorm, yi, W(:,i), out.cp{i}, opts, opts.seed + i);
+                bayesSearch(classifierType, Znorm, yi, W(:,i), out.cp{i}, opts, mod(double(opts.seed) + i, 2^32));
         else
             % Scrambled Sobol search. Scrambling must be applied via the
             % scramble() object function -- sobolset's constructor only
@@ -300,7 +304,7 @@ for i = 1:nalgos
 
             [out.Ysub(:,i), out.Pr0sub(:,i), p1_best, p2_best] = ...
                 sobolSearch(classifierType, Znorm, yi, W(:,i), ...
-                            out.cp{i}, P1, P2, opts, opts.seed + i);
+                            out.cp{i}, P1, P2, opts, mod(double(opts.seed) + i, 2^32));
         end
 
         % Re-seed immediately before final training: crossValPredict
@@ -313,10 +317,10 @@ for i = 1:nalgos
         % Without this, trainFinalClassifier's own randomness (e.g.
         % fitcensemble bagging) would depend on which tuning strategy ran,
         % not just on opts.seed.
-        rng(opts.seed + i, 'twister');
+        rng(mod(double(opts.seed) + i, 2^32), 'twister');
         [out.classifiers{i}, out.Yhat(:,i), out.Pr0hat(:,i)] = ...
             trainFinalClassifier(classifierType, Znorm, yi, W(:,i), ...
-                                 p1_best, p2_best, opts, opts.seed + i);
+                                 p1_best, p2_best, opts, mod(double(opts.seed) + i, 2^32));
     end
 
     out.param1(i) = p1_best;

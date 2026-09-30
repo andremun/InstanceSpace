@@ -45,28 +45,60 @@ else
     zcols = {'z_1','z_2'};
 end
 
-% footprintBoundary/traceAlphaBoundary (scriptfcn.m) NaN-separate multiple
-% disconnected boundary regions in verts, when the underlying alphaShape
-% has more than one (#31) -- the same convention polyshape.Vertices
-% itself already uses. A reader expecting a single closed polygon can
-% split verts on isnan(verts(:,1)).
-for i=1:nalgos
-    verts = footprintBoundary(container.trace.best{i});
-    if ~isempty(verts)
-        writeArray2CSV(verts, zcols, makeBndLabels(verts), ...
-                       [rootdir 'footprint_' container.data.algolabels{i} '_best.csv']);
-    end
-    verts = footprintBoundary(container.trace.good{i});
-    if ~isempty(verts)
-        writeArray2CSV(verts, zcols, makeBndLabels(verts), ...
-                       [rootdir 'footprint_' container.data.algolabels{i} '_good.csv']);
+% These names belong to the toolkit's geometry export namespace. Remove
+% prior geometry, including algorithms absent from the current portfolio.
+old = dir(fullfile(rootdir, '*.csv'));
+for j = 1:numel(old)
+    name = old(j).name;
+    if ~isempty(regexp(name, '^footprint_.+_(best|good)(_faces)?\.csv$', 'once')) || ...
+            ismember(name, {'bounds.csv','bounds_prunned.csv','bounds_faces.csv','bounds_prunned_faces.csv'})
+        delete(fullfile(rootdir,name));
     end
 end
+geometry = struct('algorithm',{},'kind',{},'vertices',{},'faces',{},'status',{});
+for i = 1:nalgos
+    for kind = {'best','good'}
+        fp = container.trace.(kind{1}){i};
+        faces = zeros(0,3);
+        if ndim == 3 && isfield(fp,'polygon') && isa(fp.polygon,'alphaShape') && ~isempty(fp.polygon.Points)
+            [faces,verts] = boundaryFacets(fp.polygon);
+        else
+            verts = footprintBoundary(fp);
+        end
+        if isempty(verts), verts = zeros(0,ndim); end
+        base = ['footprint_' container.data.algolabels{i} '_' kind{1}];
+        writeArray2CSV(verts,zcols,makeBndLabels(verts),fullfile(rootdir,[base '.csv']));
+        facefile = '';
+        if ndim == 3
+            facefile = [base '_faces.csv'];
+            writematrixWithHeaders(faces,fullfile(rootdir,facefile));
+        end
+        status = 'available';
+        if isempty(verts), status = 'empty'; end
+        geometry(end+1) = struct('algorithm',container.data.algolabels{i}, ...
+            'kind',kind{1},'vertices',[base '.csv'],'faces',facefile,'status',status); %#ok<AGROW>
+    end
+end
+manifest = struct('dimensions',ndim,'indexBase',1, ...
+    'rings','2D boundary rings are NaN-separated. Nested rings represent holes.', ...
+    'footprints',geometry);
+fid = fopen(fullfile(rootdir,'geometry_manifest.json'),'w');
+if fid < 0, error('ISA:scriptcsv:manifestWrite','Cannot write geometry manifest.'); end
+cleanup = onCleanup(@() fclose(fid));
+fprintf(fid,'%s',jsonencode(manifest));
+clear cleanup;
 
 writeArray2CSV(container.pilot.Z, zcols, ...
                container.data.instlabels, ...
                [rootdir 'coordinates.csv']);
 if isfield(container,'cloist')
+    if ndim == 3
+        if ~isfield(container.cloist,'ZedgeFaces') || ~isfield(container.cloist,'ZecorrFaces')
+            error('ISA:scriptcsv:missingFaces','Rebuild CLOISTER before exporting this legacy 3D boundary.');
+        end
+        writematrixWithHeaders(container.cloist.ZedgeFaces,fullfile(rootdir,'bounds_faces.csv'));
+        writematrixWithHeaders(container.cloist.ZecorrFaces,fullfile(rootdir,'bounds_prunned_faces.csv'));
+    end
     writeArray2CSV(container.cloist.Zedge, zcols, ...
                    makeBndLabels(container.cloist.Zedge), ...
                    [rootdir 'bounds.csv']);
@@ -125,4 +157,9 @@ writeCell2CSV(container.pythia.summary(2:end,2:end), ...
               container.pythia.summary(1,2:end), ...
               container.pythia.summary(2:end,1), ...
               [rootdir 'classifier_table.csv']);
+end
+
+function writematrixWithHeaders(faces,file)
+% Face indices refer to the corresponding vertex CSV rows, starting at one.
+writetable(array2table(faces,'VariableNames',{'vertex_1','vertex_2','vertex_3'}),file);
 end

@@ -17,6 +17,8 @@ An `InstanceSpace` object holds the options, the trained model, and the evaluati
 
 `obj = InstanceSpace(rootdir,opts)` uses the options structure `opts` instead of `options.json`.
 
+During `build`, algorithms with no good training instances are removed. Preprocessing is then fitted to the retained portfolio. Best-algorithm indices, best performance, beta-easy flags, and saved transforms all refer to that portfolio. With an absolute threshold, removing an algorithm can change the best performance on an instance where no algorithm is good.
+
 `InstanceSpace` is a value class: a method that changes the object returns the changed copy, so assign the result, as in `obj = obj.build()`.
 
 ## Examples

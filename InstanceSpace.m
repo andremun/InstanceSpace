@@ -548,41 +548,28 @@ classdef InstanceSpace
             prelimOpts.norm          = obj.opts.norm.flag;
             prelimOpts.iqrMultiplier = obj.opts.prelim.iqrMultiplier;
             prelimOpts.nanThreshold  = obj.opts.prelim.nanThreshold;
+            prelimState = rng;
             [data.X, data.Y, prelimOut] = PRELIM(data.X, data.Y, prelimOpts);
+            idx = all(~prelimOut.Ybin, 1);
+            if any(idx)
+                warning('-> There are algorithms with no ''good'' instances. They are being removed to increase speed.');
+                data.Yraw      = data.Yraw(:,~idx);
+                data.algolabels = data.algolabels(~idx);
+                if size(data.Yraw, 2) == 0
+                    error('-> There are no ''good'' algorithms. Please verify the binary performance measure. STOPPING!')
+                end
+                % Refit on the retained portfolio so winners, beta and
+                % transforms all use its columns. A removed algorithm can
+                % still have been best on a row where no algorithm is good.
+                % Replay tie-breaking as for a build of this portfolio alone.
+                rng(prelimState);
+                [data.X, data.Y, prelimOut] = PRELIM(data.Xraw, data.Yraw, prelimOpts);
+            end
             data.Ybest        = prelimOut.Ybest;
             data.Ybin         = prelimOut.Ybin;
             data.P            = prelimOut.P;
             data.numGoodAlgos = prelimOut.numGoodAlgos;
             data.beta         = prelimOut.beta;
-
-            idx = all(~data.Ybin, 1);
-            if any(idx)
-                warning('-> There are algorithms with no ''good'' instances. They are being removed to increase speed.');
-                data.Yraw      = data.Yraw(:,~idx);
-                data.Y         = data.Y(:,~idx);
-                data.Ybin      = data.Ybin(:,~idx);
-                data.algolabels = data.algolabels(~idx);
-                % prelimOut.lambdaY/muY/sigmaY are per-algorithm (1 x
-                % original-nalgos), fit before this pruning -- explore()
-                % later indexes them positionally against model.data.
-                % algolabels (the pruned list) via
-                % modelalgos=numel(trainedPrelim.lambdaY), so leaving them
-                % unpruned both over-counts modelalgos (indexing Y past
-                % its actual reconciled width, or misapplying a pruned
-                % algorithm's transform to an unrelated new algorithm's
-                % column) and, whenever a pruned algorithm wasn't last,
-                % misaligns every surviving lambda/mu/sigma after it.
-                % Pruning with the same mask keeps both counts and
-                % positions consistent with data.algolabels. minY is a
-                % single scalar (global min across all algorithms), not
-                % per-algorithm, so it needs no equivalent pruning.
-                prelimOut.lambdaY = prelimOut.lambdaY(~idx);
-                prelimOut.muY     = prelimOut.muY(~idx);
-                prelimOut.sigmaY  = prelimOut.sigmaY(~idx);
-                if size(data.Y, 2) == 0
-                    error('-> There are no ''good'' algorithms. Please verify the binary performance measure. STOPPING!')
-                end
-            end
 
             ninst = size(data.X, 1);
             fractional  = obj.opts.selvars.smallscaleflag && isfloat(obj.opts.selvars.smallscale);

@@ -215,3 +215,5 @@ Evaluation mode scores only the instances with observed performance for each alg
 Evaluation uses the saved training fallback algorithm and precision weights. Legacy models without these fields use the first trained algorithm as fallback and equal voting weights. Test outcomes never determine recommendations.
 
 Training summaries use out-of-fold predictions for both algorithm and selector rows. `selection0CV` and `selection1CV` retain these selections. `Yhat`, `selection0`, and `selection1` remain fitted-data outputs for footprints and training plots. These CV metrics condition on the fitted preprocessing, projection, and selected hyperparameters. They are not an unbiased cross-validation estimate of the complete ISA pipeline. Exploration summaries label their metrics as `Test_model_*`.
+
+Selector recall is the fraction of instances with an observed good algorithm on which the non-fallback selection is good. Successful selections are not also counted as missed opportunities when other algorithms are good.

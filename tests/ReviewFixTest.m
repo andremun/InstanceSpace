@@ -21,6 +21,16 @@ classdef ReviewFixTest < matlab.unittest.TestCase
 
 
     methods (Test)
+        function testSelectorRecall(tc)
+            opts = ISAdefaults(struct());
+            trained.classifiers = {struct('constant',true,'value',true),struct('constant',true,'value',true)};
+            trained.precision = [1;1]; trained.defaultAlgorithm = 1;
+            out = PYTHIA([0 1;1 0],ones(2),true(2),ones(2,1),{'a','b'},opts.pythia,trained);
+            tc.verifyEqual(out.summary{end,9},100);
+            trained.classifiers{1}.value = false; trained.classifiers{2}.value = false;
+            out = PYTHIA([0 1;1 0],ones(2),true(2),ones(2,1),{'a','b'},opts.pythia,trained);
+            tc.verifyEqual(out.summary{end,9},0);
+        end
         function testTraceSmallEvaluation(tc)
             opts = ISAdefaults(struct()); rng(8);
             for dims = [2 3]

@@ -852,9 +852,10 @@ Yfull(~sel1) = NaN;
 Ysvms(~out.Yhat) = NaN;
 
 pgood = mean(any(Ybin & sel1, 2));
-fb = sum(any( Ybin & ~sel0, 2));
-fg = sum(any(~Ybin &  sel0, 2));
-tg = sum(any( Ybin &  sel0, 2));
+success = any(Ybin & sel0 & observed, 2);
+fb = sum(any(Ybin & observed, 2) & ~success);
+fg = sum(any(~Ybin & sel0 & observed, 2));
+tg = sum(success);
 precisionsel = tg ./ (tg + fg);
 recallsel    = tg ./ (tg + fb);
 

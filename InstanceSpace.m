@@ -570,7 +570,7 @@ classdef InstanceSpace
             prelimOpts.norm          = obj.opts.norm.flag;
             prelimOpts.iqrMultiplier = obj.opts.prelim.iqrMultiplier;
             prelimOpts.nanThreshold  = obj.opts.prelim.nanThreshold;
-            prelimState = rng;
+            rng(obj.opts.general.seed, 'twister');
             [data.X, data.Y, prelimOut] = PRELIM(data.X, data.Y, prelimOpts);
             idx = all(~prelimOut.Ybin, 1);
             if any(idx)
@@ -584,7 +584,7 @@ classdef InstanceSpace
                 % transforms all use its columns. A removed algorithm can
                 % still have been best on a row where no algorithm is good.
                 % Replay tie-breaking as for a build of this portfolio alone.
-                rng(prelimState);
+                rng(obj.opts.general.seed, 'twister');
                 [data.X, data.Y, prelimOut] = PRELIM(data.Xraw, data.Yraw, prelimOpts);
             end
             data.Ybest        = prelimOut.Ybest;

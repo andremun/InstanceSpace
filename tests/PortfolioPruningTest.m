@@ -63,6 +63,9 @@ classdef PortfolioPruningTest < matlab.unittest.TestCase
             end
             obj = InstanceSpace(fixture.Folder, opts).build('stages', {'prelim'});
             data = obj.model.data;
+            rng(987, 'twister'); rand(1,17);
+            repeated = InstanceSpace(fixture.Folder, opts).build('stages', {'prelim'});
+            testCase.verifyEqual(repeated.model.data.P, data.P);
             p = opts.perf;
             p.auto = Normalize;
             p.bound = opts.bound.flag;

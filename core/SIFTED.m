@@ -206,9 +206,14 @@ fprintf('[SIFTED] Keeping %d out of %d features (clustering).\n', size(X,2), nfe
 end
 % =========================================================================
 function y = costfcn(ind, X, Y, Ybin, clust, cvpart, featlabels, dims)
+    % A call without inputs resets this process's cache before a new run.
     persistent mymap
-    if isempty(mymap)
+    if nargin == 0 || isempty(mymap)
         mymap = containers.Map('KeyType','char','ValueType','double');
+    end
+    if nargin == 0
+        y = [];
+        return;
     end
     % Internal PILOT call mirrors the canonical analytic branch
     % (spec §5.5), at the same dimensionality as the outer pipeline's final
@@ -248,18 +253,15 @@ function y = costfcn(ind, X, Y, Ybin, clust, cvpart, featlabels, dims)
 end
 % =========================================================================
 function clearCache()
-% Clears the persistent fitness cache in costfcn, on the client and (now
-% that the GA's UseParallel dispatches costfcn calls to pool workers,
-% each with its own persistent state) on every worker in the current
-% parallel pool too, if one exists. Without this, a worker could return
-% a stale fitness value cached under the same feature-selection bitmask
-% key from a previous, unrelated SIFTED call on different data.
-    clear costfcn
+% Reset the client and worker caches before each SIFTED call.
+% Clearing a local function by name does not reset its persistent state.
+% The bitmask keys are valid only for the current data and CV partition.
+    costfcn();
     if exist('gcp','file')==2
         mypool = gcp('nocreate');
         if ~isempty(mypool)
-            % Clear the parent function so local-function persistent state (incl. costfcn) is reset on workers.
-            wait(parfevalOnAll(mypool, @() clear('SIFTED'), 0));
+            % Wait for every reset and propagate errors before GA starts.
+            fetchOutputs(parfevalOnAll(mypool, @costfcn, 0));
         end
     end
 end

@@ -33,6 +33,7 @@ classdef StageUnitTest < matlab.unittest.TestCase
         AbsPerf = {true, false};
         FilterType = {'Ftr', 'Ftr&AP', 'Ftr&Good', 'Ftr&AP&Good'};
         Classifier = {'tree', 'nb', 'linear'};
+        SiftedParallel = {false, true};
     end
 
     methods (TestClassSetup)
@@ -173,6 +174,43 @@ classdef StageUnitTest < matlab.unittest.TestCase
             [Xs, out] = SIFTED(X, Y, Y > median(Y(:)), {'a', 'b', 'c'}, testCase.Defaults.sifted);
             testCase.verifyEqual(out.selvars, 1:3);
             testCase.verifyEqual(Xs, X);
+        end
+
+        function testSiftedCacheIsolation(testCase, SiftedParallel)
+            % Repeated calls must match a fresh run after labels change.
+            % The old client cache retained fitness values for the same
+            % feature masks, even when every label became true.
+            testCase.assumeEmpty(gcp('nocreate'), ...
+                'This test needs control of pool lifetime.');
+            previousRNG = rng;
+            testCase.addTeardown(@() rng(previousRNG));
+            testCase.addTeardown(@() clear('SIFTED'));
+            if SiftedParallel
+                pool = parpool('local', 2);
+                testCase.addTeardown(@() delete(pool));
+            end
+            rng(5, 'twister');
+            X = rand(40, 6);
+            Y = rand(40, 2);
+            labels = {'a', 'b', 'c', 'd', 'e', 'f'};
+            opts = testCase.Defaults.sifted;
+            opts.rho = 0;
+            opts.K = 3;
+            opts.Replicates = 1;
+
+            clear SIFTED;
+            SIFTED(X, Y, Y < 0.5, labels, opts);
+            [repeatedX, repeated] = SIFTED(X, Y, true(size(Y)), labels, opts);
+
+            % Clear all processes to obtain an independent reference.
+            clear SIFTED;
+            if SiftedParallel
+                fetchOutputs(parfevalOnAll(pool, @() clear('SIFTED'), 0));
+            end
+            [freshX, fresh] = SIFTED(X, Y, true(size(Y)), labels, opts);
+            testCase.verifyEqual(repeated.selvars, fresh.selvars, ...
+                'Selected features must not depend on a previous call''s labels.');
+            testCase.verifyEqual(repeatedX, freshX);
         end
 
         % ------------------------------------------------------------ PILOT

@@ -202,6 +202,9 @@ classdef InstanceSpace
                 InstanceSpace.printOptions(obj.opts);
             end
             [mypool, poolOpenedHere] = obj.ensurePool();
+            if poolOpenedHere
+                poolCleanup = onCleanup(@() delete(mypool)); %#ok<NASGU>
+            end
 
             for i = 1:numel(toRun)
                 stage = toRun{i};
@@ -238,7 +241,7 @@ classdef InstanceSpace
 
             if poolOpenedHere
                 fprintf('[BUILD] Closing parallel processing pool.\n');
-                delete(mypool);
+                clear poolCleanup;
             end
 
             % Persist and write outputs only once the FULL pipeline has
@@ -537,15 +540,10 @@ classdef InstanceSpace
             if ~obj.opts.general.parallel
                 return;
             end
-            rightSize = ~isempty(mypool) && ...
-                (~isnumeric(obj.opts.general.ncores) || mypool.NumWorkers == obj.opts.general.ncores);
-            if rightSize
+            if ~isempty(mypool)
                 return;
             end
             fprintf('[BUILD] Starting parallel processing pool.\n');
-            if ~isempty(mypool)
-                delete(mypool);
-            end
             if isnumeric(obj.opts.general.ncores)
                 mypool = parpool('local', obj.opts.general.ncores, 'SpmdEnabled', false);
             else
@@ -667,6 +665,7 @@ classdef InstanceSpace
                 % Match the outer pipeline's final projection dimensionality
                 % (spec §5.5) so feature-subset evaluation is consistent.
                 siftedOpts = obj.opts.sifted;
+                siftedOpts.parallel = obj.opts.general.parallel;
                 siftedOpts.dims = obj.opts.pilot.dims;
                 [obj.model.data.X, obj.model.sifted] = SIFTED(obj.model.data.X, obj.model.data.Y, ...
                     obj.model.data.Ybin, obj.model.data.featlabels, siftedOpts);
@@ -711,10 +710,11 @@ classdef InstanceSpace
 
         function obj = runPilot(obj)
             fprintf('[PILOT] Calling PILOT to find the optimal projection.\n');
-            obj.model.pilot = PILOT(obj.model.data.X, obj.model.data.Y, obj.model.data.featlabels, obj.opts.pilot);
+            pilotOpts = obj.opts.pilot; pilotOpts.parallel = obj.opts.general.parallel;
+            obj.model.pilot = PILOT(obj.model.data.X, obj.model.data.Y, obj.model.data.featlabels, pilotOpts);
             if obj.opts.pilot.dims == 3
                 fprintf('[PILOT] Finding the optimal 2D viewpoint(s) of the 3D projection.\n');
-                obj.model.pilot.viewpoint = PILOTviewpoint(obj.model.pilot.Z, obj.model.data.Y, obj.opts.pilot);
+                obj.model.pilot.viewpoint = PILOTviewpoint(obj.model.pilot.Z, obj.model.data.Y, pilotOpts);
             end
         end
 
@@ -740,8 +740,9 @@ classdef InstanceSpace
 
         function obj = runPythia(obj)
             fprintf('[PYTHIA] Summoning PYTHIA to train the prediction models.\n');
+            pythiaOpts = obj.opts.pythia; pythiaOpts.parallel = obj.opts.general.parallel;
             obj.model.pythia = PYTHIA(obj.model.pilot.Z, obj.model.data.Yraw, obj.model.data.Ybin, ...
-                obj.model.data.Ybest, obj.model.data.algolabels, obj.opts.pythia);
+                obj.model.data.Ybest, obj.model.data.algolabels, pythiaOpts);
         end
 
         function obj = runTrace(obj)
@@ -751,6 +752,7 @@ classdef InstanceSpace
             % leak into opts.trace itself, since that gets persisted
             % verbatim into obj.model.opts/options.json.
             traceOpts = obj.opts.trace;
+            traceOpts.parallel = obj.opts.general.parallel;
             traceOpts.pythiaSkip = obj.opts.pythia.skip;
             obj.model.trace = TRACE(obj.model.pilot.Z, obj.model.data.Ybin, obj.model.pythia.Yhat, ...
                 obj.model.data.P, obj.model.data.beta, obj.model.data.algolabels, traceOpts);

@@ -123,8 +123,12 @@ A 3D projection now gets a 3D convex hull, with `ZedgeFaces` and `ZecorrFaces`. 
 
 - Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
 
+### Unreleased review fixes
+
+An optional fourth argument, `Xmean`, applies the fitted PLS feature centring during projection. The three-argument call uses a zero mean.
+
+Corner enumeration uses batches of 4096 and retains hull vertices between batches. It does not allocate all corners at once.
+
 ## See Also
 
 `PILOT` | `InstanceSpace` | `scriptcsv`
-
-An optional fourth argument, `Xmean`, applies the fitted PLS feature centring during projection. The three-argument call uses a zero mean.

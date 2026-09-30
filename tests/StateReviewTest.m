@@ -39,6 +39,27 @@ classdef StateReviewTest < matlab.unittest.TestCase
         end
     end
     methods (Test)
+        function testPLSExploreMatchesTraining(tc)
+            copyfile(fullfile(tc.Folder,'metadata.csv'),fullfile(tc.Folder,'metadata_test.csv'));
+            for normalize = [false true]
+                opts = tc.Opts; opts.auto.preproc = normalize; opts.pilot.method = 'pls';
+                opts.selvars.smallscaleflag = true; opts.selvars.smallscale = .6; opts.pythia.skip = true;
+                obj = InstanceSpace(tc.Folder,opts).build();
+                obj = obj.explore(tc.Folder);
+                result = obj.getResults(1);
+                [found,rows] = ismember(obj.model.data.instlabels,result.data.instlabels);
+                tc.verifyTrue(all(found));
+                tc.verifyEqual(result.pilot.Z(rows,:),obj.model.pilot.Z,'AbsTol',1e-8);
+            end
+        end
+        function testOwnedPoolClosesOnError(tc)
+            tc.assumeTrue(isempty(gcp('nocreate')));
+            opts = tc.Opts; opts.general.parallel = true; opts.general.ncores = 2;
+            obj = InstanceSpace(tc.Folder,opts);
+            tc.verifyError(@() obj.build('stages',{'prelim'},'onStage', ...
+                @(varargin) error('ISA:test:stop','Stop after preprocessing.')),'ISA:test:stop');
+            tc.verifyTrue(isempty(gcp('nocreate')));
+        end
         function testStringPathAndSubsetValidation(tc)
             obj = InstanceSpace(string(tc.Folder),tc.Opts).build('stages',{'prelim'});
             tc.verifyEqual(obj.rootdir,[tc.Folder filesep]);
@@ -72,18 +93,23 @@ classdef StateReviewTest < matlab.unittest.TestCase
             tc.verifyError(@() InstanceSpace(tc.Folder,tc.Opts).build('stages',{'prelim'}),'ISA:INIT:incompleteData');
         end
         function testSiftedRestoresInput(tc)
-            obj = InstanceSpace(tc.Folder,tc.Opts).build('stages',{'prelim','sifted'});
-            original = obj.model.data;
-            obj.model.data.X = original.X(:,[1 3]);
-            obj.model.data.featlabels = original.featlabels([1 3]);
-            obj.model.featsel.idx = [1 3];
+            file = fullfile(tc.Folder,'metadata.csv'); T = readtable(file);
+            T.algo_a = T.feature_a; T.algo_b = T.feature_c; writetable(T,file);
+            opts = tc.Opts; opts.auto.preproc = false; opts.perf.AbsPerf = true; opts.perf.epsilon = .5;
+            opts.sifted.flag = true; opts.sifted.rho = .99;
+            obj = InstanceSpace(tc.Folder,opts).build('stages',{'prelim','sifted'});
+            tc.verifyEqual(size(obj.model.data.X,2),2);
+            obj.opts.sifted.flag = false;
             obj = obj.build('stages',{'sifted'});
-            tc.verifyEqual(obj.model.data,original);
+            opts.sifted.flag = false;
+            fresh = InstanceSpace(tc.Folder,opts).build('stages',{'prelim','sifted'});
+            tc.verifyEqual(obj.model.data,fresh.model.data);
             tc.verifyEqual(obj.model.featsel.idx,1:4);
         end
         function testPartialSaveResume(tc)
             obj = InstanceSpace(tc.Folder,tc.Opts);
-            stages = {'prelim','sifted','pilot','cloister'};
+            obj.opts.pythia.skip = true;
+            stages = {'prelim','sifted','pilot','cloister','pythia','trace'};
             for i = 1:numel(stages)
                 obj = obj.build('stages',stages(i)); obj.save();
                 loaded = InstanceSpace.load(tc.Folder);

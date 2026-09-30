@@ -201,10 +201,14 @@ Replaces the `buildIS` and `exploreIS` scripts as the main interface.
 
 - Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
 
-## See Also
-
-`buildIS` | `exploreIS` | [Getting Started](GettingStarted.html) | [Options Reference](OptionsReference.html)
+### Unreleased review fixes
 
 Each completed stage stores the options used to fit it. A partial rebuild rejects changed options for retained stages. Rebuild the affected stage and its dependents first. Partial builds can be saved, loaded, and resumed. Changing `general.seed` requires rebuilding preprocessing. Stage seeds and verbosity are copied from general defaults at construction and remain explicit stage options afterwards.
 
 SIFTED reruns start from the saved pre-selection data, including its original row subset. Models saved without this artifact must rebuild preprocessing before rerunning SIFTED.
+
+Build reuses an existing pool without replacing or deleting it. A pool opened by build is closed on success or error. `general.parallel=false` makes core stage execution serial even if a pool exists.
+
+## See Also
+
+`buildIS` | `exploreIS` | [Getting Started](GettingStarted.html) | [Options Reference](OptionsReference.html)

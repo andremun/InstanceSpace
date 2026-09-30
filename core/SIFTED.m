@@ -68,6 +68,7 @@ if ~isfield(opts, 'dims'), opts.dims = 2;    end
 % InstanceSpace; a standalone SIFTED(...) call needs its own fallback,
 % same as PYTHIA's opts.seed default.
 if ~isfield(opts, 'seed'), opts.seed = 42;   end
+if ~isfield(opts, 'diagnostics'), opts.diagnostics = true; end
 if ~(isnumeric(opts.dims) && isscalar(opts.dims) && ismember(opts.dims, [2 3]))
     error('ISA:SIFTED:invalidDims', ...
         'opts.dims must be 2 or 3 (got %s).', mat2str(opts.dims));
@@ -89,7 +90,7 @@ acceptableClustering   = 0.75;
 
 clearCache(); % reset the persistent fitness cache at the start of each call
 
-if exist('gcp','file')==2
+if exist('gcp','file')==2 && (~isfield(opts,'parallel') || opts.parallel)
     mypool = gcp('nocreate');
     if ~isempty(mypool)
         nworkers = mypool.NumWorkers;
@@ -153,6 +154,7 @@ fprintf('[SIFTED] Selecting features based on correlation clustering.\n');
 prevRNG = rng;
 rngGuard = onCleanup(@() rng(prevRNG)); %#ok<NASGU>
 rng(opts.seed, 'twister');
+if opts.diagnostics
 out.eva = evalclusters(Xaux', 'kmeans', 'Silhouette', 'KList', 3:nfeats, ...
                               'Distance', 'correlation');
 fprintf('[SIFTED] Average silhouette values for each number of clusters.\n');
@@ -164,6 +166,7 @@ if out.eva.CriterionValues(out.eva.InspectedK==opts.K) < unnaceptableClustering
     if ~isempty(out.Ksuggested)
         fprintf('[SIFTED] A suggested value of K is %d\n', out.Ksuggested);
     end
+end
 end
 % -------------------------------------------------------------------------
 rng(opts.seed, 'twister');
@@ -236,7 +239,7 @@ function y = costfcn(ind, X, Y, Ybin, clust, cvpart, featlabels, dims, seed)
         % (dozens to hundreds of times per SIFTED call), so PILOT's normal
         % per-run status/summary output would flood the console.
         out = PILOT(X(:,idx), Y, featlabels(idx), ...
-            struct('analytic', analytic, 'dims', dims, 'verbose', false, 'seed', seed));
+            struct('analytic', analytic, 'dims', dims, 'verbose', false, 'seed', seed, 'parallel', false));
         Z = out.Z;
         y = -Inf;
         % Plain loop, not parfor: costfcn is itself called in parallel by

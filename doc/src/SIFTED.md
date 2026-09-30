@@ -163,6 +163,10 @@ k-means, the partition and the genetic algorithm use `opts.seed`.
 
 - Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
 
+### Unreleased review fixes
+
+Set `opts.sifted.diagnostics=false` to skip the advisory silhouette sweep. Feature clustering and selection still run with the configured K.
+
 ## See Also
 
 `PRELIM` | `PILOT` | `InstanceSpace`

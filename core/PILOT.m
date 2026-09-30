@@ -1,6 +1,6 @@
 function out = PILOT(X, Y, featlabels, opts)
 % PILOT  Project features onto a 2D or 3D instance space (Munoz et al.,
-% Mach Learn 2018), finding A/B/C such that Z=X*A' and [X Y] is
+% Mach Learn 2018), finding A/B/C such that Z=X*A' (centred X for PLS) and [X Y] is
 % reconstructed from Z as closely as possible.
 %
 %   out = PILOT(X, Y, featlabels, opts)
@@ -33,7 +33,8 @@ function out = PILOT(X, Y, featlabels, opts)
 %
 %   Outputs
 %     out  - struct with fields:
-%              A       (dims x nfeats) projection matrix, Z = X*A'
+%              A       (dims x nfeats) projection matrix
+%              Xmean   fitted feature mean (PLS only), Z = (X-Xmean)*A'
 %              B, C    reconstruction matrices for the feature/performance
 %                      blocks of [X Y] from Z
 %              Z       (ninst x dims) projected instance coordinates
@@ -111,7 +112,7 @@ end
 n = size(X, 2); % Number of features
 Xbar = [X Y];
 m = size(Xbar, 2);
-if exist('gcp','file')==2
+if exist('gcp','file')==2 && (~isfield(opts,'parallel') || opts.parallel)
     mypool = gcp('nocreate');
     if ~isempty(mypool)
         nworkers = mypool.NumWorkers;

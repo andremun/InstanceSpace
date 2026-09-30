@@ -119,6 +119,7 @@ checkCellOfText(opts, 'selvars', 'feats');
 checkCellOfText(opts, 'selvars', 'algos');
 
 checkLogical(opts, 'sifted', 'flag');
+checkLogical(opts, 'sifted', 'diagnostics');
 checkUnitRange(opts, 'sifted', 'rho');
 checkUnitRange(opts, 'sifted', 'pval');
 checkPosInt(opts, 'sifted', 'K', false);

@@ -101,7 +101,7 @@ isGood = all(Ybin, 2);
 % distance matrix, which matters in practice: at ninst ~ 20000 a dense
 % Dx alone needs ~3GB, doubling to ~6GB with a second matrix (Dy) for the
 % 'Ftr&AP'/'Ftr&AP&Good' types.
-neighbours = rangesearch(X, X, opts.mindistance);
+searcher = createns(X);
 
 % The elimination itself stays sequential, not just the neighbour lookup:
 % which instances end up marked redundant depends on the running state of
@@ -115,7 +115,8 @@ for ii = 1:ninst
     if subsetIndex(ii)
         continue;
     end
-    jjList = neighbours{ii};
+    neighbours = rangesearch(searcher, X(ii,:), opts.mindistance);
+    jjList = neighbours{1};
     jjList = jjList(jjList > ii);
     if isempty(jjList)
         continue;

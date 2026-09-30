@@ -39,6 +39,16 @@ classdef StateReviewTest < matlab.unittest.TestCase
         end
     end
     methods (Test)
+        function testSiftedRestoresInput(tc)
+            obj = InstanceSpace(tc.Folder,tc.Opts).build('stages',{'prelim','sifted'});
+            original = obj.model.data;
+            obj.model.data.X = original.X(:,[1 3]);
+            obj.model.data.featlabels = original.featlabels([1 3]);
+            obj.model.featsel.idx = [1 3];
+            obj = obj.build('stages',{'sifted'});
+            tc.verifyEqual(obj.model.data,original);
+            tc.verifyEqual(obj.model.featsel.idx,1:4);
+        end
         function testPartialSaveResume(tc)
             obj = InstanceSpace(tc.Folder,tc.Opts);
             stages = {'prelim','sifted','pilot','cloister'};

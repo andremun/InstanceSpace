@@ -651,11 +651,18 @@ classdef InstanceSpace
             % and nanThreshold drops) survives for evaluateTestSet to
             % validate metadata_test.csv's column order against.
             model_.featsel.labels = model_.data.featlabels;
+            model_.preSiftedData = model_.data;
 
             obj.model = model_;
         end
 
         function obj = runSifted(obj)
+            if ~isfield(obj.model, 'preSiftedData')
+                error('ISA:InstanceSpace:missingPreSiftedData', ...
+                    'This model lacks pre-SIFTED data. Rebuild preprocessing before rerunning SIFTED.');
+            end
+            obj.model.data = obj.model.preSiftedData;
+            obj.model.featsel.idx = 1:size(obj.model.data.X, 2);
             nfeats = size(obj.model.data.X, 2);
             if obj.opts.sifted.flag
                 fprintf('[SIFTED] Calling SIFTED for automated feature selection.\n');

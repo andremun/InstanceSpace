@@ -66,6 +66,10 @@ Adds `distribution_boundary.png`.
 
 3D spaces are drawn from their optimised viewpoints and saved as `.fig` files too.
 
+### Unreleased review fixes
+
+Each plot export removes prior toolkit-owned plot filenames before drawing the current run. This clears plots for removed algorithms and features, absent sources or bounds, and old 3D FIG files. Keep user-authored files outside the toolkit's `distribution_*`, `binary_*`, and `footprint_*` output names.
+
 ## See Also
 
 `scriptcsv` | `ISArecallView` | `PILOTviewpoint` | `InstanceSpace`

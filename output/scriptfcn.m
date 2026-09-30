@@ -118,6 +118,7 @@ function applyView(is3D, viewAngle)
 % Applies the optimised camera viewpoint (spec §5.2) if one was supplied,
 % otherwise falls back to MATLAB's default isometric 3D view. No-op in 2D.
 if ~is3D, return; end
+daspect([1 1 1]);
 if isempty(viewAngle)
     view(3);
 else
@@ -189,7 +190,8 @@ end
 if isempty(g)
     g = 1;
 end
-viewAngle = rad2deg([viewpoint.azimuth(g), viewpoint.elevation(g)]);
+% cart2sph measures from +X. MATLAB view measures from -Y towards +X.
+viewAngle = rad2deg([viewpoint.azimuth(g)+pi/2, viewpoint.elevation(g)]);
 end
 % =========================================================================
 function d = dotDiameter()

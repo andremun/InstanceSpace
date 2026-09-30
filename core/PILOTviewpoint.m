@@ -97,7 +97,7 @@ LAMBDA = 0.2; % paper-calibrated orthogonality penalty weight (spec 5.2)
 
 n = size(Z, 2); % projection dimensionality being viewed (3 for 3D PILOT)
 Hd = pdist(Z)';
-if exist('gcp','file')==2
+if exist('gcp','file')==2 && (~isfield(opts,'parallel') || opts.parallel)
     mypool = gcp('nocreate');
     if ~isempty(mypool)
         nworkers = mypool.NumWorkers;

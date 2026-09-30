@@ -8,11 +8,14 @@ Estimate the boundary of the instance space
 
 ```
 out = CLOISTER(X,A,opts)
+out = CLOISTER(X,A,opts,Xmean)
 ```
 
 ## Description
 
 `out = CLOISTER(X,A,opts)` estimates the region of the instance space where instances could exist, using correlations between features (Correlated Limits of the Instance Space's Theoretical or Experimental Regions). It takes every corner of the box bounded by the minimum and maximum of each feature, discards the corners that contradict a strong, significant correlation between two features, and projects the remaining corners with the PILOT matrix `A`. The convex hull of the projected corners is the estimated boundary.
+
+`out = CLOISTER(X,A,opts,Xmean)` subtracts the fitted feature mean before projection. For PLS, pass `model.pilot.Xmean` to keep the boundary in the same coordinates as `model.pilot.Z`. The three-argument form uses a zero mean. The same centring applies to the projected-instance hull used when the feature-count limit is exceeded.
 
 Parts of the boundary far from any instance show where new test instances would extend the benchmark.
 
@@ -85,6 +88,12 @@ A corner is discarded when it contradicts the sign of a correlation stronger tha
 
 The number of corners grows as `2^nfeats`. With more features than this, CLOISTER warns (`ISA:CLOISTER:tooManyFeatures`) and returns the convex hull of the projected instances instead.
 
+### `Xmean` — Fitted feature mean
+
+*1-by-`nfeats` numeric row vector | default: `zeros(1,nfeats)`*
+
+The mean fitted during PILOT training. Pass `model.pilot.Xmean` for PLS. Corners and fallback instances are projected as `(X-Xmean)*A'`; CLOISTER does not estimate a new mean. Omit the argument for an uncentred projection.
+
 ## Output Arguments
 
 ### `out` — Boundary
@@ -122,6 +131,12 @@ A 3D projection now gets a 3D convex hull, with `ZedgeFaces` and `ZecorrFaces`. 
 ## References
 
 - Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
+
+### Unreleased review fixes
+
+An optional fourth argument, `Xmean`, applies the fitted PLS feature centring during projection. The three-argument call uses a zero mean.
+
+Corner enumeration uses batches of 4096 and retains hull vertices between batches. It does not allocate all corners at once.
 
 ## See Also
 

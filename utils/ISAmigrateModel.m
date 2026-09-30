@@ -148,6 +148,15 @@ model = migrateOptsMerges(model);
 model = migrateDataFieldNames(model);
 model = migratePilotFields(model);
 model = migratePythiaFields(model);
+if isfield(model, 'pythia') && isfield(model, 'data') && isfield(model.data, 'Ybin')
+    if ~isfield(model.pythia, 'defaultAlgorithm')
+        [~, model.pythia.defaultAlgorithm] = max(mean(model.data.Ybin, 1));
+    end
+    if ~isfield(model.pythia, 'precision') && isfield(model.pythia, 'Ysub')
+        predicted = model.pythia.Ysub;
+        model.pythia.precision = (sum(predicted & model.data.Ybin, 1) ./ sum(predicted, 1))';
+    end
+end
 model = migrateTraceFields(model);
 model = inferCompletedStages(model);
 end
@@ -238,6 +247,25 @@ end
 
 % =========================================================================
 function model = migratePilotFields(model)
+if isfield(model, 'pilot') && ~isfield(model.pilot, 'Xmean') && ...
+        isfield(model, 'opts') && isfield(model.opts, 'pilot') && ...
+        isfield(model.opts.pilot, 'method') && strcmpi(model.opts.pilot.method, 'pls')
+    if ~isfield(model, 'data') || ~isfield(model.data, 'X')
+        error('ISA:ISAmigrateModel:missingPLSMean', 'Retrain this PLS model: its training features are missing.');
+    end
+    model.pilot.Xmean = mean(model.data.X, 1);
+    % Legacy CLOISTER projected uncentred features, unlike PLS's fitted Z.
+    % Translate vertices once when recovering the missing mean; topology
+    % and already centred models must remain unchanged on later loads.
+    if isfield(model, 'cloist')
+        for field = {'Zedge', 'Zecorr'}
+            name = field{1};
+            if isfield(model.cloist, name) && ~isempty(model.cloist.(name))
+                model.cloist.(name) = model.cloist.(name) - model.pilot.Xmean*model.pilot.A';
+            end
+        end
+    end
+end
 % model.pilot.A without B/C is not expected in any production model -- B
 % and C are always assigned in the same code block as A -- so there is no
 % automatic fix, only a warning that the model may be corrupted or from an

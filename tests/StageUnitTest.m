@@ -33,6 +33,7 @@ classdef StageUnitTest < matlab.unittest.TestCase
         AbsPerf = {true, false};
         FilterType = {'Ftr', 'Ftr&AP', 'Ftr&Good', 'Ftr&AP&Good'};
         Classifier = {'tree', 'nb', 'linear'};
+        SiftedParallel = {false, true};
     end
 
     methods (TestClassSetup)
@@ -96,13 +97,12 @@ classdef StageUnitTest < matlab.unittest.TestCase
             testCase.verifyError(@() PRELIM(X, Y, 'opts'), 'ISA:PRELIM:badOpts');
         end
 
-        function testPrelimWarnsOnZeroBest(testCase, MaxPerf)
-            % Relative performance divides by the best value; many exact
-            % zeros there make the relative matrix meaningless.
-            [X, Y] = syntheticMetadata(40, 3, 2);
-            Y(1:10, :) = 0;
-            testCase.verifyWarning(@() PRELIM(X, Y, prelimOpts(MaxPerf, false)), ...
-                'ISA:PRELIM:manyZeroBest');
+        function testPrelimZeroBest(testCase, MaxPerf)
+            X = (1:10)'; Y = zeros(10,2);
+            [~, transformed, out] = PRELIM(X,Y,prelimOpts(MaxPerf,false));
+            testCase.verifyTrue(all(out.Ybin(:)));
+            testCase.verifyEqual(out.Ybest,zeros(10,1));
+            testCase.verifyTrue(all(isfinite(transformed(:))));
         end
 
         function testPrelimEvalModeClipsAndWarns(testCase)
@@ -173,6 +173,43 @@ classdef StageUnitTest < matlab.unittest.TestCase
             [Xs, out] = SIFTED(X, Y, Y > median(Y(:)), {'a', 'b', 'c'}, testCase.Defaults.sifted);
             testCase.verifyEqual(out.selvars, 1:3);
             testCase.verifyEqual(Xs, X);
+        end
+
+        function testSiftedCacheIsolation(testCase, SiftedParallel)
+            % Repeated calls must match a fresh run after labels change.
+            % The old client cache retained fitness values for the same
+            % feature masks, even when every label became true.
+            testCase.assumeEmpty(gcp('nocreate'), ...
+                'This test needs control of pool lifetime.');
+            previousRNG = rng;
+            testCase.addTeardown(@() rng(previousRNG));
+            testCase.addTeardown(@() clear('SIFTED'));
+            if SiftedParallel
+                pool = parpool('local', 2);
+                testCase.addTeardown(@() delete(pool));
+            end
+            rng(5, 'twister');
+            X = rand(40, 6);
+            Y = rand(40, 2);
+            labels = {'a', 'b', 'c', 'd', 'e', 'f'};
+            opts = testCase.Defaults.sifted;
+            opts.rho = 0;
+            opts.K = 3;
+            opts.Replicates = 1;
+
+            clear SIFTED;
+            SIFTED(X, Y, Y < 0.5, labels, opts);
+            [repeatedX, repeated] = SIFTED(X, Y, true(size(Y)), labels, opts);
+
+            % Clear all processes to obtain an independent reference.
+            clear SIFTED;
+            if SiftedParallel
+                fetchOutputs(parfevalOnAll(pool, @() clear('SIFTED'), 0));
+            end
+            [freshX, fresh] = SIFTED(X, Y, true(size(Y)), labels, opts);
+            testCase.verifyEqual(repeated.selvars, fresh.selvars, ...
+                'Selected features must not depend on a previous call''s labels.');
+            testCase.verifyEqual(repeatedX, freshX);
         end
 
         % ------------------------------------------------------------ PILOT
@@ -390,10 +427,10 @@ classdef StageUnitTest < matlab.unittest.TestCase
             scatter3(ax, rand(10,1), rand(10,1), rand(10,1));
             ISArecallView(fig, 3);                  % algorithm 3 is in group 2
             [az, el] = view(ax);
-            testCase.verifyEqual([az el], rad2deg([1.0 0.4]), 'AbsTol', 1e-6);
+            testCase.verifyEqual([az el], rad2deg([1.0+pi/2 0.4]), 'AbsTol', 1e-6);
             ISArecallView(fig);                     % global viewpoint
             [az, el] = view(ax);
-            testCase.verifyEqual([az el], rad2deg([0.5 0.2]), 'AbsTol', 1e-6);
+            testCase.verifyEqual([az el], rad2deg([0.5+pi/2 0.2]), 'AbsTol', 1e-6);
         end
     end
 end

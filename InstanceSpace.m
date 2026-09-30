@@ -130,9 +130,7 @@ classdef InstanceSpace
             if nargin < 3 || isempty(requireData)
                 requireData = true;
             end
-            if ~(endsWith(rootdir, '/') || endsWith(rootdir, '\'))
-                rootdir = [rootdir '/'];
-            end
+            rootdir = InstanceSpace.normalizeRoot(rootdir);
             obj.rootdir = rootdir;
             if requireData && ~isfile([rootdir 'metadata.csv'])
                 error('ISA:InstanceSpace:missingData', ...
@@ -176,6 +174,26 @@ classdef InstanceSpace
             toRun = InstanceSpace.StageOrder(ismember(InstanceSpace.StageOrder, p.Results.stages));
             onStage = p.Results.onStage;
 
+            obj.opts = ISAdefaults(ISAvalidateOpts(obj.opts));
+            retained = obj;
+            for j = 1:numel(toRun)
+                retained = retained.invalidateDownstream(toRun{j});
+            end
+            for j = 1:numel(retained.completedStages)
+                stage = retained.completedStages{j};
+                if ismember(stage, toRun), continue; end
+                previous = [];
+                if isfield(obj.model, 'stageOptions') && isfield(obj.model.stageOptions, stage)
+                    previous = obj.model.stageOptions.(stage);
+                elseif isfield(obj.model, 'opts')
+                    previous = InstanceSpace.stageOptions(obj.model.opts, stage);
+                end
+                if isempty(previous) || ~isequaln(previous, InstanceSpace.stageOptions(obj.opts, stage))
+                    error('ISA:InstanceSpace:staleOptions', ...
+                        'Options for retained stage ''%s'' changed. Rebuild that stage and its dependents.', stage);
+                end
+            end
+
             startProcess = tic;
             fprintf('[BUILD] Root directory: %s\n', obj.rootdir);
             rng(obj.opts.general.seed, 'twister');
@@ -184,6 +202,9 @@ classdef InstanceSpace
                 InstanceSpace.printOptions(obj.opts);
             end
             [mypool, poolOpenedHere] = obj.ensurePool();
+            if poolOpenedHere
+                poolCleanup = onCleanup(@() delete(mypool)); %#ok<NASGU>
+            end
 
             for i = 1:numel(toRun)
                 stage = toRun{i};
@@ -211,6 +232,8 @@ classdef InstanceSpace
                 % re-running are unaffected -- they just get re-added a
                 % few iterations later, same as any other stage.
                 obj = obj.invalidateDownstream(stage);
+                obj.model.opts = obj.opts;
+                obj.model.stageOptions.(stage) = InstanceSpace.stageOptions(obj.opts, stage);
                 if ~isempty(onStage)
                     onStage(stage, obj.model);
                 end
@@ -218,7 +241,7 @@ classdef InstanceSpace
 
             if poolOpenedHere
                 fprintf('[BUILD] Closing parallel processing pool.\n');
-                delete(mypool);
+                clear poolCleanup;
             end
 
             % Persist and write outputs only once the FULL pipeline has
@@ -261,9 +284,7 @@ classdef InstanceSpace
                 @(x) isempty(x) || isa(x, 'function_handle'));
             parse(p, varargin{:});
             onStage = p.Results.onStage;
-            if ~(endsWith(testRootDir, '/') || endsWith(testRootDir, '\'))
-                testRootDir = [testRootDir '/'];
-            end
+            testRootDir = InstanceSpace.normalizeRoot(testRootDir);
             if isempty(fieldnames(obj.model)) || ...
                     ~all(ismember(InstanceSpace.StageOrder, obj.completedStages))
                 % Checking obj.model.pilot alone let a partially-built
@@ -404,9 +425,7 @@ classdef InstanceSpace
             % option defaults absent from the saved model (ISAdefaults).
             InstanceSpace.ensurePathSetup(); % load() calls ISAmigrateModel/ISAdefaults
             % (both in utils/) directly, before the constructor call below.
-            if ~(endsWith(rootdir, '/') || endsWith(rootdir, '\'))
-                rootdir = [rootdir '/'];
-            end
+            rootdir = InstanceSpace.normalizeRoot(rootdir);
             modelfile = [rootdir 'model.mat'];
             if ~isfile(modelfile)
                 error('ISA:InstanceSpace:missingModel', ...
@@ -521,15 +540,10 @@ classdef InstanceSpace
             if ~obj.opts.general.parallel
                 return;
             end
-            rightSize = ~isempty(mypool) && ...
-                (~isnumeric(obj.opts.general.ncores) || mypool.NumWorkers == obj.opts.general.ncores);
-            if rightSize
+            if ~isempty(mypool)
                 return;
             end
             fprintf('[BUILD] Starting parallel processing pool.\n');
-            if ~isempty(mypool)
-                delete(mypool);
-            end
             if isnumeric(obj.opts.general.ncores)
                 mypool = parpool('local', obj.opts.general.ncores, 'SpmdEnabled', false);
             else
@@ -548,48 +562,33 @@ classdef InstanceSpace
             prelimOpts.norm          = obj.opts.norm.flag;
             prelimOpts.iqrMultiplier = obj.opts.prelim.iqrMultiplier;
             prelimOpts.nanThreshold  = obj.opts.prelim.nanThreshold;
+            rng(obj.opts.general.seed, 'twister');
             [data.X, data.Y, prelimOut] = PRELIM(data.X, data.Y, prelimOpts);
+            idx = all(~prelimOut.Ybin, 1);
+            if any(idx)
+                warning('-> There are algorithms with no ''good'' instances. They are being removed to increase speed.');
+                data.Yraw      = data.Yraw(:,~idx);
+                data.algolabels = data.algolabels(~idx);
+                if size(data.Yraw, 2) == 0
+                    error('-> There are no ''good'' algorithms. Please verify the binary performance measure. STOPPING!')
+                end
+                % Refit on the retained portfolio so winners, beta and
+                % transforms all use its columns. A removed algorithm can
+                % still have been best on a row where no algorithm is good.
+                % Replay tie-breaking as for a build of this portfolio alone.
+                rng(obj.opts.general.seed, 'twister');
+                [data.X, data.Y, prelimOut] = PRELIM(data.Xraw, data.Yraw, prelimOpts);
+            end
             data.Ybest        = prelimOut.Ybest;
             data.Ybin         = prelimOut.Ybin;
             data.P            = prelimOut.P;
             data.numGoodAlgos = prelimOut.numGoodAlgos;
             data.beta         = prelimOut.beta;
 
-            idx = all(~data.Ybin, 1);
-            if any(idx)
-                warning('-> There are algorithms with no ''good'' instances. They are being removed to increase speed.');
-                data.Yraw      = data.Yraw(:,~idx);
-                data.Y         = data.Y(:,~idx);
-                data.Ybin      = data.Ybin(:,~idx);
-                data.algolabels = data.algolabels(~idx);
-                % prelimOut.lambdaY/muY/sigmaY are per-algorithm (1 x
-                % original-nalgos), fit before this pruning -- explore()
-                % later indexes them positionally against model.data.
-                % algolabels (the pruned list) via
-                % modelalgos=numel(trainedPrelim.lambdaY), so leaving them
-                % unpruned both over-counts modelalgos (indexing Y past
-                % its actual reconciled width, or misapplying a pruned
-                % algorithm's transform to an unrelated new algorithm's
-                % column) and, whenever a pruned algorithm wasn't last,
-                % misaligns every surviving lambda/mu/sigma after it.
-                % Pruning with the same mask keeps both counts and
-                % positions consistent with data.algolabels. minY is a
-                % single scalar (global min across all algorithms), not
-                % per-algorithm, so it needs no equivalent pruning.
-                prelimOut.lambdaY = prelimOut.lambdaY(~idx);
-                prelimOut.muY     = prelimOut.muY(~idx);
-                prelimOut.sigmaY  = prelimOut.sigmaY(~idx);
-                if size(data.Y, 2) == 0
-                    error('-> There are no ''good'' algorithms. Please verify the binary performance measure. STOPPING!')
-                end
-            end
-
             ninst = size(data.X, 1);
-            fractional  = obj.opts.selvars.smallscaleflag && isfloat(obj.opts.selvars.smallscale);
-            fileindexed = obj.opts.selvars.fileidxflag && isfile(obj.opts.selvars.fileidx);
-            bydensity   = obj.opts.selvars.densityflag && ...
-                          isfloat(obj.opts.selvars.mindistance) && ...
-                          ischar(obj.opts.selvars.type);
+            fractional  = obj.opts.selvars.smallscaleflag;
+            fileindexed = obj.opts.selvars.fileidxflag;
+            bydensity   = obj.opts.selvars.densityflag;
             if fractional
                 fprintf('[BUILD] Creating a small scale experiment for validation. Percentage of subset: %s%%\n', ...
                     num2str(round(100.*obj.opts.selvars.smallscale, 2)));
@@ -601,8 +600,14 @@ classdef InstanceSpace
             elseif fileindexed
                 fprintf('[BUILD] Using a subset of the instances.\n');
                 subsetIndex = false(size(data.X,1), 1);
+                if ~isfile(obj.opts.selvars.fileidx)
+                    error('ISA:InstanceSpace:missingIndexFile', 'Subset index file not found: %s.', obj.opts.selvars.fileidx);
+                end
                 aux = table2array(readtable(obj.opts.selvars.fileidx));
-                aux(aux > ninst) = [];
+                if ~(isnumeric(aux) && isvector(aux) && all(isfinite(aux)) && ...
+                        all(aux >= 1 & aux <= ninst & aux == floor(aux)))
+                    error('ISA:InstanceSpace:badIndices', 'Subset indices must be integers in [1, %d].', ninst);
+                end
                 subsetIndex(aux) = true;
             elseif bydensity
                 fprintf('[BUILD] Creating a small scale experiment for validation based on density.\n');
@@ -642,17 +647,25 @@ classdef InstanceSpace
             % and nanThreshold drops) survives for evaluateTestSet to
             % validate metadata_test.csv's column order against.
             model_.featsel.labels = model_.data.featlabels;
+            model_.preSiftedData = model_.data;
 
             obj.model = model_;
         end
 
         function obj = runSifted(obj)
+            if ~isfield(obj.model, 'preSiftedData')
+                error('ISA:InstanceSpace:missingPreSiftedData', ...
+                    'This model lacks pre-SIFTED data. Rebuild preprocessing before rerunning SIFTED.');
+            end
+            obj.model.data = obj.model.preSiftedData;
+            obj.model.featsel.idx = 1:size(obj.model.data.X, 2);
             nfeats = size(obj.model.data.X, 2);
             if obj.opts.sifted.flag
                 fprintf('[SIFTED] Calling SIFTED for automated feature selection.\n');
                 % Match the outer pipeline's final projection dimensionality
                 % (spec §5.5) so feature-subset evaluation is consistent.
                 siftedOpts = obj.opts.sifted;
+                siftedOpts.parallel = obj.opts.general.parallel;
                 siftedOpts.dims = obj.opts.pilot.dims;
                 [obj.model.data.X, obj.model.sifted] = SIFTED(obj.model.data.X, obj.model.data.Y, ...
                     obj.model.data.Ybin, obj.model.data.featlabels, siftedOpts);
@@ -697,10 +710,11 @@ classdef InstanceSpace
 
         function obj = runPilot(obj)
             fprintf('[PILOT] Calling PILOT to find the optimal projection.\n');
-            obj.model.pilot = PILOT(obj.model.data.X, obj.model.data.Y, obj.model.data.featlabels, obj.opts.pilot);
+            pilotOpts = obj.opts.pilot; pilotOpts.parallel = obj.opts.general.parallel;
+            obj.model.pilot = PILOT(obj.model.data.X, obj.model.data.Y, obj.model.data.featlabels, pilotOpts);
             if obj.opts.pilot.dims == 3
                 fprintf('[PILOT] Finding the optimal 2D viewpoint(s) of the 3D projection.\n');
-                obj.model.pilot.viewpoint = PILOTviewpoint(obj.model.pilot.Z, obj.model.data.Y, obj.opts.pilot);
+                obj.model.pilot.viewpoint = PILOTviewpoint(obj.model.pilot.Z, obj.model.data.Y, pilotOpts);
             end
         end
 
@@ -719,13 +733,16 @@ classdef InstanceSpace
                      'false for this build. The sign-based filter may silently degrade for any ' ...
                      'feature that is naturally all one sign in its raw scale.']);
             end
-            obj.model.cloist = CLOISTER(obj.model.data.X, obj.model.pilot.A, obj.opts.cloister);
+            Xmean = zeros(1, size(obj.model.data.X, 2));
+            if isfield(obj.model.pilot, 'Xmean'), Xmean = obj.model.pilot.Xmean; end
+            obj.model.cloist = CLOISTER(obj.model.data.X, obj.model.pilot.A, obj.opts.cloister, Xmean);
         end
 
         function obj = runPythia(obj)
             fprintf('[PYTHIA] Summoning PYTHIA to train the prediction models.\n');
+            pythiaOpts = obj.opts.pythia; pythiaOpts.parallel = obj.opts.general.parallel;
             obj.model.pythia = PYTHIA(obj.model.pilot.Z, obj.model.data.Yraw, obj.model.data.Ybin, ...
-                obj.model.data.Ybest, obj.model.data.algolabels, obj.opts.pythia);
+                obj.model.data.Ybest, obj.model.data.algolabels, pythiaOpts);
         end
 
         function obj = runTrace(obj)
@@ -735,6 +752,7 @@ classdef InstanceSpace
             % leak into opts.trace itself, since that gets persisted
             % verbatim into obj.model.opts/options.json.
             traceOpts = obj.opts.trace;
+            traceOpts.parallel = obj.opts.general.parallel;
             traceOpts.pythiaSkip = obj.opts.pythia.skip;
             obj.model.trace = TRACE(obj.model.pilot.Z, obj.model.data.Ybin, obj.model.pythia.Yhat, ...
                 obj.model.data.P, obj.model.data.beta, obj.model.data.algolabels, traceOpts);
@@ -742,6 +760,29 @@ classdef InstanceSpace
     end
 
     methods (Static, Access = private)
+        function path = normalizeRoot(path)
+            if ~((ischar(path) && isrow(path)) || (isstring(path) && isscalar(path)))
+                error('ISA:InstanceSpace:badPath', 'The directory must be a character vector or scalar string.');
+            end
+            path = char(path);
+            if isempty(path), error('ISA:InstanceSpace:badPath', 'The directory must not be empty.'); end
+            if ~endsWith(path, filesep), path = [path filesep]; end
+        end
+
+        function value = stageOptions(opts, stage)
+            % Only options consumed by this stage define its fitted state.
+            switch stage
+                case 'prelim'
+                    names = {'perf','prelim','auto','bound','norm','selvars'};
+                otherwise
+                    names = {stage};
+            end
+            value = struct();
+            for i = 1:numel(names), value.(names{i}) = opts.(names{i}); end
+            if strcmp(stage, 'prelim'), value.seed = opts.general.seed; end
+            if strcmp(stage, 'sifted'), value.dims = opts.pilot.dims; end
+        end
+
         function tf = hasNestedField(s, dottedPath)
             % Walks a 'a.b.c' dotted path through nested structs, used by
             % checkRequiredFields (#28). Missing at any level, or present
@@ -908,7 +949,9 @@ classdef InstanceSpace
                 onStage('sifted', out);
             end
 
-            out.pilot.Z = out.data.X*model.pilot.A';
+            Xmean = zeros(1, size(out.data.X, 2));
+            if isfield(model.pilot, 'Xmean'), Xmean = model.pilot.Xmean; end
+            out.pilot.Z = (out.data.X-Xmean)*model.pilot.A';
             if ~isempty(onStage)
                 onStage('pilot', out);
             end

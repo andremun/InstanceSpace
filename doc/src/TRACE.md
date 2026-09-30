@@ -91,7 +91,7 @@ Normally `obj.opts.trace`.
 
 *`0.6` (default) | scalar in [0, 1]*
 
-Minimum fraction of good instances inside a footprint.
+Target fraction of good instances inside a footprint. Check `accepted` before treating a training footprint as meeting this target.
 
 #### `opts.minInstances` — Minimum instances
 
@@ -163,6 +163,12 @@ TRACE3 replaces the DBSCAN method as the default and supports 3D instance spaces
 - Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
 - Simpson, C., Muñoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B. (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis. *Machine Learning*, 114, 240. <https://doi.org/10.1007/s10994-025-06871-5>
 - Muñoz, M.A. & Smith-Miles, K. (2017). Performance analysis of continuous black-box optimization algorithms via footprints in instance space. *Evolutionary Computation*, 25(4), 529–554. <https://doi.org/10.1162/EVCO_a_00194>
+
+### Unreleased review fixes
+
+Evaluation reuses the trained space geometry. Single-instance, duplicate, and lower-dimensional test batches do not require a test convex hull.
+
+TRACE3 footprints store `accepted` and `terminationReason`. Reaching the target gives `purityReached`. Exhausting the alpha search retains the last candidate with `accepted=false` and `spectrumExhausted`. An empty footprint has `insufficientSupport`. Evaluation preserves these training acceptance fields while updating test metrics.
 
 ## See Also
 

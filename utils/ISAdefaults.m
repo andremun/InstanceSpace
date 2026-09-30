@@ -90,6 +90,8 @@ if ~isfield(opts.sifted, 'MaxIter'),        opts.sifted.MaxIter        = 1000;  
 if ~isfield(opts.sifted, 'Replicates'),     opts.sifted.Replicates     = 100;    end
 if ~isfield(opts.sifted, 'seed'),           opts.sifted.seed           = opts.general.seed; end
 
+if ~isfield(opts.sifted, 'diagnostics'), opts.sifted.diagnostics = true; end
+
 % pilot
 if ~isfield(opts, 'pilot'),             opts.pilot             = struct; end
 if ~isfield(opts.pilot, 'analytic'),    opts.pilot.analytic    = false;  end

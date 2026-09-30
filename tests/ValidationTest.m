@@ -61,7 +61,8 @@ classdef ValidationTest < matlab.unittest.TestCase
             opts.pilot = struct('dims', 3, 'topoWeight', 0, 'viewGroups', {{[1 2], 3}});
             opts.pythia = struct('classifier', "SVM", 'ensembleMethod', "Bag");
             opts.selvars = struct('feats', {{'feature_a', "feature_b"}}, 'fileidx', "idx.csv");
-            testCase.verifyEqual(ISAvalidateOpts(opts), opts);
+            expected = opts; expected.pythia.classifier = 'svm';
+            testCase.verifyEqual(ISAvalidateOpts(opts), expected);
         end
 
         function testDefaultsFillEveryGroup(testCase)
@@ -225,7 +226,6 @@ c = {
     'pilotNtries',         'pilot',    'ntries',        0,          'notPositive'
     'pilotAlphaZero',      'pilot',    'alpha',         0,          'notPositive'
     'pilotTopoNegative',   'pilot',    'topoWeight',    -1,         'notPositive'
-    'viewGroupsNumeric',   'pilot',    'viewGroups',    [1 2],      'badViewGroups'
     'viewGroupsZero',      'pilot',    'viewGroups',    {[1 0]},    'badViewGroups'
     'cloisterPval',        'cloister', 'pval',          1.5,        'notInUnitRange'
     'cloisterMaxFeatures', 'cloister', 'maxFeatures',   -3,         'notPositive'

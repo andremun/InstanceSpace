@@ -42,6 +42,9 @@ classdef InstanceSpaceTest < matlab.unittest.TestCase
             copyfile([root 'metadata_test.csv'], [testCase.CaseDir 'metadata_test.csv']);
 
             testCase.Opts = testDefaultOpts();
+            % Simulate obsolete output from an earlier algorithm portfolio.
+            fid = fopen([testCase.CaseDir 'footprint_removed.png'],'w'); fclose(fid);
+            fid = fopen([testCase.CaseDir 'footprint_removed.fig'],'w'); fclose(fid);
             testCase.Opts.outputs.web = true;     % covers scriptweb
             testCase.Built = InstanceSpace(testCase.CaseDir, testCase.Opts).build();
         end
@@ -57,6 +60,8 @@ classdef InstanceSpaceTest < matlab.unittest.TestCase
     methods (Test)
         function testSourcesAndWebOutputs(testCase)
             m = testCase.Built.model;
+            testCase.verifyFalse(isfile([testCase.CaseDir 'footprint_removed.png']));
+            testCase.verifyFalse(isfile([testCase.CaseDir 'footprint_removed.fig']));
             testCase.verifyClass(m.data.S, 'categorical');
             testCase.verifyEqual(sort(categories(m.data.S)), {'suiteA'; 'suiteB'});
             testCase.verifyTrue(isfile([testCase.CaseDir 'distribution_sources.png']), ...

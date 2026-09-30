@@ -68,6 +68,7 @@ if ~isfield(opts, 'dims'), opts.dims = 2;    end
 % InstanceSpace; a standalone SIFTED(...) call needs its own fallback,
 % same as PYTHIA's opts.seed default.
 if ~isfield(opts, 'seed'), opts.seed = 42;   end
+if ~isfield(opts, 'diagnostics'), opts.diagnostics = true; end
 if ~(isnumeric(opts.dims) && isscalar(opts.dims) && ismember(opts.dims, [2 3]))
     error('ISA:SIFTED:invalidDims', ...
         'opts.dims must be 2 or 3 (got %s).', mat2str(opts.dims));
@@ -87,18 +88,16 @@ unnaceptableClustering = 0.50;
 acceptableClustering   = 0.75;
 % -------------------------------------------------------------------------
 
-clearCache(); % reset the persistent fitness cache at the start of each call
-
-if exist('gcp','file')==2
+mypool = [];
+if exist('gcp','file')==2 && (~isfield(opts,'parallel') || opts.parallel)
     mypool = gcp('nocreate');
-    if ~isempty(mypool)
-        nworkers = mypool.NumWorkers;
-    else
-        nworkers = 0;
-    end
+end
+if ~isempty(mypool)
+    nworkers = mypool.NumWorkers;
 else
     nworkers = 0;
 end
+clearCache(mypool); % reset only the processes this invocation can use
 
 % -------------------------------------------------------------------------
 nfeats = size(X, 2);
@@ -153,6 +152,7 @@ fprintf('[SIFTED] Selecting features based on correlation clustering.\n');
 prevRNG = rng;
 rngGuard = onCleanup(@() rng(prevRNG)); %#ok<NASGU>
 rng(opts.seed, 'twister');
+if opts.diagnostics
 out.eva = evalclusters(Xaux', 'kmeans', 'Silhouette', 'KList', 3:nfeats, ...
                               'Distance', 'correlation');
 fprintf('[SIFTED] Average silhouette values for each number of clusters.\n');
@@ -165,6 +165,7 @@ if out.eva.CriterionValues(out.eva.InspectedK==opts.K) < unnaceptableClustering
         fprintf('[SIFTED] A suggested value of K is %d\n', out.Ksuggested);
     end
 end
+end
 % -------------------------------------------------------------------------
 rng(opts.seed, 'twister');
 out.clust = bsxfun(@eq, kmeans(Xaux', opts.K, 'Distance', 'correlation', ...
@@ -176,7 +177,7 @@ fprintf('[SIFTED] Constructing %d clusters of features.\n', opts.K);
 fprintf('[SIFTED] Using a GA+LookUpTable to find an optimal combination.\n');
 % -------------------------------------------------------------------------
 cvpart  = cvpartition(size(Xaux,1), 'Kfold', Kfolds);
-fcnwrap = @(x) costfcn(x, Xaux, Y, Ybin, out.clust, cvpart, featlabels(out.selvars), opts.dims);
+fcnwrap = @(x) costfcn(x, Xaux, Y, Ybin, out.clust, cvpart, featlabels(out.selvars), opts.dims, opts.seed);
 % GA population fitness evaluations are parallelised at the GA level
 % (UseParallel) rather than inside costfcn: a parfor over the ~10
 % algorithm columns nested inside a fitness function called hundreds of
@@ -205,10 +206,15 @@ fprintf('[SIFTED] Keeping %d out of %d features (clustering).\n', size(X,2), nfe
 
 end
 % =========================================================================
-function y = costfcn(ind, X, Y, Ybin, clust, cvpart, featlabels, dims)
+function y = costfcn(ind, X, Y, Ybin, clust, cvpart, featlabels, dims, seed)
+    % A call without inputs resets this process's cache before a new run.
     persistent mymap
-    if isempty(mymap)
+    if nargin == 0 || isempty(mymap)
         mymap = containers.Map('KeyType','char','ValueType','double');
+    end
+    if nargin == 0
+        y = [];
+        return;
     end
     % Internal PILOT call mirrors the canonical analytic branch
     % (spec §5.5), at the same dimensionality as the outer pipeline's final
@@ -231,7 +237,7 @@ function y = costfcn(ind, X, Y, Ybin, clust, cvpart, featlabels, dims)
         % (dozens to hundreds of times per SIFTED call), so PILOT's normal
         % per-run status/summary output would flood the console.
         out = PILOT(X(:,idx), Y, featlabels(idx), ...
-            struct('analytic', analytic, 'dims', dims, 'verbose', false));
+            struct('analytic', analytic, 'dims', dims, 'verbose', false, 'seed', seed, 'parallel', false));
         Z = out.Z;
         y = -Inf;
         % Plain loop, not parfor: costfcn is itself called in parallel by
@@ -247,20 +253,14 @@ function y = costfcn(ind, X, Y, Ybin, clust, cvpart, featlabels, dims)
     end
 end
 % =========================================================================
-function clearCache()
-% Clears the persistent fitness cache in costfcn, on the client and (now
-% that the GA's UseParallel dispatches costfcn calls to pool workers,
-% each with its own persistent state) on every worker in the current
-% parallel pool too, if one exists. Without this, a worker could return
-% a stale fitness value cached under the same feature-selection bitmask
-% key from a previous, unrelated SIFTED call on different data.
-    clear costfcn
-    if exist('gcp','file')==2
-        mypool = gcp('nocreate');
-        if ~isempty(mypool)
-            % Clear the parent function so local-function persistent state (incl. costfcn) is reset on workers.
-            wait(parfevalOnAll(mypool, @() clear('SIFTED'), 0));
-        end
+function clearCache(mypool)
+% Reset the client and the selected pool's caches before each SIFTED call.
+% Clearing a local function by name does not reset its persistent state.
+% The bitmask keys are valid only for the current data and CV partition.
+    costfcn();
+    if ~isempty(mypool)
+        % Wait for every reset and propagate errors before GA starts.
+        fetchOutputs(parfevalOnAll(mypool, @costfcn, 0));
     end
 end
 % =========================================================================

@@ -1,0 +1,72 @@
+{
+  "names": [
+    "CopilotReviewTest/testLegacyPLSBoundaryMigration(Dims=2,Boundary=populated)",
+    "CopilotReviewTest/testLegacyPLSBoundaryMigration(Dims=2,Boundary=empty)",
+    "CopilotReviewTest/testLegacyPLSBoundaryMigration(Dims=2,Boundary=absent)",
+    "CopilotReviewTest/testLegacyPLSBoundaryMigration(Dims=3,Boundary=populated)",
+    "CopilotReviewTest/testLegacyPLSBoundaryMigration(Dims=3,Boundary=empty)",
+    "CopilotReviewTest/testLegacyPLSBoundaryMigration(Dims=3,Boundary=absent)",
+    "CopilotReviewTest/testSerialSiftedDoesNotDispatchToExistingPool",
+    "StageUnitTest/testSiftedGuards",
+    "StageUnitTest/testSiftedKeepsFewFeatures",
+    "StageUnitTest/testSiftedCacheIsolation(SiftedParallel=false)",
+    "StageUnitTest/testSiftedCacheIsolation(SiftedParallel=true)",
+    "ReviewFixTest/testPLSProjectionMean"
+  ],
+  "passed": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "failed": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+  ],
+  "incomplete": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+  ],
+  "duration": [
+    1.140812,
+    0.10889399999999999,
+    0.09211399999999999,
+    0.103289,
+    0.12223500000000001,
+    0.019275,
+    43.596903999999995,
+    1.654102,
+    0.042342,
+    7.199945,
+    48.030247,
+    0.17312
+  ]
+}

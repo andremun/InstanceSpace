@@ -1,7 +1,8 @@
-function out = CLOISTER(X, A, opts)
+function out = CLOISTER(X, A, opts, Xmean)
 % CLOISTER  Estimate the empirical boundary of the instance space.
 %
 %   out = CLOISTER(X, A, opts)
+%   out = CLOISTER(X, A, opts, Xmean)
 %
 %   Enumerates every combination of feature lower/upper bounds (a
 %   hypercube's corners), discards combinations that contradict the
@@ -21,6 +22,9 @@ function out = CLOISTER(X, A, opts)
 %                                    contradicting the trend is discarded (0.70)
 %              maxFeatures   int     feature-count guard before falling back
 %                                    to a plain convex hull (20)
+%     Xmean - optional (1 x nfeats) fitted feature mean, default zeros.
+%             Pass model.pilot.Xmean for PLS so corners and fallback
+%             instances use (X-Xmean)*A' in the fitted coordinate system.
 %
 %   Outputs
 %     out  - struct with fields:
@@ -66,6 +70,7 @@ rho = rho.*(pval<opts.pval);
 % threshold keeps its remaining NaN entries through PRELIM/SIFTED/PILOT).
 % Without omitnan, min/max would return NaN for that column and propagate
 % through Xedge/Zedge into convhull, which errors on NaN input.
+if nargin < 4, Xmean = zeros(1, size(X,2)); end
 Xbnds = [min(X,[],1,'omitnan'); max(X,[],1,'omitnan')];
 % Guard: if too many features, the bit-matrix enumeration below would
 % produce an intractable matrix. Use convex hull of Z as a safe fallback.
@@ -75,46 +80,43 @@ if nfeats > MAX_FEATS
     warning('ISA:CLOISTER:tooManyFeatures', ...
         'CLOISTER skipped: %d features exceeds limit of %d. Using convex hull as boundary.', ...
         nfeats, MAX_FEATS);
-    [out.Zedge, out.ZedgeFaces] = boundaryHull(X*A');
+    [out.Zedge, out.ZedgeFaces] = boundaryHull((X-Xmean)*A');
     out.Zecorr      = out.Zedge;
     out.ZecorrFaces = out.ZedgeFaces;
     fprintf('[CLOISTER] CLOISTER has completed.\n');
     return;
 end
-% Pure-MATLAB replacement for de2bi (no Communications Toolbox required)
-idx = rem(floor((0:2^nfeats-1)' .* 2.^(-(nfeats-1:-1:0))), 2) + 1;
-ncomb = size(idx,1);
-Xedge = zeros(ncomb,nfeats);
-remove = false(ncomb,1);
-for i=1:ncomb
-   ind = sub2ind([2 nfeats],idx(i,:),1:nfeats);
-   Xedge(i,:) = Xbnds(ind)';
-   for j=1:nfeats
-       for k=j+1:nfeats
-           % Check for valid points give the correlation trend
-           if rho(j,k)>opts.corrThreshold && sign(Xedge(i,j))~=sign(Xedge(i,k))
-               remove(i) = true;
-           elseif rho(j,k)<-opts.corrThreshold && sign(Xedge(i,j))==sign(Xedge(i,k))
-               remove(i) = true;
-           end
-           if remove(i)
-               break;
-           end
-       end
-       if remove(i)
-           break;
-       end
-   end
+% Keep only hull vertices between bounded batches. This preserves the hull
+% of all corners without allocating two full 2^nfeats-by-nfeats arrays.
+batchSize = 4096;
+Zall = zeros(0,size(A,1)); Zvalid = Zall;
+[jpair,kpair] = find(triu(abs(rho)>opts.corrThreshold,1));
+for first = 0:batchSize:2^nfeats-1
+    ids = (first:min(first+batchSize-1,2^nfeats-1))';
+    Xedge = repmat(Xbnds(1,:),numel(ids),1);
+    for j = 1:nfeats
+        upper = rem(floor(ids/2^(nfeats-j)),2) == 1;
+        Xedge(upper,j) = Xbnds(2,j);
+    end
+    remove = false(numel(ids),1);
+    for j = 1:numel(jpair)
+        sameSign = sign(Xedge(:,jpair(j))) == sign(Xedge(:,kpair(j)));
+        if rho(jpair(j),kpair(j)) > 0
+            remove = remove | ~sameSign;
+        else
+            remove = remove | sameSign;
+        end
+    end
+    Zbatch = (Xedge-Xmean)*A';
+    Zall = extremePoints([Zall;Zbatch]);
+    Zvalid = extremePoints([Zvalid;Zbatch(~remove,:)]);
 end
-[out.Zedge, out.ZedgeFaces] = boundaryHull(Xedge*A');
-
+[out.Zedge, out.ZedgeFaces] = boundaryHull(Zall);
 try
-    [out.Zecorr, out.ZecorrFaces] = boundaryHull(Xedge(~remove,:)*A');
+    [out.Zecorr, out.ZecorrFaces] = boundaryHull(Zvalid);
 catch
-    fprintf('[CLOISTER] The acceptable correlation threshold was too strict.\n');
-    fprintf('[CLOISTER] The features are weakly correlated.\n');
-    fprintf('[CLOISTER] Please consider increasing it.\n');
-    out.Zecorr      = out.Zedge;
+    fprintf('[CLOISTER] Correlation constraints enclose no region. Using the full boundary.\n');
+    out.Zecorr = out.Zedge;
     out.ZecorrFaces = out.ZedgeFaces;
 end
 fprintf('[CLOISTER] CLOISTER has completed.\n');
@@ -163,4 +165,21 @@ else
     V = Z(K, :);
     F = [];
 end
+end
+
+function V = extremePoints(Z)
+% Points inside a batch hull cannot become vertices of a later union hull.
+Z = unique(Z,'rows');
+if size(Z,1) < 3, V = Z; return; end
+centered = Z-mean(Z,1);
+r = rank(centered);
+if r == 0, V = Z(1,:); return; end
+[~,~,basis] = svd(centered,'econ');
+P = centered*basis(:,1:r);
+if r == 1
+    [~,lo] = min(P); [~,hi] = max(P); ids = [lo hi];
+else
+    ids = unique(convhull(P));
+end
+V = Z(ids,:);
 end

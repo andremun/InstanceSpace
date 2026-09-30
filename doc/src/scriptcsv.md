@@ -63,6 +63,10 @@ A footprint region with a hole writes both its outer boundary and the hole's bou
 
 Every region of a footprint is written, separated by `NaN` rows, instead of only the first.
 
+### Unreleased review fixes
+
+Geometry exports include empty vertex tables when a footprint is empty. For 3D, each vertex table has a corresponding `_faces.csv` with one-based triangle indices. CLOISTER uses `bounds_faces.csv` and `bounds_prunned_faces.csv`. `geometry_manifest.json` records dimensionality, footprint filenames, and empty status. Two-dimensional rings are NaN-separated, including holes. The exporter replaces the toolkit-owned `footprint_*_best.csv`, `footprint_*_good.csv`, their face tables, and boundary CSVs on each run. Keep user-authored files outside these reserved names.
+
 ## See Also
 
 `scriptpng` | `scriptweb` | `InstanceSpace`

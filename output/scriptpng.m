@@ -47,6 +47,18 @@ function scriptpng(container,rootdir)
 % -------------------------------------------------------------------------
 % Preliminaries
 scriptfcn;
+% Remove only toolkit-owned plot names before writing the current run.
+% This also clears old 3D FIG files when the new run is 2D or disables FIG.
+previous = [dir(fullfile(rootdir,'*.png')); dir(fullfile(rootdir,'*.fig'))];
+fixedNames = {'distribution_number_good_algos.png','distribution_portfolio.png', ...
+    'distribution_svm_portfolio.png','distribution_beta_score.png', ...
+    'distribution_boundary.png','distribution_sources.png'};
+pattern = '^(distribution_(feature|performance_global_normalized|performance_individual_normalized)_.+|binary_(performance|classifier)_.+|footprint_.+)\.(png|fig)$';
+for j = 1:numel(previous)
+    if ismember(previous(j).name,fixedNames) || ~isempty(regexp(previous(j).name,pattern,'once'))
+        delete(fullfile(rootdir,previous(j).name));
+    end
+end
 % Figures created in headless/batch MATLAB (-nodisplay, common for
 % automated runs) otherwise inherit a black background. Two distinct
 % causes, both handled here:
@@ -97,7 +109,7 @@ nfeats = size(container.data.X,2);
 nalgos = size(container.data.Y,2);
 Xaux = (container.data.X-min(container.data.X,[],1))./range(container.data.X,1);
 Yind = (container.data.Yraw-min(container.data.Yraw,[],1))./range(container.data.Yraw,1);
-Yglb = log10(container.data.Yraw+1);
+Yglb = sign(container.data.Yraw).*log10(abs(container.data.Yraw)+1);
 Yglb = (Yglb-min(Yglb(:)))./range(Yglb(:));
 Yfoot = container.data.Ybin;
 Pfoot = container.data.P;

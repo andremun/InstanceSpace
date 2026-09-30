@@ -29,7 +29,7 @@ abalone_ori,0.332548382,0.210409617,0.035714286,0.164181841,0.167112964,0.895471
 
 ## Missing Values
 
-Leave a cell empty or write `NaN` for a missing value. A feature with at least `opts.prelim.nanThreshold` missing values is removed. A missing performance value never counts as good.
+Leave a cell empty or write `NaN` for a missing value. A feature with at least `opts.prelim.nanThreshold` missing values is removed. After filtering, training requires complete features and performance values. Remaining missing values cause an error that names the affected instances. Evaluation requires complete retained features but permits missing performance values, which never count as observed failures in classifier scoring.
 
 Avoid `NA`, spreadsheet error codes such as `#DIV/0!`, and empty rows: they make MATLAB read the whole column as text, which then fails later in the pipeline.
 
@@ -53,6 +53,12 @@ Start with more candidate features than you need; `SIFTED` removes the ones that
 ## References
 
 - Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
+
+## Version History
+
+### Unreleased review fixes
+
+Training stores the feature columns removed by `nanThreshold`. Exploration removes those same columns before checking the required feature schema, even when their test values are complete.
 
 ## See Also
 

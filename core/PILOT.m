@@ -1,6 +1,6 @@
 function out = PILOT(X, Y, featlabels, opts)
 % PILOT  Project features onto a 2D or 3D instance space (Munoz et al.,
-% Mach Learn 2018), finding A/B/C such that Z=X*A' and [X Y] is
+% Mach Learn 2018), finding A/B/C such that Z=X*A' (centred X for PLS) and [X Y] is
 % reconstructed from Z as closely as possible.
 %
 %   out = PILOT(X, Y, featlabels, opts)
@@ -33,7 +33,8 @@ function out = PILOT(X, Y, featlabels, opts)
 %
 %   Outputs
 %     out  - struct with fields:
-%              A       (dims x nfeats) projection matrix, Z = X*A'
+%              A       (dims x nfeats) projection matrix
+%              Xmean   fitted feature mean (PLS only), Z = (X-Xmean)*A'
 %              B, C    reconstruction matrices for the feature/performance
 %                      blocks of [X Y] from Z
 %              Z       (ninst x dims) projected instance coordinates
@@ -71,6 +72,8 @@ function out = PILOT(X, Y, featlabels, opts)
 % -------------------------------------------------------------------------
 
 if ~isfield(opts, 'verbose'), opts.verbose = true; end
+if ~isfield(opts, 'analytic'), opts.analytic = false; end
+if ~isfield(opts, 'ntries'), opts.ntries = 10; end
 % ISAdefaults sets this to opts.general.seed for a call routed through
 % InstanceSpace; a standalone PILOT(...) call (CLAUDE.md: every core
 % pipeline function must remain independently callable) needs its own
@@ -101,12 +104,15 @@ if ~(isnumeric(opts.alpha) && isscalar(opts.alpha) && isfinite(opts.alpha) && op
 end
 d = opts.dims;
 costWeight = opts.alpha;
+if any(~isfinite(X(:))) || any(~isfinite(Y(:)))
+    error('ISA:PILOT:incompleteData', ...
+        'PILOT requires finite features and training outcomes. Resolve missing values before projection.');
+end
 
 n = size(X, 2); % Number of features
 Xbar = [X Y];
 m = size(Xbar, 2);
-Hd = pdist(X)';
-if exist('gcp','file')==2
+if exist('gcp','file')==2 && (~isfield(opts,'parallel') || opts.parallel)
     mypool = gcp('nocreate');
     if ~isempty(mypool)
         nworkers = mypool.NumWorkers;
@@ -148,9 +154,10 @@ if strcmpi(opts.method, 'pls')
         fprintf('[PILOT] PILOT is using partial least squares (opts.pilot.method=''pls'').\n');
     end
     Xmean = mean(X, 1);
+    out.Xmean = Xmean;
     Ymean = mean(Y, 1);
     [XL, YL, XS, ~, ~, ~, ~, stats] = plsregress(X, Y, d);
-    out.A = stats.W';  % Ar = W' (d x n) -- used by exploreIS to reproject new instances via Z=X*A'
+    out.A = stats.W';  % Z = (X - out.Xmean)*A'
     out.B = XL;          % Br = P (n x d)
     out.C = YL';          % Cr = Q' (d x q)
     out.Z = XS;
@@ -178,8 +185,8 @@ elseif opts.analytic
     V = V(:,idx(1:d));         % top-d eigenvectors, (m x d)
     out.B = V(1:n,:);           % (n x d)
     out.C = V(n+1:m,:)'./sqrt(costWeight); % (d x q), rescaled back to true Y units
-    Xr = Xt'/(Xt*Xt');           % pseudo-inverse of Xt (rank-checked above), (ninst x n)
-    out.A = V'*XbarwT*Xr;         % (d x n)
+    % Solve least squares directly instead of squaring X's condition number.
+    out.A = (X \ (Xbarw * V))';
     Zt = out.A*Xt;                 % (d x ninst)
     out.Z = Zt';                   % (ninst x d) -- matches the numerical branch's convention
     Xhat = [out.B*Zt; out.C'*Zt];  % (m x ninst), same orientation as XbarT
@@ -196,6 +203,7 @@ else
         idx = 1;
         out.alpha = opts.precalcAlpha;
     else
+        Hd = pdist(X)'; % Only numerical restart ranking uses pairwise distances.
         if isfield(opts,'X0') && isnumeric(opts.X0) && ...
                 size(opts.X0,1)==d*m+d*n && size(opts.X0,2)>=1
             if opts.verbose

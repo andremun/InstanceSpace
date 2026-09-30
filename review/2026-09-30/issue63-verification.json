@@ -1,0 +1,524 @@
+{
+  "issue": 63,
+  "master_commit": "08044f5",
+  "pr_code_commit": "f238f16",
+  "scope": "PILOT only, fixed inputs prepared once using master PRELIM/SIFTED and exporter defaults; no worker pool",
+  "runs": [
+    {
+      "name": "master-default-1",
+      "meta": {
+        "release": "26.1.0.3346908 (R2026a) Update 5",
+        "platform": "GLNXA64",
+        "threads": 12,
+        "blas": "Intel(R) oneAPI Math Kernel Library Version 2025.3-Product Build 20251007 for Intel(R) 64 architecture applications (CNR branch SSE4_2)",
+        "ntries": 10,
+        "seed": 42,
+        "root": "/tmp/isa-issue63/master"
+      },
+      "winner": 10,
+      "gap": 0.005916240583143884
+    },
+    {
+      "name": "master-default-2",
+      "meta": {
+        "release": "26.1.0.3346908 (R2026a) Update 5",
+        "platform": "GLNXA64",
+        "threads": 12,
+        "blas": "Intel(R) oneAPI Math Kernel Library Version 2025.3-Product Build 20251007 for Intel(R) 64 architecture applications (CNR branch SSE4_2)",
+        "ntries": 10,
+        "seed": 42,
+        "root": "/tmp/isa-issue63/master"
+      },
+      "winner": 10,
+      "gap": 0.005916240583143884
+    },
+    {
+      "name": "pr-default-1",
+      "meta": {
+        "release": "26.1.0.3346908 (R2026a) Update 5",
+        "platform": "GLNXA64",
+        "threads": 12,
+        "blas": "Intel(R) oneAPI Math Kernel Library Version 2025.3-Product Build 20251007 for Intel(R) 64 architecture applications (CNR branch SSE4_2)",
+        "ntries": 10,
+        "seed": 42,
+        "root": "/home/unimelb.edu.au/mariom1/Documents/packages/InstanceSpace"
+      },
+      "winner": 10,
+      "gap": 0.005916240583143884
+    },
+    {
+      "name": "pr-default-2",
+      "meta": {
+        "release": "26.1.0.3346908 (R2026a) Update 5",
+        "platform": "GLNXA64",
+        "threads": 12,
+        "blas": "Intel(R) oneAPI Math Kernel Library Version 2025.3-Product Build 20251007 for Intel(R) 64 architecture applications (CNR branch SSE4_2)",
+        "ntries": 10,
+        "seed": 42,
+        "root": "/home/unimelb.edu.au/mariom1/Documents/packages/InstanceSpace"
+      },
+      "winner": 10,
+      "gap": 0.005916240583143884
+    },
+    {
+      "name": "master-single-1",
+      "meta": {
+        "release": "26.1.0.3346908 (R2026a) Update 5",
+        "platform": "GLNXA64",
+        "threads": 1,
+        "blas": "Intel(R) oneAPI Math Kernel Library Version 2025.3-Product Build 20251007 for Intel(R) 64 architecture applications (CNR branch SSE4_2)",
+        "ntries": 10,
+        "seed": 42,
+        "root": "/tmp/isa-issue63/master"
+      },
+      "winner": 10,
+      "gap": 0.005916240583142773
+    },
+    {
+      "name": "master-single-2",
+      "meta": {
+        "release": "26.1.0.3346908 (R2026a) Update 5",
+        "platform": "GLNXA64",
+        "threads": 1,
+        "blas": "Intel(R) oneAPI Math Kernel Library Version 2025.3-Product Build 20251007 for Intel(R) 64 architecture applications (CNR branch SSE4_2)",
+        "ntries": 10,
+        "seed": 42,
+        "root": "/tmp/isa-issue63/master"
+      },
+      "winner": 10,
+      "gap": 0.005916240583142773
+    },
+    {
+      "name": "pr-single-1",
+      "meta": {
+        "release": "26.1.0.3346908 (R2026a) Update 5",
+        "platform": "GLNXA64",
+        "threads": 1,
+        "blas": "Intel(R) oneAPI Math Kernel Library Version 2025.3-Product Build 20251007 for Intel(R) 64 architecture applications (CNR branch SSE4_2)",
+        "ntries": 10,
+        "seed": 42,
+        "root": "/home/unimelb.edu.au/mariom1/Documents/packages/InstanceSpace"
+      },
+      "winner": 10,
+      "gap": 0.005916240583142773
+    },
+    {
+      "name": "pr-single-2",
+      "meta": {
+        "release": "26.1.0.3346908 (R2026a) Update 5",
+        "platform": "GLNXA64",
+        "threads": 1,
+        "blas": "Intel(R) oneAPI Math Kernel Library Version 2025.3-Product Build 20251007 for Intel(R) 64 architecture applications (CNR branch SSE4_2)",
+        "ntries": 10,
+        "seed": 42,
+        "root": "/home/unimelb.edu.au/mariom1/Documents/packages/InstanceSpace"
+      },
+      "winner": 10,
+      "gap": 0.005916240583142773
+    },
+    {
+      "name": "pr-default-fresh-1",
+      "meta": {
+        "release": "26.1.0.3346908 (R2026a) Update 5",
+        "platform": "GLNXA64",
+        "threads": 12,
+        "blas": "Intel(R) oneAPI Math Kernel Library Version 2025.3-Product Build 20251007 for Intel(R) 64 architecture applications (CNR branch SSE4_2)",
+        "ntries": 10,
+        "seed": 42,
+        "root": "/home/unimelb.edu.au/mariom1/Documents/packages/InstanceSpace"
+      },
+      "winner": 10,
+      "gap": 0.005916240583143884
+    },
+    {
+      "name": "pr-default-fresh-2",
+      "meta": {
+        "release": "26.1.0.3346908 (R2026a) Update 5",
+        "platform": "GLNXA64",
+        "threads": 12,
+        "blas": "Intel(R) oneAPI Math Kernel Library Version 2025.3-Product Build 20251007 for Intel(R) 64 architecture applications (CNR branch SSE4_2)",
+        "ntries": 10,
+        "seed": 42,
+        "root": "/home/unimelb.edu.au/mariom1/Documents/packages/InstanceSpace"
+      },
+      "winner": 10,
+      "gap": 0.005916240583143884
+    },
+    {
+      "name": "pr-single-fresh-1",
+      "meta": {
+        "release": "26.1.0.3346908 (R2026a) Update 5",
+        "platform": "GLNXA64",
+        "threads": 1,
+        "blas": "Intel(R) oneAPI Math Kernel Library Version 2025.3-Product Build 20251007 for Intel(R) 64 architecture applications (CNR branch SSE4_2)",
+        "ntries": 10,
+        "seed": 42,
+        "root": "/home/unimelb.edu.au/mariom1/Documents/packages/InstanceSpace"
+      },
+      "winner": 10,
+      "gap": 0.005916240583142773
+    },
+    {
+      "name": "pr-single-fresh-2",
+      "meta": {
+        "release": "26.1.0.3346908 (R2026a) Update 5",
+        "platform": "GLNXA64",
+        "threads": 1,
+        "blas": "Intel(R) oneAPI Math Kernel Library Version 2025.3-Product Build 20251007 for Intel(R) 64 architecture applications (CNR branch SSE4_2)",
+        "ntries": 10,
+        "seed": 42,
+        "root": "/home/unimelb.edu.au/mariom1/Documents/packages/InstanceSpace"
+      },
+      "winner": 10,
+      "gap": 0.005916240583142773
+    }
+  ],
+  "comparisons": [
+    {
+      "left": "master-default-1",
+      "right": "master-default-2",
+      "fields": {
+        "X0": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "alpha": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "A": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "Z": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "eoptim": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "perf": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        }
+      }
+    },
+    {
+      "left": "pr-default-1",
+      "right": "pr-default-2",
+      "fields": {
+        "X0": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "alpha": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "A": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "Z": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "eoptim": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "perf": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        }
+      }
+    },
+    {
+      "left": "master-single-1",
+      "right": "master-single-2",
+      "fields": {
+        "X0": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "alpha": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "A": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "Z": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "eoptim": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "perf": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        }
+      }
+    },
+    {
+      "left": "pr-single-1",
+      "right": "pr-single-2",
+      "fields": {
+        "X0": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "alpha": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "A": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "Z": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "eoptim": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "perf": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        }
+      }
+    },
+    {
+      "left": "pr-default-fresh-1",
+      "right": "pr-default-fresh-2",
+      "fields": {
+        "X0": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "alpha": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "A": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "Z": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "eoptim": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "perf": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        }
+      }
+    },
+    {
+      "left": "pr-single-fresh-1",
+      "right": "pr-single-fresh-2",
+      "fields": {
+        "X0": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "alpha": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "A": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "Z": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "eoptim": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "perf": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        }
+      }
+    },
+    {
+      "left": "master-default-1",
+      "right": "pr-default-1",
+      "fields": {
+        "X0": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "alpha": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "A": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "Z": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "eoptim": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "perf": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        }
+      }
+    },
+    {
+      "left": "master-single-1",
+      "right": "pr-single-1",
+      "fields": {
+        "X0": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "alpha": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "A": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "Z": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "eoptim": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "perf": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        }
+      }
+    },
+    {
+      "left": "pr-default-1",
+      "right": "pr-default-fresh-1",
+      "fields": {
+        "X0": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "alpha": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "A": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "Z": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "eoptim": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "perf": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        }
+      }
+    },
+    {
+      "left": "pr-single-1",
+      "right": "pr-single-fresh-1",
+      "fields": {
+        "X0": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "alpha": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "A": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "Z": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "eoptim": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "perf": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        }
+      }
+    },
+    {
+      "left": "pr-default-1",
+      "right": "pr-single-1",
+      "fields": {
+        "X0": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "alpha": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "A": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "Z": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "eoptim": {
+          "exact_equal": true,
+          "max_abs_difference": 0.0
+        },
+        "perf": {
+          "exact_equal": false,
+          "max_abs_difference": 6.5503158452884236e-15
+        }
+      }
+    }
+  ],
+  "inputs": {
+    "X": {
+      "shape": [
+        212,
+        9
+      ],
+      "sha256_float64_c_order": "3df9613a50b270b81c55ab896586dfb64cd2d76b3e5e61c1a690564bf7232ed2"
+    },
+    "Y": {
+      "shape": [
+        212,
+        10
+      ],
+      "sha256_float64_c_order": "5bc0b4a2dea3a8406aef3c2e3bd5e7c6f59b3a21ea444e6dce67267844ab36ac"
+    }
+  }
+}

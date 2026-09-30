@@ -1,0 +1,435 @@
+[STARTUP] ISA Toolkit function directories added to the MATLAB path.
+
+REVIEW_CASE pruning
+[BUILD] Root directory: /tmp/tpdad4310a_9132_43a1_aaf6_35b48dc095de/
+[BUILD] Loading metadata.csv.
+[PRELIM] Calling PRELIM for data pre-processing.
+[PRELIM] Calculating the binary measure of performance
+[PRELIM] An algorithm is good if its performance is less than 1
+[PRELIM] For 0% of the instances there is more than one best algorithm. Random selection is used to break ties.
+[Warning: -> There are algorithms with no 'good' instances. They are being
+removed to increase speed.] 
+[> In InstanceSpace/runPrelim (line 554)
+In InstanceSpace/build (line 193)
+In isa_review_checks>pruning (line 18)
+In isa_review_checks (line 6)] 
+[BUILD] Using the complete set of the instances.
+[BUILD] Completed in 3.2 s.
+REVIEW_RESULT retained=2 P=3 beta_true=40 expected_beta_true=40
+
+REVIEW_CASE partialSave
+[BUILD] Root directory: /tmp/tp244c8a13_6bc9_46d7_9754_db64b6696ad4/
+[BUILD] Loading metadata.csv.
+[PRELIM] Calling PRELIM for data pre-processing.
+[PRELIM] Calculating the binary measure of performance
+[PRELIM] An algorithm is good if its performance is less than 1
+[PRELIM] For 0% of the instances there is more than one best algorithm. Random selection is used to break ties.
+[Warning: -> There are algorithms with no 'good' instances. They are being
+removed to increase speed.] 
+[> In InstanceSpace/runPrelim (line 554)
+In InstanceSpace/build (line 193)
+In isa_review_checks>partialSave (line 22)
+In isa_review_checks (line 6)] 
+[BUILD] Using the complete set of the instances.
+[BUILD] Completed in 0.4 s.
+ISAmigrateModel: inferred completedStages = {prelim} from present model sub-structs.
+REVIEW_ERROR MATLAB:nonExistentField: Unrecognized field name "opts".
+
+REVIEW_CASE plsProjection
+REVIEW_RESULT PLS train/eval maximum difference 8.71835673
+
+REVIEW_CASE smallEval
+[TRACE] TRACE3 is calculating the space area and density.
+[TRACE] Space Area: 0.64763 | Space density: 46.3225
+[TRACE] TRACE3 is calculating the algorithm footprints.
+[TRACE] Good performance footprint for 'a'
+[TRACE] Best performance footprint for 'a'
+[TRACE] Algorithm 'a' completed. Elapsed time: 0.01s
+[TRACE] TRACE3 is calculating the beta-footprint.
+[TRACE] There are not enough instances to calculate a footprint.
+[TRACE] Preparing the summary table.
+[TRACE] TRACE3 has completed. Footprint analysis results:
+
+  Columns 1 through 4
+
+    {0×0 double}    {'Area_Good'}    {'Area_Good_Normal…'}    {'Density_Good'}
+    {'a'       }    {[   0.5200]}    {[           0.8030]}    {[     57.6640]}
+
+  Columns 5 through 7
+
+    {'Density_Good_Nor…'}    {'Purity_Good'}    {'Area_Best'}
+    {[           1.2450]}    {[          1]}    {[   0.5200]}
+
+  Columns 8 through 10
+
+    {'Area_Best_Normal…'}    {'Density_Best'}    {'Density_Best_Nor…'}
+    {[           0.8030]}    {[     57.6640]}    {[           1.2450]}
+
+  Column 11
+
+    {'Purity_Best'}
+    {[          1]}
+
+REVIEW_ERROR MATLAB:convhull:NotEnoughPtsConvhullErrId: Error computing the convex hull. Not enough unique points specified.
+
+REVIEW_CASE fallbackLeak
+[PYTHIA] PYTHIA has completed! Performance of the models:
+
+  Columns 1 through 3
+
+    {'Algorithms '}    {'Avg_Perf_all_ins…'}    {'Std_Perf_all_ins…'}
+    {'a'          }    {[           0.2930]}    {[           0.3060]}
+    {'b'          }    {[           0.6460]}    {[           0.2110]}
+    {'Oracle'     }    {[           0.2340]}    {[           0.1800]}
+    {'Selector'   }    {[           0.2930]}    {[           0.3060]}
+
+  Columns 4 through 6
+
+    {'Probability_of_g…'}    {'Avg_Perf_selecte…'}    {'Std_Perf_selecte…'}
+    {[                1]}    {0×0 double         }    {0×0 double         }
+    {[                0]}    {0×0 double         }    {0×0 double         }
+    {[                1]}    {0×0 double         }    {0×0 double         }
+    {[                1]}    {0×0 double         }    {0×0 double         }
+
+  Columns 7 through 9
+
+    {'CV_model_accuracy'}    {'CV_model_precisi…'}    {'CV_model_recall'}
+    {[                0]}    {0×0 double         }    {[              0]}
+    {[              100]}    {0×0 double         }    {0×0 double       }
+    {0×0 double         }    {0×0 double         }    {0×0 double       }
+    {0×0 double         }    {0×0 double         }    {[              0]}
+
+[PYTHIA] PYTHIA has completed! Performance of the models:
+
+  Columns 1 through 3
+
+    {'Algorithms '}    {'Avg_Perf_all_ins…'}    {'Std_Perf_all_ins…'}
+    {'a'          }    {[           0.2930]}    {[           0.3060]}
+    {'b'          }    {[           0.6460]}    {[           0.2110]}
+    {'Oracle'     }    {[           0.2340]}    {[           0.1800]}
+    {'Selector'   }    {[           0.6460]}    {[           0.2110]}
+
+  Columns 4 through 6
+
+    {'Probability_of_g…'}    {'Avg_Perf_selecte…'}    {'Std_Perf_selecte…'}
+    {[                0]}    {0×0 double         }    {0×0 double         }
+    {[                1]}    {0×0 double         }    {0×0 double         }
+    {[                1]}    {0×0 double         }    {0×0 double         }
+    {[                1]}    {0×0 double         }    {0×0 double         }
+
+  Columns 7 through 9
+
+    {'CV_model_accuracy'}    {'CV_model_precisi…'}    {'CV_model_recall'}
+    {[              100]}    {0×0 double         }    {0×0 double       }
+    {[                0]}    {0×0 double         }    {[              0]}
+    {0×0 double         }    {0×0 double         }    {0×0 double       }
+    {0×0 double         }    {0×0 double         }    {[              0]}
+
+REVIEW_RESULT same features/model different truth selects 1 vs 2
+
+REVIEW_CASE recallMetric
+[PYTHIA] Initializing PYTHIA.
+[PYTHIA] Not using cost-sensitive classification.
+[PYTHIA] Classifier: knn | Tuning: sobol (20 evals) | CV: 5-fold.
+[PYTHIA] Training has started. PYTHIA may take a while to complete...
+[Warning: Algorithm 'a' is good for every instance; skipping
+cross-validation/tuning and using a constant prediction instead. A
+constant-classifier sentinel is stored for this algorithm (see PYTHIAevalMode)
+so exploreIS/PYTHIA eval mode reproduces the same constant prediction.] 
+[> In PYTHIA (line 240)
+In isa_review_checks>recallMetric (line 40)
+In isa_review_checks (line 6)] 
+[PYTHIA] PYTHIA trained 'a'; 1 model left.
+[PYTHIA] Elapsed time: 0.05s
+[Warning: Algorithm 'b' is good for every instance; skipping
+cross-validation/tuning and using a constant prediction instead. A
+constant-classifier sentinel is stored for this algorithm (see PYTHIAevalMode)
+so exploreIS/PYTHIA eval mode reproduces the same constant prediction.] 
+[> In PYTHIA (line 240)
+In isa_review_checks>recallMetric (line 40)
+In isa_review_checks (line 6)] 
+[PYTHIA] PYTHIA trained 'b'; no models left.
+[PYTHIA] Elapsed time: 0.01s
+[PYTHIA] PYTHIA training complete.
+[PYTHIA] Average CV precision: 100.0%
+[PYTHIA] Average CV accuracy : 100.0%
+[PYTHIA] Completed in 0.1 s.
+[PYTHIA] PYTHIA has completed! Performance of the models:
+
+  Columns 1 through 3
+
+    {'Algorithms '}    {'Avg_Perf_all_ins…'}    {'Std_Perf_all_ins…'}
+    {'a'          }    {[           0.3550]}    {[           0.2990]}
+    {'b'          }    {[           0.4620]}    {[           0.3430]}
+    {'Oracle'     }    {[           0.2840]}    {[           0.2760]}
+    {'Selector'   }    {[           0.3550]}    {[           0.2990]}
+
+  Columns 4 through 6
+
+    {'Probability_of_g…'}    {'Avg_Perf_selecte…'}    {'Std_Perf_selecte…'}
+    {[                1]}    {[           0.3550]}    {[           0.2990]}
+    {[                1]}    {[           0.4620]}    {[           0.3430]}
+    {[                1]}    {0×0 double         }    {0×0 double         }
+    {[                1]}    {[           0.3550]}    {[           0.2990]}
+
+  Columns 7 through 9
+
+    {'CV_model_accuracy'}    {'CV_model_precisi…'}    {'CV_model_recall'}
+    {[              100]}    {[              100]}    {[            100]}
+    {[              100]}    {[              100]}    {[            100]}
+    {0×0 double         }    {0×0 double         }    {0×0 double       }
+    {0×0 double         }    {[              100]}    {[             50]}
+
+  Columns 10 through 11
+
+    {'NumNeighbors'}    {'Distance'}
+    {0×0 double    }    {0×0 double}
+    {0×0 double    }    {0×0 double}
+    {0×0 double    }    {0×0 double}
+    {0×0 double    }    {0×0 double}
+
+REVIEW_RESULT all predictions and selections correct selector recall=50
+
+REVIEW_CASE weights
+[PYTHIA] Initializing PYTHIA.
+[PYTHIA] Using cost-sensitive classification.
+[PYTHIA] Classifier: knn | Tuning: sobol (20 evals) | CV: 5-fold.
+[PYTHIA] Training has started. PYTHIA may take a while to complete...
+[Warning: Algorithm 'a' is good for every instance; skipping
+cross-validation/tuning and using a constant prediction instead. A
+constant-classifier sentinel is stored for this algorithm (see PYTHIAevalMode)
+so exploreIS/PYTHIA eval mode reproduces the same constant prediction.] 
+[> In PYTHIA (line 240)
+In isa_review_checks>weights (line 45)
+In isa_review_checks (line 6)] 
+[PYTHIA] PYTHIA trained 'a'; 1 model left.
+[PYTHIA] Elapsed time: 0.00s
+[Warning: Algorithm 'b' is good for every instance; skipping
+cross-validation/tuning and using a constant prediction instead. A
+constant-classifier sentinel is stored for this algorithm (see PYTHIAevalMode)
+so exploreIS/PYTHIA eval mode reproduces the same constant prediction.] 
+[> In PYTHIA (line 240)
+In isa_review_checks>weights (line 45)
+In isa_review_checks (line 6)] 
+[PYTHIA] PYTHIA trained 'b'; no models left.
+[PYTHIA] Elapsed time: 0.00s
+[PYTHIA] PYTHIA training complete.
+[PYTHIA] Average CV precision: 100.0%
+[PYTHIA] Average CV accuracy : 100.0%
+[PYTHIA] Completed in 0.0 s.
+[PYTHIA] PYTHIA has completed! Performance of the models:
+
+  Columns 1 through 3
+
+    {'Algorithms '}    {'Avg_Perf_all_ins…'}    {'Std_Perf_all_ins…'}
+    {'a'          }    {[           5.5000]}    {[           3.0280]}
+    {'b'          }    {[          15.5000]}    {[           3.0280]}
+    {'Oracle'     }    {[           5.5000]}    {[           3.0280]}
+    {'Selector'   }    {[           5.5000]}    {[           3.0280]}
+
+  Columns 4 through 6
+
+    {'Probability_of_g…'}    {'Avg_Perf_selecte…'}    {'Std_Perf_selecte…'}
+    {[                1]}    {[           5.5000]}    {[           3.0280]}
+    {[                1]}    {[          15.5000]}    {[           3.0280]}
+    {[                1]}    {0×0 double         }    {0×0 double         }
+    {[                1]}    {[           5.5000]}    {[           3.0280]}
+
+  Columns 7 through 9
+
+    {'CV_model_accuracy'}    {'CV_model_precisi…'}    {'CV_model_recall'}
+    {[              100]}    {[              100]}    {[            100]}
+    {[              100]}    {[              100]}    {[            100]}
+    {0×0 double         }    {0×0 double         }    {0×0 double       }
+    {0×0 double         }    {[              100]}    {[             50]}
+
+  Columns 10 through 11
+
+    {'NumNeighbors'}    {'Distance'}
+    {0×0 double    }    {0×0 double}
+    {0×0 double    }    {0×0 double}
+    {0×0 double    }    {0×0 double}
+    {0×0 double    }    {0×0 double}
+
+REVIEW_RESULT weights first row actual=[9.5 0.5] regret=[0 10]
+
+REVIEW_CASE jsonGroups
+     1     2
+     3     4
+
+REVIEW_ERROR ISA:ISAvalidateOpts:badViewGroups: opts.pilot.viewGroups must be a cell array of algorithm index vectors; got [1 2;3 4].
+
+REVIEW_CASE missingFeature
+[BUILD] Root directory: /tmp/tpcb52b82c_0794_40b8_8ec0_53c4a91216e1/
+[BUILD] Loading metadata.csv.
+[Warning: -> There are features with too many missing values. They are being
+removed to increase speed.] 
+[> In INIT (line 253)
+In InstanceSpace/runPrelim (line 536)
+In InstanceSpace/build (line 193)
+In isa_review_checks>missingFeature (line 53)
+In isa_review_checks (line 6)] 
+[PRELIM] Calling PRELIM for data pre-processing.
+[PRELIM] Calculating the binary measure of performance
+[PRELIM] An algorithm is good if its performance is less than 1
+[PRELIM] For 0% of the instances there is more than one best algorithm. Random selection is used to break ties.
+[Warning: -> There are algorithms with no 'good' instances. They are being
+removed to increase speed.] 
+[> In InstanceSpace/runPrelim (line 554)
+In InstanceSpace/build (line 193)
+In isa_review_checks>missingFeature (line 53)
+In isa_review_checks (line 6)] 
+[BUILD] Using the complete set of the instances.
+[BUILD] Completed in 0.2 s.
+[EXPLORE] Loading metadata_test.csv.
+REVIEW_ERROR ISA:InstanceSpace:featureCountMismatch: metadata_test.csv has 4 feature column(s) after applying opts.selvars.feats, but the trained model expects 3 (some training features may have been dropped for exceeding opts.prelim.nanThreshold). Check that metadata_test.csv has the same feature_ columns as metadata.csv.
+
+REVIEW_CASE siftedRerun
+[BUILD] Root directory: /tmp/tp643ba69c_3bb5_4bb7_83a7_eb03a89486a8/
+[BUILD] Loading metadata.csv.
+[PRELIM] Calling PRELIM for data pre-processing.
+[PRELIM] Calculating the binary measure of performance
+[PRELIM] An algorithm is good if its performance is less than 1
+[PRELIM] For 0% of the instances there is more than one best algorithm. Random selection is used to break ties.
+[Warning: -> There are algorithms with no 'good' instances. They are being
+removed to increase speed.] 
+[> In InstanceSpace/runPrelim (line 554)
+In InstanceSpace/build (line 193)
+In isa_review_checks>siftedRerun (line 57)
+In isa_review_checks (line 6)] 
+[BUILD] Using the complete set of the instances.
+[SIFTED] Calling SIFTED for automated feature selection.
+[SIFTED] Selecting features based on correlation with performance.
+[SIFTED] Keeping 2 out of 4 features (correlation).
+[SIFTED] There are 3 or less features. Skipping correlation clustering selection.
+[BUILD] Completed in 0.2 s.
+[BUILD] Root directory: /tmp/tp643ba69c_3bb5_4bb7_83a7_eb03a89486a8/
+[BUILD] Completed in 0.0 s.
+REVIEW_RESULT original 4 features after sifted=2 after disabling sifted=2
+
+REVIEW_CASE nanPilot
+REVIEW_ERROR MATLAB:rank:matrixWithNaNInf: Input matrix must not contain NaN or Inf values.
+
+REVIEW_CASE negativePerf
+[PRELIM] Calculating the binary measure of performance
+[PRELIM] An algorithm is good if its performance is within 5% of the best.
+[PRELIM] For 0% of the instances there is more than one best algorithm. Random selection is used to break ties.
+REVIEW_RESULT negative min costs [-10 -1] Ybin=[true true]
+[PRELIM] Calculating the binary measure of performance
+[Warning: More than 5% of instances have a best-algorithm performance of exactly
+zero; the relative-performance matrix will be close to 1 everywhere for these
+instances.] 
+[> In PRELIM (line 95)
+In isa_review_checks>negativePerf (line 68)
+In isa_review_checks (line 6)] 
+[PRELIM] An algorithm is good if its performance is within 5% of the best.
+[PRELIM] For 100% of the instances there is more than one best algorithm. Random selection is used to break ties.
+REVIEW_RESULT maximize all zeros Ybin=[false false]
+
+REVIEW_CASE rankFallback
+[Warning: Feature matrix rank-deficient; falling back to numerical solution.] 
+[> In PILOT (line 121)
+In isa_review_checks>rankFallback (line 71)
+In isa_review_checks (line 6)] 
+REVIEW_ERROR MATLAB:nonExistentField: Unrecognized field name "ntries".
+
+REVIEW_CASE stringRoot
+REVIEW_ERROR MATLAB:validation:IncompatibleSize: Error setting property 'rootdir' of class 'InstanceSpace'. Value must be a vector.
+[STARTUP] ISA Toolkit function directories added to the MATLAB path.
+
+REVIEW_CASE cacheCheck
+[SIFTED] Selecting features based on correlation with performance.
+[SIFTED] Keeping 6 out of 6 features (correlation).
+[SIFTED] Selecting features based on correlation clustering.
+[SIFTED] Average silhouette values for each number of clusters.
+    3.0000    4.0000    5.0000    6.0000
+    0.2663    0.3751    0.7170    1.0000
+
+[SIFTED] The silhouette value for K=3 is below 0.50. You should consider increasing K.
+[SIFTED] A suggested value of K is 6
+[SIFTED] Constructing 3 clusters of features.
+[SIFTED] Using a GA+LookUpTable to find an optimal combination.
+ga stopped because the average change in the penalty function value is less than options.FunctionTolerance and 
+the constraint violation is less than options.ConstraintTolerance.
+[SIFTED] Keeping 3 out of 6 features (clustering).
+[SIFTED] Selecting features based on correlation with performance.
+[SIFTED] Keeping 6 out of 6 features (correlation).
+[SIFTED] Selecting features based on correlation clustering.
+[SIFTED] Average silhouette values for each number of clusters.
+    3.0000    4.0000    5.0000    6.0000
+    0.2663    0.3751    0.7170    1.0000
+
+[SIFTED] The silhouette value for K=3 is below 0.50. You should consider increasing K.
+[SIFTED] A suggested value of K is 6
+[SIFTED] Constructing 3 clusters of features.
+[SIFTED] Using a GA+LookUpTable to find an optimal combination.
+ga stopped because the average change in the penalty function value is less than options.FunctionTolerance and 
+the constraint violation is less than options.ConstraintTolerance.
+[SIFTED] Keeping 3 out of 6 features (clustering).
+REVIEW_RESULT first SIFTED PILOT_calls=6
+REVIEW_RESULT second SIFTED PILOT_calls=0
+
+REVIEW_CASE constantNorm
+[PRELIM] Calculating the binary measure of performance
+[PRELIM] An algorithm is good if its performance is less than 1
+[PRELIM] For 0% of the instances there is more than one best algorithm. Random selection is used to break ties.
+[PRELIM] Auto-pre-processing.
+[PRELIM] Removing extreme outliers from the feature values.
+[PRELIM] Auto-normalizing the data using Box-Cox and Z transformations.
+[PRELIM] Calculating the binary measure of performance
+[PRELIM] An algorithm is good if its performance is less than 1
+[PRELIM] For 0% of the instances there is more than one best algorithm. Random selection is used to break ties.
+[PRELIM] Auto-pre-processing.
+[PRELIM] Removing extreme outliers from the feature values.
+[PRELIM] Auto-normalizing the data using Box-Cox and Z transformations.
+REVIEW_RESULT constant feature train finite=1 eval finite=0 train_eval_X_diff=0 Y_diff=0 sigma=[0 0.385600751824042 0.221086022595408]
+
+REVIEW_CASE cameraCheck
+REVIEW_RESULT desired direction=[1 0 0] actual=[0 -1 0]
+
+REVIEW_CASE seedCheck
+[PYTHIA] Initializing PYTHIA.
+[PYTHIA] Not using cost-sensitive classification.
+[PYTHIA] Classifier: knn | Tuning: sobol (1 evals) | CV: 5-fold.
+[PYTHIA] Training has started. PYTHIA may take a while to complete...
+REVIEW_ERROR MATLAB:rng:badSeed: SD must be a nonnegative integer seed less than 2^32.
+
+REVIEW_CASE densityString
+REVIEW_RESULT validated scalar string passes bydensity type gate=0
+
+REVIEW_CASE tracePurity
+[TRACE] TRACE3 is calculating the space area and density.
+[TRACE] Space Area: 1 | Space density: 10
+[TRACE] TRACE3 is calculating the algorithm footprints.
+[TRACE] Good performance footprint for 'a'
+[TRACE] Best performance footprint for 'a'
+[TRACE] Algorithm 'a' completed. Elapsed time: 0.01s
+[TRACE] TRACE3 is calculating the beta-footprint.
+[TRACE] There are not enough instances to calculate a footprint.
+[TRACE] Preparing the summary table.
+[TRACE] TRACE3 has completed. Footprint analysis results:
+
+  Columns 1 through 4
+
+    {0×0 double}    {'Area_Good'}    {'Area_Good_Normal…'}    {'Density_Good'}
+    {'a'       }    {[        1]}    {[                1]}    {[          10]}
+
+  Columns 5 through 7
+
+    {'Density_Good_Nor…'}    {'Purity_Good'}    {'Area_Best'}
+    {[                1]}    {[     0.5000]}    {[        1]}
+
+  Columns 8 through 10
+
+    {'Area_Best_Normal…'}    {'Density_Best'}    {'Density_Best_Nor…'}
+    {[                1]}    {[          10]}    {[                1]}
+
+  Column 11
+
+    {'Purity_Best'}
+    {[          1]}
+
+REVIEW_RESULT accepted footprint measure=1 purity=0.5 threshold=0.9
+
+REVIEW_CASE profilePilot
+REVIEW_RESULT analytic branch pdist calls=2

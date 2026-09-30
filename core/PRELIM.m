@@ -17,7 +17,7 @@ function [X, Y, out] = PRELIM(X, Y, opts, trainedPrelim)
 %
 %   Inputs
 %     X     - (ninst x nfeats) feature matrix; may contain NaN
-%     Y     - (ninst x nalgos) performance matrix; may contain NaN
+%     Y     - (ninst x nalgos) nonnegative performance matrix; NaN is unobserved
 %     opts  - struct with fields:
 %               MaxPerf       logical  true = maximise performance (default false)
 %               AbsPerf       logical  true = absolute threshold (default false)
@@ -70,6 +70,10 @@ if ~isstruct(opts)
     error('ISA:PRELIM:badOpts', 'opts must be a struct.');
 end
 if ~isfield(opts, 'iqrMultiplier'), opts.iqrMultiplier = 5; end
+if any(Y(:) < 0 | isinf(Y(:)))
+    error('ISA:PRELIM:invalidPerformance', ...
+        'Observed raw performance must be finite and nonnegative; NaN denotes an unobserved outcome.');
+end
 
 Yraw = Y;
 nalgos = size(Y, 2);
@@ -86,50 +90,44 @@ if opts.MaxPerf
     Yaux = Y;
     Yaux(isnan(Yaux)) = -Inf;
     [out.Ybest, out.P] = max(Yaux, [], 2);
-    YbestTie = out.Ybest;  % pre-eps-substitution snapshot, used for tie detection below
+    YbestTie = out.Ybest;  % preserve raw values for tie detection
     if opts.AbsPerf
         out.Ybin = Yaux >= opts.epsilon;
         msg = [msg 'higher than ' num2str(opts.epsilon)];
     else
-        if mean(out.Ybest==0) > 0.05
-            warning('ISA:PRELIM:manyZeroBest', ...
-                ['More than 5%% of instances have a best-algorithm performance of ' ...
-                 'exactly zero; the relative-performance matrix will be close to 1 ' ...
-                 'everywhere for these instances.']);
-        end
-        out.Ybest(out.Ybest==0) = eps;
-        Y(Y==0) = eps;
-        Y = 1 - bsxfun(@rdivide, Y, out.Ybest);
-        out.Ybin = (1 - bsxfun(@rdivide, Yaux, out.Ybest)) <= opts.epsilon;
+        denominator = out.Ybest;
+        denominator(denominator == 0) = eps;
+        Y(Y == 0) = eps;
+        Y = 1 - bsxfun(@rdivide, Y, denominator);
+        out.Ybin = Y <= opts.epsilon;
         msg = [msg 'within ' num2str(round(100.*opts.epsilon)) '% of the best.'];
     end
 else
     Yaux = Y;
     Yaux(isnan(Yaux)) = Inf;
     [out.Ybest, out.P] = min(Yaux, [], 2);
-    YbestTie = out.Ybest;  % pre-eps-substitution snapshot, used for tie detection below
+    YbestTie = out.Ybest;  % preserve raw values for tie detection
     if opts.AbsPerf
         out.Ybin = Yaux <= opts.epsilon;
         msg = [msg 'less than ' num2str(opts.epsilon)];
     else
-        if mean(out.Ybest==0) > 0.05
-            warning('ISA:PRELIM:manyZeroBest', ...
-                ['More than 5%% of instances have a best-algorithm performance of ' ...
-                 'exactly zero; the relative-performance matrix will be close to 1 ' ...
-                 'everywhere for these instances.']);
-        end
-        out.Ybest(out.Ybest==0) = eps;
-        Y(Y==0) = eps;
-        Y = bsxfun(@rdivide, Y, out.Ybest) - 1;
-        out.Ybin = (bsxfun(@rdivide, Yaux, out.Ybest) - 1) <= opts.epsilon;
+        denominator = out.Ybest;
+        denominator(denominator == 0) = eps;
+        Y(Y == 0) = eps;
+        Y = bsxfun(@rdivide, Y, denominator) - 1;
+        out.Ybin = Y <= opts.epsilon;
         msg = [msg 'within ' num2str(round(100.*opts.epsilon)) '% of the best.'];
     end
+end
+if ~opts.AbsPerf && mean(out.Ybest == 0) > 0.05
+    warning('ISA:PRELIM:manyZeroBest', ...
+        ['More than 5%% of instances have zero best performance. Relative ' ...
+         'performance uses machine epsilon for zero scores; consider an absolute threshold.']);
 end
 fprintf('[PRELIM] %s\n', msg);
 % -------------------------------------------------------------------------
 % Testing for ties. If there is a tie in performance, we pick an algorithm
-% at random. Compared against YbestTie (captured before the eps
-% substitution above) so exact-zero best scores are still matched correctly.
+% at random. Compare raw values so zero best scores remain exact ties.
 bestAlgos = bsxfun(@eq, Yraw, YbestTie);
 multipleBestAlgos = sum(bestAlgos, 2) > 1;
 aidx = 1:nalgos;
@@ -140,6 +138,9 @@ for i = tieRows
 end
 fprintf('[PRELIM] For %s%% of the instances there is more than one best algorithm. Random selection is used to break ties.\n', ...
     num2str(round(100.*mean(multipleBestAlgos))));
+unobserved = all(isnan(Yraw), 2);
+out.Ybest(unobserved) = NaN;
+out.P(unobserved) = 0;
 out.numGoodAlgos = sum(out.Ybin, 2);
 out.beta = out.numGoodAlgos > (opts.betaThreshold * nalgos);
 % -------------------------------------------------------------------------
@@ -173,6 +174,9 @@ if isEvalMode
                                     bsxfun(@times, lomask, trainedPrelim.lobound);
     end
 
+    % Match zscore's unit divisor for constant columns, including old models.
+    trainedPrelim.sigmaX(trainedPrelim.sigmaX == 0) = 1;
+    trainedPrelim.sigmaY(trainedPrelim.sigmaY == 0) = 1;
     modelalgos = numel(trainedPrelim.lambdaY);
     if opts.auto && opts.norm
         fprintf('[PRELIM] Auto-normalizing the data using Box-Cox and Z transformations.\n');
@@ -189,7 +193,9 @@ if isEvalMode
             end
             X(:,i) = x;
         end
-        X = bsxfun(@rdivide, bsxfun(@minus, X, trainedPrelim.muX), trainedPrelim.sigmaX);
+        scaleX = trainedPrelim.sigmaX;
+        scaleX(scaleX == 0) = 1;
+        X = bsxfun(@rdivide, bsxfun(@minus, X, trainedPrelim.muX), scaleX);
 
         % Shifts the WHOLE of Y (not just the first modelalgos columns),
         % matching the original: any columns beyond modelalgos (algorithms
@@ -247,6 +253,7 @@ else
             idx = isnan(aux);
             [aux, out.lambdaX(i)] = boxcox(aux(~idx));
             [aux, out.muX(i), out.sigmaX(i)] = zscore(aux);
+            if out.sigmaX(i) == 0, out.sigmaX(i) = 1; end
             X(~idx, i) = aux;
         end
 
@@ -256,6 +263,7 @@ else
             idx = isnan(aux);
             [aux, out.lambdaY(i)] = boxcox(aux(~idx));
             [aux, out.muY(i), out.sigmaY(i)] = zscore(aux);
+            if out.sigmaY(i) == 0, out.sigmaY(i) = 1; end
             Y(~idx, i) = aux;
         end
     end

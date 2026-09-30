@@ -116,7 +116,9 @@ rad2deg([vp.azimuth vp.elevation])</code></pre></div></div></details></section>
 <section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="v0-9-0-introduced">v0.9.0 — Introduced</h3><p>Part of the 3D instance space (ISA3) support.</p></div></section>
 <section class="refsect" id="references"><h2>References</h2><ul>
 <li>Simpson, C., Muñoz, M.A., Kandanaarachchi, S. &amp; Campello, R.J.G.B. (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis. <em>Machine Learning</em>, 114, 240. <a href="https://doi.org/10.1007/s10994-025-06871-5">https://doi.org/10.1007/s10994-025-06871-5</a></li>
-</ul></section>
+</ul>
+<h3 id="unreleased-review-fixes">Unreleased review fixes</h3>
+<p>Azimuth and elevation use the <code>cart2sph</code> convention in radians. Plot helpers convert azimuth to the MATLAB camera convention and use equal data-axis scales to preserve the fitted plane.</p></section>
 <section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="PILOT.html"><code>PILOT</code></a> | <a class="code-link" href="ISArecallView.html"><code>ISArecallView</code></a> | <a class="code-link" href="scriptpng.html"><code>scriptpng</code></a></p></div></section>
 <footer class="page-foot">
 <p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>

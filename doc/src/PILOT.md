@@ -205,10 +205,12 @@ The BFGS starting points use `opts.seed`, so a changed `opts.general.seed` chang
 - Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
 - Simpson, C., Muñoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B. (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis. *Machine Learning*, 114, 240. <https://doi.org/10.1007/s10994-025-06871-5>
 
-## See Also
-
-`SIFTED` | `PILOTviewpoint` | `CLOISTER` | `InstanceSpace`
+### Unreleased review fixes
 
 PLS stores `out.Xmean`. Apply its projection as `(X-out.Xmean)*out.A'` for new instances. Standard PILOT projections do not subtract a mean.
 
 Standalone calls fill numerical fallback defaults (`ntries=10`, `seed=42`). Analytic projection solves least squares directly. Pairwise feature distances are computed only when numerical restarts need ranking.
+
+## See Also
+
+`SIFTED` | `PILOTviewpoint` | `CLOISTER` | `InstanceSpace`

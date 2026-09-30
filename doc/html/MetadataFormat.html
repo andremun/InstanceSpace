@@ -113,7 +113,7 @@
 <div class="code"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>Instances,feature_Max_Normalized_Entropy_attributes,feature_ErrorRate_Decision_Node,feature_Training_Error_Linear_Classifier_L2,algo_NB,algo_KNN,algo_RandF
 abalone,0.332548382,0.386458668,0.260234614,0.280095763,0.256969153,0.234432252
 abalone_ori,0.332548382,0.210409617,0.035714286,0.164181841,0.167112964,0.895471859</code></pre></div></section>
-<section class="refsect" id="missing-values"><h2>Missing Values</h2><p>Leave a cell empty or write <code>NaN</code> for a missing value. A feature with at least <a class="code-link" href="OptionsReference.html#opts-prelim-nanthreshold"><code>opts.prelim.nanThreshold</code></a> missing values is removed. A missing performance value never counts as good.</p>
+<section class="refsect" id="missing-values"><h2>Missing Values</h2><p>Leave a cell empty or write <code>NaN</code> for a missing value. A feature with at least <a class="code-link" href="OptionsReference.html#opts-prelim-nanthreshold"><code>opts.prelim.nanThreshold</code></a> missing values is removed. After filtering, training requires complete features and performance values. Remaining missing values cause an error that names the affected instances. Evaluation requires complete retained features but permits missing performance values, which never count as observed failures in classifier scoring.</p>
 <p>Avoid <code>NA</code>, spreadsheet error codes such as <code>#DIV/0!</code>, and empty rows: they make MATLAB read the whole column as text, which then fails later in the pipeline.</p></section>
 <section class="refsect" id="test-instances"><h2>Test Instances</h2><p><code>metadata_test.csv</code> must contain the same <code>feature_</code> columns as <code>metadata.csv</code>, in the same order. It may contain:</p>
 <ul>
@@ -130,13 +130,14 @@ abalone_ori,0.332548382,0.210409617,0.035714286,0.164181841,0.167112964,0.895471
 <section class="refsect" id="references"><h2>References</h2><ul>
 <li>Smith-Miles, K. &amp; Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. <em>ACM Computing Surveys</em>, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
 </ul></section>
+<section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="unreleased-review-fixes">Unreleased review fixes</h3><p>Training stores the feature columns removed by <code>nanThreshold</code>. Exploration removes those same columns before checking the required feature schema, even when their test values are complete.</p></div></section>
 <section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="INIT.html"><code>INIT</code></a> | <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> | <a href="OptionsReference.html">Options Reference</a></p></div></section>
 <footer class="page-foot">
 <p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
 <p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
 </footer>
 </main>
-<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#columns">Columns</a></li><li><a href="#example">Example</a></li><li><a href="#missing-values">Missing Values</a></li><li><a href="#test-instances">Test Instances</a></li><li><a href="#choosing-features">Choosing Features</a></li><li><a href="#references">References</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#columns">Columns</a></li><li><a href="#example">Example</a></li><li><a href="#missing-values">Missing Values</a></li><li><a href="#test-instances">Test Instances</a></li><li><a href="#choosing-features">Choosing Features</a></li><li><a href="#references">References</a></li><li><a href="#version-history">Version History</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
 </div>
 </body>
 </html>

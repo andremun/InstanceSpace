@@ -54,8 +54,12 @@ Start with more candidate features than you need; `SIFTED` removes the ones that
 
 - Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
 
+## Version History
+
+### Unreleased review fixes
+
+Training stores the feature columns removed by `nanThreshold`. Exploration removes those same columns before checking the required feature schema, even when their test values are complete.
+
 ## See Also
 
 `INIT` | `InstanceSpace` | [Options Reference](OptionsReference.html)
-
-Training stores the feature columns removed by `nanThreshold`. Exploration removes those same columns before checking the required feature schema, even when their test values are complete.

@@ -145,7 +145,7 @@ Every setting is a field of the `opts` structure, given to `InstanceSpace` direc
 | `opts.pilot.method` | `'standard'` | Projection: `'standard'` or `'pls'` (Partial Least Squares). |
 | `opts.pythia.classifier` | `'knn'` | Algorithm-selection classifier: `'knn'`, `'svm'`, `'tree'`, `'nb'`, `'linear'` or `'ensemble'`. |
 | `opts.pythia.tuning` | `'sobol'` | Hyperparameter search: `'sobol'`, `'bayes'` or `'none'`. |
-| `opts.trace.PI` | `0.6` | Minimum purity of a footprint. |
+| `opts.trace.PI` | `0.6` | Target footprint purity. Check `accepted` to identify footprints below the target. |
 | `opts.outputs.csv`, `opts.outputs.png` | `true` | Write CSV files and PNG figures. |
 
 The option groups follow the pipeline order: `general` and `perf` apply throughout; `prelim`, `auto`, `bound`, `norm` and `selvars` control data preparation (PRELIM); then `sifted` (feature selection), `pilot` (projection), `cloister` (boundary estimation), `pythia` (algorithm selection), `trace` (footprints), and `outputs` (files written at the end). An invalid value, such as `opts.pilot.dims = 4`, raises an `ISA:ISAvalidateOpts:*` error when the `InstanceSpace` object is created.

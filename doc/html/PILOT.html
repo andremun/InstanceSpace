@@ -152,7 +152,10 @@ scatter3(Z(:,<span class="num">1</span>), Z(:,<span class="num">2</span>), Z(:,<
 <li>Muñoz, M.A., Villanova, L., Baatar, D. &amp; Smith-Miles, K. (2018). Instance spaces for machine learning classification. <em>Machine Learning</em>, 107(1), 109–147. <a href="https://doi.org/10.1007/s10994-017-5629-5">https://doi.org/10.1007/s10994-017-5629-5</a></li>
 <li>Smith-Miles, K. &amp; Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. <em>ACM Computing Surveys</em>, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
 <li>Simpson, C., Muñoz, M.A., Kandanaarachchi, S. &amp; Campello, R.J.G.B. (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis. <em>Machine Learning</em>, 114, 240. <a href="https://doi.org/10.1007/s10994-025-06871-5">https://doi.org/10.1007/s10994-025-06871-5</a></li>
-</ul></section>
+</ul>
+<h3 id="unreleased-review-fixes">Unreleased review fixes</h3>
+<p>PLS stores <code>out.Xmean</code>. Apply its projection as <code>(X-out.Xmean)*out.A'</code> for new instances. Standard PILOT projections do not subtract a mean.</p>
+<p>Standalone calls fill numerical fallback defaults (<code>ntries=10</code>, <code>seed=42</code>). Analytic projection solves least squares directly. Pairwise feature distances are computed only when numerical restarts need ranking.</p></section>
 <section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="SIFTED.html"><code>SIFTED</code></a> | <a class="code-link" href="PILOTviewpoint.html"><code>PILOTviewpoint</code></a> | <a class="code-link" href="CLOISTER.html"><code>CLOISTER</code></a> | <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a></p></div></section>
 <footer class="page-foot">
 <p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>

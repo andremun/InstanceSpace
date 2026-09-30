@@ -25,7 +25,7 @@ Settings for the whole pipeline.
 | `seed` | `42` | Random seed. Every stochastic stage derives its seed from this value, so the same seed and data reproduce a run. |
 | `verbose` | `true` | Detailed progress output. Stage start and end messages are always printed. |
 | `parallel` | `false` | Use a parallel pool (Parallel Computing Toolbox) for SIFTED, PILOT, PYTHIA and TRACE. |
-| `ncores` | `18` | Number of workers of the parallel pool. |
+| `ncores` | `18` | Workers when opening a pool. An existing pool is reused unchanged. |
 
 ## opts.perf
 
@@ -93,6 +93,7 @@ Feature selection. Used by `SIFTED`.
 
 | Field | Default | Description |
 |---|---|---|
+| `diagnostics` | `true` | Run the advisory silhouette sweep. Disable it to reduce selection overhead. |
 | `flag` | `true` | Run SIFTED. `false` keeps every feature. |
 | `rho` | `0.10` | Minimum absolute correlation between a feature and an algorithm's performance. |
 | `pval` | `0.05` | Significance level of the correlations. |
@@ -153,7 +154,7 @@ Footprints. Used by `TRACE`.
 | Field | Default | Description |
 |---|---|---|
 | `method` | `'trace3'` | `'trace3'`, or `'legacy'` for the earlier DBSCAN method (2D only). |
-| `PI` | `0.6` | Minimum purity of a footprint. |
+| `PI` | `0.6` | Target purity. TRACE3 marks footprints that do not meet it with `accepted=false`. |
 | `minInstances` | `4` | Minimum number of instances in a footprint. |
 | `minAreaFrac` | `0.01` | Minimum footprint size as a fraction of the whole space. |
 | `contra` | `false` | Legacy method only: remove contradictions between best-algorithm footprints. `true` by default when `method` is `'legacy'`. |
@@ -169,12 +170,16 @@ Files written when `build` or `explore` completes. See `scriptcsv`, `scriptpng` 
 | `fig` | `true` | 3D only: also save footprint figures as `.fig` files. |
 | `web` | `false` | Write the colour files used by MATILDA. Needs `csv`. |
 
-## See Also
+## Version History
 
-`InstanceSpace` | `ISAdefaults` | `ISAvalidateOpts` | [Metadata File Format](MetadataFormat.html)
+### Unreleased review fixes
 
 Rectangular numeric `pilot.viewGroups` from JSON are converted to one group per row before validation. An empty group list selects the default group. Individual groups must contain positive integer indices.
 
 Seeds must be integers in `[0, 2^32-1]`. PYTHIA wraps derived algorithm and fold seeds into this range.
 
 Enumeration values are case-insensitive and canonicalised before dispatch. Instance subsetting modes are mutually exclusive. A requested index file must exist and contain only valid positive integer row indices. Directory arguments accept character vectors or scalar strings.
+
+## See Also
+
+`InstanceSpace` | `ISAdefaults` | `ISAvalidateOpts` | [Metadata File Format](MetadataFormat.html)

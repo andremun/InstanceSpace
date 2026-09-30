@@ -122,8 +122,10 @@ Part of the 3D instance space (ISA3) support.
 
 - Simpson, C., Muñoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B. (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis. *Machine Learning*, 114, 240. <https://doi.org/10.1007/s10994-025-06871-5>
 
+### Unreleased review fixes
+
+Azimuth and elevation use the `cart2sph` convention in radians. Plot helpers convert azimuth to the MATLAB camera convention and use equal data-axis scales to preserve the fitted plane.
+
 ## See Also
 
 `PILOT` | `ISArecallView` | `scriptpng`
-
-Azimuth and elevation use the `cart2sph` convention in radians. Plot helpers convert azimuth to the MATLAB camera convention and use equal data-axis scales to preserve the fitted plane.

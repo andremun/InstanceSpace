@@ -141,7 +141,11 @@ Y2 = T2{:, startsWith(T2.Properties.VariableNames, <span class="str">'algo_'</sp
 <div class="history"><h3 id="v0-9-0-outlier-bound-option">v0.9.0 — Outlier bound option</h3><p><a class="code-link" href="OptionsReference.html#opts-prelim-iqrmultiplier"><code>opts.prelim.iqrMultiplier</code></a> replaces the fixed outlier-bound width.</p></div></section>
 <section class="refsect" id="references"><h2>References</h2><ul>
 <li>Smith-Miles, K. &amp; Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. <em>ACM Computing Surveys</em>, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
-</ul></section>
+</ul>
+<h3 id="unreleased-review-fixes">Unreleased review fixes</h3>
+<p>Constant columns use a unit divisor for Z-score normalisation. Evaluation applies the same policy to zero scales saved by older models.</p>
+<p>Relative performance is nonnegative regret divided by <code>max(abs(Ybest),eps)</code>: <code>(Y-Ybest)/scale</code> for minimisation and <code>(Ybest-Y)/scale</code> for maximisation. This supports negative scores and zero best scores. Exact ties at zero have zero regret and are good. <code>Ybest</code> always retains the raw best performance.</p>
+<p>Evaluation rows with no observed algorithm outcomes have <code>P=0</code> and <code>Ybest=NaN</code>. They are excluded from Oracle probability estimates.</p></section>
 <section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="INIT.html"><code>INIT</code></a> | <a class="code-link" href="FILTER.html"><code>FILTER</code></a> | <a class="code-link" href="SIFTED.html"><code>SIFTED</code></a> | <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a></p></div></section>
 <footer class="page-foot">
 <p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>

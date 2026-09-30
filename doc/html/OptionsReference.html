@@ -105,7 +105,7 @@ obj = InstanceSpace(rootdir, opts);</code></pre></div>
 </tr>
 <tr id="opts-general-ncores"><td><code>ncores</code></td>
 <td><code>18</code></td>
-<td>Number of workers of the parallel pool.</td>
+<td>Workers when opening a pool. An existing pool is reused unchanged.</td>
 </tr>
 </tbody>
 </table></section>
@@ -263,6 +263,10 @@ obj = InstanceSpace(rootdir, opts);</code></pre></div>
 </tr>
 </thead>
 <tbody>
+<tr id="opts-sifted-diagnostics"><td><code>diagnostics</code></td>
+<td><code>true</code></td>
+<td>Run the advisory silhouette sweep. Disable it to reduce selection overhead.</td>
+</tr>
 <tr id="opts-sifted-flag"><td><code>flag</code></td>
 <td><code>true</code></td>
 <td>Run SIFTED. <code>false</code> keeps every feature.</td>
@@ -441,7 +445,7 @@ obj = InstanceSpace(rootdir, opts);</code></pre></div>
 </tr>
 <tr id="opts-trace-pi"><td><code>PI</code></td>
 <td><code>0.6</code></td>
-<td>Minimum purity of a footprint.</td>
+<td>Target purity. TRACE3 marks footprints that do not meet it with <code>accepted=false</code>.</td>
 </tr>
 <tr id="opts-trace-mininstances"><td><code>minInstances</code></td>
 <td><code>4</code></td>
@@ -485,13 +489,16 @@ obj = InstanceSpace(rootdir, opts);</code></pre></div>
 </tr>
 </tbody>
 </table></section>
+<section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="unreleased-review-fixes">Unreleased review fixes</h3><p>Rectangular numeric <code>pilot.viewGroups</code> from JSON are converted to one group per row before validation. An empty group list selects the default group. Individual groups must contain positive integer indices.</p>
+<p>Seeds must be integers in <code>[0, 2^32-1]</code>. PYTHIA wraps derived algorithm and fold seeds into this range.</p>
+<p>Enumeration values are case-insensitive and canonicalised before dispatch. Instance subsetting modes are mutually exclusive. A requested index file must exist and contain only valid positive integer row indices. Directory arguments accept character vectors or scalar strings.</p></div></section>
 <section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> | <a class="code-link" href="ISAdefaults.html"><code>ISAdefaults</code></a> | <a class="code-link" href="ISAvalidateOpts.html"><code>ISAvalidateOpts</code></a> | <a href="MetadataFormat.html">Metadata File Format</a></p></div></section>
 <footer class="page-foot">
 <p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
 <p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
 </footer>
 </main>
-<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#opts-general">opts.general</a></li><li><a href="#opts-perf">opts.perf</a></li><li><a href="#opts-prelim">opts.prelim</a></li><li><a href="#opts-auto">opts.auto</a></li><li><a href="#opts-bound">opts.bound</a></li><li><a href="#opts-norm">opts.norm</a></li><li><a href="#opts-selvars">opts.selvars</a></li><li><a href="#opts-sifted">opts.sifted</a></li><li><a href="#opts-pilot">opts.pilot</a></li><li><a href="#opts-cloister">opts.cloister</a></li><li><a href="#opts-pythia">opts.pythia</a></li><li><a href="#opts-trace">opts.trace</a></li><li><a href="#opts-outputs">opts.outputs</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#opts-general">opts.general</a></li><li><a href="#opts-perf">opts.perf</a></li><li><a href="#opts-prelim">opts.prelim</a></li><li><a href="#opts-auto">opts.auto</a></li><li><a href="#opts-bound">opts.bound</a></li><li><a href="#opts-norm">opts.norm</a></li><li><a href="#opts-selvars">opts.selvars</a></li><li><a href="#opts-sifted">opts.sifted</a></li><li><a href="#opts-pilot">opts.pilot</a></li><li><a href="#opts-cloister">opts.cloister</a></li><li><a href="#opts-pythia">opts.pythia</a></li><li><a href="#opts-trace">opts.trace</a></li><li><a href="#opts-outputs">opts.outputs</a></li><li><a href="#version-history">Version History</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
 </div>
 </body>
 </html>

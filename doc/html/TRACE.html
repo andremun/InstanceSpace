@@ -108,7 +108,7 @@ out = TRACE(m.pilot.Z, m.data.Ybin, m.pythia.Yhat, m.data.P, m.data.beta, ...
 <p>Normally <code>obj.opts.trace</code>.</p><details class="arg" id="arg-opts-method"><summary><code>opts.method</code> <span class="arg-desc">— Footprint method</span></summary><div class="arg-body"><p class="arg-type"><code>'trace3'</code> (default) | <code>'legacy'</code></p>
 <p><code>'legacy'</code> falls back to <code>'trace3'</code> with a warning for a 3D space.</p></div></details>
 <details class="arg" id="arg-opts-pi"><summary><code>opts.PI</code> <span class="arg-desc">— Purity threshold</span></summary><div class="arg-body"><p class="arg-type"><code>0.6</code> (default) | scalar in [0, 1]</p>
-<p>Minimum fraction of good instances inside a footprint.</p></div></details>
+<p>Target fraction of good instances inside a footprint. Check <code>accepted</code> before treating a training footprint as meeting this target.</p></div></details>
 <details class="arg" id="arg-opts-mininstances"><summary><code>opts.minInstances</code> <span class="arg-desc">— Minimum instances</span></summary><div class="arg-body"><p class="arg-type"><code>4</code> (default) | positive integer</p>
 <p>Fewer instances than this give an empty footprint.</p></div></details>
 <details class="arg" id="arg-opts-minareafrac"><summary><code>opts.minAreaFrac</code> <span class="arg-desc">— Minimum size</span></summary><div class="arg-body"><p class="arg-type"><code>0.01</code> (default) | scalar in [0, 1]</p>
@@ -135,7 +135,10 @@ out = TRACE(m.pilot.Z, m.data.Ybin, m.pythia.Yhat, m.data.P, m.data.beta, ...
 <li>Smith-Miles, K. &amp; Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. <em>ACM Computing Surveys</em>, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
 <li>Simpson, C., Muñoz, M.A., Kandanaarachchi, S. &amp; Campello, R.J.G.B. (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis. <em>Machine Learning</em>, 114, 240. <a href="https://doi.org/10.1007/s10994-025-06871-5">https://doi.org/10.1007/s10994-025-06871-5</a></li>
 <li>Muñoz, M.A. &amp; Smith-Miles, K. (2017). Performance analysis of continuous black-box optimization algorithms via footprints in instance space. <em>Evolutionary Computation</em>, 25(4), 529–554. <a href="https://doi.org/10.1162/EVCO_a_00194">https://doi.org/10.1162/EVCO_a_00194</a></li>
-</ul></section>
+</ul>
+<h3 id="unreleased-review-fixes">Unreleased review fixes</h3>
+<p>Evaluation reuses the trained space geometry. Single-instance, duplicate, and lower-dimensional test batches do not require a test convex hull.</p>
+<p>TRACE3 footprints store <code>accepted</code> and <code>terminationReason</code>. Reaching the target gives <code>purityReached</code>. Exhausting the alpha search retains the last candidate with <code>accepted=false</code> and <code>spectrumExhausted</code>. An empty footprint has <code>insufficientSupport</code>. Evaluation preserves these training acceptance fields while updating test metrics.</p></section>
 <section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="PYTHIA.html"><code>PYTHIA</code></a> | <a class="code-link" href="PILOT.html"><code>PILOT</code></a> | <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> | <a class="code-link" href="scriptpng.html"><code>scriptpng</code></a></p></div></section>
 <footer class="page-foot">
 <p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>

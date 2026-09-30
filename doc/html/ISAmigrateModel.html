@@ -119,6 +119,10 @@ m.pythia.classifiers</code></pre></div></div></details></section>
 <td><code>model.data.Ybest</code></td>
 </tr>
 <tr>
+<td>PLS model without <code>pilot.Xmean</code></td>
+<td>recover the mean from training features and translate saved <code>cloist.Zedge</code>/<code>Zecorr</code> by <code>-Xmean*A'</code>; face indices are unchanged</td>
+</tr>
+<tr>
 <td><code>model.pythia.svm{i}</code>, <code>model.pythia.knn{i}</code></td>
 <td><code>model.pythia.classifiers{i}</code></td>
 </tr>
@@ -141,7 +145,8 @@ m.pythia.classifiers</code></pre></div></div></details></section>
 </tbody>
 </table>
 <p>A <code>model.pilot.A</code> without <code>B</code> and <code>C</code> cannot be repaired and raises a warning.</p></section>
-<section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="v0-9-0-introduced">v0.9.0 — Introduced</h3></div></section>
+<section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="unreleased-pls-boundary-alignment">Unreleased — PLS boundary alignment</h3><p>Recovering a missing PLS feature mean also translates any saved CLOISTER vertices into the fitted PLS coordinate system. Empty or absent boundaries are retained. Repeated migration leaves already centred geometry unchanged. Models without the training features needed to recover the mean must be rebuilt.</p></div>
+<div class="history"><h3 id="v0-9-0-introduced">v0.9.0 — Introduced</h3></div></section>
 <section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a> | <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a> | <a class="code-link" href="exploreIS.html"><code>exploreIS</code></a></p></div></section>
 <footer class="page-foot">
 <p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>

@@ -170,11 +170,15 @@ Cell array with one `ClassificationModel` per algorithm.
 
 #### `out.Pr0hat` — Predicted bad-class scores
 
-Probability that each algorithm is *not* good on each instance.
+Bad-class score for each algorithm on each instance. Consult the corresponding `out.scoreType` entry before interpreting a column: only `probability` denotes the probability that the algorithm is *not* good. `decision-score` and `class-score` are classifier scores and need not lie in [0,1]; `unknown` has no declared score semantics, and `unavailable` marks a placeholder rather than a usable score.
 
 #### `out.Ysub`, `out.Pr0sub` — Cross-validated predictions
 
-Training mode only.
+Training mode only. `Ysub` contains predicted labels; `Pr0sub` contains bad-class scores. `out.scoreTypeCV` describes each score column. A `mixed` column combines score types across folds; `out.Pr0subIsProbability` identifies which individual entries can be interpreted as probabilities.
+
+#### `out.scoreType`, `out.scoreTypeCV` — Score semantics
+
+Cell arrays with one entry per algorithm. Values are `probability`, `decision-score`, `class-score`, `unknown`, or `unavailable`. `scoreTypeCV` can also be `mixed`. Use this metadata when consuming `Pr0hat` or `Pr0sub`, including models loaded from older toolkit versions.
 
 #### `out.accuracy`, `out.precision`, `out.recall`, `out.cvcmat` — Classifier performance
 

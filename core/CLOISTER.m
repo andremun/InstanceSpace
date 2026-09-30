@@ -2,6 +2,7 @@ function out = CLOISTER(X, A, opts, Xmean)
 % CLOISTER  Estimate the empirical boundary of the instance space.
 %
 %   out = CLOISTER(X, A, opts)
+%   out = CLOISTER(X, A, opts, Xmean)
 %
 %   Enumerates every combination of feature lower/upper bounds (a
 %   hypercube's corners), discards combinations that contradict the
@@ -21,6 +22,9 @@ function out = CLOISTER(X, A, opts, Xmean)
 %                                    contradicting the trend is discarded (0.70)
 %              maxFeatures   int     feature-count guard before falling back
 %                                    to a plain convex hull (20)
+%     Xmean - optional (1 x nfeats) fitted feature mean, default zeros.
+%             Pass model.pilot.Xmean for PLS so corners and fallback
+%             instances use (X-Xmean)*A' in the fitted coordinate system.
 %
 %   Outputs
 %     out  - struct with fields:

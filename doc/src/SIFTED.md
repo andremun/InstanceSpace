@@ -167,6 +167,8 @@ k-means, the partition and the genetic algorithm use `opts.seed`.
 
 Set `opts.sifted.diagnostics=false` to skip the advisory silhouette sweep. Feature clustering and selection still run with the configured K.
 
+A call with `opts.parallel=false` resets only its client fitness cache and does not dispatch work to an existing pool. A later parallel call resets its worker caches before using them.
+
 ## See Also
 
 `PRELIM` | `PILOT` | `InstanceSpace`

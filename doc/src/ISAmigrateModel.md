@@ -67,6 +67,7 @@ File form only.
 | `opts.corr.flag`, `opts.corr.threshold`, `opts.clust.flag` | fields of `opts.sifted` |
 | `opts.perf.MaxMin` | `opts.perf.MaxPerf` |
 | `model.data.bestPerformace` | `model.data.Ybest` |
+| PLS model without `pilot.Xmean` | recover the mean from training features and translate saved `cloist.Zedge`/`Zecorr` by `-Xmean*A'`; face indices are unchanged |
 | `model.pythia.svm{i}`, `model.pythia.knn{i}` | `model.pythia.classifiers{i}` |
 | `model.pythia.boxcosnt`, `model.pythia.kscale` | `model.pythia.param1`, `model.pythia.param2` |
 | LIBSVM classifier structures | retrained with `opts.pythia.classifier` (default `'knn'`), because LIBSVM structures have no `predict` method |
@@ -76,6 +77,10 @@ File form only.
 A `model.pilot.A` without `B` and `C` cannot be repaired and raises a warning.
 
 ## Version History
+
+### Unreleased — PLS boundary alignment
+
+Recovering a missing PLS feature mean also translates any saved CLOISTER vertices into the fitted PLS coordinate system. Empty or absent boundaries are retained. Repeated migration leaves already centred geometry unchanged. Models without the training features needed to recover the mean must be rebuilt.
 
 ### v0.9.0 — Introduced
 

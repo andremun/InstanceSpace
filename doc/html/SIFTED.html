@@ -135,7 +135,8 @@ xlabel(<span class="str">'K'</span>), ylabel(<span class="str">'Mean silhouette'
 <li>Smith-Miles, K. &amp; Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. <em>ACM Computing Surveys</em>, 55(12), Article 255. <a href="https://doi.org/10.1145/3572895">https://doi.org/10.1145/3572895</a></li>
 </ul>
 <h3 id="unreleased-review-fixes">Unreleased review fixes</h3>
-<p>Set <a class="code-link" href="OptionsReference.html#opts-sifted-diagnostics"><code>opts.sifted.diagnostics=false</code></a> to skip the advisory silhouette sweep. Feature clustering and selection still run with the configured K.</p></section>
+<p>Set <a class="code-link" href="OptionsReference.html#opts-sifted-diagnostics"><code>opts.sifted.diagnostics=false</code></a> to skip the advisory silhouette sweep. Feature clustering and selection still run with the configured K.</p>
+<p>A call with <a class="code-link" href="OptionsReference.html#opts-sifted"><code>opts.parallel=false</code></a> resets only its client fitness cache and does not dispatch work to an existing pool. A later parallel call resets its worker caches before using them.</p></section>
 <section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="PRELIM.html"><code>PRELIM</code></a> | <a class="code-link" href="PILOT.html"><code>PILOT</code></a> | <a class="code-link" href="InstanceSpace.html"><code>InstanceSpace</code></a></p></div></section>
 <footer class="page-foot">
 <p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>

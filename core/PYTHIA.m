@@ -56,9 +56,12 @@ function out = PYTHIA(Z, Y, Ybin, Ybest, algolabels, opts, trainedModel)
 %              classifiers{nalgos}      trained classifier objects (or
 %                                       legacy LIBSVM structs)
 %              Yhat, Pr0hat            predicted good-performance labels
-%                                       and probabilities
+%                                       and bad-class scores (not always probabilities)
 %              Ysub, Pr0sub            cross-validated predictions
 %                                       (training mode)
+%              scoreType, scoreTypeCV  per-algorithm score semantics for
+%                                       Pr0hat and Pr0sub respectively
+%              Pr0subIsProbability     per-entry probability mask for CV scores
 %              cvcmat, accuracy,
 %              precision, recall       per-algorithm cross-validation
 %                                       performance

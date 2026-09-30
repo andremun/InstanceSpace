@@ -88,18 +88,16 @@ unnaceptableClustering = 0.50;
 acceptableClustering   = 0.75;
 % -------------------------------------------------------------------------
 
-clearCache(); % reset the persistent fitness cache at the start of each call
-
+mypool = [];
 if exist('gcp','file')==2 && (~isfield(opts,'parallel') || opts.parallel)
     mypool = gcp('nocreate');
-    if ~isempty(mypool)
-        nworkers = mypool.NumWorkers;
-    else
-        nworkers = 0;
-    end
+end
+if ~isempty(mypool)
+    nworkers = mypool.NumWorkers;
 else
     nworkers = 0;
 end
+clearCache(mypool); % reset only the processes this invocation can use
 
 % -------------------------------------------------------------------------
 nfeats = size(X, 2);
@@ -255,17 +253,14 @@ function y = costfcn(ind, X, Y, Ybin, clust, cvpart, featlabels, dims, seed)
     end
 end
 % =========================================================================
-function clearCache()
-% Reset the client and worker caches before each SIFTED call.
+function clearCache(mypool)
+% Reset the client and the selected pool's caches before each SIFTED call.
 % Clearing a local function by name does not reset its persistent state.
 % The bitmask keys are valid only for the current data and CV partition.
     costfcn();
-    if exist('gcp','file')==2
-        mypool = gcp('nocreate');
-        if ~isempty(mypool)
-            % Wait for every reset and propagate errors before GA starts.
-            fetchOutputs(parfevalOnAll(mypool, @costfcn, 0));
-        end
+    if ~isempty(mypool)
+        % Wait for every reset and propagate errors before GA starts.
+        fetchOutputs(parfevalOnAll(mypool, @costfcn, 0));
     end
 end
 % =========================================================================

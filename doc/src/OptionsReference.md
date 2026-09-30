@@ -176,3 +176,5 @@ Files written when `build` or `explore` completes. See `scriptcsv`, `scriptpng` 
 Rectangular numeric `pilot.viewGroups` from JSON are converted to one group per row before validation. An empty group list selects the default group. Individual groups must contain positive integer indices.
 
 Seeds must be integers in `[0, 2^32-1]`. PYTHIA wraps derived algorithm and fold seeds into this range.
+
+Enumeration values are case-insensitive and canonicalised before dispatch. Instance subsetting modes are mutually exclusive. A requested index file must exist and contain only valid positive integer row indices. Directory arguments accept character vectors or scalar strings.

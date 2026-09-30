@@ -39,6 +39,22 @@ classdef StateReviewTest < matlab.unittest.TestCase
         end
     end
     methods (Test)
+        function testStringPathAndSubsetValidation(tc)
+            obj = InstanceSpace(string(tc.Folder),tc.Opts).build('stages',{'prelim'});
+            tc.verifyEqual(obj.rootdir,[tc.Folder filesep]);
+            opts = tc.Opts; opts.selvars.type = "ftr"; opts.selvars.densityflag = true;
+            obj = InstanceSpace(string(tc.Folder),opts).build('stages',{'prelim'});
+            tc.verifyTrue(obj.model.prelim.bydensity);
+            opts.selvars.fileidxflag = true;
+            tc.verifyError(@() InstanceSpace(tc.Folder,opts),'ISA:ISAvalidateOpts:subsetConflict');
+            opts.selvars.densityflag = false; opts.selvars.fileidx = fullfile(tc.Folder,'absent.csv');
+            tc.verifyError(@() InstanceSpace(tc.Folder,opts).build('stages',{'prelim'}),'ISA:InstanceSpace:missingIndexFile');
+            opts.selvars.fileidx = fullfile(tc.Folder,'indices.csv');
+            writetable(table([1;31]),opts.selvars.fileidx);
+            tc.verifyError(@() InstanceSpace(tc.Folder,opts).build('stages',{'prelim'}),'ISA:InstanceSpace:badIndices');
+            opts = ISAvalidateOpts(struct('pythia',struct('tuning','NONE')));
+            tc.verifyEqual(opts.pythia.tuning,'none');
+        end
         function testDroppedFeatureReplay(tc)
             file = fullfile(tc.Folder,'metadata.csv'); T = readtable(file);
             T.feature_b(:) = NaN; writetable(T,file);

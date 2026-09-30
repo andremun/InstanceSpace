@@ -157,6 +157,30 @@ checkLogical(opts, 'outputs', 'csv');
 checkLogical(opts, 'outputs', 'png');
 checkLogical(opts, 'outputs', 'fig');
 checkLogical(opts, 'outputs', 'web');
+
+modes = {'smallscaleflag','fileidxflag','densityflag'};
+active = 0;
+for i = 1:numel(modes)
+    [value,present] = getf(opts,'selvars',modes{i});
+    active = active + (present && value);
+end
+if active > 1
+    error('ISA:ISAvalidateOpts:subsetConflict', 'Choose only one instance-subsetting mode.');
+end
+% Validation accepts enum case variants. Dispatch receives canonical values.
+enums = {'pilot','method',{'standard','pls'}; ...
+         'pythia','classifier',{'knn','svm','tree','nb','linear','ensemble'}; ...
+         'pythia','tuning',{'sobol','bayes','none'}; ...
+         'trace','method',{'trace3','legacy'}; ...
+         'selvars','type',{'Ftr','Ftr&AP','Ftr&Good','Ftr&AP&Good'}};
+for i = 1:size(enums,1)
+    [value,present] = getf(opts,enums{i,1},enums{i,2});
+    if present
+        allowed = enums{i,3};
+        opts.(enums{i,1}).(enums{i,2}) = allowed{find(strcmpi(value,allowed),1)};
+    end
+end
+
 end
 
 % =========================================================================

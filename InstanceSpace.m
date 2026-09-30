@@ -130,9 +130,7 @@ classdef InstanceSpace
             if nargin < 3 || isempty(requireData)
                 requireData = true;
             end
-            if ~(endsWith(rootdir, '/') || endsWith(rootdir, '\'))
-                rootdir = [rootdir '/'];
-            end
+            rootdir = InstanceSpace.normalizeRoot(rootdir);
             obj.rootdir = rootdir;
             if requireData && ~isfile([rootdir 'metadata.csv'])
                 error('ISA:InstanceSpace:missingData', ...
@@ -283,9 +281,7 @@ classdef InstanceSpace
                 @(x) isempty(x) || isa(x, 'function_handle'));
             parse(p, varargin{:});
             onStage = p.Results.onStage;
-            if ~(endsWith(testRootDir, '/') || endsWith(testRootDir, '\'))
-                testRootDir = [testRootDir '/'];
-            end
+            testRootDir = InstanceSpace.normalizeRoot(testRootDir);
             if isempty(fieldnames(obj.model)) || ...
                     ~all(ismember(InstanceSpace.StageOrder, obj.completedStages))
                 % Checking obj.model.pilot alone let a partially-built
@@ -426,9 +422,7 @@ classdef InstanceSpace
             % option defaults absent from the saved model (ISAdefaults).
             InstanceSpace.ensurePathSetup(); % load() calls ISAmigrateModel/ISAdefaults
             % (both in utils/) directly, before the constructor call below.
-            if ~(endsWith(rootdir, '/') || endsWith(rootdir, '\'))
-                rootdir = [rootdir '/'];
-            end
+            rootdir = InstanceSpace.normalizeRoot(rootdir);
             modelfile = [rootdir 'model.mat'];
             if ~isfile(modelfile)
                 error('ISA:InstanceSpace:missingModel', ...
@@ -594,11 +588,9 @@ classdef InstanceSpace
             data.beta         = prelimOut.beta;
 
             ninst = size(data.X, 1);
-            fractional  = obj.opts.selvars.smallscaleflag && isfloat(obj.opts.selvars.smallscale);
-            fileindexed = obj.opts.selvars.fileidxflag && isfile(obj.opts.selvars.fileidx);
-            bydensity   = obj.opts.selvars.densityflag && ...
-                          isfloat(obj.opts.selvars.mindistance) && ...
-                          ischar(obj.opts.selvars.type);
+            fractional  = obj.opts.selvars.smallscaleflag;
+            fileindexed = obj.opts.selvars.fileidxflag;
+            bydensity   = obj.opts.selvars.densityflag;
             if fractional
                 fprintf('[BUILD] Creating a small scale experiment for validation. Percentage of subset: %s%%\n', ...
                     num2str(round(100.*obj.opts.selvars.smallscale, 2)));
@@ -610,8 +602,14 @@ classdef InstanceSpace
             elseif fileindexed
                 fprintf('[BUILD] Using a subset of the instances.\n');
                 subsetIndex = false(size(data.X,1), 1);
+                if ~isfile(obj.opts.selvars.fileidx)
+                    error('ISA:InstanceSpace:missingIndexFile', 'Subset index file not found: %s.', obj.opts.selvars.fileidx);
+                end
                 aux = table2array(readtable(obj.opts.selvars.fileidx));
-                aux(aux > ninst) = [];
+                if ~(isnumeric(aux) && isvector(aux) && all(isfinite(aux)) && ...
+                        all(aux >= 1 & aux <= ninst & aux == floor(aux)))
+                    error('ISA:InstanceSpace:badIndices', 'Subset indices must be integers in [1, %d].', ninst);
+                end
                 subsetIndex(aux) = true;
             elseif bydensity
                 fprintf('[BUILD] Creating a small scale experiment for validation based on density.\n');
@@ -760,6 +758,15 @@ classdef InstanceSpace
     end
 
     methods (Static, Access = private)
+        function path = normalizeRoot(path)
+            if ~((ischar(path) && isrow(path)) || (isstring(path) && isscalar(path)))
+                error('ISA:InstanceSpace:badPath', 'The directory must be a character vector or scalar string.');
+            end
+            path = char(path);
+            if isempty(path), error('ISA:InstanceSpace:badPath', 'The directory must not be empty.'); end
+            if ~endsWith(path, filesep), path = [path filesep]; end
+        end
+
         function value = stageOptions(opts, stage)
             % Only options consumed by this stage define its fitted state.
             switch stage

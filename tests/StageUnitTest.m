@@ -97,13 +97,12 @@ classdef StageUnitTest < matlab.unittest.TestCase
             testCase.verifyError(@() PRELIM(X, Y, 'opts'), 'ISA:PRELIM:badOpts');
         end
 
-        function testPrelimWarnsOnZeroBest(testCase, MaxPerf)
-            % Relative performance divides by the best value; many exact
-            % zeros there make the relative matrix meaningless.
-            [X, Y] = syntheticMetadata(40, 3, 2);
-            Y(1:10, :) = 0;
-            testCase.verifyWarning(@() PRELIM(X, Y, prelimOpts(MaxPerf, false)), ...
-                'ISA:PRELIM:manyZeroBest');
+        function testPrelimZeroBest(testCase, MaxPerf)
+            X = (1:10)'; Y = zeros(10,2);
+            [~, transformed, out] = PRELIM(X,Y,prelimOpts(MaxPerf,false));
+            testCase.verifyTrue(all(out.Ybin(:)));
+            testCase.verifyEqual(out.Ybest,zeros(10,1));
+            testCase.verifyTrue(all(isfinite(transformed(:))));
         end
 
         function testPrelimEvalModeClipsAndWarns(testCase)

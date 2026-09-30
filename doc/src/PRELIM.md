@@ -193,3 +193,5 @@ The fourth argument, `trainedPrelim`, applies a trained preprocessing to new dat
 `INIT` | `FILTER` | `SIFTED` | `InstanceSpace`
 
 Constant columns use a unit divisor for Z-score normalisation. Evaluation applies the same policy to zero scales saved by older models.
+
+Relative performance is nonnegative regret divided by `max(abs(Ybest),eps)`: `(Y-Ybest)/scale` for minimisation and `(Ybest-Y)/scale` for maximisation. This supports negative scores and zero best scores. Exact ties at zero have zero regret and are good. `Ybest` always retains the raw best performance.

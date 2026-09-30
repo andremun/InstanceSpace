@@ -91,16 +91,9 @@ if opts.MaxPerf
         out.Ybin = Yaux >= opts.epsilon;
         msg = [msg 'higher than ' num2str(opts.epsilon)];
     else
-        if mean(out.Ybest==0) > 0.05
-            warning('ISA:PRELIM:manyZeroBest', ...
-                ['More than 5%% of instances have a best-algorithm performance of ' ...
-                 'exactly zero; the relative-performance matrix will be close to 1 ' ...
-                 'everywhere for these instances.']);
-        end
-        out.Ybest(out.Ybest==0) = eps;
-        Y(Y==0) = eps;
-        Y = 1 - bsxfun(@rdivide, Y, out.Ybest);
-        out.Ybin = (1 - bsxfun(@rdivide, Yaux, out.Ybest)) <= opts.epsilon;
+        scale = max(abs(out.Ybest), eps);
+        Y = (out.Ybest - Y) ./ scale;
+        out.Ybin = Y <= opts.epsilon;
         msg = [msg 'within ' num2str(round(100.*opts.epsilon)) '% of the best.'];
     end
 else
@@ -112,16 +105,9 @@ else
         out.Ybin = Yaux <= opts.epsilon;
         msg = [msg 'less than ' num2str(opts.epsilon)];
     else
-        if mean(out.Ybest==0) > 0.05
-            warning('ISA:PRELIM:manyZeroBest', ...
-                ['More than 5%% of instances have a best-algorithm performance of ' ...
-                 'exactly zero; the relative-performance matrix will be close to 1 ' ...
-                 'everywhere for these instances.']);
-        end
-        out.Ybest(out.Ybest==0) = eps;
-        Y(Y==0) = eps;
-        Y = bsxfun(@rdivide, Y, out.Ybest) - 1;
-        out.Ybin = (bsxfun(@rdivide, Yaux, out.Ybest) - 1) <= opts.epsilon;
+        scale = max(abs(out.Ybest), eps);
+        Y = (Y - out.Ybest) ./ scale;
+        out.Ybin = Y <= opts.epsilon;
         msg = [msg 'within ' num2str(round(100.*opts.epsilon)) '% of the best.'];
     end
 end

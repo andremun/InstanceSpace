@@ -21,6 +21,18 @@ classdef ReviewFixTest < matlab.unittest.TestCase
 
 
     methods (Test)
+        function testTraceSmallEvaluation(tc)
+            opts = ISAdefaults(struct()); rng(8);
+            for dims = [2 3]
+                Z = rand(40,dims); y = true(40,1);
+                trained = TRACE(Z,y,y,ones(40,1),y,{'a'},opts.trace);
+                for n = [1 2 4]
+                    q = repmat(Z(1,:),n,1); labels = true(n,1);
+                    evaluated = TRACE(q,labels,labels,ones(n,1),labels,{'a'},opts.trace,trained);
+                    tc.verifyEqual(evaluated.space.measure,trained.space.measure);
+                end
+            end
+        end
         function testCVSelectionSummary(tc)
             rng(17); Z = rand(30,2); Y = rand(30,2); labels = Y<0.5;
             opts = ISAdefaults(struct()); opts.pythia.classifier = 'tree';

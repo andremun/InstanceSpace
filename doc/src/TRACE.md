@@ -167,3 +167,5 @@ TRACE3 replaces the DBSCAN method as the default and supports 3D instance spaces
 ## See Also
 
 `PYTHIA` | `PILOT` | `InstanceSpace` | `scriptpng`
+
+Evaluation reuses the trained space geometry. Single-instance, duplicate, and lower-dimensional test batches do not require a test convex hull.

@@ -92,7 +92,6 @@ pythiaAvailable = ~isempty(Yhat) && ~pythiaSkipped;
 % convhull(Z) accepts Z directly as an n-by-2 or n-by-3 points matrix, so
 % no is3D branch is needed here (unlike TRACEmetrics3's area()/volume()
 % calls below, which really do need to dispatch on dimensionality).
-[~, spaceArea] = convhull(Z);
 if is3D; measureLabel = 'Volume'; else; measureLabel = 'Area'; end
 
 % =========================================================================
@@ -159,6 +158,7 @@ end
 % =========================================================================
 % TRAINING MODE — LEGACY
 % =========================================================================
+[~, spaceArea] = convhull(Z);
 if useLegacy
     fprintf('[TRACE] TRACE (legacy) is building footprints.\n');
     % Contradiction removal defaults to true for legacy (spec 4.1)

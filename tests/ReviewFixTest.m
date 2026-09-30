@@ -21,6 +21,19 @@ classdef ReviewFixTest < matlab.unittest.TestCase
 
 
     methods (Test)
+        function testCVSelectionSummary(tc)
+            rng(17); Z = rand(30,2); Y = rand(30,2); labels = Y<0.5;
+            opts = ISAdefaults(struct()); opts.pythia.classifier = 'tree';
+            opts.pythia.params = ones(2,1); opts.pythia.kFold = 3;
+            out = PYTHIA(Z,Y,labels,min(Y,[],2),{'a','b'},opts.pythia);
+            scores = out.Ysub .* max(out.precision',0);
+            scores(isnan(scores)) = 0;
+            [best, selection] = max(scores,[],2); selection(best<=0) = 0;
+            tc.verifyEqual(out.selection0CV,selection);
+            tc.verifyEqual(out.summary{1,8},'CV_model_precision');
+            eval = PYTHIA(Z,Y,labels,min(Y,[],2),{'a','b'},opts.pythia,out);
+            tc.verifyEqual(eval.summary{1,8},'Test_model_precision');
+        end
         function testConstantScale(tc)
             opts = ISAdefaults(struct());
             p = opts.perf; p.AbsPerf = true; p.auto = true; p.bound = true; p.norm = true;

@@ -352,7 +352,12 @@ fprintf('[PYTHIA] Completed in %.1f s.\n', toc(t));
 
 [~, out.defaultAlgorithm] = max(mean(Ybin, 1));
 out = computeSelection(out, nalgos, out.defaultAlgorithm);
-out.summary = buildSummary(out, algolabels, nalgos, ninst, ...
+cv = out;
+cv.Yhat = out.Ysub;
+cv = computeSelection(cv, nalgos, out.defaultAlgorithm);
+out.selection0CV = cv.selection0;
+out.selection1CV = cv.selection1;
+out.summary = buildSummary(cv, algolabels, nalgos, ninst, ...
                            Y, Ybin, Ybest, p1label, p2label);
 fprintf('[PYTHIA] PYTHIA has completed! Performance of the models:\n\n');
 disp(out.summary);
@@ -861,6 +866,9 @@ colheads = {'Avg_Perf_all_instances';
             'CV_model_accuracy';
             'CV_model_precision';
             'CV_model_recall'};
+if isempty(p1label)
+    colheads(6:8) = {'Test_model_accuracy'; 'Test_model_precision'; 'Test_model_recall'};
+end
 if ~isempty(p1label)
     colheads = [colheads; {p1label}];
     if hasP2; colheads = [colheads; {p2label}]; end

@@ -521,7 +521,7 @@ end
 out = computeSelection(out, nalgos, out.defaultAlgorithm, selPrecision);
 % Eval-mode summary has 9 columns (no hyperparameter columns).
 out.summary = buildSummary(out, algolabels, nalgos, ninst, ...
-                           Y, Ybin, Ybest, [], []);
+                           Y, Ybin, Ybest, [], [], true);
 fprintf('[PYTHIA] PYTHIA has completed! Performance of the models:\n\n');
 disp(out.summary);
 end
@@ -876,8 +876,9 @@ end
 
 % -------------------------------------------------------------------------
 function summary = buildSummary(out, algolabels, nalgos, ninst, ...
-                                Y, Ybin, Ybest, p1label, p2label)
+                                Y, Ybin, Ybest, p1label, p2label, isEvaluation)
 % Build the PYTHIA summary cell array.
+if nargin < 10, isEvaluation = false; end
 hasP2 = ~isempty(p1label) && ~strcmp(p2label, 'N/A');
 ncols = 9 + ~isempty(p1label) + hasP2;  % 9 (eval), 10 (1-param classifier), 11 (2-param)
 
@@ -919,7 +920,7 @@ colheads = {'Avg_Perf_all_instances';
             'CV_model_accuracy';
             'CV_model_precision';
             'CV_model_recall'};
-if isempty(p1label)
+if isEvaluation
     colheads(6:8) = {'Test_model_accuracy'; 'Test_model_precision'; 'Test_model_recall'};
 end
 if ~isempty(p1label)

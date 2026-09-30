@@ -109,6 +109,7 @@ classdef ReviewFixTest < matlab.unittest.TestCase
             opts.pythia.skip = true;
             q = PYTHIA(X,Y,Y<5,min(Y,[],2),{'a','b'},opts.pythia);
             tc.verifyEqual(q.sigma(1),1);
+            tc.verifyEqual(q.summary{1,8},'CV_model_precision');
         end
         function testPLSProjectionMean(tc)
             rng(12);

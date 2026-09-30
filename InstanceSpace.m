@@ -176,6 +176,26 @@ classdef InstanceSpace
             toRun = InstanceSpace.StageOrder(ismember(InstanceSpace.StageOrder, p.Results.stages));
             onStage = p.Results.onStage;
 
+            obj.opts = ISAdefaults(ISAvalidateOpts(obj.opts));
+            retained = obj;
+            for j = 1:numel(toRun)
+                retained = retained.invalidateDownstream(toRun{j});
+            end
+            for j = 1:numel(retained.completedStages)
+                stage = retained.completedStages{j};
+                if ismember(stage, toRun), continue; end
+                previous = [];
+                if isfield(obj.model, 'stageOptions') && isfield(obj.model.stageOptions, stage)
+                    previous = obj.model.stageOptions.(stage);
+                elseif isfield(obj.model, 'opts')
+                    previous = InstanceSpace.stageOptions(obj.model.opts, stage);
+                end
+                if isempty(previous) || ~isequaln(previous, InstanceSpace.stageOptions(obj.opts, stage))
+                    error('ISA:InstanceSpace:staleOptions', ...
+                        'Options for retained stage ''%s'' changed. Rebuild that stage and its dependents.', stage);
+                end
+            end
+
             startProcess = tic;
             fprintf('[BUILD] Root directory: %s\n', obj.rootdir);
             rng(obj.opts.general.seed, 'twister');
@@ -211,6 +231,8 @@ classdef InstanceSpace
                 % re-running are unaffected -- they just get re-added a
                 % few iterations later, same as any other stage.
                 obj = obj.invalidateDownstream(stage);
+                obj.model.opts = obj.opts;
+                obj.model.stageOptions.(stage) = InstanceSpace.stageOptions(obj.opts, stage);
                 if ~isempty(onStage)
                     onStage(stage, obj.model);
                 end
@@ -731,6 +753,20 @@ classdef InstanceSpace
     end
 
     methods (Static, Access = private)
+        function value = stageOptions(opts, stage)
+            % Only options consumed by this stage define its fitted state.
+            switch stage
+                case 'prelim'
+                    names = {'perf','prelim','auto','bound','norm','selvars'};
+                otherwise
+                    names = {stage};
+            end
+            value = struct();
+            for i = 1:numel(names), value.(names{i}) = opts.(names{i}); end
+            if strcmp(stage, 'prelim'), value.seed = opts.general.seed; end
+            if strcmp(stage, 'sifted'), value.dims = opts.pilot.dims; end
+        end
+
         function tf = hasNestedField(s, dottedPath)
             % Walks a 'a.b.c' dotted path through nested structs, used by
             % checkRequiredFields (#28). Missing at any level, or present

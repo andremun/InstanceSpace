@@ -204,3 +204,5 @@ Replaces the `buildIS` and `exploreIS` scripts as the main interface.
 ## See Also
 
 `buildIS` | `exploreIS` | [Getting Started](GettingStarted.html) | [Options Reference](OptionsReference.html)
+
+Each completed stage stores the options used to fit it. A partial rebuild rejects changed options for retained stages. Rebuild the affected stage and its dependents first. Partial builds can be saved, loaded, and resumed. Changing `general.seed` requires rebuilding preprocessing. Stage seeds and verbosity are copied from general defaults at construction and remain explicit stage options afterwards.

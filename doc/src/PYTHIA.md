@@ -168,7 +168,7 @@ Cell array with one `ClassificationModel` per algorithm.
 
 `ninst`-by-`nalgos` logical matrix. In training mode these are the predictions of the final model on the training data.
 
-#### `out.Pr0hat` — Predicted probabilities
+#### `out.Pr0hat` — Predicted bad-class scores
 
 Probability that each algorithm is *not* good on each instance.
 
@@ -192,7 +192,7 @@ Index of the selected algorithm per instance. `selection0` is 0 where no algorit
 
 #### `out.summary` — Summary table
 
-Cell array with one row per algorithm plus rows for the *Oracle* (always the best algorithm) and the *Selector*. Columns: mean and standard deviation of performance on all instances, probability of good performance (over the instances with observed performance), mean and standard deviation on the instances where the algorithm is selected, cross-validation accuracy, precision and recall, and (training mode) the hyperparameters. Cells with no data, such as the accuracy of an algorithm without a classifier, are empty (`[]`). Written to `classifier_table.csv` by `scriptcsv`.
+Cell array with one row per algorithm plus rows for the *Oracle* (always the best algorithm) and the *Selector*. Columns: mean and standard deviation of performance on all instances, probability of good performance (over the instances with observed performance), mean and standard deviation on the instances where the algorithm is selected, CV accuracy, precision and recall during training, test metrics during exploration, and (training mode) the hyperparameters. Cells with no data, such as the accuracy of an algorithm without a classifier, are empty (`[]`). Written to `classifier_table.csv` by `scriptcsv`.
 
 ## Version History
 
@@ -208,9 +208,7 @@ Evaluation mode scores only the instances with observed performance for each alg
 
 - Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
 
-## See Also
-
-`ISAgetClassifierFcn` | `TRACE` | `InstanceSpace` | [Deprecated Functions](Deprecated.html)
+### Unreleased review fixes
 
 Evaluation uses the saved training fallback algorithm and precision weights. Legacy models without these fields use the first trained algorithm as fallback and equal voting weights. Test outcomes never determine recommendations.
 
@@ -219,3 +217,9 @@ Training summaries use out-of-fold predictions for both algorithm and selector r
 Selector recall is the fraction of instances with an observed good algorithm on which the non-fallback selection is good. Successful selections are not also counted as missed opportunities when other algorithms are good.
 
 Cost-sensitive weights are `abs(Y-Ybest)` per instance. Zero regrets use the smallest positive regret in the training matrix to keep every observed example trainable. If all regrets are zero, weights are uniform.
+
+`scoreType` describes each `Pr0hat` column and `scoreTypeCV` describes `Pr0sub`. Values are `probability`, `decision-score`, `class-score`, or `unavailable` (`unknown` for old classifiers without metadata). Scores are mapped through classifier class names. SVM candidate folds use decision scores and omit posterior calibration. The selected final SVM is calibrated, and a failed calibration is labelled as decision scores. Failed CV candidates cannot produce a successful model: all failed candidates or an invalid selected CV result raise an error. A single-class training fold predicts its observed class.
+
+## See Also
+
+`ISAgetClassifierFcn` | `TRACE` | `InstanceSpace` | [Deprecated Functions](Deprecated.html)

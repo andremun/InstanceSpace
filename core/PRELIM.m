@@ -126,6 +126,9 @@ for i = tieRows
 end
 fprintf('[PRELIM] For %s%% of the instances there is more than one best algorithm. Random selection is used to break ties.\n', ...
     num2str(round(100.*mean(multipleBestAlgos))));
+unobserved = all(isnan(Yraw), 2);
+out.Ybest(unobserved) = NaN;
+out.P(unobserved) = 0;
 out.numGoodAlgos = sum(out.Ybin, 2);
 out.beta = out.numGoodAlgos > (opts.betaThreshold * nalgos);
 % -------------------------------------------------------------------------

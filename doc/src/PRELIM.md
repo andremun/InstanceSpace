@@ -188,10 +188,14 @@ The fourth argument, `trainedPrelim`, applies a trained preprocessing to new dat
 
 - Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
 
-## See Also
-
-`INIT` | `FILTER` | `SIFTED` | `InstanceSpace`
+### Unreleased review fixes
 
 Constant columns use a unit divisor for Z-score normalisation. Evaluation applies the same policy to zero scales saved by older models.
 
 Relative performance is nonnegative regret divided by `max(abs(Ybest),eps)`: `(Y-Ybest)/scale` for minimisation and `(Ybest-Y)/scale` for maximisation. This supports negative scores and zero best scores. Exact ties at zero have zero regret and are good. `Ybest` always retains the raw best performance.
+
+Evaluation rows with no observed algorithm outcomes have `P=0` and `Ybest=NaN`. They are excluded from Oracle probability estimates.
+
+## See Also
+
+`INIT` | `FILTER` | `SIFTED` | `InstanceSpace`

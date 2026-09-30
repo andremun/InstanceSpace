@@ -189,7 +189,7 @@ if ~pythiaAvailable
         'PYTHIA predictions unavailable; using true labels only (Zu = {yi=1}).');
 end
 
-if exist('gcp', 'file') == 2
+if exist('gcp', 'file') == 2 && (~isfield(opts,'parallel') || opts.parallel)
     pool = gcp('nocreate');
     nworkers = 0;
     if ~isempty(pool), nworkers = pool.NumWorkers; end
@@ -258,6 +258,9 @@ as = alphaShape(Zu);
 
 % Step 5: compute initial metrics
 [footprint, valid] = TRACEmetrics3(as, Z, Ybin, is3D);
+footprint.accepted = valid && footprint.purity >= opts.PI;
+footprint.terminationReason = 'spectrumExhausted';
+if footprint.accepted, footprint.terminationReason = 'purityReached'; end
 if ~valid || footprint.measure < opts.minAreaFrac * spaceArea
     footprint = TRACEthrow3(is3D);
     return;
@@ -281,6 +284,9 @@ for ii = 1:numel(alphaVec)
         as.RegionThreshold = area(as) / 20;
     end
     [footprint, valid] = TRACEmetrics3(as, Z, Ybin, is3D);
+footprint.accepted = valid && footprint.purity >= opts.PI;
+footprint.terminationReason = 'spectrumExhausted';
+if footprint.accepted, footprint.terminationReason = 'purityReached'; end
     if ~valid || footprint.measure < opts.minAreaFrac * spaceArea
         footprint = TRACEthrow3(is3D);
         return;
@@ -289,7 +295,7 @@ for ii = 1:numel(alphaVec)
         return;
     end
 end
-% Alpha spectrum exhausted — return the best footprint found.
+% Spectrum exhausted: retain the last candidate with accepted=false.
 end
 
 % =========================================================================
@@ -314,8 +320,9 @@ if m <= 0 || isinf(as.Alpha)
     return;
 end
 footprint.measure      = m;
-footprint.elements     = sum(inShape(as, Z));
-footprint.goodElements = sum(inShape(as, Z(logical(Ybin),:)));
+inside = inShape(as, Z);
+footprint.elements     = sum(inside);
+footprint.goodElements = sum(inside & logical(Ybin));
 if footprint.elements == 0
     valid = false;
     footprint.density = 0;
@@ -330,6 +337,8 @@ end
 function footprint = TRACEthrow3(is3D)
 fprintf('[TRACE] There are not enough instances to calculate a footprint.\n');
 footprint.polygon      = [];
+footprint.accepted = false;
+footprint.terminationReason = 'insufficientSupport';
 footprint.measure      = 0;
 footprint.measureLabel = 'Area';
 if is3D, footprint.measureLabel = 'Volume'; end

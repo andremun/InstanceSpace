@@ -108,6 +108,7 @@ if ~(isnumeric(opts.seed) && isscalar(opts.seed) && isfinite(opts.seed) && ...
         opts.seed >= 0 && opts.seed <= 2^32-1 && opts.seed == floor(opts.seed))
     error('ISA:PYTHIA:badSeed', 'opts.seed must be an integer in [0, 2^32-1].');
 end
+opts.tuning = lower(char(opts.tuning));
 % Handle deprecated flags.
 if isfield(opts, 'uselibsvm') && opts.uselibsvm
     warning('ISA:PYTHIA:libsvmDeprecated', ...
@@ -216,6 +217,13 @@ out.Ysub           = false(ninst, nalgos);
 out.Yhat           = false(ninst, nalgos);
 out.Pr0sub         = zeros(ninst, nalgos);
 out.Pr0hat         = zeros(ninst, nalgos);
+out.scoreType = repmat({'class-score'},1,nalgos);
+out.scoreTypeCV = repmat({'class-score'},1,nalgos);
+if any(strcmpi(classifierType, {'knn','tree','nb'}))
+    out.scoreTypeCV(:) = {'probability'};
+elseif strcmpi(classifierType, 'svm')
+    out.scoreTypeCV(:) = {'decision-score'};
+end
 out.param1         = zeros(1, nalgos);
 out.param2         = zeros(1, nalgos);
 out.param2Label    = cell(1, nalgos);  % human-readable param2 (distance name for KNN)
@@ -253,6 +261,8 @@ for i = 1:nalgos
                  '(see PYTHIAevalMode) so exploreIS/PYTHIA eval mode reproduces ' ...
                  'the same constant prediction.'], algolabels{i}, labelWord);
         end
+        out.scoreType{i} = 'probability';
+        out.scoreTypeCV{i} = 'probability';
         out.cp{i}          = [];
         out.Ysub(:,i)       = yi(1);
         % Pr0sub/Pr0hat are P(class 0 = false = "bad"), matching
@@ -317,8 +327,12 @@ for i = 1:nalgos
         % Without this, trainFinalClassifier's own randomness (e.g.
         % fitcensemble bagging) would depend on which tuning strategy ran,
         % not just on opts.seed.
+        if any(isnan(out.Pr0sub(:,i)))
+            error('ISA:PYTHIA:invalidCV', ...
+                'Cross-validation failed for algorithm %s. Check its data and classifier parameters.', algolabels{i});
+        end
         rng(mod(double(opts.seed) + i, 2^32), 'twister');
-        [out.classifiers{i}, out.Yhat(:,i), out.Pr0hat(:,i)] = ...
+        [out.classifiers{i}, out.Yhat(:,i), out.Pr0hat(:,i), out.scoreType{i}] = ...
             trainFinalClassifier(classifierType, Znorm, yi, W(:,i), ...
                                  p1_best, p2_best, opts, mod(double(opts.seed) + i, 2^32));
     end
@@ -417,6 +431,8 @@ out.Pr0hat = zeros(ninst, nalgos);
 % NaN, so precision/recall/accuracy come out NaN instead of a fabricated
 % score (#58).
 out.cvcmat = NaN(nalgos, 4);
+out.scoreType = repmat({'unavailable'},1,nalgos);
+if isfield(trained,'scoreType'), out.scoreType(1:modelalgos) = trained.scoreType; end
 
 for ii = 1:modelalgos
     clf = clfs{ii};
@@ -428,6 +444,7 @@ for ii = 1:modelalgos
         % instance had the same label, so no real classifier was fit).
         % Must be checked before the LIBSVM isstruct dispatch below, or
         % this would be misinterpreted as a LIBSVM model struct.
+        out.scoreType{ii} = 'probability';
         out.Yhat(:,ii)   = clf.value;
         % Pr0hat is P(class 0 = false = "bad"); see the matching comment in
         % the training-mode degenerate-label branch above.
@@ -446,13 +463,13 @@ for ii = 1:modelalgos
                  'libsvm/) and add its MEX-files to the path if you need to evaluate this ' ...
                  'unretrained legacy model as-is.'], algolabels{ii});
         end
-        Yin = double(Ybin(:,ii)) + 1;
+        Yin = ones(ninst,1); % Prediction does not need measured test labels.
+        out.scoreType{ii} = 'decision-score';
         [aux, ~, out.Pr0hat(:,ii)] = svmpredict(Yin, Znorm, clf, '-q');
         out.Yhat(:,ii) = logical(aux == 2);
     else
-        [out.Yhat(:,ii), aux] = clf.predict(Znorm);
-        out.Yhat(:,ii) = logical(out.Yhat(:,ii));
-        if size(aux,2) >= 1; out.Pr0hat(:,ii) = aux(:,1); end
+        [out.Yhat(:,ii), out.Pr0hat(:,ii)] = predictClassifier(clf, Znorm);
+        if ~isfield(trained,'scoreType'), out.scoreType{ii} = 'unknown'; end
     end
     % Score only the instances with observed performance for this
     % algorithm (#58). INIT's reconciliation leaves NaN in Y for a trained
@@ -512,7 +529,7 @@ function [Ysub, Psub, p1_best, p2_best] = sobolSearch( ...
 if nargin < 9; baseSeed = opts.seed; end
 nsobol = length(P1);
 ninst  = size(Z, 1);
-nworkers = getParallelWorkers();
+nworkers = getParallelWorkers(opts);
 
 Ysub_all = false(ninst, nsobol);
 Psub_all = zeros(ninst, nsobol);
@@ -555,9 +572,8 @@ errs = mean(Ysub_all ~= Ybin_rep, 1);
 % Invalidate candidates where any fold's training failed (NaN probability).
 errs(any(isnan(Psub_all), 1)) = Inf;
 if all(isinf(errs))
-    warning('ISA:PYTHIA:allSobolFailed', ...
-        'All Sobol candidates failed (training error on every fold). Using first candidate.');
-    errs(1) = 0;
+    error('ISA:PYTHIA:allSobolFailed', ...
+        'Every Sobol candidate failed at least one fold. Check data and classifier parameters.');
 end
 [~, best] = min(errs);
 Ysub   = Ysub_all(:, best);
@@ -666,7 +682,7 @@ function [Ysub, Psub] = crossValPredict(type, Z, Ybin, W, cp, p1, p2, opts, seed
 % Run k-fold CV with fixed hyperparameters; return fold-level predictions.
 if nargin < 9; seed = opts.seed; end
 ninst    = size(Z, 1);
-nworkers = getParallelWorkers();
+nworkers = getParallelWorkers(opts);
 Ysub = false(ninst, 1);
 Psub = zeros(ninst, 1);
 
@@ -685,6 +701,11 @@ end
 function [Yp, Pp] = evalFoldClassifier(type, Ztrain, Ytrain, Wtrain, Ztest, p1, p2, opts, seed)
 % Train one classifier on a CV fold and predict on the test fold.
 if nargin < 9; seed = opts.seed; end
+if numel(unique(Ytrain)) == 1
+    Yp = repmat(logical(Ytrain(1)),size(Ztest,1),1);
+    Pp = double(~Yp);
+    return;
+end
 try
     clf = fitOneClassifier(type, Ztrain, Ytrain, Wtrain, p1, p2, opts, false, seed);
     [Yp, Pp] = predictClassifier(clf, Ztest);
@@ -700,19 +721,21 @@ end
 end
 
 % -------------------------------------------------------------------------
-function [clf, Yhat, Phat] = trainFinalClassifier(type, Z, Ybin, W, p1, p2, opts, seed)
+function [clf, Yhat, Phat, scoreType] = trainFinalClassifier(type, Z, Ybin, W, p1, p2, opts, seed)
 % Train the final model on all data with the best hyperparameters.
 if nargin < 8; seed = opts.seed; end
-clf = fitOneClassifier(type, Z, Ybin, W, p1, p2, opts, true, seed);
+[clf, scoreType] = fitOneClassifier(type, Z, Ybin, W, p1, p2, opts, true, seed);
 [Yhat, Phat] = predictClassifier(clf, Z);
 end
 
 % -------------------------------------------------------------------------
-function clf = fitOneClassifier(type, Z, Y, W, p1, p2, opts, isFinal, seed)
+function [clf, scoreType] = fitOneClassifier(type, Z, Y, W, p1, p2, opts, isFinal, seed)
 % Dispatch training call to the appropriate MATLAB fitc* function.
 if nargin < 8; isFinal = false; end
 if nargin < 9; seed = opts.seed; end
 
+scoreType = 'class-score';
+if any(strcmpi(type, {'knn','tree','nb'})), scoreType = 'probability'; end
 switch lower(type)
     case 'knn'
         distOpts = {'euclidean','cityblock','cosine','correlation'};
@@ -730,6 +753,8 @@ switch lower(type)
                 'Standardize', false, 'CacheSize', 'maximal'};
         if isFinal; args = [args, {'RemoveDuplicates', true}]; end
         clf = fitcsvm(Z, Y, args{:});
+        scoreType = 'decision-score';
+        if isFinal
         try
             % fitSVMPosterior fits its own sigmoid calibration (internally
             % cross-validated), which draws from the global RNG stream.
@@ -741,10 +766,12 @@ switch lower(type)
             % call" fix for PILOT/SIFTED/PILOTviewpoint).
             rng(seed, 'twister');
             clf = fitSVMPosterior(clf);
+            scoreType = 'probability';
         catch ME
             warning('ISA:PYTHIA:posteriorFailed', ...
                 'fitSVMPosterior failed; predict will return raw decision scores: %s', ...
                 ME.message);
+        end
         end
 
     case 'tree'
@@ -782,8 +809,9 @@ end
 function [Yp, Pp] = predictClassifier(clf, Z)
 [Yp, aux] = clf.predict(Z);
 Yp = logical(Yp);
-if size(aux,2) >= 1
-    Pp = aux(:,1);
+badColumn = find(clf.ClassNames == false, 1);
+if ~isempty(badColumn)
+    Pp = aux(:,badColumn);
 else
     Pp = zeros(size(Z,1), 1);
 end
@@ -855,7 +883,9 @@ Y(~sel0)     = NaN;
 Yfull(~sel1) = NaN;
 Ysvms(~out.Yhat) = NaN;
 
-pgood = mean(any(Ybin & sel1, 2));
+selectedObserved = any(observed & sel1, 2);
+pgood = sum(any(Ybin & sel1 & observed, 2)) / sum(selectedObserved);
+pgoodOracle = sum(any(Ybin & observed, 2)) / sum(any(observed, 2));
 success = any(Ybin & sel0 & observed, 2);
 fb = sum(any(Ybin & observed, 2) & ~success);
 fg = sum(any(~Ybin & sel0 & observed, 2));
@@ -890,7 +920,7 @@ summary(2:end, 3) = num2cell(round([stdperf(:);        nanstd(Ybest);   nanstd(Y
 % is good. Exactly 1 for relative performance (the best algorithm always
 % clears its own threshold), but below 1 when opts.perf.AbsPerf=true and
 % no algorithm meets the absolute threshold on some instances (#59).
-summary(2:end, 4) = num2cell(round([pgoodAlgo';        mean(any(Ybin, 2)); pgood],          3));
+summary(2:end, 4) = num2cell(round([pgoodAlgo';        pgoodOracle; pgood],          3));
 summary(2:end, 5) = num2cell(round([nanmean(Ysvms)';   NaN;             nanmean(Y(:))],     3));
 summary(2:end, 6) = num2cell(round([nanstd(Ysvms)';    NaN;             nanstd(Y(:))],      3));
 summary(2:end, 7) = num2cell(round(100.*[out.accuracy;  NaN;            NaN],               1));
@@ -924,6 +954,8 @@ function out = emptyPYTHIAout(ninst, nalgos, algolabels, Y, Ybin, Ybest, nfeats)
 if nargin < 7; nfeats = 2; end   % 2D projected space is the common case
 out.classifiers    = cell(1, nalgos);
 out.classifierType = 'none';
+out.scoreType = repmat({'unavailable'},1,nalgos);
+out.scoreTypeCV = out.scoreType;
 out.mu             = zeros(1, nfeats);
 out.sigma          = ones(1, nfeats);
 out.cp             = cell(1, nalgos);
@@ -947,9 +979,9 @@ out.summary = buildSummary(out, algolabels, nalgos, ninst, Y, Ybin, Ybest, [], [
 end
 
 % -------------------------------------------------------------------------
-function nw = getParallelWorkers()
+function nw = getParallelWorkers(opts)
 nw = 0;
-if exist('gcp', 'file') == 2
+if exist('gcp', 'file') == 2 && (~isfield(opts,'parallel') || opts.parallel)
     pool = gcp('nocreate');
     if ~isempty(pool); nw = pool.NumWorkers; end
 end

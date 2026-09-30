@@ -21,6 +21,41 @@ classdef ReviewFixTest < matlab.unittest.TestCase
 
 
     methods (Test)
+        function testUnobservedEvaluationRow(tc)
+            p = struct('MaxPerf',false,'AbsPerf',true,'epsilon',5,'betaThreshold',.5,'auto',false);
+            [~,~,out] = PRELIM([1;2],[NaN NaN;1 2],p);
+            tc.verifyTrue(isnan(out.Ybest(1))); tc.verifyEqual(out.P(1),0);
+            opts = ISAdefaults(struct());
+            trained.classifiers = {struct('constant',true,'value',true),struct('constant',true,'value',true)};
+            trained.precision = [1;1]; trained.defaultAlgorithm = 1;
+            evaluated = PYTHIA([1;2],[NaN NaN;1 2],out.Ybin,out.Ybest,{'a','b'},opts.pythia,trained);
+            tc.verifyEqual(evaluated.summary{end-1,4},1);
+            tc.verifyEqual(evaluated.summary{end,4},1);
+        end
+        function testInvalidCVRejected(tc)
+            opts = ISAdefaults(struct()); opts.pythia.classifier = 'svm';
+            opts.pythia.params = [-1 1]; opts.pythia.kFold = 2; opts.pythia.verbose = false;
+            Z = [(1:8)',[1;3;2;4;6;5;8;7]]; Y = (1:8)';
+            tc.verifyError(@() PYTHIA(Z,Y,Y<5,Y,{'a'},opts.pythia),'ISA:PYTHIA:invalidCV');
+        end
+        function testScoreMetadata(tc)
+            rng(14); Z = rand(20,2); Y = rand(20,1);
+            opts = ISAdefaults(struct()); opts.pythia.classifier = 'svm';
+            opts.pythia.params = [1 1]; opts.pythia.kFold = 2;
+            out = PYTHIA(Z,Y,Y<0.5,Y,{'a'},opts.pythia);
+            tc.verifyEqual(out.scoreTypeCV,{'decision-score'});
+            tc.verifyEqual(out.scoreType,{'probability'});
+            tc.verifyTrue(all(out.Pr0hat>=0 & out.Pr0hat<=1));
+        end
+        function testTraceAcceptanceStatus(tc)
+            Z = [0 0;1 0;0 1;1 1;.5 .5]; Z = [Z;Z];
+            labels = [true(5,1);false(5,1)]; opts = ISAdefaults(struct());
+            opts.trace.PI = .9; opts.trace.minAreaFrac = 0;
+            out = TRACE(Z,labels,labels,ones(10,1),true(10,1),{'a'},opts.trace);
+            tc.verifyFalse(out.good{1}.accepted);
+            tc.verifyEqual(out.good{1}.terminationReason,'spectrumExhausted');
+            tc.verifyLessThan(out.good{1}.purity,opts.trace.PI);
+        end
         function testRegretWeights(tc)
             opts = ISAdefaults(struct()); opts.pythia.useweights = true;
             Y = [1 11;3 8;2 4;4 10]; Ybest = min(Y,[],2);

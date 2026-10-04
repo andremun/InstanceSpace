@@ -19,9 +19,10 @@
 function model=loadModel(filename)
 model=load(filename);
 if isfield(model,'archiveVersion')
-    if model.archiveVersion~=1 || ~isacompat.isOctave()
-        error('ISA:compat:archiveVersion','This portable archive requires the tested Octave environment (schema 1).');
+    if ~isacompat.isOctave() || ~isnumeric(model.archiveVersion) || ...
+            ~isscalar(model.archiveVersion) || ~ismember(model.archiveVersion,[1 2])
+        error('ISA:compat:archiveVersion','This portable archive requires the tested Octave environment (schemas 1 and 2).');
     end
-    model=isacompat.archiveValue(model.payload,true);
+    model=isacompat.archiveValue(model.payload,true,model.archiveVersion);
 end
 end

@@ -109,15 +109,22 @@ scores and loadings with `Z=(X-Xmean)*A'`.
 
 ## Archive contract
 
-Octave writes MAT v7 binary data with `archiveVersion=1` and an encoded `payload`.
-Arrays, cell arrays and structs remain data; categories, CV masks and alpha
-complex inputs have explicit type markers and reconstruction paths. KNN models
+Octave writes MAT v7 binary data with `archiveVersion=2` and an encoded `payload`.
+Arrays and cell arrays remain data. Every ordinary struct is enclosed in an
+explicit struct envelope, preserving its dimensions and fields (including fields
+named `isaArchiveType`) without interpreting its contents as object markers.
+Categories, CV masks and alpha-complex inputs have explicit type markers and
+reconstruction paths. KNN models
 use the Statistics package's `savemodel`/`loadmodel` API, embedded as byte arrays:
 these are **Octave/Statistics-specific classifier archives**, not portable MATLAB
 classifier objects. Keep the pinned runtime/packages to reload them. Reconstruction
 does not retrain classifiers. Unknown types/schema versions fail explicitly.
 Writes use a temporary file followed by replacement after serialization succeeds.
-`InstanceSpace.load` and file-based `ISAmigrateModel` understand the archive.
+`InstanceSpace.load` and file-based `ISAmigrateModel` understand both schemas;
+re-saving an archive writes schema 2. Schema 1 retains its original marker
+interpretation for backward compatibility. Marker-shaped user structs in old
+schema-1 files are inherently ambiguous and cannot automatically be distinguished
+from genuine object markers; schema 2 prevents this collision for new saves.
 
 MATLAB keeps flattened top-level model fields and `-v7.3` persistence. Exported
 CSV numerical results are the supported interchange surface; do not load an
@@ -136,6 +143,8 @@ Octave classifier archive as a MATLAB model.
 - `runPipelineSmoke`: quoted Unicode instance IDs, sources, normalization, feature
   selection, full 2D/3D build, save/load/explore, matching predictions/summaries,
   evaluation-only algorithms, CSV and PNG signatures. Output lives in ignored test directories.
+- `runArchiveSmoke`: literal marker-like fields, nested/empty struct arrays, real
+  object round-trips, schema-1 compatibility and schema-2 re-saving.
 - `runWorkflowEdges`: fractional/density subsets and preservation of the previous
   archive when serialization fails.
 

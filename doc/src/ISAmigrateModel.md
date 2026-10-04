@@ -84,7 +84,7 @@ File-based migration recognizes versioned Octave archives and preserves their ex
 
 ### v0.9.2 — PLS boundary alignment and Octave archives
 
-File-based migration now reads and preserves versioned Octave model archives.
+File-based migration now reads versioned Octave model archives. Schema-1 archives remain readable; saving writes schema 2, which keeps ordinary struct fields separate from internal object markers.
 
 Recovering a missing PLS feature mean also translates any saved CLOISTER vertices into the fitted PLS coordinate system. Empty or absent boundaries are retained. Repeated migration leaves already centred geometry unchanged. Models without the training features needed to recover the mean must be rebuilt.
 

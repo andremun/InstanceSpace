@@ -20,6 +20,14 @@ classdef OctaveCompatibilityTest < matlab.unittest.TestCase
 % -------------------------------------------------------------------------
 
     methods (Test)
+        function literalArchiveStructs(~)
+            folder = fullfile(fileparts(mfilename('fullpath')), 'portable');
+            oldPath = path;
+            cleanup = onCleanup(@() path(oldPath)); %#ok<NASGU>
+            addpath(folder);
+            runArchiveSmoke();
+        end
+
         function sharedOptimizationContracts(~)
             folder = fullfile(fileparts(mfilename('fullpath')), 'portable');
             oldPath = path;

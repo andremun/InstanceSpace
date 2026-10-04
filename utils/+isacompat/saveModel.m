@@ -18,7 +18,7 @@
 % -------------------------------------------------------------------------
 function saveModel(filename,model)
 if isacompat.isOctave()
-    archiveVersion=1; payload=isacompat.archiveValue(model,false);
+    archiveVersion=2; payload=isacompat.archiveValue(model,false,archiveVersion);
     temporary=[tempname(fileparts(filename)) '.mat'];
     cleanup=onCleanup(@() removeTemporary(temporary));
     save(temporary,'archiveVersion','payload','-mat7-binary');

@@ -16,10 +16,21 @@
 %   Algorithm Testing. ACM Computing Surveys, 55(12), Article 255.
 %   https://doi.org/10.1145/3572895
 % -------------------------------------------------------------------------
-function out=archiveValue(value,decode)
-% Versioned plain-data encoding. Only explicitly supported types reconstruct.
+function out=archiveValue(value,decode,archiveVersion)
+% Schema 2 envelopes every ordinary struct; its fields are never type tags.
+% Schema 1 is read-only compatibility with the original marker format.
+if nargin<3, archiveVersion=2; end
+if ~isnumeric(archiveVersion) || ~isscalar(archiveVersion) || ...
+        ~ismember(archiveVersion,[1 2]) || (~decode && archiveVersion~=2)
+    error('ISA:compat:archiveVersion','Unsupported archive schema or encoding version.');
+end
 if decode && isstruct(value) && isscalar(value) && isfield(value,'isaArchiveType')
     switch value.isaArchiveType
+        case 'struct'
+            if archiveVersion~=2 || ~isfield(value,'value') || ~isstruct(value.value)
+                error('ISA:compat:archiveType','Invalid struct archive envelope.');
+            end
+            out=mapStructFields(value.value,true,archiveVersion);
         case 'knn'
             filename=[tempname '.mat']; cleanup=onCleanup(@() delete(filename));
             fid=fopen(filename,'wb'); fwrite(fid,value.payload,'uint8'); fclose(fid);
@@ -46,16 +57,30 @@ elseif ~decode && isa(value,'categorical')
 elseif ~decode && isa(value,'string')
     out=struct('isaArchiveType','string','values',{cellstr(value)});
 elseif isstruct(value)
-    out=value; fields=fieldnames(value);
-    for k=1:numel(value)
-        for j=1:numel(fields), out(k).(fields{j})=isacompat.archiveValue(value(k).(fields{j}),decode); end
+    if decode && archiveVersion==2
+        error('ISA:compat:archiveType','Schema 2 requires an envelope for each struct.');
+    end
+    out=mapStructFields(value,decode,archiveVersion);
+    if ~decode
+        out=struct('isaArchiveType','struct','value',{out});
     end
 elseif iscell(value)
     out=cell(size(value));
-    for k=1:numel(value), out{k}=isacompat.archiveValue(value{k},decode); end
+    for k=1:numel(value), out{k}=isacompat.archiveValue(value{k},decode,archiveVersion); end
 elseif isnumeric(value) || islogical(value) || ischar(value)
     out=value;
 else
     error('ISA:compat:archiveType','Unsupported archive value of class %s.',class(value));
+end
+end
+
+function out=mapStructFields(value,decode,archiveVersion)
+% Preserve array dimensions, empty structs and field order. In particular,
+% never interpret the payload struct itself as a marker, only its values.
+out=value; fields=fieldnames(value);
+for k=1:numel(value)
+    for j=1:numel(fields)
+        out(k).(fields{j})=isacompat.archiveValue(value(k).(fields{j}),decode,archiveVersion);
+    end
 end
 end

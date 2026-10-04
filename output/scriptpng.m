@@ -46,6 +46,20 @@ function scriptpng(container,rootdir)
 
 % -------------------------------------------------------------------------
 % Preliminaries
+% One .fig file per footprint (spec §8), for interactive rotation --
+% meaningful for 3D projections specifically; opts.outputs.fig (default
+% true) can disable it. Older containers saved before this option existed
+% default to true rather than silently losing the feature.
+is3D = size(container.pilot.Z, 2) == 3;
+writeFig = is3D;
+if isfield(container, 'opts') && isfield(container.opts, 'outputs') && ...
+        isfield(container.opts.outputs, 'fig')
+    writeFig = writeFig && container.opts.outputs.fig;
+end
+% -------------------------------------------------------------------------
+if isacompat.isOctave() && writeFig
+    error('ISA:compat:unsupportedFeature','Octave PNG output requires outputs.fig=false.');
+end
 if isacompat.isOctave()
     if any(strcmp(available_graphics_toolkits(),'qt'))
         graphics_toolkit('qt');
@@ -144,20 +158,6 @@ globalView = resolveViewAngle(viewpoint, []); % feature/portfolio-level plots
 userData=get(fig,'UserData');
 if ~isstruct(userData), userData=struct(); end
 userData.isaViewpoint=viewpoint; set(fig,'UserData',userData);
-% One .fig file per footprint (spec §8), for interactive rotation --
-% meaningful for 3D projections specifically; opts.outputs.fig (default
-% true) can disable it. Older containers saved before this option existed
-% default to true rather than silently losing the feature.
-is3D = size(container.pilot.Z, 2) == 3;
-writeFig = is3D;
-if isfield(container, 'opts') && isfield(container.opts, 'outputs') && ...
-        isfield(container.opts.outputs, 'fig')
-    writeFig = writeFig && container.opts.outputs.fig;
-end
-% -------------------------------------------------------------------------
-if isacompat.isOctave() && writeFig
-    error('ISA:compat:unsupportedFeature','Octave PNG output requires outputs.fig=false.');
-end
 fprintf('[OUTPUT] Producing the plots.\n');
 % -------------------------------------------------------------------------
 % Drawing feature plots

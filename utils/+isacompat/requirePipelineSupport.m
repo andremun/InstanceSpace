@@ -29,10 +29,11 @@ if any(strcmp(stages,'pythia')), isacompat.requirePythiaSupport(opts.pythia); en
 if any(strcmp(stages,'trace')) && strcmpi(opts.trace.method,'legacy')
     error('ISA:compat:unsupportedFeature','Octave supports trace.method=trace3. Legacy polygon operations are MATLAB-only.');
 end
-if numel(stages)==6 && opts.outputs.png && opts.pilot.dims==3 && opts.outputs.fig
+% Output restrictions apply to staged builds too: any call may complete a model.
+if opts.outputs.png && opts.pilot.dims==3 && opts.outputs.fig
     error('ISA:compat:unsupportedFeature','Set outputs.fig=false for Octave PNG output.');
 end
-if numel(stages)==6 && opts.outputs.web
+if opts.outputs.web
     error('ISA:compat:unsupportedFeature','Web palette export is MATLAB-only; Octave supports CSV and PNG.');
 end
 end

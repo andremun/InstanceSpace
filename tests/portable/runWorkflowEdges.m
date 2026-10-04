@@ -32,10 +32,51 @@ if isacompat.isOctave()
     expectError(@() isacompat.saveModel(filename,struct('bad',@sin)),'ISA:compat:archiveType');
     assert(isequaln(isacompat.loadModel(filename),original));
     expectError(@() isacompat.requireFeature('parallel'),'ISA:compat:unsupportedFeature');
+    checkStagedOutputRejection(root);
 end
 fprintf('[PORTABLE] PASS: fractional/density subsets and archive failure safety.\n');
 end
 function expectError(f,id)
 try, f(); catch err, assert(strcmp(err.identifier,id)); return; end
 error('ISA:portable:missingError','Expected %s.',id);
+end
+
+function checkStagedOutputRejection(root)
+folder=tempname; mkdir(folder); cleanup=onCleanup(@() rmdir(folder,'s'));
+copyfile(fullfile(root,'test','data','metadata.csv'),fullfile(folder,'metadata.csv'));
+opts=struct('general',struct('verbose',false),'outputs',struct('csv',false,'png',false), ...
+    'sifted',struct('flag',false),'pilot',struct('analytic',true,'dims',3,'ntries',1), ...
+    'pythia',struct('skip',true),'trace',struct('minInstances',1000));
+obj=InstanceSpace(folder,opts);
+obj=obj.build('stages',{'prelim','sifted','pilot','cloister','pythia'});
+assert(~ismember('trace',obj.completedStages));
+names={'model.mat','bounds.csv','footprint_previous.png','footprint_previous.fig'};
+for j=1:numel(names)
+    fid=fopen(fullfile(folder,names{j}),'w'); fprintf(fid,'preserve this existing output'); fclose(fid);
+end
+for mode={'web','fig'}
+    bad=obj; bad.opts.outputs.csv=true;
+    if strcmp(mode{1},'web')
+        bad.opts.outputs.web=true;
+    else
+        bad.opts.outputs.png=true; bad.opts.outputs.fig=true;
+    end
+    before=rng;
+    expectError(@() bad.build('stages',{'trace'}),'ISA:compat:unsupportedFeature');
+    assert(isequal(rng,before));
+    % Even a non-final stage must reject these unsupported output options.
+    expectError(@() bad.build('stages',{'prelim'}),'ISA:compat:unsupportedFeature');
+    if strcmp(mode{1},'fig')
+        container=bad.model; container.opts=bad.opts;
+        expectError(@() scriptpng(container,[folder filesep]),'ISA:compat:unsupportedFeature');
+    end
+    for j=1:numel(names)
+        assert(strcmp(fileread(fullfile(folder,names{j})),'preserve this existing output'));
+    end
+end
+% Supported output settings still allow the final stage to complete and save.
+obj=obj.build('stages',{'trace'});
+assert(ismember('trace',obj.completedStages));
+assert(isfield(isacompat.loadModel(fullfile(folder,'model.mat')),'trace'));
+fprintf('[PORTABLE] PASS: staged output rejection preserves existing files.\n');
 end

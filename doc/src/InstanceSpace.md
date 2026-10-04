@@ -195,7 +195,7 @@ Octave supports serial build/save/load/explore with the validated KNN/TRACE3 bac
 
 ### v0.9.2 — Stage validation and Octave workflows
 
-Added serial Octave build/save/load/explore with explicit property validation and runtime-specific model archives.
+Added serial Octave build/save/load/explore with explicit property validation and runtime-specific model archives. Unsupported output options are rejected before work begins, including in staged builds.
 
 Each completed stage stores the options used to fit it. A partial rebuild rejects changed options for retained stages. Rebuild the affected stage and its dependents first. Partial builds can be saved, loaded, and resumed. Changing `general.seed` requires rebuilding preprocessing. Stage seeds and verbosity are copied from general defaults at construction and remain explicit stage options afterwards.
 

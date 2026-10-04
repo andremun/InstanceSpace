@@ -60,7 +60,7 @@ Octave exports PNG through print and uses viridis. Qt is selected when available
 
 ### v0.9.2 — Plot export updates and Octave support
 
-Added Octave PNG export through Qt, with viridis colours and MATLAB-only FIG output.
+Added Octave PNG export through Qt, with viridis colours and MATLAB-only FIG output. Direct Octave calls requesting 3D FIG output fail before removing existing output files.
 
 Each plot export removes prior toolkit-owned plot filenames before drawing the current run. This clears plots for removed algorithms and features, absent sources or bounds, and old 3D FIG files. Keep user-authored files outside the toolkit's `distribution_*`, `binary_*`, and `footprint_*` output names.
 

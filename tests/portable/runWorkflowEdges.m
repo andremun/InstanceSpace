@@ -78,5 +78,43 @@ end
 obj=obj.build('stages',{'trace'});
 assert(ismember('trace',obj.completedStages));
 assert(isfield(isacompat.loadModel(fullfile(folder,'model.mat')),'trace'));
+checkExploreOutputRejection(obj,folder,names);
 fprintf('[PORTABLE] PASS: staged output rejection preserves existing files.\n');
+end
+
+function checkExploreOutputRejection(obj,folder,names)
+copyfile(fullfile(folder,'metadata.csv'),fullfile(folder,'metadata_test.csv'));
+for mode={'web','fig'}
+    saved=obj.model; saved.opts.outputs.csv=true;
+    if strcmp(mode{1},'web')
+        saved.opts.outputs.web=true;
+    else
+        saved.opts.outputs.png=true; saved.opts.outputs.fig=true;
+    end
+    % Exercise options retained by an archive, not merely current obj.opts.
+    isacompat.saveModel(fullfile(folder,'model.mat'),saved);
+    loaded=InstanceSpace.load(folder);
+    loaded.opts.outputs.web=false; loaded.opts.outputs.fig=false;
+    for j=2:numel(names)
+        fid=fopen(fullfile(folder,names{j}),'w'); fprintf(fid,'preserve this existing output'); fclose(fid);
+    end
+    before=rng;
+    expectError(@() loaded.explore(folder,'onStage',@unexpectedStage), ...
+        'ISA:compat:unsupportedFeature');
+    assert(isequal(rng,before));
+    assert(isempty(loaded.testDirs) && isempty(loaded.testResults));
+    for j=2:numel(names)
+        assert(strcmp(fileread(fullfile(folder,names{j})),'preserve this existing output'));
+    end
+end
+% Training-only options must not stop evaluation of an already trained model.
+obj.model.opts.pythia.skip=false;
+obj.model.opts.pythia.tuning='bayes';
+obj.opts.outputs.web=true; % Explore uses frozen model options, not this edit.
+obj=obj.explore(folder);
+assert(numel(obj.testResults)==1 && numel(obj.testDirs)==1);
+fprintf('[PORTABLE] PASS: explore checks frozen outputs before evaluation or mutation.\n');
+end
+function unexpectedStage(varargin)
+error('ISA:portable:unexpectedStage','Explore evaluated a stage before rejecting output options.');
 end

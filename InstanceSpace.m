@@ -339,6 +339,7 @@ classdef InstanceSpace
                     ['No fully trained model to explore -- call build() with every stage ' ...
                      '(or load a fully-built model) first.']);
             end
+            isacompat.requireOutputSupport(obj.model.opts);
             datafile = [testRootDir 'metadata_test.csv'];
             if ~isfile(datafile)
                 error('ISA:InstanceSpace:missingTestData', ...

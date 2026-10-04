@@ -16,18 +16,13 @@
 %   Algorithm Testing. ACM Computing Surveys, 55(12), Article 255.
 %   https://doi.org/10.1145/3572895
 % -------------------------------------------------------------------------
-function requirePipelineSupport(opts,stages)
+function requireOutputSupport(opts)
+% Validate frozen output options before either build or explore does work.
 if ~isacompat.isOctave(), return; end
-if compare_versions(version,'11.1.0','<')
-    error('ISA:compat:runtimeVersion','The serial pipeline requires Octave >=11.1 and the tested packages.');
+if opts.outputs.png && opts.pilot.dims==3 && opts.outputs.fig
+    error('ISA:compat:unsupportedFeature','Set outputs.fig=false for Octave PNG output.');
 end
-if isempty(which('readtable')) || isempty(which('fitcknn'))
-    error('ISA:compat:missingPackages','Load Datatypes 1.5.0 and Statistics 2.0.0 before building.');
+if opts.outputs.web
+    error('ISA:compat:unsupportedFeature','Web palette export is MATLAB-only; Octave supports CSV and PNG.');
 end
-if opts.general.parallel, isacompat.requireFeature('parallel'); end
-if any(strcmp(stages,'pythia')), isacompat.requirePythiaSupport(opts.pythia); end
-if any(strcmp(stages,'trace')) && strcmpi(opts.trace.method,'legacy')
-    error('ISA:compat:unsupportedFeature','Octave supports trace.method=trace3. Legacy polygon operations are MATLAB-only.');
-end
-isacompat.requireOutputSupport(opts);
 end

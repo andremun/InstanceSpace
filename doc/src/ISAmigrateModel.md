@@ -76,9 +76,15 @@ File form only.
 
 A `model.pilot.A` without `B` and `C` cannot be repaired and raises a warning.
 
+## GNU Octave
+
+File-based migration recognizes versioned Octave archives and preserves their explicit reconstruction format. MATLAB legacy migration retains its existing file format.
+
 ## Version History
 
-### Unreleased — PLS boundary alignment
+### v0.9.2 — PLS boundary alignment and Octave archives
+
+File-based migration now reads and preserves versioned Octave model archives.
 
 Recovering a missing PLS feature mean also translates any saved CLOISTER vertices into the fitted PLS coordinate system. Empty or absent boundaries are retained. Repeated migration leaves already centred geometry unchanged. Models without the training features needed to recover the mean must be rebuilt.
 

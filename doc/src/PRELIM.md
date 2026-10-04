@@ -174,7 +174,23 @@ Training mode only. `minY` is one shift for the whole matrix; the others are per
 
 In evaluation mode, PRELIM warns (`ISA:InstanceSpace:outOfDistribution`) when more than 5% of the new instances fall outside the training bounds.
 
+## GNU Octave
+
+Octave supports fitting and applying Box–Cox normalization, bounds and performance labels. The namespaced adapter uses maximum likelihood and a stable near-zero transform; constant positive columns use lambda 1. MATLAB retains native Box–Cox fitting.
+
 ## Version History
+
+### v0.9.2 — Performance labels and Octave normalization
+
+Added Octave Box–Cox fitting and application of frozen normalization parameters.
+
+Constant columns use a unit divisor for Z-score normalisation. Evaluation applies the same policy to zero scales saved by older models.
+
+Relative performance retains the original expressions: `Y/Ybest - 1` for minimisation and `1 - Y/Ybest` for maximisation, applied per instance. An algorithm is good when this value is at most `epsilon`. For positive scores these are equivalent to `Y <= (1+epsilon)*Ybest` and `Y >= (1-epsilon)*Ybest`, respectively. The code retains the ratio expressions to preserve floating-point behavior at the threshold.
+
+For relative calculations only, exact zeros in the numerator and denominator are replaced by machine epsilon, as in the original method. Positive values, including values smaller than machine epsilon, are not clipped. Both transformed performance and binary labels use the same calculation, so all-zero ties are good in either direction. `Ybest` retains the raw best performance. A warning is issued when more than 5% of best scores are zero. This numerical convention is not a meaningful percentage of zero and is sensitive to measurement units; use an absolute threshold when zero-reference comparisons matter. Negative raw scores are rejected rather than assigned a new relative-performance definition.
+
+Evaluation rows with no observed algorithm outcomes have `P=0` and `Ybest=NaN`. They are excluded from Oracle probability estimates.
 
 ### v0.9.1 — Evaluation mode
 
@@ -187,16 +203,6 @@ The fourth argument, `trainedPrelim`, applies a trained preprocessing to new dat
 ## References
 
 - Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
-
-### Unreleased review fixes
-
-Constant columns use a unit divisor for Z-score normalisation. Evaluation applies the same policy to zero scales saved by older models.
-
-Relative performance retains the original expressions: `Y/Ybest - 1` for minimisation and `1 - Y/Ybest` for maximisation, applied per instance. An algorithm is good when this value is at most `epsilon`. For positive scores these are equivalent to `Y <= (1+epsilon)*Ybest` and `Y >= (1-epsilon)*Ybest`, respectively. The code retains the ratio expressions to preserve floating-point behavior at the threshold.
-
-For relative calculations only, exact zeros in the numerator and denominator are replaced by machine epsilon, as in the original method. Positive values, including values smaller than machine epsilon, are not clipped. Both transformed performance and binary labels use the same calculation, so all-zero ties are good in either direction. `Ybest` retains the raw best performance. A warning is issued when more than 5% of best scores are zero. This numerical convention is not a meaningful percentage of zero and is sensitive to measurement units; use an absolute threshold when zero-reference comparisons matter. Negative raw scores are rejected rather than assigned a new relative-performance definition.
-
-Evaluation rows with no observed algorithm outcomes have `P=0` and `Ybest=NaN`. They are excluded from Oracle probability estimates.
 
 ## See Also
 

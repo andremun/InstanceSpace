@@ -189,27 +189,33 @@ min  ||X - Z*B'||^2 + alpha*||Y - Z*C||^2    subject to  Z = X*A'
 
 where `X` and `Y` are the preprocessed feature and performance matrices. The analytic solution takes the leading `dims` eigenvectors of `[X Y]'*[X Y]`, with the `Y` block weighted by `sqrt(alpha)` (Muñoz et al., 2018). The numerical solution runs BFGS (`fminunc`) from `opts.ntries` random starts and keeps the trial with the highest correlation between the pairwise distances of the instances before and after projection, so the chosen space also preserves the topology of the data.
 
+## GNU Octave
+
+Octave supports serial analytic/numerical standard projection and centered SIMPLS in 2D/3D, including optimized 3D viewpoints. Native MATLAB backends are retained. Optimizer trajectories may differ; parallel execution is rejected under Octave.
+
 ## Version History
 
-### v0.9.0 — 3D projections and PLS
+### v0.9.2 — Projection corrections and Octave support
 
-`opts.dims = 3` produces a 3D instance space (ISA3). `opts.method = 'pls'` adds Partial Least Squares as an alternative projection.
+Added serial Octave analytic, numerical and SIMPLS projections in 2D/3D.
+
+PLS stores `out.Xmean`. Apply its projection as `(X-out.Xmean)*out.A'` for new instances. Standard PILOT projections do not subtract a mean.
+
+Standalone calls fill numerical fallback defaults (`ntries=10`, `seed=42`). Analytic projection solves least squares directly. Pairwise feature distances are computed only when numerical restarts need ranking.
 
 ### v0.9.1 — Seed control
 
 The BFGS starting points use `opts.seed`, so a changed `opts.general.seed` changes the projection and the same seed reproduces it.
+
+### v0.9.0 — 3D projections and PLS
+
+`opts.dims = 3` produces a 3D instance space (ISA3). `opts.method = 'pls'` adds Partial Least Squares as an alternative projection.
 
 ## References
 
 - Muñoz, M.A., Villanova, L., Baatar, D. & Smith-Miles, K. (2018). Instance spaces for machine learning classification. *Machine Learning*, 107(1), 109–147. <https://doi.org/10.1007/s10994-017-5629-5>
 - Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
 - Simpson, C., Muñoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B. (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis. *Machine Learning*, 114, 240. <https://doi.org/10.1007/s10994-025-06871-5>
-
-### Unreleased review fixes
-
-PLS stores `out.Xmean`. Apply its projection as `(X-out.Xmean)*out.A'` for new instances. Standard PILOT projections do not subtract a mean.
-
-Standalone calls fill numerical fallback defaults (`ntries=10`, `seed=42`). Analytic projection solves least squares directly. Pairwise feature distances are computed only when numerical restarts need ranking.
 
 ## See Also
 

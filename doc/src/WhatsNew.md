@@ -6,6 +6,10 @@ The complete list of changes, including every bug fix, is in `RELEASE_NOTES.md` 
 
 ## v0.9.2 (in development)
 
+### New Functionality
+
+- Serial GNU Octave support for 2D/3D build, save/load and exploration, including normalization, feature selection, projection, KNN with none/Sobol tuning, TRACE3 footprints, CSV and PNG. The tested environment is Octave 11.3 with Statistics 2.0.0 and Datatypes 1.5.0. Qt is required for 3D PNG; parallel execution, Bayesian tuning and FIG output remain MATLAB-only.
+
 ### Bug Fixes
 
 - `PYTHIA` evaluation scores each algorithm only on the new instances with observed performance, and reports `NaN` for a trained algorithm that the new data does not cover. Before, such an algorithm was scored against labels that were never measured.

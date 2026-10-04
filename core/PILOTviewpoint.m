@@ -97,6 +97,7 @@ LAMBDA = 0.2; % paper-calibrated orthogonality penalty weight (spec 5.2)
 
 n = size(Z, 2); % projection dimensionality being viewed (3 for 3D PILOT)
 Hd = pdist(Z)';
+if isfield(opts,'parallel') && opts.parallel, isacompat.requireFeature('parallel'); end
 if exist('gcp','file')==2 && (~isfield(opts,'parallel') || opts.parallel)
     mypool = gcp('nocreate');
     if ~isempty(mypool)
@@ -134,12 +135,7 @@ for g = 1:ngroups
     theta = zeros(2*n+2*n2, ntries);
     perf  = zeros(1, ntries);
     parfor (i=1:ntries, nworkers)
-        thetai = fminunc(errorfcn, X0(:,i), ...
-                          optimoptions('fminunc','Algorithm','quasi-newton',...
-                                                 'Display','off',...
-                                                 'UseParallel',false,...
-                                                 'MaxIterations',30000,...
-                                                 'FunctionTolerance',1e-20));
+        thetai = isacompat.minimize(errorfcn,X0(:,i),true);
         A = reshape(thetai(1:2*n), 2, n);
         A(1,:) = A(1,:) / max(norm(A(1,:)), eps);
         A(2,:) = A(2,:) / max(norm(A(2,:)), eps);

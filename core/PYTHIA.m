@@ -112,6 +112,11 @@ if ~(isnumeric(opts.seed) && isscalar(opts.seed) && isfinite(opts.seed) && ...
     error('ISA:PYTHIA:badSeed', 'opts.seed must be an integer in [0, 2^32-1].');
 end
 opts.tuning = lower(char(opts.tuning));
+if nargin == 7
+    isacompat.requirePythiaSupport(opts, trainedModel);
+else
+    isacompat.requirePythiaSupport(opts);
+end
 % Handle deprecated flags.
 if isfield(opts, 'uselibsvm') && opts.uselibsvm
     warning('ISA:PYTHIA:libsvmDeprecated', ...
@@ -215,6 +220,7 @@ fprintf('[PYTHIA] Training has started. PYTHIA may take a while to complete...\n
 out.classifiers    = cell(1, nalgos);
 out.classifierType = classifierType;
 out.cp             = cell(1, nalgos);
+out.tuningCandidates = cell(1,nalgos);
 out.cvcmat         = zeros(nalgos, 4);
 out.Ysub           = false(ninst, nalgos);
 out.Yhat           = false(ninst, nalgos);
@@ -312,10 +318,9 @@ for i = 1:nalgos
             % 'Scramble' there partial-matches the ScrambleMethod property
             % and assigns it the raw string, which fails validation since
             % ScrambleMethod expects a struct with 'Type'/'Options' fields.
-            ss = sobolset(2, 'Skip', 1);
-            ss = scramble(ss, 'MatousekAffineOwen');
-            X  = net(ss, nIter);
+            X = isacompat.sobolCandidates(nIter);
             [P1, P2] = sobolToParams(classifierType, X);
+            out.tuningCandidates{i} = [P1(:),P2(:)];
 
             [out.Ysub(:,i), out.Pr0sub(:,i), p1_best, p2_best, out.Pr0subIsProbability(:,i)] = ...
                 sobolSearch(classifierType, Znorm, yi, W(:,i), ...
@@ -546,8 +551,8 @@ Psub_all = zeros(ninst, nsobol);
 Csub_all = false(ninst, nsobol);
 
 for fold = 1:cp.NumTestSets
-    itrain = logical(cp.training(fold));
-    itest  = logical(cp.test(fold));
+    itrain = logical(training(cp, fold));
+    itest  = logical(test(cp, fold));
     Ztrain = Z(itrain,:);  Ytrain = logical(Ybin(itrain));  Wtrain = W(itrain);
     Ztest  = Z(itest,:);   ntest  = sum(itest);
 
@@ -694,6 +699,8 @@ end
 % -------------------------------------------------------------------------
 function [Ysub, Psub, isProbability] = crossValPredict(type, Z, Ybin, W, cp, p1, p2, opts, seed)
 % Run k-fold CV with fixed hyperparameters; return fold-level predictions.
+% Function-form mask access works in MATLAB and Octave; dot indexing in
+% Octave can index the no-argument mask result instead of passing the fold.
 if nargin < 9; seed = opts.seed; end
 ninst    = size(Z, 1);
 nworkers = getParallelWorkers(opts);
@@ -702,8 +709,8 @@ Psub = zeros(ninst, 1);
 isProbability = false(ninst,1);
 
 for fold = 1:cp.NumTestSets
-    itrain = logical(cp.training(fold));
-    itest  = logical(cp.test(fold));
+    itrain = logical(training(cp, fold));
+    itest  = logical(test(cp, fold));
     Ztrain = Z(itrain,:);  Ytrain = logical(Ybin(itrain));  Wtrain = W(itrain);
     Ztest  = Z(itest,:);
     [Yfold, Pfold, Cfold] = evalFoldClassifier(type, Ztrain, Ytrain, Wtrain, Ztest, p1, p2, opts, seed);
@@ -932,20 +939,20 @@ if ~isempty(p1label)
 end
 summary(1, 2:end) = colheads';
 % Column vectors (nalgos+2)×1 assembled with ; — required for 2D cell-slice assignment.
-summary(2:end, 2) = num2cell(round([avgperf(:);        nanmean(Ybest);  nanmean(Yfull(:))], 3));
-summary(2:end, 3) = num2cell(round([stdperf(:);        nanstd(Ybest);   nanstd(Yfull(:))],  3));
+summary(2:end, 2) = num2cell(isacompat.roundDecimal([avgperf(:);        nanmean(Ybest);  nanmean(Yfull(:))], 3));
+summary(2:end, 3) = num2cell(isacompat.roundDecimal([stdperf(:);        nanstd(Ybest);   nanstd(Yfull(:))],  3));
 % Oracle row: the fraction of instances on which at least one algorithm
 % is good. Exactly 1 for relative performance (the best algorithm always
 % clears its own threshold), but below 1 when opts.perf.AbsPerf=true and
 % no algorithm meets the absolute threshold on some instances (#59).
-summary(2:end, 4) = num2cell(round([pgoodAlgo';        pgoodOracle; pgood],          3));
-summary(2:end, 5) = num2cell(round([nanmean(Ysvms)';   NaN;             nanmean(Y(:))],     3));
-summary(2:end, 6) = num2cell(round([nanstd(Ysvms)';    NaN;             nanstd(Y(:))],      3));
-summary(2:end, 7) = num2cell(round(100.*[out.accuracy;  NaN;            NaN],               1));
-summary(2:end, 8) = num2cell(round(100.*[out.precision; NaN;            precisionsel],       1));
-summary(2:end, 9) = num2cell(round(100.*[out.recall;    NaN;            recallsel],          1));
+summary(2:end, 4) = num2cell(isacompat.roundDecimal([pgoodAlgo';        pgoodOracle; pgood],          3));
+summary(2:end, 5) = num2cell(isacompat.roundDecimal([nanmean(Ysvms)';   NaN;             nanmean(Y(:))],     3));
+summary(2:end, 6) = num2cell(isacompat.roundDecimal([nanstd(Ysvms)';    NaN;             nanstd(Y(:))],      3));
+summary(2:end, 7) = num2cell(isacompat.roundDecimal(100.*[out.accuracy;  NaN;            NaN],               1));
+summary(2:end, 8) = num2cell(isacompat.roundDecimal(100.*[out.precision; NaN;            precisionsel],       1));
+summary(2:end, 9) = num2cell(isacompat.roundDecimal(100.*[out.recall;    NaN;            recallsel],          1));
 if ~isempty(p1label)
-    summary(2:end-2, 10) = num2cell(round(out.param1(:), 3));
+    summary(2:end-2, 10) = num2cell(isacompat.roundDecimal(out.param1(:), 3));
     if hasP2
         % KNN: param2Label holds the resolved distance name (categorical string).
         % All other classifiers: use the numeric param2 value directly so the
@@ -954,7 +961,7 @@ if ~isempty(p1label)
                 && any(~cellfun(@isempty, out.param2Label))
             summary(2:end-2, 11) = out.param2Label(:);
         else
-            summary(2:end-2, 11) = num2cell(round(out.param2(:), 3));
+            summary(2:end-2, 11) = num2cell(isacompat.roundDecimal(out.param2(:), 3));
         end
     end
 end
@@ -977,6 +984,7 @@ out.scoreTypeCV = out.scoreType;
 out.mu             = zeros(1, nfeats);
 out.sigma          = ones(1, nfeats);
 out.cp             = cell(1, nalgos);
+out.tuningCandidates = cell(1,nalgos);
 out.cvcmat         = zeros(nalgos, 4);
 out.Ysub           = false(ninst, nalgos);
 out.Yhat           = false(ninst, nalgos);

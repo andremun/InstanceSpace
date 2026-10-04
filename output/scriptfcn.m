@@ -86,8 +86,7 @@ function lims = axisLimits(Z)
 % ceil/floor rounding this used to apply to the bounds themselves --
 % swamped that real range entirely, leaving the whole point cloud
 % squeezed into a tiny fraction of a much larger empty axes box.
-ubound = max(Z,[],1,'omitnan');
-lbound = min(Z,[],1,'omitnan');
+[lbound,ubound] = isacompat.columnExtrema(Z);
 bad = isnan(ubound) | isnan(lbound);
 ubound(bad) = 1;
 lbound(bad) = -1;
@@ -228,10 +227,10 @@ for i=nsources:-1:1
              'MarkerFaceColor', clrs(i,:), ...
              'MarkerEdgeColor', 'none', ...
              'MarkerSize', dotDiameter());
-    handle(i) = patch([0 0],[0 0], clrs(i,:), 'EdgeColor','none');
+    handle(i) = legendPatch(clrs(i,:));
 end
 labelAxes(is3D); title('Sources');
-legend(handle, sourcelabels, 'Location', 'NorthEastOutside');
+legend(handle, sourcelabels, 'Location', 'NorthEastOutside','AutoUpdate','off');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 axis square; axis(axisLimits(Z)); grid on;
@@ -275,7 +274,7 @@ for i=0:nalgos
                        'MarkerFaceColor', clr(i+1,:), ...
                        'MarkerEdgeColor', 'none', ...
                        'MarkerSize', dotDiameter());
-    h(i+1) = patch([0 0],[0 0], clr(i+1,:), 'EdgeColor','none');
+    h(i+1) = legendPatch(clr(i+1,:));
     if i==0
         algolbls{i+1} = 'None';
     else
@@ -283,7 +282,7 @@ for i=0:nalgos
     end
 end
 labelAxes(is3D); title(titlelabel);
-legend(h(isworthy), algolbls(isworthy), 'Location', 'NorthEastOutside');
+legend(h(isworthy), algolbls(isworthy), 'Location', 'NorthEastOutside','AutoUpdate','off');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 axis square; axis(axisLimits(Z)); grid on;
@@ -309,7 +308,7 @@ for i=0:nalgos
                        'MarkerFaceColor', clr(i+1,:), ...
                        'MarkerEdgeColor', 'none', ...
                        'MarkerSize', dotDiameter());
-    h(i+1) = patch([0 0],[0 0], clr(i+1,:), 'EdgeColor','none');
+    h(i+1) = legendPatch(clr(i+1,:));
     if i==0
         algolbls{i+1} = 'None';
     else
@@ -318,7 +317,7 @@ for i=0:nalgos
     end
 end
 labelAxes(is3D); title('Portfolio footprints');
-legend(h(isworthy), algolbls(isworthy), 'Location', 'NorthEastOutside');
+legend(h(isworthy), algolbls(isworthy), 'Location', 'NorthEastOutside','AutoUpdate','off');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 axis square; axis(axisLimits(Z)); grid on;
@@ -340,7 +339,7 @@ if any(~Ybin)
                         'MarkerFaceColor', orange, ...
                         'MarkerEdgeColor', 'none', ...
                         'MarkerSize', dotDiameter());
-    h(2) = patch([0 0],[0 0], orange, 'EdgeColor','none');
+    h(2) = legendPatch(orange);
 end
 if any(Ybin)
     plotLine(Z, Ybin, 'LineStyle', 'none', ...
@@ -349,11 +348,11 @@ if any(Ybin)
                        'MarkerFaceColor', blue, ...
                        'MarkerEdgeColor', 'none', ...
                        'MarkerSize', dotDiameter());
-    h(1) = patch([0 0],[0 0], blue, 'EdgeColor','none');
+    h(1) = legendPatch(blue);
     drawFootprint(good, blue, 0.3);
 end
 labelAxes(is3D); title([titlelabel ' Footprints']);
-legend(h(h~=0), lbls(h~=0), 'Location', 'NorthEastOutside');
+legend(h(h~=0), lbls(h~=0), 'Location', 'NorthEastOutside','AutoUpdate','off');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 axis square; axis(axisLimits(Z)); grid on;
@@ -367,7 +366,7 @@ function handle = drawFootprint(footprint, color, alpha)
 % dimension branch is needed here.
 hold on;
 if isempty(footprint) || isempty(footprint.polygon)
-    handle = patch([0 0],[0 0], color, 'EdgeColor','none');
+    handle = legendPatch(color);
     return
 end
 
@@ -384,7 +383,7 @@ blue = [0.0 0.0 1.0];
 lbls = {'GOOD','BAD'};
 h = zeros(1,2);
 if any(~Ybin)
-    h(2) = patch([0 0],[0 0], orange, 'EdgeColor','none');
+    h(2) = legendPatch(orange);
     plotLine(Z, ~Ybin, 'LineStyle', 'none', ...
                         'Marker', 'o', ...
                         'Color', orange, ...
@@ -393,7 +392,7 @@ if any(~Ybin)
                         'MarkerSize', dotDiameter());
 end
 if any(Ybin)
-    h(1) = patch([0 0],[0 0], blue, 'EdgeColor','none');
+    h(1) = legendPatch(blue);
     plotLine(Z, Ybin, 'LineStyle', 'none', ...
                        'Marker', 'o', ...
                        'Color', blue, ...
@@ -402,7 +401,7 @@ if any(Ybin)
                        'MarkerSize', dotDiameter());
 end
 labelAxes(is3D); title(titlelabel);
-legend(h(h~=0), lbls(h~=0), 'Location', 'NorthEastOutside');
+legend(h(h~=0), lbls(h~=0), 'Location', 'NorthEastOutside','AutoUpdate','off');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 axis square; axis(axisLimits(Z)); grid on;
@@ -438,7 +437,7 @@ else
 end
 hold off;
 labelAxes(is3D); title(titlelabel);
-legend('Location', 'NorthEastOutside');
+legend('Location', 'NorthEastOutside','AutoUpdate','off');
 set(findall(gcf,'-property','FontSize'),'FontSize',12);
 set(findall(gcf,'-property','LineWidth'),'LineWidth',1);
 axis square; axis(axisLimits(Z)); grid on;
@@ -447,7 +446,7 @@ end
 % =========================================================================
 function pts = getPolygonPoints(polygon)
 % Extract vertex/point matrix from either a polyshape or alphaShape object.
-if isa(polygon, 'alphaShape')
+if isacompat.isAlphaShape(polygon)
     pts = polygon.Points;
 else
     pts = polygon.Vertices;
@@ -463,7 +462,7 @@ if ~isfield(fp, 'polygon') || isempty(fp.polygon)
     return;
 end
 poly = fp.polygon;
-if isa(poly, 'alphaShape')
+if isacompat.isAlphaShape(poly)
     if size(poly.Points, 2) == 3
         % 3D boundary CSV export not supported; skip silently.
         % Full 3D boundary extraction is deferred to a later phase.
@@ -558,5 +557,13 @@ for startIdx = [bf(1,1); regionVertIdx(:)]'
         verts = [verts; NaN(1, size(bv, 2))]; %#ok<AGROW>
     end
     verts = [verts; bv(order, :)]; %#ok<AGROW>
+end
+end
+
+function h=legendPatch(color)
+if isacompat.isOctave()
+    h=line(NaN,NaN,NaN,'LineStyle','none','Marker','s','Color',color,'MarkerFaceColor',color);
+else
+    h=patch([0 0],[0 0],color,'EdgeColor','none');
 end
 end

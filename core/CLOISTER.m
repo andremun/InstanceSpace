@@ -61,7 +61,7 @@ function out = CLOISTER(X, A, opts, Xmean)
 fprintf('[CLOISTER] CLOISTER is using correlation to estimate a boundary for the space.\n');
 
 nfeats = size(X,2);
-[rho,pval] = corr(X);
+[rho,pval] = isacompat.pearsonColumns(X);
 rho = rho.*(pval<opts.pval);
 
 % omitnan: a feature column can still carry sparse NaNs here (buildIS only
@@ -71,7 +71,8 @@ rho = rho.*(pval<opts.pval);
 % Without omitnan, min/max would return NaN for that column and propagate
 % through Xedge/Zedge into convhull, which errors on NaN input.
 if nargin < 4, Xmean = zeros(1, size(X,2)); end
-Xbnds = [min(X,[],1,'omitnan'); max(X,[],1,'omitnan')];
+[lowerBound, upperBound] = isacompat.columnExtrema(X);
+Xbnds = [lowerBound; upperBound];
 % Guard: if too many features, the bit-matrix enumeration below would
 % produce an intractable matrix. Use convex hull of Z as a safe fallback.
 if ~isfield(opts, 'maxFeatures'), opts.maxFeatures = 20; end

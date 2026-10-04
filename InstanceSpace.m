@@ -35,7 +35,7 @@ classdef InstanceSpace
 %   the model/result at that point; omitting it changes nothing.
 %
 %   Persistence:
-%     obj.save();                    % writes rootdir/model.mat (-v7.3)
+%     obj.save();                    % writes rootdir/model.mat (runtime-specific format)
 %     obj = InstanceSpace.load(rootdir);   % reads it back
 %
 %   buildIS.m and exploreIS.m are thin backward-compatibility wrappers
@@ -61,12 +61,12 @@ classdef InstanceSpace
 % -------------------------------------------------------------------------
 
     properties (Access = public)
-        rootdir         (1,:) char
-        opts            (1,1) struct
-        model           (1,1) struct
-        testDirs        (1,:) cell
-        testResults     (1,:) cell
-        completedStages (1,:) cell
+        rootdir
+        opts
+        model
+        testDirs
+        testResults
+        completedStages
     end
 
     properties (Access = private, Constant)
@@ -115,7 +115,49 @@ classdef InstanceSpace
             'trace',    {{'pilot.Z', 'data.Ybin', 'pythia.Yhat', 'data.P', 'data.beta', 'data.algolabels'}});
     end
 
-    methods (Access = public)
+    methods
+        function obj = set.rootdir(obj,value)
+            if ~isa(value,'char') || ~(ismatrix(value) && size(value,1)==1)
+                error('ISA:InstanceSpace:invalidProperty','rootdir must be a row char.');
+            end
+            obj.rootdir = value;
+        end
+
+        function obj = set.opts(obj,value)
+            if ~isa(value,'struct') || ~(isscalar(value))
+                error('ISA:InstanceSpace:invalidProperty','opts must be a scalar struct.');
+            end
+            obj.opts = value;
+        end
+
+        function obj = set.model(obj,value)
+            if ~isa(value,'struct') || ~(isscalar(value))
+                error('ISA:InstanceSpace:invalidProperty','model must be a scalar struct.');
+            end
+            obj.model = value;
+        end
+
+        function obj = set.testDirs(obj,value)
+            if ~isa(value,'cell') || ~(ismatrix(value) && size(value,1)==1)
+                error('ISA:InstanceSpace:invalidProperty','testDirs must be a row cell.');
+            end
+            obj.testDirs = value;
+        end
+
+        function obj = set.testResults(obj,value)
+            if ~isa(value,'cell') || ~(ismatrix(value) && size(value,1)==1)
+                error('ISA:InstanceSpace:invalidProperty','testResults must be a row cell.');
+            end
+            obj.testResults = value;
+        end
+
+        function obj = set.completedStages(obj,value)
+            if ~isa(value,'cell') || ~(ismatrix(value) && size(value,1)==1)
+                error('ISA:InstanceSpace:invalidProperty','completedStages must be a row cell.');
+            end
+            obj.completedStages = value;
+        end
+
         function obj = InstanceSpace(rootdir, opts, requireData)
             % Reads metadata.csv presence and fills opts defaults; runs
             % no computation (spec §7.2). requireData (default true) is
@@ -175,6 +217,7 @@ classdef InstanceSpace
             onStage = p.Results.onStage;
 
             obj.opts = ISAdefaults(ISAvalidateOpts(obj.opts));
+            isacompat.requirePipelineSupport(obj.opts,toRun);
             retained = obj;
             for j = 1:numel(toRun)
                 retained = retained.invalidateDownstream(toRun{j});
@@ -252,7 +295,7 @@ classdef InstanceSpace
             % unconditionally expect every stage's output.
             if all(ismember(InstanceSpace.StageOrder, obj.completedStages))
                 obj.model.opts = obj.opts;
-                fprintf('[BUILD] Storing the raw MATLAB results for post-processing and/or debugging.\n');
+                fprintf('[BUILD] Storing the model for post-processing and/or debugging.\n');
                 obj.save();
                 if obj.opts.outputs.csv
                     scriptcsv(obj.model, obj.rootdir);
@@ -403,18 +446,19 @@ classdef InstanceSpace
         end
 
         function save(obj)
-            % Writes rootdir/model.mat (-v7.3, HDF5-compatible; spec §7.7).
-            % Uses '-struct' to flatten obj.model's top-level fields (data,
+            % Writes rootdir/model.mat: MATLAB v7.3 or versioned Octave archive.
+            % MATLAB uses '-struct' to flatten obj.model's top-level fields (data,
             % prelim, sifted, pilot, cloist, pythia, trace, featsel, opts)
             % into individual MAT variables, matching the format written by
             % the pre-refactor buildIS.m so existing readers (and
-            % InstanceSpace.load) keep working unchanged.
+            % InstanceSpace.load) keep working unchanged. Octave encodes supported
+            % geometry/classifier objects explicitly through isacompat.saveModel.
             if isempty(fieldnames(obj.model))
                 error('ISA:InstanceSpace:notBuilt', ...
                     'Nothing to save -- call build() first.');
             end
             modelToSave = obj.model; %#ok<NASGU> referenced by name below via -struct
-            save([obj.rootdir 'model.mat'], '-struct', 'modelToSave', '-v7.3');
+            isacompat.saveModel([obj.rootdir 'model.mat'],modelToSave);
         end
     end
 
@@ -436,7 +480,7 @@ classdef InstanceSpace
             % so load() with an output argument reconstructs the struct
             % directly -- this also reads model.mat files written by the
             % pre-refactor buildIS.m.
-            model = load(modelfile);
+            model = isacompat.loadModel(modelfile);
             model = ISAmigrateModel(model);
             model.opts = ISAdefaults(model.opts);
 
@@ -535,8 +579,12 @@ classdef InstanceSpace
             % otherwise so successive staged build() calls in the same
             % session don't pay pool-startup cost repeatedly. Only a pool
             % opened by this call is closed again at the end of build().
-            mypool = gcp('nocreate');
+            mypool = [];
             openedHere = false;
+            if isacompat.isOctave() && obj.opts.general.parallel
+                isacompat.requireFeature('parallel');
+            end
+            if exist('gcp','file')==2, mypool = gcp('nocreate'); end
             if ~obj.opts.general.parallel
                 return;
             end
@@ -591,12 +639,12 @@ classdef InstanceSpace
             bydensity   = obj.opts.selvars.densityflag;
             if fractional
                 fprintf('[BUILD] Creating a small scale experiment for validation. Percentage of subset: %s%%\n', ...
-                    num2str(round(100.*obj.opts.selvars.smallscale, 2)));
+                    num2str(isacompat.roundDecimal(100.*obj.opts.selvars.smallscale, 2)));
                 state = rng;
                 rng(obj.opts.general.seed, 'twister');
                 aux = cvpartition(ninst, 'HoldOut', obj.opts.selvars.smallscale);
                 rng(state);
-                subsetIndex = aux.test;
+                subsetIndex = test(aux);
             elseif fileindexed
                 fprintf('[BUILD] Using a subset of the instances.\n');
                 subsetIndex = false(size(data.X,1), 1);
@@ -615,7 +663,7 @@ classdef InstanceSpace
                     FILTER(data.X, data.Y, data.Ybin, obj.opts.selvars);
                 subsetIndex = ~subsetIndex;
                 fprintf('[BUILD] Percentage of instances retained: %s%%\n', ...
-                    num2str(round(100.*mean(subsetIndex), 2)));
+                    num2str(isacompat.roundDecimal(100.*mean(subsetIndex), 2)));
             else
                 fprintf('[BUILD] Using the complete set of the instances.\n');
                 subsetIndex = true(ninst, 1);
@@ -701,7 +749,7 @@ classdef InstanceSpace
                     subsetIndex = ~subsetIndex;
                     obj.model.data = ISAsubsetData(obj.model.data_dense, subsetIndex, obj.model.featsel.idx);
                     fprintf('[SIFTED] Percentage of instances retained: %s%%\n', ...
-                        num2str(round(100.*mean(subsetIndex), 2)));
+                        num2str(isacompat.roundDecimal(100.*mean(subsetIndex), 2)));
                 end
             else
                 obj.model.sifted = struct('selvars', 1:nfeats);
@@ -976,22 +1024,24 @@ classdef InstanceSpace
             % training model (no pre-fit lambda/mu/sigma to reuse).
             nfeats = size(X, 2);
             nalgos = size(Y, 2);
-            minX = min(X, [], 1, 'omitnan');
+            minX = isacompat.columnExtrema(X);
             X = bsxfun(@minus, X, minX) + 1;
             for i = 1:nfeats
                 aux = X(:,i);
                 idx = isnan(aux);
-                aux = boxcox(aux(~idx));
+                if all(idx), continue; end
+                aux = isacompat.boxcoxFit(aux(~idx));
                 aux = zscore(aux);
                 X(~idx,i) = aux;
             end
 
-            minY = min(Y(:), [], 'omitnan');
+            minY = isacompat.columnExtrema(Y(:));
             Y = (Y - minY) + eps;
             for i = 1:nalgos
                 aux = Y(:,i);
                 idx = isnan(aux);
-                aux = boxcox(aux(~idx));
+                if all(idx), continue; end
+                aux = isacompat.boxcoxFit(aux(~idx));
                 aux = zscore(aux);
                 Y(~idx,i) = aux;
             end

@@ -52,9 +52,17 @@ scriptpng(obj.model, outdir);
 
 Must exist and end with a file separator.
 
+## GNU Octave
+
+Octave exports PNG through print and uses viridis. Qt is selected when available and is required for 3D export; use a virtual display for headless execution. MATLAB retains exportgraphics and parula. FIG output is MATLAB-only.
+
 ## Version History
 
-### v0.9.2 — 3D boundary figure
+### v0.9.2 — Plot export updates and Octave support
+
+Added Octave PNG export through Qt, with viridis colours and MATLAB-only FIG output.
+
+Each plot export removes prior toolkit-owned plot filenames before drawing the current run. This clears plots for removed algorithms and features, absent sources or bounds, and old 3D FIG files. Keep user-authored files outside the toolkit's `distribution_*`, `binary_*`, and `footprint_*` output names.
 
 `distribution_boundary.png` is also drawn for a 3D space.
 
@@ -65,10 +73,6 @@ Adds `distribution_boundary.png`.
 ### v0.9.0 — 3D figures
 
 3D spaces are drawn from their optimised viewpoints and saved as `.fig` files too.
-
-### Unreleased review fixes
-
-Each plot export removes prior toolkit-owned plot filenames before drawing the current run. This clears plots for removed algorithms and features, absent sources or bounds, and old 3D FIG files. Keep user-authored files outside the toolkit's `distribution_*`, `binary_*`, and `footprint_*` output names.
 
 ## See Also
 

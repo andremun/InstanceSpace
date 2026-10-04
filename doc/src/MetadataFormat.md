@@ -50,15 +50,15 @@ The features determine what the instance space can reveal. Good features:
 
 Start with more candidate features than you need; `SIFTED` removes the ones that do not explain performance. See Smith-Miles & Muñoz (2023) for guidance on feature design.
 
+## Version History
+
+### v0.9.2 — Training feature schema
+
+Training stores the feature columns removed by `nanThreshold`. Exploration removes those same columns before checking the required feature schema, even when their test values are complete.
+
 ## References
 
 - Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
-
-## Version History
-
-### Unreleased review fixes
-
-Training stores the feature columns removed by `nanThreshold`. Exploration removes those same columns before checking the required feature schema, even when their test values are complete.
 
 ## See Also
 

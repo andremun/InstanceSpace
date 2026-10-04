@@ -186,11 +186,7 @@ if isEvalMode
             lambda = trainedPrelim.lambdaX(i);
             x = X(:,i);
             idx = ~isnan(x);
-            if abs(lambda) < 1e-10
-                x(idx) = log(x(idx));
-            else
-                x(idx) = (x(idx).^lambda - 1) ./ lambda;
-            end
+            x(idx) = isacompat.boxcoxApply(x(idx),lambda);
             X(:,i) = x;
         end
         scaleX = trainedPrelim.sigmaX;
@@ -208,11 +204,7 @@ if isEvalMode
             lambda = trainedPrelim.lambdaY(i);
             y = Y(:,i);
             idx = ~isnan(y);
-            if abs(lambda) < 1e-10
-                y(idx) = log(y(idx));
-            else
-                y(idx) = (y(idx).^lambda - 1) ./ lambda;
-            end
+            y(idx) = isacompat.boxcoxApply(y(idx),lambda);
             Y(:,i) = y;
         end
         Y(:,1:modelalgos) = bsxfun(@rdivide, bsxfun(@minus, Y(:,1:modelalgos), ...
@@ -223,8 +215,7 @@ if isEvalMode
             'Feature matrix X is complex after normalisation. Check test data range vs training data.');
     end
 else
-    out.medval  = nanmedian(X, 1);
-    out.iqrange = iqr(X, 1);
+    [out.medval, out.iqrange] = isacompat.columnQuartiles(X);
     out.hibound = out.medval + opts.iqrMultiplier.*out.iqrange;
     out.lobound = out.medval - opts.iqrMultiplier.*out.iqrange;
     if opts.auto && opts.bound
@@ -237,11 +228,11 @@ else
 
     nfeats = size(X, 2);
     nalgos = size(Y, 2);
-    out.minX    = min(X, [], 1, 'omitnan');
+    out.minX    = isacompat.columnExtrema(X);
     out.lambdaX = zeros(1, nfeats);
     out.muX     = zeros(1, nfeats);
     out.sigmaX  = zeros(1, nfeats);
-    out.minY    = nanmin(Y(:));
+    out.minY    = isacompat.columnExtrema(Y(:));
     out.lambdaY = zeros(1, nalgos);
     out.muY     = zeros(1, nalgos);
     out.sigmaY  = zeros(1, nalgos);
@@ -251,7 +242,7 @@ else
         for i = 1:nfeats
             aux = X(:, i);
             idx = isnan(aux);
-            [aux, out.lambdaX(i)] = boxcox(aux(~idx));
+            [aux, out.lambdaX(i)] = isacompat.boxcoxFit(aux(~idx));
             [aux, out.muX(i), out.sigmaX(i)] = zscore(aux);
             if out.sigmaX(i) == 0, out.sigmaX(i) = 1; end
             X(~idx, i) = aux;
@@ -261,7 +252,7 @@ else
         for i = 1:nalgos
             aux = Y(:, i);
             idx = isnan(aux);
-            [aux, out.lambdaY(i)] = boxcox(aux(~idx));
+            [aux, out.lambdaY(i)] = isacompat.boxcoxFit(aux(~idx));
             [aux, out.muY(i), out.sigmaY(i)] = zscore(aux);
             if out.sigmaY(i) == 0, out.sigmaY(i) = 1; end
             Y(~idx, i) = aux;

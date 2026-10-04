@@ -198,21 +198,15 @@ Index of the selected algorithm per instance. `selection0` is 0 where no algorit
 
 Cell array with one row per algorithm plus rows for the *Oracle* (always the best algorithm) and the *Selector*. Columns: mean and standard deviation of performance on all instances, probability of good performance (over the instances with observed performance), mean and standard deviation on the instances where the algorithm is selected, CV accuracy, precision and recall during training, test metrics during exploration, and (training mode) the hyperparameters. Cells with no data, such as the accuracy of an algorithm without a classifier, are empty (`[]`). Written to `classifier_table.csv` by `scriptcsv`.
 
+## GNU Octave
+
+The validated Octave classifier is KNN with none or Sobol tuning, weighted/unweighted fitting, CV, probabilities and held-out evaluation. Other classifiers and Bayesian tuning fail explicitly. The tested environment is Octave 11.3, Statistics 2.0.0 and Datatypes 1.5.0. Actual Sobol candidate matrices are stored in tuningCandidates; equal seeds do not imply the same MATLAB scramble. Versioned model archives preserve native KNN models through the package serialization API.
+
 ## Version History
 
-### v0.9.2 — Evaluation, Oracle, and SVM reproducibility fixes
+### v0.9.2 — Evaluation corrections and Octave KNN
 
-Evaluation mode scores only the instances with observed performance for each algorithm, and reports `NaN` for a trained algorithm that the new data does not cover. The Oracle's probability of good performance is the fraction of instances on which any algorithm is good, instead of a fixed 1. With `opts.classifier = 'svm'`, the posterior probabilities (`Pr0hat`/`Pr0sub`) are now reproducible for a fixed `opts.seed` — the classifier is reseeded immediately before fitting its sigmoid calibration, rather than inheriting whatever random state `fitcsvm`'s solver left behind. This changes `Pr0hat`/`Pr0sub` for existing SVM runs, but not the thresholded predictions (`Yhat`/`Ysub`).
-
-### v0.9.0 — Classifier registry
-
-`opts.classifier` selects any registered classifier, with Sobol or Bayesian tuning. Replaces the LIBSVM-based SVM and `PYTHIA2`.
-
-## References
-
-- Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
-
-### Unreleased review fixes
+Added Octave KNN with none/Sobol tuning, stored candidate matrices and classifier archive support.
 
 Evaluation uses the saved training fallback algorithm and precision weights. Legacy models without these fields use the first trained algorithm as fallback and equal voting weights. Test outcomes never determine recommendations.
 
@@ -223,6 +217,16 @@ Selector recall is the fraction of instances with an observed good algorithm on 
 Cost-sensitive weights are `abs(Y-Ybest)` per instance. Zero regrets use the smallest positive regret in the training matrix to keep every observed example trainable. If all regrets are zero, weights are uniform.
 
 `scoreType` describes each `Pr0hat` column and `scoreTypeCV` describes `Pr0sub`. Values are `probability`, `decision-score`, `class-score`, or `unavailable` (`unknown` for old classifiers without metadata). Scores are mapped through classifier class names. SVM folds and the final model retain posterior calibration. A failed calibration is labelled as decision scores. `Pr0subIsProbability` identifies calibrated or probabilistic CV scores per prediction, and `scoreTypeCV` is `mixed` when folds use different score types. Failed CV candidates cannot produce a successful model: all failed candidates or an invalid selected CV result raise an error. A single-class training fold predicts its observed class.
+
+Evaluation mode scores only the instances with observed performance for each algorithm, and reports `NaN` for a trained algorithm that the new data does not cover. The Oracle's probability of good performance is the fraction of instances on which any algorithm is good, instead of a fixed 1. With `opts.classifier = 'svm'`, the posterior probabilities (`Pr0hat`/`Pr0sub`) are now reproducible for a fixed `opts.seed` — the classifier is reseeded immediately before fitting its sigmoid calibration, rather than inheriting whatever random state `fitcsvm`'s solver left behind. This changes `Pr0hat`/`Pr0sub` for existing SVM runs, but not the thresholded predictions (`Yhat`/`Ysub`).
+
+### v0.9.0 — Classifier registry
+
+`opts.classifier` selects any registered classifier, with Sobol or Bayesian tuning. Replaces the LIBSVM-based SVM and `PYTHIA2`.
+
+## References
+
+- Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
 
 ## See Also
 

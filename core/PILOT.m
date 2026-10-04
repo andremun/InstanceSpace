@@ -88,7 +88,7 @@ if ~isfield(opts, 'alpha'),  opts.alpha  = 1.0;        end % performance-reconst
 if ~isfield(opts, 'method'), opts.method = 'standard'; end % 'standard' (BFGS/analytic) or 'pls' (spec 5.3)
 if ~any(strcmpi(opts.method, {'standard','pls'}))
     error('ISA:PILOT:invalidMethod', ...
-        'opts.method must be ''standard'' or ''pls'' (got ''%s'').', char(string(opts.method)));
+        'opts.method must be ''standard'' or ''pls''.');
 end
 if ~(isnumeric(opts.dims) && isscalar(opts.dims) && ismember(opts.dims, [2 3]))
     error('ISA:PILOT:invalidDims', ...
@@ -107,6 +107,10 @@ costWeight = opts.alpha;
 if any(~isfinite(X(:))) || any(~isfinite(Y(:)))
     error('ISA:PILOT:incompleteData', ...
         'PILOT requires finite features and training outcomes. Resolve missing values before projection.');
+end
+
+if isfield(opts, 'parallel') && opts.parallel
+    isacompat.requireFeature('parallel');
 end
 
 n = size(X, 2); % Number of features
@@ -156,7 +160,7 @@ if strcmpi(opts.method, 'pls')
     Xmean = mean(X, 1);
     out.Xmean = Xmean;
     Ymean = mean(Y, 1);
-    [XL, YL, XS, ~, ~, ~, ~, stats] = plsregress(X, Y, d);
+    [XL, YL, XS, ~, ~, ~, ~, stats] = isacompat.pls(X, Y, d);
     out.A = stats.W';  % Z = (X - out.Xmean)*A'
     out.B = XL;          % Br = P (n x d)
     out.C = YL';          % Cr = Q' (d x q)
@@ -228,11 +232,8 @@ else
             fprintf('[PILOT] This may take a while. Trials will not be run sequentially.\n');
         end
         parfor (i=1:opts.ntries,nworkers)
-            [alphaCol,eoptim(i)] = fminunc(errorfcn, X0(:,i), ...
-                                             optimoptions('fminunc','Algorithm','quasi-newton',...
-                                                                    'Display','off',...
-                                                                    'UseParallel',false),...
-                                             Xbar, n, m);
+            objective = @(theta) errorfcn(theta,Xbar,n,m);
+            [alphaCol,eoptim(i)] = isacompat.minimize(objective,X0(:,i));
             % alpha(:,i) is a parfor sliced-output variable: it must only
             % ever be written (never read back) with a consistent (:,i)
             % pattern, so A is reshaped from the plain local alphaCol
@@ -266,7 +267,7 @@ end
 out.summary = cell(d+1, n+1);
 out.summary(2:end,1) = arrayfun(@(k) sprintf('Z_{%d}',k), 1:d, 'UniformOutput', false);
 out.summary(1,2:end) = featlabels;
-out.summary(2:end,2:end) = num2cell(round(out.A,4));
+out.summary(2:end,2:end) = num2cell(isacompat.roundDecimal(out.A,4));
 if opts.verbose
     fprintf('[PILOT] PILOT has completed. The projection matrix A is:\n\n');
     disp(out.summary);

@@ -1,0 +1,45 @@
+name: Octave core smoke
+
+on:
+  push: {}
+  pull_request:
+    branches: [master]
+  workflow_dispatch: {}
+
+jobs:
+  analytic-pilot:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install the minimal core-only test runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y octave=6.4.0-2
+      - name: Run portable contracts
+        run: >-
+          octave --no-gui --quiet --eval
+          "assert(strcmp(version, '6.4.0')); addpath('tests/portable'); runPortableSmoke();"
+
+  serial-pipeline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install the pinned full-pipeline runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y flatpak xvfb xauth
+          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user --noninteractive flathub org.octave.Octave
+          flatpak update --user --noninteractive --commit=a37e6c8b9898ad580b4666407cb324fe8cd6e18dd1860fa811028b34575c577f org.octave.Octave
+      - name: Install verified test packages
+        run: >-
+          flatpak run --filesystem="$GITHUB_WORKSPACE" org.octave.Octave --no-gui --quiet --eval
+          "assert(strcmp(version,'11.3.0')); addpath('tests/portable'); setupOctaveValidation(true);"
+      - name: Run serial contracts and complete workflows
+        run: >-
+          xvfb-run -a flatpak run --filesystem="$GITHUB_WORKSPACE" org.octave.Octave --no-gui --quiet --eval
+          "addpath('tests/portable'); setupOctaveValidation(); set(0,'defaultfigurevisible','off');
+          runPortableSmoke(); runLearningSmoke(); runOptimizationSmoke(); runGeometrySmoke(); runWorkflowEdges();
+          runPipelineSmoke(2,true); runPipelineSmoke(3,true);"

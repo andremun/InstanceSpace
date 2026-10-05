@@ -17,6 +17,9 @@
 %   https://doi.org/10.1145/3572895
 % -------------------------------------------------------------------------
 function runOptimizationSmoke()
+root=fileparts(fileparts(fileparts(mfilename('fullpath'))));
+oldPath=path; cleanup=onCleanup(@() path(oldPath)); %#ok<NASGU>
+addpath(fullfile(root,'utils'),fullfile(root,'core'));
 t=(1:30)'; X=[sin(t),cos(t),t/30,sin(t/3)]; Y=X*[1 2;2 -1;3 1;-1 2];
 labels={'a','b','c','d'};
 for dims=[2 3]

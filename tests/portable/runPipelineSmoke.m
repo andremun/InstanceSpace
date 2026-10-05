@@ -39,8 +39,9 @@ for testing=[false true]
     end
     fclose(fid);
 end
+% Keep all fixture features so clustering and default diagnostics are exercised.
 opts=struct('general',struct('verbose',false), ...
-    'sifted',struct('K',4,'Replicates',2,'diagnostics',false), ...
+    'sifted',struct('K',4,'Replicates',2,'rho',0), ...
     'pilot',struct('dims',dims,'analytic',true), ...
     'pythia',struct('classifier','knn','tuning','sobol','nTuningIter',4,'kFold',3), ...
     'outputs',struct('csv',true,'png',withPlots,'fig',false));
@@ -50,6 +51,15 @@ assert(strcmp(obj.model.data.instlabels{1},'instância,1'));
 assert(isfinite(obj.model.trace.space.measure) && obj.model.trace.space.measure>0);
 loaded=InstanceSpace.load(folder);
 assert(isequal(loaded.model.pythia.Yhat,obj.model.pythia.Yhat));
+if isacompat.isOctave()
+    % Leave diagnostics at its default: evalclusters output must be archival data.
+    eva=obj.model.sifted.eva;
+    assert(isstruct(eva) && all(isfield(eva,{'InspectedK','CriterionValues'})));
+    assert(numel(eva.InspectedK)>1 && any(eva.InspectedK==opts.sifted.K));
+    assert(numel(eva.CriterionValues)==numel(eva.InspectedK));
+    assert(any(isfinite(eva.CriterionValues)));
+    assert(isequaln(loaded.model.sifted.eva,eva));
+end
 obj=obj.explore(folder); loaded=loaded.explore(folder);
 a=obj.testResults{end}; b=loaded.testResults{end};
 assert(size(a.data.Y,2)==3 && all(isfinite(a.data.Y(:))));

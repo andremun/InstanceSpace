@@ -20,6 +20,14 @@ classdef OctaveCompatibilityTest < matlab.unittest.TestCase
 % -------------------------------------------------------------------------
 
     methods (Test)
+        function sharedGeometryContracts(~)
+            folder = fullfile(fileparts(mfilename('fullpath')), 'portable');
+            oldPath = path;
+            cleanup = onCleanup(@() path(oldPath)); %#ok<NASGU>
+            addpath(folder);
+            runGeometrySmoke();
+        end
+
         function literalArchiveStructs(~)
             folder = fullfile(fileparts(mfilename('fullpath')), 'portable');
             oldPath = path;

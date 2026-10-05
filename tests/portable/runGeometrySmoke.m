@@ -17,6 +17,11 @@
 %   https://doi.org/10.1145/3572895
 % -------------------------------------------------------------------------
 function runGeometrySmoke()
+root=fileparts(fileparts(fileparts(mfilename('fullpath'))));
+oldPath=path; cleanup=onCleanup(@() path(oldPath)); %#ok<NASGU>
+addpath(fullfile(root,'utils'));
+state=rng; rngCleanup=onCleanup(@() rng(state)); %#ok<NASGU>
+rng(73);
 for dims=[2 3]
     P=dec2bin(0:2^dims-1)-'0'; shape=isacompat.AlphaShape(P);
     assert(abs(area(shape)-1)<1e-12);
@@ -35,5 +40,43 @@ shape=isacompat.AlphaShape([0 0;1 0;1 1;0 1;0 0]); assert(area(shape)==1);
 t=(0:15)'*2*pi/16; P=[cos(t),sin(t);2*cos(t),2*sin(t)];
 shape=isacompat.AlphaShape(P); shape.Alpha=.8;
 assert(area(shape)>0 && ~inShape(shape,[0 0]));
+checkIndexedContainment();
 fprintf('[PORTABLE] PASS: alpha complex area/volume, regions, holes and boundaries.\n');
+end
+
+function checkIndexedContainment()
+for dims=[2 3]
+    shape=isacompat.AlphaShape(rand(80,dims));
+    P=shape.Points; T=shape.Simplices;
+    % Vertices, facet centroids and small perturbations test inclusive boundaries.
+    faces=zeros(size(T,1),dims);
+    for j=1:dims, faces=faces+P(T(:,j),:)/dims; end
+    Q=[rand(300,dims)*1.4-.2;P;faces;faces+1e-11;faces-1e-11;NaN(1,dims)];
+    radii=sort(shape.Radii);
+    for fraction=[.2 .6 1]
+        shape.Alpha=radii(max(1,ceil(fraction*numel(radii))));
+        for threshold=[0 .001 Inf]
+            shape.RegionThreshold=threshold;
+            assert(isequal(inShape(shape,Q),exhaustiveContainment(shape,Q)));
+        end
+    end
+    assert(isempty(inShape(shape,zeros(0,dims))));
+end
+% Representative timing, reported rather than asserted on shared CI hardware.
+shape=isacompat.AlphaShape(rand(500,3)); Q=rand(2000,3);
+tic; expected=exhaustiveContainment(shape,Q); referenceTime=toc;
+tic; actual=inShape(shape,Q); indexedTime=toc;
+assert(isequal(actual,expected));
+fprintf('[PORTABLE] Containment benchmark: exhaustive %.3fs, indexed %.3fs (%d tetrahedra).\n', ...
+    referenceTime,indexedTime,size(shape.Simplices,1));
+end
+function inside=exhaustiveContainment(shape,Q)
+% Independent reference retaining the original exhaustive containment contract.
+T=shape.active(); P=shape.Points; inside=false(size(Q,1),1); tol=1e-10;
+for k=1:size(T,1)
+    V=P(T(k,:),:); ids=find(~inside & all(Q>=min(V)-tol & Q<=max(V)+tol,2));
+    if isempty(ids), continue; end
+    B=(Q(ids,:)-V(1,:))/(V(2:end,:)-V(1,:));
+    inside(ids)=all(B>=-tol,2) & sum(B,2)<=1+tol;
+end
 end

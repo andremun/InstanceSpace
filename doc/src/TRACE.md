@@ -160,7 +160,7 @@ Octave supports TRACE3 through a toolkit-owned regularized Delaunay alpha comple
 
 ### v0.9.2 — Footprint evaluation and Octave support
 
-Added Octave TRACE3 footprints using regularized Delaunay alpha complexes in 2D/3D.
+Added Octave TRACE3 footprints using regularized Delaunay alpha complexes in 2D/3D. Containment reuses a spatial index over simplex bounds across alpha candidates; queries visit overlapping bounds while preserving inclusive boundaries and region filtering.
 
 Evaluation reuses the trained space geometry. Single-instance, duplicate, and lower-dimensional test batches do not require a test convex hull.
 

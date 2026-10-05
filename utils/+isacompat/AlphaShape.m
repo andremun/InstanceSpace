@@ -25,6 +25,9 @@ properties (SetAccess=private)
     Radii
     Measures
 end
+properties (Access=private)
+    SpatialIndex=[]
+end
 properties
     Alpha=Inf
     RegionThreshold=0
@@ -45,6 +48,12 @@ methods
         end
         keep=m>0 & isfinite(r); obj.Simplices=T(keep,:);
         obj.Radii=r(keep); obj.Measures=m(keep);
+        lower=Inf(size(obj.Simplices,1),d); upper=-lower;
+        for j=1:d+1
+            vertices=P(obj.Simplices(:,j),:);
+            lower=min(lower,vertices); upper=max(upper,vertices);
+        end
+        obj.SpatialIndex=buildIndex(lower,upper,(1:size(lower,1))');
         nearest=Inf(size(P,1),1);
         for k=1:numel(obj.Radii)
             ids=obj.Simplices(k,:); nearest(ids)=min(nearest(ids),obj.Radii(k));
@@ -52,7 +61,7 @@ methods
         obj.Alpha=max(nearest);
     end
     function a=alphaSpectrum(obj), a=sort(unique(obj.Radii),'descend'); end
-    function [T,regions,measure]=active(obj)
+    function [T,regions,measure,ids]=active(obj)
         ids=find(obj.Radii<=obj.Alpha*(1+64*eps)); T=obj.Simplices(ids,:);
         measure=obj.Measures(ids); n=size(T,1); regions=zeros(n,1);
         if n==0, return; end
@@ -74,7 +83,7 @@ methods
         totals=accumarray(regions,measure); [~,ord]=sort(totals,'descend');
         mapping=zeros(count,1); valid=ord(totals(ord)>=obj.RegionThreshold);
         mapping(valid)=1:numel(valid); regions=mapping(regions);
-        keep=regions>0; T=T(keep,:); regions=regions(keep); measure=measure(keep);
+        keep=regions>0; T=T(keep,:); regions=regions(keep); measure=measure(keep); ids=ids(keep);
     end
     function n=numRegions(obj), [~,r]=obj.active(); n=max([0;r]); end
     function a=area(obj), [~,~,m]=obj.active(); a=sum(m); end
@@ -88,17 +97,45 @@ methods
         [U,~,g]=unique(F,'rows'); counts=accumarray(g,1); F=U(counts==1,:);
     end
     function inside=inShape(obj,Q)
-        T=obj.active(); P=obj.Points; inside=false(size(Q,1),1); tol=1e-10;
-        for k=1:size(T,1)
-            V=P(T(k,:),:); ids=find(~inside & all(Q>=min(V)-tol & Q<=max(V)+tol,2));
-            if isempty(ids), continue; end
-            B=(Q(ids,:)-V(1,:))/(V(2:end,:)-V(1,:));
-            inside(ids)=all(B>=-tol,2) & sum(B,2)<=1+tol;
-        end
+        [~,~,~,activeIds]=obj.active(); inside=false(size(Q,1),1);
+        if isempty(activeIds) || isempty(Q), return; end
+        enabled=false(size(obj.Simplices,1),1); enabled(activeIds)=true;
+        inside=queryIndex(obj.SpatialIndex,obj.Points,obj.Simplices,enabled,Q, ...
+            (1:size(Q,1))',inside,1e-10);
     end
     function h=plot(obj,varargin)
         if size(obj.Points,2)==2, F=obj.active(); else, F=boundaryFacets(obj); end
         h=patch('Faces',F,'Vertices',obj.Points,varargin{:});
+    end
+end
+end
+
+function node=buildIndex(lower,upper,ids)
+% A reusable bounding-volume hierarchy over the immutable Delaunay complex.
+node=struct('lower',min(lower(ids,:),[],1),'upper',max(upper(ids,:),[],1), ...
+    'ids',[],'left',[],'right',[]);
+if numel(ids)<=16
+    node.ids=ids; return;
+end
+centers=lower(ids,:)/2+upper(ids,:)/2;
+[~,axis]=max(max(centers,[],1)-min(centers,[],1));
+[~,order]=sort(centers(:,axis)); middle=floor(numel(ids)/2);
+node.left=buildIndex(lower,upper,ids(order(1:middle)));
+node.right=buildIndex(lower,upper,ids(order(middle+1:end)));
+end
+function inside=queryIndex(node,P,T,enabled,Q,ids,inside,tol)
+ids=ids(~inside(ids) & all(Q(ids,:)>=node.lower-tol & Q(ids,:)<=node.upper+tol,2));
+if isempty(ids), return; end
+if isempty(node.ids)
+    inside=queryIndex(node.left,P,T,enabled,Q,ids,inside,tol);
+    inside=queryIndex(node.right,P,T,enabled,Q,ids,inside,tol);
+else
+    for k=node.ids(enabled(node.ids))'
+        V=P(T(k,:),:);
+        candidates=ids(~inside(ids) & all(Q(ids,:)>=min(V)-tol & Q(ids,:)<=max(V)+tol,2));
+        if isempty(candidates), continue; end
+        B=(Q(candidates,:)-V(1,:))/(V(2:end,:)-V(1,:));
+        inside(candidates)=all(B>=-tol,2) & sum(B,2)<=1+tol;
     end
 end
 end

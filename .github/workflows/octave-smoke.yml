@@ -41,5 +41,5 @@ jobs:
         run: >-
           xvfb-run -a flatpak run --filesystem="$GITHUB_WORKSPACE" org.octave.Octave --no-gui --quiet --eval
           "addpath('tests/portable'); setupOctaveValidation(); set(0,'defaultfigurevisible','off');
-          runPortableSmoke(); runLearningSmoke(); runOptimizationSmoke(); runGeometrySmoke(); runWorkflowEdges(); runArchiveSmoke();
+          runPortableSmoke(); runLearningSmoke(); runOptimizationSmoke(); runGeometrySmoke(); runWorkflowEdges(); runArchiveSmoke(); runPropertySmoke();
           runPipelineSmoke(2,true); runPipelineSmoke(3,true);"

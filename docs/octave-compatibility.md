@@ -145,6 +145,8 @@ Octave classifier archive as a MATLAB model.
   evaluation-only algorithms, CSV and PNG signatures. Output lives in ignored test directories.
 - `runArchiveSmoke`: literal marker-like fields, nested/empty struct arrays, real
   object round-trips, schema-1 compatibility and schema-2 re-saving.
+- `runPropertySmoke`: invalid property types/shapes leave state unchanged; valid
+  scalar structs and row cells remain accepted in both runtimes.
 - `runWorkflowEdges`: fractional/density subsets and preservation of the previous
   archive when serialization fails.
 
@@ -156,6 +158,18 @@ The existing MATLAB CI remains the check for supported R2025a. A separate minima
 Octave 6.4 job exercises core-only deterministic contracts; it is not a supported
 full-pipeline runtime. The modern Octave CI job pins the Flatpak application and
 package versions and runs the serial suites and complete PNG workflows.
+
+### Coverage reporting
+
+Codecov receives the MATLAB Cobertura report, not Octave execution data. The
+MATLAB runner includes library package subfolders such as `utils/+isacompat`;
+these were previously omitted by a non-recursive file list. Including them
+increases the measured scope and can lower the percentage even as tests improve.
+Octave-only branches remain uncovered in the MATLAB report despite passing the
+separate Octave workflow. Octave's function profiler is not line coverage, so
+its function calls are not converted into fabricated Cobertura line hits.
+Coverage thresholds are unchanged; runtime test success and measured MATLAB
+line coverage are separate signals.
 
 This is a bounded serial release, not a claim of every MATLAB option or arbitrary
 cross-runtime numerical parity. No historical reference fixtures were replaced.

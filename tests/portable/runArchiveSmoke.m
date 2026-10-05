@@ -52,6 +52,26 @@ roundTrip(filename,struct('isaArchiveType','partition','masks',logical([1 0;0 1]
 roundTrip(filename,struct('isaArchiveType','string','values',{{'plain data'}}));
 roundTrip(filename,struct('isaArchiveType','alpha','points',[0 0;1 0;0 1], ...
     'alpha',1,'threshold',0));
+% Portable object encoding is a shared contract even when MATLAB uses native files.
+partition=isacompat.Partition(logical([1 0;0 1;1 0]));
+restored=isacompat.archiveValue(isacompat.archiveValue(partition,false),true);
+for k=1:2
+    assert(isequal(test(restored,k),test(partition,k)));
+    assert(isequal(training(restored,k),~test(partition,k)));
+end
+geometry=isacompat.AlphaShape([0 0;1 0;0 1]);
+restored=isacompat.archiveValue(isacompat.archiveValue(geometry,false),true);
+assert(area(restored)==.5 && isequal(inShape(restored,[.1 .1;2 2]),[true;false]));
+for value={categorical({'a';'b';'a'}),string({'one','two'})}
+    restored=isacompat.archiveValue(isacompat.archiveValue(value{1},false),true);
+    assert(isequal(cellstr(restored),cellstr(value{1})));
+end
+expectArchiveError(@() isacompat.archiveValue(@sin,false),'ISA:compat:archiveType');
+expectArchiveError(@() isacompat.archiveValue(struct('x',1),true),'ISA:compat:archiveType');
+expectArchiveError(@() isacompat.archiveValue(struct('isaArchiveType','unknown'),true),'ISA:compat:archiveType');
+expectArchiveError(@() isacompat.archiveValue(struct('isaArchiveType','struct','value',42),true),'ISA:compat:archiveType');
+expectArchiveError(@() isacompat.archiveValue(1,false,1),'ISA:compat:archiveVersion');
+expectArchiveError(@() isacompat.archiveValue(1,true,3),'ISA:compat:archiveVersion');
 if isacompat.isOctave()
     X=[0 0;1 0;0 1;2 2;3 2;2 3]; Y=logical([0;0;0;1;1;1]);
     classifier=fitcknn(X,Y,'NumNeighbors',3,'Weights',[1;2;3;4;5;6]);
@@ -127,4 +147,9 @@ assert(isequal(cellstr(original.strings),cellstr(restored.strings)));
 end
 function removeFile(filename)
 if isfile(filename), delete(filename); end
+end
+
+function expectArchiveError(f,id)
+try, f(); catch err, assert(strcmp(err.identifier,id)); return; end
+error('ISA:portable:missingError','Expected %s.',id);
 end

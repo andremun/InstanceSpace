@@ -83,7 +83,8 @@ suite = TestSuite.fromFolder(fullfile(repoRoot, 'tests'), 'IncludingSubfolders',
 runner = TestRunner.withTextOutput();
 
 % Coverage is measured on the toolkit's library code: every file in
-% core/, output/ and utils/, plus the three entry points at the repo root.
+% core/, output/ and utils/ (including package subfolders), plus the three
+% entry points at the repo root. Octave execution is not MATLAB line coverage.
 % The root folder also holds scripts that no test can run -- example.m and
 % liveDemoIS.m (demos; CI runs example.m separately, outside this runner),
 % startup.m, Contents.m, and this runner itself -- so it is listed file by
@@ -91,7 +92,7 @@ runner = TestRunner.withTextOutput();
 coverageReportFile = fullfile(repoRoot, 'coverage.xml');
 libFiles = {};
 for d = {'core', 'output', 'utils'}
-    listing = dir(fullfile(repoRoot, d{1}, '*.m'));
+    listing = dir(fullfile(repoRoot, d{1}, '**', '*.m'));
     libFiles = [libFiles, fullfile({listing.folder}, {listing.name})]; %#ok<AGROW>
 end
 libFiles = [libFiles, fullfile(repoRoot, {'InstanceSpace.m', 'buildIS.m', 'exploreIS.m'})];

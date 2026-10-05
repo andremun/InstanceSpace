@@ -20,6 +20,7 @@ function runOptimizationSmoke()
 root=fileparts(fileparts(fileparts(mfilename('fullpath'))));
 oldPath=path; cleanup=onCleanup(@() path(oldPath)); %#ok<NASGU>
 addpath(fullfile(root,'utils'),fullfile(root,'core'));
+initialRng=rng; rngCleanup=onCleanup(@() rng(initialRng)); %#ok<NASGU>
 t=(1:30)'; X=[sin(t),cos(t),t/30,sin(t/3)]; Y=X*[1 2;2 -1;3 1;-1 2];
 labels={'a','b','c','d'};
 for dims=[2 3]
@@ -32,13 +33,16 @@ for dims=[2 3]
     assert(all(isfinite(out.Z(:))) && isfinite(out.error));
     assert(norm(out.Z-X*out.A','fro')<1e-10);
 end
-if isacompat.isOctave()
-    settings=struct('PopulationSize',50,'MaxGenerations',10,'FitnessLimit',0, ...
+settings=struct('PopulationSize',50,'MaxGenerations',10,'FitnessLimit',0, ...
         'FunctionTolerance',1e-3,'MaxStallGenerations',3);
-    [best,info]=isacompat.integerSearch(@(x)sum((x-[2 3]).^2),[3 4],settings);
-    assert(isequal(best,[2 3]) && info.fitness==0);
-    rng(9); [best,info]=isacompat.integerSearch(@(x)sum((x-1).^2),[10 10],settings);
-    assert(all(best>=1 & best<=10 & best==round(best)) && isfinite(info.fitness));
+[best,info]=isacompat.integerSearch(@(x)sum((x-[2 3]).^2),[3 4],settings);
+assert(isequal(best,[2 3]) && info.fitness==0);
+rng(9); [best,info]=isacompat.integerSearch(@(x)sum((x-1).^2),[10 10],settings);
+assert(all(best>=1 & best<=10 & best==round(best)) && isfinite(info.fitness));
+settings.FitnessLimit=-Inf; settings.MaxStallGenerations=2;
+[~,info]=isacompat.integerSearch(@(x)1,[10 10],settings);
+assert(info.fitness==1 && info.generations==3);
+if isacompat.isOctave()
     rng(9); A=isacompat.sobolCandidates(15); rng(9); B=isacompat.sobolCandidates(15);
     assert(isequal(A,B) && all(A(:)>=0 & A(:)<1));
     assert(size(unique(floor(A*4),'rows'),1)==15);

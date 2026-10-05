@@ -177,7 +177,7 @@ Plots into the current figure. `view` is one of:
 save(obj)
 ```
 
-Writes `obj.model` to `rootdir/model.mat` in MAT-file version 7.3 format, one variable per field.
+Writes `obj.model` to `rootdir/model.mat`. MATLAB uses MAT-file version 7.3, one variable per model field. Octave uses a versioned MAT v7 archive with `archiveVersion` and `payload` envelope variables; its trained classifier archives are runtime-specific.
 
 ### load
 
@@ -195,7 +195,7 @@ Octave supports serial build/save/load/explore with the validated KNN/TRACE3 bac
 
 ### v0.9.2 — Stage validation and Octave workflows
 
-Added serial Octave build/save/load/explore with explicit property validation and runtime-specific model archives. Unsupported output options are rejected before work begins, including in staged builds and explore calls using saved model options. Octave archive schema 2 encloses ordinary structs explicitly so user fields cannot be mistaken for internal type markers; existing schema-1 archives remain readable.
+Added serial Octave build/save/load/explore with explicit property validation and runtime-specific model archives. Unsupported output options are rejected before work begins, including in staged builds and explore calls using saved model options. Octave archive schema 2 encloses ordinary structs explicitly so user fields cannot be mistaken for internal type markers; existing schema-1 archives remain readable. Native flattened models with custom `archiveVersion` fields remain native unless their only top-level variables are the reserved archive envelope pair, `archiveVersion` and `payload`.
 
 Each completed stage stores the options used to fit it. A partial rebuild rejects changed options for retained stages. Rebuild the affected stage and its dependents first. Partial builds can be saved, loaded, and resumed. Changing `general.seed` requires rebuilding preprocessing. Stage seeds and verbosity are copied from general defaults at construction and remain explicit stage options afterwards.
 

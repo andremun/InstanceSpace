@@ -19,6 +19,18 @@
 function runArchiveSmoke()
 % Literal marker-like data must remain data, alongside real archived objects.
 filename=[tempname '.mat']; cleanup=onCleanup(@() removeFile(filename));
+% Native flattened MAT files can legitimately have archive-like custom fields.
+for versionValue={1,999,'custom'}
+    native=struct('archiveVersion',versionValue{1},'data',[1 NaN 3]);
+    save(filename,'-struct','native','-v7');
+    assert(isequaln(isacompat.loadModel(filename),native));
+    native.payload=struct('userData',true);
+    save(filename,'-struct','native','-v7');
+    assert(isequaln(isacompat.loadModel(filename),native));
+end
+native=struct('archiveVersion','ordinary custom field');
+save(filename,'-struct','native','-v7');
+assert(isequaln(isacompat.loadModel(filename),native));
 tags={'knn','alpha','partition','categorical','string','struct','unknown',[],42,{'nested'}};
 for j=1:numel(tags)
     literal=struct(); literal.isaArchiveType=tags{j};
@@ -75,7 +87,20 @@ if isacompat.isOctave()
         assert(strcmp(err.identifier,'ISA:compat:archiveVersion'));
     end
 end
-fprintf('[PORTABLE] PASS: literal struct markers, object archives and schema-1 migration.\n');
+% Exact portable envelopes still require Octave and a supported schema.
+if ~isacompat.isOctave()
+    for archiveVersion=[1 2 3]
+        payload=struct('data',42);
+        save(filename,'archiveVersion','payload','-v7');
+        try
+            isacompat.loadModel(filename);
+            error('ISA:portable:missingError','Expected a runtime/schema error.');
+        catch err
+            assert(strcmp(err.identifier,'ISA:compat:archiveVersion'));
+        end
+    end
+end
+fprintf('[PORTABLE] PASS: native custom fields, literal markers, objects and schema-1 migration.\n');
 end
 function roundTrip(filename,original)
 encoded=isacompat.archiveValue(original,false);

@@ -18,7 +18,9 @@
 % -------------------------------------------------------------------------
 function model=loadModel(filename)
 model=load(filename);
-if isfield(model,'archiveVersion')
+% Native flattened models may contain custom archiveVersion/payload fields.
+% Only the exact two-variable envelope identifies a portable archive.
+if numel(fieldnames(model))==2 && all(isfield(model,{'archiveVersion','payload'}))
     if ~isacompat.isOctave() || ~isnumeric(model.archiveVersion) || ...
             ~isscalar(model.archiveVersion) || ~ismember(model.archiveVersion,[1 2])
         error('ISA:compat:archiveVersion','This portable archive requires the tested Octave environment (schemas 1 and 2).');

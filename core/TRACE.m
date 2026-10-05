@@ -75,6 +75,9 @@ isEvalMode = nargin == 8;
 is3D       = size(Z, 2) == 3;
 nalgos     = size(Ybin, 2);
 useLegacy  = isfield(opts, 'method') && strcmpi(opts.method, 'legacy');
+if useLegacy && isacompat.isOctave()
+    error('ISA:compat:unsupportedFeature','Octave supports TRACE3; legacy TRACE is MATLAB-only.');
+end
 if useLegacy && is3D
     warning('ISA:TRACE:legacyNo3D', ...
         'Legacy TRACE does not support 3D instance spaces; switching to TRACE3.');
@@ -254,7 +257,7 @@ if size(Zu, 1) <= opts.minInstances
 end
 
 % Step 4: build alpha-shape at default (minimum enclosing) alpha
-as = alphaShape(Zu);
+as = isacompat.makeAlphaShape(Zu);
 
 % Step 5: compute initial metrics
 [footprint, valid] = TRACEmetrics3(as, Z, Ybin, is3D);
@@ -365,7 +368,7 @@ if isempty(poly)
     footprint.purity       = 0;
     return;
 end
-if isa(poly, 'alphaShape')
+if isacompat.isAlphaShape(poly)
     inside = inShape(poly, Z);
 elseif isa(poly, 'polyshape')
     inside = isinterior(poly, Z);
@@ -409,7 +412,7 @@ summary(2:end, 1) = algolabels;
 for i = 1:nalgos
     row = [TRACEsummaryRow(good{i}, space.measure, space.density), ...
            TRACEsummaryRow(best{i}, space.measure, space.density)];
-    summary(i+1, 2:end) = num2cell(round(row, 3));
+    summary(i+1, 2:end) = num2cell(isacompat.roundDecimal(row, 3));
 end
 end
 

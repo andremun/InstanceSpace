@@ -177,7 +177,7 @@ Plots into the current figure. `view` is one of:
 save(obj)
 ```
 
-Writes `obj.model` to `rootdir/model.mat` in MAT-file version 7.3 format, one variable per field.
+Writes `obj.model` to `rootdir/model.mat`. MATLAB uses MAT-file version 7.3, one variable per model field. Octave uses a versioned MAT v7 archive with `archiveVersion` and `payload` envelope variables; its trained classifier archives are runtime-specific.
 
 ### load
 
@@ -187,7 +187,21 @@ obj = InstanceSpace.load(rootdir)
 
 Reads `rootdir/model.mat`, migrates a legacy model with `ISAmigrateModel`, fills missing options with `ISAdefaults`, and sets `completedStages` from the stages present. `metadata.csv` is not needed.
 
+## GNU Octave
+
+Octave supports serial build/save/load/explore with the validated KNN/TRACE3 backends. Explicit property setters preserve validation in both engines. Octave uses a versioned MAT v7 archive; native KNN archives are runtime-specific, while MATLAB keeps the existing MAT v7.3 format. CSV and PNG are supported; Qt and a display or virtual display are required for 3D PNG. outputs.fig defaults to false in Octave.
+
 ## Version History
+
+### v0.9.2 — Stage validation and Octave workflows
+
+Added serial Octave build/save/load/explore with explicit property validation and runtime-specific model archives. Unsupported output options are rejected before work begins, including in staged builds and explore calls using saved model options. Octave archive schema 2 encloses ordinary structs explicitly so user fields cannot be mistaken for internal type markers; existing schema-1 archives remain readable. Native flattened models with custom `archiveVersion` fields remain native unless their only top-level variables are the reserved archive envelope pair, `archiveVersion` and `payload`.
+
+Each completed stage stores the options used to fit it. A partial rebuild rejects changed options for retained stages. Rebuild the affected stage and its dependents first. Partial builds can be saved, loaded, and resumed. Changing `general.seed` requires rebuilding preprocessing. Stage seeds and verbosity are copied from general defaults at construction and remain explicit stage options afterwards.
+
+SIFTED reruns start from the saved pre-selection data, including its original row subset. Models saved without this artifact must rebuild preprocessing before rerunning SIFTED.
+
+Build reuses an existing pool without replacing or deleting it. A pool opened by build is closed on success or error. `general.parallel=false` makes core stage execution serial even if a pool exists.
 
 ### v0.9.1 — Stage callbacks and boundary plot
 
@@ -200,14 +214,6 @@ Replaces the `buildIS` and `exploreIS` scripts as the main interface.
 ## References
 
 - Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
-
-### Unreleased review fixes
-
-Each completed stage stores the options used to fit it. A partial rebuild rejects changed options for retained stages. Rebuild the affected stage and its dependents first. Partial builds can be saved, loaded, and resumed. Changing `general.seed` requires rebuilding preprocessing. Stage seeds and verbosity are copied from general defaults at construction and remain explicit stage options afterwards.
-
-SIFTED reruns start from the saved pre-selection data, including its original row subset. Models saved without this artifact must rebuild preprocessing before rerunning SIFTED.
-
-Build reuses an existing pool without replacing or deleting it. A pool opened by build is closed on success or error. `general.parallel=false` makes core stage execution serial even if a pool exists.
 
 ## See Also
 

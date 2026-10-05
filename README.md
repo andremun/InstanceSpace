@@ -47,6 +47,15 @@ The reference documentation is at **<https://andremun.github.io/InstanceSpace/>*
 
 The main requirement for the software to run is to have MATLAB R2025a or later, with the [Global Optimization](https://au.mathworks.com/help/gads/index.html), [Parallel Computing](https://www.mathworks.com/products/parallel-computing.html), [Optimization](https://au.mathworks.com/products/optimization.html), [Statistics and Machine Learning](https://au.mathworks.com/help/stats/index.html), and [Financial](https://au.mathworks.com/products/finance.html) toolboxes installed. The LIBSVM MEX-files (`svmpredict`/`svmtrain`), used for legacy models, are **not bundled with this repository** (no build source is available for them). They're only relevant for evaluating a pre-v0.9.0 model whose classifiers `ISAmigrateModel` couldn't retrain (missing original training data); `ISAmigrateModel` prefers retraining from scratch with the current registry whenever the training data is available, which needs no LIBSVM dependency. If you do hit that path, obtain LIBSVM yourself from [the official project](https://www.csie.ntu.edu.tw/~cjlin/libsvm/) and add its MEX-files to the MATLAB path — `PYTHIA`'s eval mode raises a clear `ISA:PYTHIA:noLibsvm` error naming the missing dependency if you don't.
 
+### GNU Octave serial support
+
+Octave 11.3 with Statistics 2.0.0 and Datatypes 1.5.0 supports the serial
+2D/3D build → save/load → explore workflow: normalization, feature selection,
+analytic/numerical/PLS projection, KNN with none/Sobol tuning, TRACE3 footprints,
+CSV and PNG. Qt is required for 3D PNG. Other classifiers, Bayesian tuning,
+parallel execution and MATLAB-specific files are outside the validated scope.
+See [setup, contracts and validation](docs/octave-compatibility.md).
+
 ## Repository layout
 
 ```

@@ -88,6 +88,7 @@ unnaceptableClustering = 0.50;
 acceptableClustering   = 0.75;
 % -------------------------------------------------------------------------
 
+if isfield(opts,'parallel') && opts.parallel, isacompat.requireFeature('parallel'); end
 mypool = [];
 if exist('gcp','file')==2 && (~isfield(opts,'parallel') || opts.parallel)
     mypool = gcp('nocreate');
@@ -168,15 +169,19 @@ end
 end
 % -------------------------------------------------------------------------
 rng(opts.seed, 'twister');
-out.clust = bsxfun(@eq, kmeans(Xaux', opts.K, 'Distance', 'correlation', ...
-                                              'MaxIter', opts.MaxIter, ...
-                                              'Replicates', opts.Replicates, ...
-                                              'Options', statset('UseParallel', nworkers~=0), ...
-                                              'OnlinePhase', 'on'), 1:opts.K);
+clusterArgs = {'Distance','correlation','MaxIter',opts.MaxIter,'Replicates',opts.Replicates};
+if ~isacompat.isOctave()
+    clusterArgs = [clusterArgs, {'Options',statset('UseParallel',nworkers~=0),'OnlinePhase','on'}];
+end
+out.clust = bsxfun(@eq, kmeans(Xaux',opts.K,clusterArgs{:}),1:opts.K);
+if isacompat.isOctave() && isfield(out,'eva')
+    out.eva = struct('InspectedK',out.eva.InspectedK,'CriterionValues',out.eva.CriterionValues);
+end
 fprintf('[SIFTED] Constructing %d clusters of features.\n', opts.K);
 fprintf('[SIFTED] Using a GA+LookUpTable to find an optimal combination.\n');
 % -------------------------------------------------------------------------
 cvpart  = cvpartition(size(Xaux,1), 'Kfold', Kfolds);
+out.cvpartition = cvpart;
 fcnwrap = @(x) costfcn(x, Xaux, Y, Ybin, out.clust, cvpart, featlabels(out.selvars), opts.dims, opts.seed);
 % GA population fitness evaluations are parallelised at the GA level
 % (UseParallel) rather than inside costfcn: a parfor over the ~10
@@ -186,14 +191,10 @@ fcnwrap = @(x) costfcn(x, Xaux, Y, Ybin, out.clust, cvpart, featlabels(out.selva
 % dwarfs the tiny loop it parallelises. Parallelising GA's own
 % population evaluation instead spreads real, independent work
 % (one full PILOT + KNN fit per individual) across workers.
-gaopts  = optimoptions('ga', ...
-    'FitnessLimit',      FitnessLimit, ...
-    'FunctionTolerance', FunctionTolerance, ...
-    'MaxGenerations',    MaxGenerations, ...
-    'MaxStallGenerations', MaxStallGenerations, ...
-    'PopulationSize',    PopulationSize, ...
-    'UseParallel',       nworkers > 0);
-ind = ga(fcnwrap, opts.K, [], [], [], [], ones(1,opts.K), sum(out.clust), [], 1:opts.K, gaopts);
+searchSettings = struct('FitnessLimit',FitnessLimit,'FunctionTolerance',FunctionTolerance, ...
+    'MaxGenerations',MaxGenerations,'MaxStallGenerations',MaxStallGenerations,'PopulationSize',PopulationSize);
+[ind,out.search] = isacompat.selectInteger(fcnwrap,sum(out.clust),searchSettings,nworkers);
+
 
 decoder = false(1, size(Xaux,2));
 for i = 1:opts.K
@@ -247,7 +248,7 @@ function y = costfcn(ind, X, Y, Ybin, clust, cvpart, featlabels, dims, seed)
         % gaopts definition above.
         for ii = 1:size(Y,2)
             knn = fitcknn(Z, Ybin(:,ii), 'CVPartition', cvpart, 'NumNeighbors', kneighbours);
-            y = max(y, knn.kfoldLoss);
+            y = max(y, kfoldLoss(knn));
         end
         mymap(key) = y;
     end

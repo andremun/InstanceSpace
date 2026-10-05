@@ -108,7 +108,7 @@ if ~isfile(modelfile)
         'No model.mat found in ''%s''.', rootdir);
 end
 
-model = load(modelfile);
+model = isacompat.loadModel(modelfile);
 model = migrateModelStruct(model);
 
 [dir, base, ext] = fileparts(modelfile);
@@ -128,7 +128,8 @@ if isfile(backupfile)
          'existing backup first.'], backupfile);
 end
 copyfile(modelfile, backupfile);
-save(modelfile, '-struct', 'model');
+if isacompat.isOctave(), isacompat.saveModel(modelfile,model);
+else, save(modelfile, '-struct', 'model'); end
 fprintf('ISAmigrateModel: migrated model written to ''%s''; original backed up to ''%s''.\n', ...
     modelfile, backupfile);
 end

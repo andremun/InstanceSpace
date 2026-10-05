@@ -149,7 +149,19 @@ Present only when the silhouette value for `opts.K` is below 0.5.
 - `opts.sifted.flag = false` skips SIFTED in `InstanceSpace` and keeps every feature.
 - SIFTED is the slowest stage. Set `opts.general.parallel = true` to evaluate the genetic algorithm's population in parallel.
 
+## GNU Octave
+
+Octave runs serial correlation clustering and CV/KNN fitness with bounded integer search. Small search spaces are enumerated; larger ones use a serial GA. The backend and fitness are recorded in search, with cvpartition retaining the folds. Octave uses batch k-means updates; MATLAB retains its online phase and native GA.
+
 ## Version History
+
+### v0.9.2 — Diagnostics, cache handling and Octave support
+
+Added serial Octave clustering and integer search, with the search backend and CV partition recorded in the result.
+
+Set `opts.sifted.diagnostics=false` to skip the advisory silhouette sweep. Feature clustering and selection still run with the configured K.
+
+A call with `opts.parallel=false` resets only its client fitness cache and does not dispatch work to an existing pool. A later parallel call resets its worker caches before using them.
 
 ### v0.9.1 — Seed control
 
@@ -162,12 +174,6 @@ k-means, the partition and the genetic algorithm use `opts.seed`.
 ## References
 
 - Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
-
-### Unreleased review fixes
-
-Set `opts.sifted.diagnostics=false` to skip the advisory silhouette sweep. Feature clustering and selection still run with the configured K.
-
-A call with `opts.parallel=false` resets only its client fitness cache and does not dispatch work to an existing pool. A later parallel call resets its worker caches before using them.
 
 ## See Also
 

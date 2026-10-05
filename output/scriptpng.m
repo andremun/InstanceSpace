@@ -46,6 +46,27 @@ function scriptpng(container,rootdir)
 
 % -------------------------------------------------------------------------
 % Preliminaries
+% One .fig file per footprint (spec §8), for interactive rotation --
+% meaningful for 3D projections specifically; opts.outputs.fig (default
+% true) can disable it. Older containers saved before this option existed
+% default to true rather than silently losing the feature.
+is3D = size(container.pilot.Z, 2) == 3;
+writeFig = is3D;
+if isfield(container, 'opts') && isfield(container.opts, 'outputs') && ...
+        isfield(container.opts.outputs, 'fig')
+    writeFig = writeFig && container.opts.outputs.fig;
+end
+% -------------------------------------------------------------------------
+if isacompat.isOctave() && writeFig
+    error('ISA:compat:unsupportedFeature','Octave PNG output requires outputs.fig=false.');
+end
+if isacompat.isOctave()
+    if any(strcmp(available_graphics_toolkits(),'qt'))
+        graphics_toolkit('qt');
+    elseif size(container.pilot.Z,2)==3
+        error('ISA:compat:graphicsBackend','3D PNG requires the Qt graphics toolkit and a display (use xvfb-run for headless execution).');
+    end
+end
 scriptfcn;
 % Remove only toolkit-owned plot names before writing the current run.
 % This also clears old 3D FIG files when the new run is 2D or disables FIG.
@@ -104,7 +125,7 @@ try
     set(groot, 'defaultAxesToolbarVisible', 'off');
 catch
 end
-colormap('parula');
+if isacompat.isOctave(), colormap(viridis(256)); else, colormap('parula'); end
 nfeats = size(container.data.X,2);
 nalgos = size(container.data.Y,2);
 Xaux = (container.data.X-min(container.data.X,[],1))./range(container.data.X,1);
@@ -134,21 +155,9 @@ globalView = resolveViewAngle(viewpoint, []); % feature/portfolio-level plots
 % is not guaranteed to auto-vivify into a struct through a graphics
 % property's dot-assignment chain -- initialise it explicitly first,
 % preserving any existing struct fields rather than clobbering them.
-if ~isstruct(fig.UserData)
-    fig.UserData = struct();
-end
-fig.UserData.isaViewpoint = viewpoint;
-% One .fig file per footprint (spec §8), for interactive rotation --
-% meaningful for 3D projections specifically; opts.outputs.fig (default
-% true) can disable it. Older containers saved before this option existed
-% default to true rather than silently losing the feature.
-is3D = size(container.pilot.Z, 2) == 3;
-writeFig = is3D;
-if isfield(container, 'opts') && isfield(container.opts, 'outputs') && ...
-        isfield(container.opts.outputs, 'fig')
-    writeFig = writeFig && container.opts.outputs.fig;
-end
-% -------------------------------------------------------------------------
+userData=get(fig,'UserData');
+if ~isstruct(userData), userData=struct(); end
+userData.isaViewpoint=viewpoint; set(fig,'UserData',userData);
 fprintf('[OUTPUT] Producing the plots.\n');
 % -------------------------------------------------------------------------
 % Drawing feature plots
@@ -156,7 +165,7 @@ for i=1:nfeats
     clf;
     drawScatter(container.pilot.Z, Xaux(:,i),...
                 strrep(container.data.featlabels{i},'_',' '), globalView);
-    exportgraphics(fig, [rootdir 'distribution_feature_' container.data.featlabels{i} '.png']);
+    isacompat.exportFigure(fig, [rootdir 'distribution_feature_' container.data.featlabels{i} '.png']);
 end
 % -------------------------------------------------------------------------
 % Drawing algorithm performance/footprint plots
@@ -166,18 +175,18 @@ for i=1:nalgos
     clf;
     drawScatter(container.pilot.Z, Yglb(:,i), ...
                 strrep(container.data.algolabels{i},'_',' '), algoView);
-    exportgraphics(fig, [rootdir 'distribution_performance_global_normalized_' container.data.algolabels{i} '.png']);
+    isacompat.exportFigure(fig, [rootdir 'distribution_performance_global_normalized_' container.data.algolabels{i} '.png']);
     % Actual performance, normalized individualy
     clf;
     drawScatter(container.pilot.Z, Yind(:,i), ...
                 strrep(container.data.algolabels{i},'_',' '), algoView);
-    exportgraphics(fig, [rootdir 'distribution_performance_individual_normalized_' container.data.algolabels{i} '.png']);
+    isacompat.exportFigure(fig, [rootdir 'distribution_performance_individual_normalized_' container.data.algolabels{i} '.png']);
     % Actual binary performance
     try
         clf;
         drawBinaryPerformance(container.pilot.Z, container.data.Ybin(:,i), ...
                               strrep(container.data.algolabels{i},'_',' '), algoView);
-        exportgraphics(fig, [rootdir 'binary_performance_' container.data.algolabels{i} '.png']);
+        isacompat.exportFigure(fig, [rootdir 'binary_performance_' container.data.algolabels{i} '.png']);
     catch
         fprintf('[OUTPUT] No binary performance has been calculated.\n');
     end
@@ -186,7 +195,7 @@ for i=1:nalgos
         clf;
         drawBinaryPerformance(container.pilot.Z, container.pythia.Yhat(:,i), ...
                               strrep(container.data.algolabels{i},'_',' '), algoView);
-        exportgraphics(fig, [rootdir 'binary_classifier_' container.data.algolabels{i} '.png']);
+        isacompat.exportFigure(fig, [rootdir 'binary_classifier_' container.data.algolabels{i} '.png']);
     catch
         fprintf('[OUTPUT] No classifier predictions are available.\n');
     end
@@ -198,7 +207,7 @@ for i=1:nalgos
                              container.trace.good{i}, ...
                              Yfoot(:,i), ...
                              strrep(container.data.algolabels{i},'_',' '), algoView);
-        exportgraphics(fig, [rootdir 'footprint_' container.data.algolabels{i} '.png']);
+        isacompat.exportFigure(fig, [rootdir 'footprint_' container.data.algolabels{i} '.png']);
         if writeFig
             savefig(fig, [rootdir 'footprint_' container.data.algolabels{i} '.fig']);
         end
@@ -210,22 +219,22 @@ end
 % Plotting the number of good algos
 clf;
 drawScatter(container.pilot.Z, container.data.numGoodAlgos./nalgos, 'Percentage of good algorithms', globalView);
-exportgraphics(fig, [rootdir 'distribution_number_good_algos.png']);
+isacompat.exportFigure(fig, [rootdir 'distribution_number_good_algos.png']);
 % -------------------------------------------------------------------------
 % Drawing the algorithm performance
 clf;
 drawPortfolioSelections(container.pilot.Z, container.data.P, container.data.algolabels, 'Best algorithm', globalView);
-exportgraphics(fig, [rootdir 'distribution_portfolio.png']);
+isacompat.exportFigure(fig, [rootdir 'distribution_portfolio.png']);
 % -------------------------------------------------------------------------
 % Drawing the SVM's recommendations
 clf;
 drawPortfolioSelections(container.pilot.Z, container.pythia.selection0, container.data.algolabels, 'Predicted best algorithm', globalView);
-exportgraphics(fig, [rootdir 'distribution_svm_portfolio.png']);
+isacompat.exportFigure(fig, [rootdir 'distribution_svm_portfolio.png']);
 % -------------------------------------------------------------------------
 % Drawing the footprints as portfolio.
 clf;
 drawPortfolioFootprint(container.pilot.Z, container.trace.best, Pfoot, container.data.algolabels, globalView);
-exportgraphics(fig, [rootdir 'footprint_portfolio.png']);
+isacompat.exportFigure(fig, [rootdir 'footprint_portfolio.png']);
 if writeFig
     savefig(fig, [rootdir 'footprint_portfolio.fig']);
 end
@@ -233,7 +242,7 @@ end
 % Plotting the model.data.beta score
 clf;
 drawBinaryPerformance(container.pilot.Z, container.data.beta, '\beta score', globalView);
-exportgraphics(fig, [rootdir 'distribution_beta_score.png']);
+isacompat.exportFigure(fig, [rootdir 'distribution_beta_score.png']);
 % -------------------------------------------------------------------------
 % Drawing CLOISTER's empirical space boundary, if computed (#32). Not
 % present in an explore()/evaluateTestSet result (CLOISTER is a
@@ -250,7 +259,7 @@ if hasBoundary
     else
         drawBoundary(container.pilot.Z, container.cloist.Zedge, 'CLOISTER empirical bound');
     end
-    exportgraphics(fig, [rootdir 'distribution_boundary.png']);
+    isacompat.exportFigure(fig, [rootdir 'distribution_boundary.png']);
 elseif isfile([rootdir 'distribution_boundary.png'])
     % A prior build in this same rootdir may have written this file (e.g.
     % rebuilt as 3D, or with CLOISTER since skipped) -- remove it rather
@@ -263,5 +272,5 @@ end
 if isfield(container.data,'S')
     clf;
     drawSources(container.pilot.Z, container.data.S, globalView);
-    exportgraphics(fig, [rootdir 'distribution_sources.png']);
+    isacompat.exportFigure(fig, [rootdir 'distribution_sources.png']);
 end

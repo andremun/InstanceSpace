@@ -172,7 +172,7 @@ Files written when `build` or `explore` completes. See `scriptcsv`, `scriptpng` 
 
 ## Version History
 
-### Unreleased review fixes
+### v0.9.2 — Option validation
 
 Rectangular numeric `pilot.viewGroups` from JSON are converted to one group per row before validation. An empty group list selects the default group. Individual groups must contain positive integer indices.
 

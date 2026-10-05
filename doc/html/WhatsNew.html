@@ -76,7 +76,11 @@
 <p class="purpose">Changes in recent versions of the toolbox</p>
 </div>
 <p>The complete list of changes, including every bug fix, is in <code>RELEASE_NOTES.md</code> in the repository root.</p>
-<section class="refsect" id="v0-9-2-in-development"><h2>v0.9.2 (in development)</h2><h3 id="bug-fixes">Bug Fixes</h3>
+<section class="refsect" id="v0-9-2-in-development"><h2>v0.9.2 (in development)</h2><h3 id="new-functionality">New Functionality</h3>
+<ul>
+<li>Serial GNU Octave support for 2D/3D build, save/load and exploration, including normalization, feature selection, projection, KNN with none/Sobol tuning, TRACE3 footprints, CSV and PNG. The tested environment is Octave 11.3 with Statistics 2.0.0 and Datatypes 1.5.0. Qt is required for 3D PNG; parallel execution, Bayesian tuning and FIG output remain MATLAB-only.</li>
+</ul>
+<h3 id="bug-fixes">Bug Fixes</h3>
 <ul>
 <li><a class="code-link" href="PYTHIA.html"><code>PYTHIA</code></a> evaluation scores each algorithm only on the new instances with observed performance, and reports <code>NaN</code> for a trained algorithm that the new data does not cover. Before, such an algorithm was scored against labels that were never measured.</li>
 <li>The Oracle row of the PYTHIA summary reports the fraction of instances on which any algorithm is good. Before, it was always 1, which is wrong when <a class="code-link" href="OptionsReference.html#opts-perf-absperf"><code>opts.perf.AbsPerf</code></a> is <code>true</code>.</li>

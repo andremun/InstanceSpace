@@ -111,6 +111,10 @@ One minus the coefficient of variation of the nearest-neighbour distances of the
 
 ## Version History
 
+### v0.9.2 — Bounded neighbour queries
+
+The spatial index is queried only for each retained instance, which bounds stored neighbour lists without changing the greedy row order.
+
 ### v0.9.0 — Uniformity output
 
 `unif` is returned; before, it was computed and discarded.
@@ -119,10 +123,6 @@ One minus the coefficient of variation of the nearest-neighbour distances of the
 
 - Alipour, H., Muñoz, M.A. & Smith-Miles, K. (2023). Enhanced instance space analysis for the maximum flow problem. *European Journal of Operational Research*, 304(2), 411–428. <https://doi.org/10.1016/j.ejor.2022.04.012>
 - Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
-
-### Unreleased review fixes
-
-The spatial index is queried only for each retained instance, which bounds stored neighbour lists without changing the greedy row order.
 
 ## See Also
 

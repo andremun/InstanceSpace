@@ -112,7 +112,17 @@ For each group, PILOTviewpoint jointly fits the view `A` (2-by-3) and a performa
 
 The second term keeps the two view directions orthogonal. Like PILOT, it keeps the trial whose view best preserves the pairwise distances of `Z`.
 
+## GNU Octave
+
+Octave runs the viewpoint optimization serially through a namespaced fminunc option adapter. MATLAB keeps native optimization options. Equal starting seeds do not guarantee identical optimized camera angles.
+
 ## Version History
+
+### v0.9.2 — Camera conventions and Octave support
+
+Added serial Octave viewpoint optimization with runtime-specific optimizer options.
+
+Azimuth and elevation use the `cart2sph` convention in radians. Plot helpers convert azimuth to the MATLAB camera convention and use equal data-axis scales to preserve the fitted plane.
 
 ### v0.9.0 — Introduced
 
@@ -121,10 +131,6 @@ Part of the 3D instance space (ISA3) support.
 ## References
 
 - Simpson, C., Muñoz, M.A., Kandanaarachchi, S. & Campello, R.J.G.B. (2025). ISA3: A 3-dimensional expansion of Instance Space Analysis. *Machine Learning*, 114, 240. <https://doi.org/10.1007/s10994-025-06871-5>
-
-### Unreleased review fixes
-
-Azimuth and elevation use the `cart2sph` convention in radians. Plot helpers convert azimuth to the MATLAB camera convention and use equal data-axis scales to preserve the fitted plane.
 
 ## See Also
 

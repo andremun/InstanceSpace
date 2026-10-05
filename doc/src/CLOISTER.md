@@ -118,9 +118,19 @@ Same format as `Zedge`. Equals `Zedge` when no corner is discarded, when too man
 - `scriptcsv` writes `Zedge` to `bounds.csv` and `Zecorr` to `bounds_prunned.csv`.
 - If every projected corner lies on one line (a degenerate projection matrix or features), there is no region to bound and CLOISTER raises `ISA:CLOISTER:degenerateBoundary`.
 
+## GNU Octave
+
+Octave supports 2D/3D hulls using namespaced Pearson-significance and NaN-aware extrema adapters. The Pearson adapter requires at least three observations. Degenerate/coplanar cases and PLS centering are covered by portable tests.
+
 ## Version History
 
-### v0.9.2 — 3D boundary
+### v0.9.2 — 3D boundaries and Octave support
+
+Added serial Octave support for Pearson significance and 2D/3D hulls.
+
+An optional fourth argument, `Xmean`, applies the fitted PLS feature centring during projection. The three-argument call uses a zero mean.
+
+Corner enumeration uses batches of 4096 and retains hull vertices between batches. It does not allocate all corners at once.
 
 A 3D projection now gets a 3D convex hull, with `ZedgeFaces` and `ZecorrFaces`. Before, the hull used only the first two coordinates.
 
@@ -131,12 +141,6 @@ A 3D projection now gets a 3D convex hull, with `ZedgeFaces` and `ZecorrFaces`. 
 ## References
 
 - Smith-Miles, K. & Muñoz, M.A. (2023). Instance Space Analysis for Algorithm Testing. *ACM Computing Surveys*, 55(12), Article 255. <https://doi.org/10.1145/3572895>
-
-### Unreleased review fixes
-
-An optional fourth argument, `Xmean`, applies the fitted PLS feature centring during projection. The three-argument call uses a zero mean.
-
-Corner enumeration uses batches of 4096 and retains hull vertices between batches. It does not allocate all corners at once.
 
 ## See Also
 

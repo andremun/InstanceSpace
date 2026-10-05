@@ -60,7 +60,7 @@ for i = 1:nalgos
     for kind = {'best','good'}
         fp = container.trace.(kind{1}){i};
         faces = zeros(0,3);
-        if ndim == 3 && isfield(fp,'polygon') && isa(fp.polygon,'alphaShape') && ~isempty(fp.polygon.Points)
+        if ndim == 3 && isfield(fp,'polygon') && isacompat.isAlphaShape(fp.polygon) && ~isempty(fp.polygon.Points)
             [faces,verts] = boundaryFacets(fp.polygon);
         else
             verts = footprintBoundary(fp);

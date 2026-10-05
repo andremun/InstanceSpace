@@ -1,10 +1,14 @@
 # Instance Space Analysis Toolkit — v0.9.2 (in development)
 
-Bug fixes from the v0.9.2 backlog, a reference documentation site, and test infrastructure. It targets **MATLAB R2025a or later**.
+Bug fixes from the v0.9.2 backlog, serial GNU Octave support, a reference documentation site, and test infrastructure. It supports **MATLAB R2025a or later** and the bounded Octave workflow described below.
 
 ---
 
 ## New functionality
+
+**Serial GNU Octave workflow.** Octave supports 2D/3D build → save/load → explore with normalization, feature selection, analytic/numerical/SIMPLS projection, KNN classifiers with none/Sobol tuning, TRACE3 footprints, CSV and PNG. The full workflow requires Octave **11.1 or later**, Datatypes **1.5.0** and Statistics **2.0.0**; validation uses Octave **11.3.0**. Bayesian tuning, parallel execution, other classifiers, legacy TRACE, FIG files and web palette export remain unsupported. 3D PNG requires Qt and a display or virtual display; `outputs.fig` defaults to false in Octave. Build and explore reject unsupported output options before processing or replacing outputs.
+
+Octave saves versioned MAT v7 archives that preserve trained KNN models without retraining; these classifier archives are runtime-specific, while MATLAB retains native MAT v7.3 persistence. Schema 2 protects ordinary structs from collisions with internal type markers and reads existing schema-1 archives; ambiguous marker-shaped user structs in old archives cannot be distinguished retrospectively. CSV is the supported data interchange format. Equal seeds do not promise identical optimizer, Sobol or geometry results across runtimes. See the [Octave compatibility guide](docs/octave-compatibility.md) for setup and the complete support boundary.
 
 **Reference documentation site.** `doc/html/` holds a MATLAB-toolbox-style reference: one page per function and for the `InstanceSpace` class (syntax, description, examples, expandable argument lists, version history), plus getting-started, walkthrough, metadata-format, options-reference and migration guides, with search. The same pages open in the MATLAB Help browser through `info.xml` (**Supplemental Software → Instance Space Analysis Toolbox**) and are published to GitHub Pages from `master` by `.github/workflows/docs-pages.yml`. Pages are written in Markdown under `doc/src/` and built by `doc/generate.py`; CI fails if the committed HTML does not match its sources or has a broken link ([#53](https://github.com/andremun/InstanceSpace/issues/53)).
 
@@ -14,6 +18,7 @@ Bug fixes from the v0.9.2 backlog, a reference documentation site, and test infr
 
 ## Better engineering
 
+- **Octave CI and portable contracts.** `.github/workflows/octave-smoke.yml` runs core analytic checks and the serial pipeline with pinned Octave/packages, including 2D/3D save/load/explore, archive safety and PNG output. Shared portable contracts also run in the MATLAB test suite.
 - **JUnit test report.** `test_integration.m` writes `junit.xml` next to `coverage.xml`; CI uploads it to Codecov Test Analytics and keeps it with the coverage artifact ([#57](https://github.com/andremun/InstanceSpace/issues/57)).
 - **Coverage table in CI.** The Tests workflow prints per-file line coverage, with the uncovered line ranges, in the job log and the run summary.
 

@@ -4,7 +4,7 @@ classdef InstanceSpace
 %   obj = InstanceSpace(rootdir)
 %   obj = InstanceSpace(rootdir, opts)
 %
-%   Wraps PRELIM/SIFTED/PILOT/CLOISTER/PYTHIA/TRACE with stage-level
+%   Wraps INIT/PRELIM/SIFTED/PILOT/CLOISTER/PYTHIA/TRACE with stage-level
 %   execution control, in-between option changes, and save()/load()
 %   persistence. Because InstanceSpace is a value class (not a handle
 %   class), every method that changes state returns the updated object;
@@ -20,7 +20,7 @@ classdef InstanceSpace
 %   Staged usage, with option changes between stages:
 %     obj = InstanceSpace(rootdir);
 %     obj.opts.pilot.dims = 3;
-%     obj = obj.build('stages', {'prelim','sifted','pilot'});
+%     obj = obj.build('stages', {'init','prelim','sifted','pilot'});
 %     figure; scatter(obj.model.pilot.Z(:,1), obj.model.pilot.Z(:,2));
 %     obj.opts.pilot.alpha = 2.0;
 %     obj = obj.build('stages', {'pilot'});         % re-run PILOT only
@@ -73,11 +73,12 @@ classdef InstanceSpace
         % Canonical execution order; build('stages',...) always runs
         % requested stages in this order regardless of how they were
         % listed, so prerequisites are satisfied within a single call.
-        StageOrder = {'prelim','sifted','pilot','cloister','pythia','trace'};
+        StageOrder = {'init','prelim','sifted','pilot','cloister','pythia','trace'};
         % Immediate prerequisite each stage needs already completed
         % (either from an earlier stage in the same build() call, or a
         % previous build() call on this object).
-        StagePrereq = struct('prelim',   {{}}, ...
+        StagePrereq = struct('init',     {{}}, ...
+                              'prelim',   {{'init'}}, ...
                               'sifted',   {{'prelim'}}, ...
                               'pilot',    {{'sifted'}}, ...
                               'cloister', {{'pilot'}}, ...
@@ -87,7 +88,8 @@ classdef InstanceSpace
         % every stage except 'cloister', whose output runCloister()
         % stores under the shorter obj.model.cloist (matching the
         % pre-refactor buildIS.m's field name).
-        StageModelField = struct('prelim',   'prelim', ...
+        StageModelField = struct('init',     'init', ...
+                                  'prelim',   'prelim', ...
                                   'sifted',   'sifted', ...
                                   'pilot',    'pilot', ...
                                   'cloister', 'cloist', ...
@@ -107,7 +109,8 @@ classdef InstanceSpace
         % branch) are already isfield()-guarded at their own call site and
         % don't belong in a static required-fields list.
         StageRequiredFields = struct( ...
-            'prelim',   {{}}, ...
+            'init',     {{}}, ...
+            'prelim',   {{'init.data.X', 'init.data.Y'}}, ...
             'sifted',   {{'data.X', 'data.Y', 'data.Ybin', 'data.featlabels', 'featsel.idx'}}, ...
             'pilot',    {{'data.X', 'data.Y', 'data.featlabels'}}, ...
             'cloister', {{'data.X', 'pilot.A'}}, ...
@@ -199,8 +202,9 @@ classdef InstanceSpace
         function obj = build(obj, varargin)
             % obj = obj.build() runs every stage.
             % obj = obj.build('stages', {'pilot', ...}) runs only the
-            % named stages (in canonical order), erroring if a requested
-            % stage's prerequisite hasn't already completed.
+            % named stages (in canonical order). For compatibility, requesting
+            % prelim also runs init when its input snapshot is missing.
+            % Other missing stage prerequisites raise an error.
             % obj = obj.build('onStage', @(stageName, model) ...) invokes
             % the callback once after each stage completes, with that
             % stage's name and obj.model at that point (#26) -- useful for
@@ -215,6 +219,10 @@ classdef InstanceSpace
             parse(p, varargin{:});
             toRun = InstanceSpace.StageOrder(ismember(InstanceSpace.StageOrder, p.Results.stages));
             onStage = p.Results.onStage;
+            if ismember('prelim', toRun) && ~ismember('init', toRun) && ...
+                    (~ismember('init', obj.completedStages) || ~isfield(obj.model, 'init'))
+                toRun = [{'init'}, toRun];
+            end
 
             obj.opts = ISAdefaults(ISAvalidateOpts(obj.opts));
             isacompat.requirePipelineSupport(obj.opts,toRun);
@@ -254,6 +262,7 @@ classdef InstanceSpace
                 obj.checkPrereq(stage);
                 obj.checkRequiredFields(stage);
                 switch stage
+                    case 'init',     obj = obj.runInit();
                     case 'prelim',   obj = obj.runPrelim();
                     case 'sifted',   obj = obj.runSifted();
                     case 'pilot',    obj = obj.runPilot();
@@ -318,7 +327,7 @@ classdef InstanceSpace
             %
             % obj.explore(testRootDir, 'onStage', @(stageName, out) ...)
             % invokes the callback once after each conceptual stage
-            % (prelim, sifted, pilot, pythia, trace -- no cloister, which
+            % (init, prelim, sifted, pilot, pythia, trace -- no cloister, which
             % is never recomputed at explore time) completes, with that
             % stage's name and the in-progress result struct (#27).
             % Omitting it changes nothing.
@@ -449,7 +458,7 @@ classdef InstanceSpace
         function save(obj)
             % Writes rootdir/model.mat: MATLAB v7.3 or versioned Octave archive.
             % MATLAB uses '-struct' to flatten obj.model's top-level fields (data,
-            % prelim, sifted, pilot, cloist, pythia, trace, featsel, opts)
+            % init, prelim, sifted, pilot, cloist, pythia, trace, featsel, opts)
             % into individual MAT variables, matching the format written by
             % the pre-refactor buildIS.m so existing readers (and
             % InstanceSpace.load) keep working unchanged. Octave encodes supported
@@ -495,8 +504,12 @@ classdef InstanceSpace
             % their fields don't exist -- that would let checkPrereq wave
             % through a build()/explore() call that then crashes deep
             % inside the missing stage instead of at the prereq check.
+            % Legacy models have completed loading implicitly, but cannot
+            % reconstruct INIT's full input from transformed/subset data.
+            % A subsequent prelim rebuild reloads metadata through init.
             obj.completedStages = InstanceSpace.StageOrder(cellfun(...
-                @(s) isfield(model, InstanceSpace.StageModelField.(s)), InstanceSpace.StageOrder));
+                @(s) isfield(model, InstanceSpace.StageModelField.(s)) || ...
+                (strcmp(s, 'init') && isfield(model, 'prelim')), InstanceSpace.StageOrder));
         end
     end
 
@@ -601,8 +614,15 @@ classdef InstanceSpace
             openedHere = true;
         end
 
-        function obj = runPrelim(obj)
+        function obj = runInit(obj)
             data = INIT(obj.rootdir, obj.opts);
+            % Publish loaded data and keep a value snapshot for every PRELIM
+            % rerun, including algorithms/features later removed or subset.
+            obj.model = struct('init', struct('data', data), 'data', data);
+        end
+
+        function obj = runPrelim(obj)
+            data = obj.model.init.data;
 
             fprintf('[PRELIM] Calling PRELIM for data pre-processing.\n');
             prelimOpts = obj.opts.perf;
@@ -671,6 +691,8 @@ classdef InstanceSpace
             end
 
             model_ = struct();
+            model_.init = obj.model.init;
+            model_.stageOptions.init = obj.model.stageOptions.init;
             model_.data = data;
             if fileindexed || fractional || bydensity
                 if bydensity
@@ -821,6 +843,14 @@ classdef InstanceSpace
         function value = stageOptions(opts, stage)
             % Only options consumed by this stage define its fitted state.
             switch stage
+                case 'init'
+                    value = struct('nanThreshold', opts.prelim.nanThreshold);
+                    for name = {'feats', 'algos'}
+                        if isfield(opts.selvars, name{1})
+                            value.(name{1}) = opts.selvars.(name{1});
+                        end
+                    end
+                    return;
                 case 'prelim'
                     names = {'perf','prelim','auto','bound','norm','selvars'};
                 otherwise
@@ -930,6 +960,9 @@ classdef InstanceSpace
             [data, extra] = INIT(rootdir, model.opts, model);
             out = struct();
             out.data = data;
+            if ~isempty(onStage)
+                onStage('init', out);
+            end
 
             fprintf('[EXPLORE] Calculating the binary measure of performance.\n');
             % model.opts.perf, flattened to PRELIM's own field names,

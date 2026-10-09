@@ -74,13 +74,13 @@ classdef ClassApiTest < matlab.unittest.TestCase
 
             obj = InstanceSpace(classCaseDir, baseOpts);
 
-            obj = obj.build('stages', {'prelim', 'sifted', 'pilot'});
-            testCase.verifyEqual(obj.completedStages, {'prelim', 'sifted', 'pilot'}, ...
+            obj = obj.build('stages', {'init','prelim', 'sifted', 'pilot'});
+            testCase.verifyEqual(obj.completedStages, {'init','prelim', 'sifted', 'pilot'}, ...
                 'completedStages mismatch after a partial build().');
 
             obj.opts.pilot.alpha = 2.0;
             obj = obj.build('stages', {'pilot'}); % re-run just PILOT with the new weight
-            testCase.verifyEqual(obj.completedStages, {'prelim', 'sifted', 'pilot'}, ...
+            testCase.verifyEqual(obj.completedStages, {'init','prelim', 'sifted', 'pilot'}, ...
                 're-running an already-completed stage should not duplicate it in completedStages.');
 
             % Requested out of canonical order: build() must still run them
@@ -94,7 +94,7 @@ classdef ClassApiTest < matlab.unittest.TestCase
             % alongside a freshly re-run pilot.
             obj.opts.pilot.alpha = 3.0;
             obj = obj.build('stages', {'pilot'});
-            testCase.verifyEqual(obj.completedStages, {'prelim', 'sifted', 'pilot'}, ...
+            testCase.verifyEqual(obj.completedStages, {'init','prelim', 'sifted', 'pilot'}, ...
                 're-running pilot after cloister/pythia/trace completed should invalidate them in completedStages.');
             testCase.verifyFalse(isfield(obj.model, 'cloist') || isfield(obj.model, 'pythia') || isfield(obj.model, 'trace'), ...
                 're-running pilot should remove the now-stale cloister/pythia/trace model fields.');
@@ -155,7 +155,7 @@ classdef ClassApiTest < matlab.unittest.TestCase
             % InstanceSpace.StageOrder is private -- not accessible from
             % here -- so the canonical order is hardcoded, same as the
             % explore() case below.
-            buildOrder = {'prelim', 'sifted', 'pilot', 'cloister', 'pythia', 'trace'};
+            buildOrder = {'init','prelim', 'sifted', 'pilot', 'cloister', 'pythia', 'trace'};
 
             obj = InstanceSpace(classCaseDir, baseOpts);
             obj = obj.build('onStage', cb);
@@ -173,7 +173,7 @@ classdef ClassApiTest < matlab.unittest.TestCase
             % implies it.
             testCase.StageLog = {};
             testCase.StageSnapshots = {};
-            partialStages = {'prelim', 'sifted', 'pilot'};
+            partialStages = {'init','prelim', 'sifted', 'pilot'};
             objPartial = InstanceSpace(classCaseDir, baseOpts);
             objPartial = objPartial.build('stages', partialStages, 'onStage', cb);
             testCase.verifyEqual(testCase.StageLog, partialStages, ...
@@ -182,7 +182,7 @@ classdef ClassApiTest < matlab.unittest.TestCase
             testCase.StageLog = {};
             testCase.StageSnapshots = {};
             obj = obj.explore(classCaseDir, 'onStage', cb);
-            testCase.verifyEqual(testCase.StageLog, {'prelim','sifted','pilot','pythia','trace'}, ...
+            testCase.verifyEqual(testCase.StageLog, {'init','prelim','sifted','pilot','pythia','trace'}, ...
                 ['explore()''s onStage callback should fire once per conceptual stage, in order, ' ...
                  'excluding cloister (never recomputed at explore time).']);
             explorePilotIdx = find(strcmp(testCase.StageLog, 'pilot'));

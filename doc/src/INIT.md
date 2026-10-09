@@ -15,6 +15,8 @@ Read and filter instance metadata
 
 `[data,extra] = INIT(rootdir,opts,trainedModel)` reads `rootdir/metadata_test.csv` for evaluation. It checks that the test file has the trained model's features in the same order, and aligns the algorithm columns with the trained model: known algorithms go to their trained position, new algorithms are appended, and trained algorithms missing from the test file get a column of `NaN`.
 
+`InstanceSpace.build` exposes this as the first stage, `init`. Its output is cached in `model.init.data` for subsequent `prelim` runs. Both build and explore callbacks report `init` before `prelim`.
+
 ## Examples
 
 ### Read the reference metadata
@@ -95,6 +97,10 @@ Empty in training mode. In evaluation mode: `featlabelsAll`, `modelalgos` (numbe
 - Evaluation fails with `ISA:InstanceSpace:featureOrderMismatch` when `metadata_test.csv` lists its features in a different order from the training file.
 
 ## Version History
+
+### v0.9.2 — Independent pipeline stage
+
+`InstanceSpace` exposes `init` as a selectable build stage, retains its output for preprocessing reruns, and reports it through build and explore callbacks.
 
 ### v0.9.1 — Introduced
 

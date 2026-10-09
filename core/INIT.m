@@ -15,14 +15,9 @@ function [data, extra] = INIT(rootdir, opts, trainedModel)
 %     unseen ones are appended as new columns (NaN for training-only
 %     algorithms).
 %
-%   Before this function existed, this logic was two independent,
-%   drifted implementations -- the version embedded in
-%   InstanceSpace.runPrelim (build time) and a separate inline
-%   reimplementation in InstanceSpace.evaluateTestSet (explore time).
-%   INIT is a pure extraction of both into one shared function, dispatched
-%   by nargin like PYTHIA/TRACE (#38): each mode's behaviour is preserved
-%   exactly as it was, just no longer duplicated in two places that could
-%   silently drift apart from each other.
+%   InstanceSpace exposes this as its first build stage, 'init', and
+%   retains its output in model.init.data for independent PRELIM reruns.
+%   Both build and explore report 'init' through their onStage callback.
 %
 %   Inputs
 %     rootdir - directory containing metadata.csv (training mode) or

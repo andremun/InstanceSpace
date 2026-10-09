@@ -92,7 +92,7 @@ classdef MigrationTest < matlab.unittest.TestCase
 
         function testCompletedStagesInferred(testCase)
             m = ISAmigrateModel(struct('prelim', struct(), 'sifted', struct(), 'pilot', struct()));
-            testCase.verifyEqual(m.completedStages, {'prelim','sifted','pilot'}, ...
+            testCase.verifyEqual(m.completedStages, {'init','prelim','sifted','pilot'}, ...
                 'completedStages was not correctly inferred from present model sub-structs.');
         end
 

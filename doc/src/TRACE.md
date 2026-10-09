@@ -111,6 +111,24 @@ A footprint smaller than this fraction of the whole space is discarded.
 
 Legacy method only: remove the overlap between best-algorithm footprints.
 
+#### `opts.boundaryTolerance` — Explicit boundary distance
+
+*`0` (default) | finite nonnegative scalar*
+
+Euclidean distance in projection-coordinate units. A positive value includes
+points within this distance of a fitted edge (2D) or triangular face (3D),
+including boundaries of holes. Hole interiors farther away remain excluded.
+Zero preserves exact closed-boundary membership. There is no automatic epsilon
+multiplier, coordinate scaling or dependence on the query batch.
+
+The same rule is used for construction metrics, legacy overlap counts and
+trimming, and test-set evaluation. Geometry and area/volume are not expanded.
+The fitted value is saved as `out.boundaryTolerance`; evaluation reuses it even
+if a different option is supplied. Older models without this field use zero.
+Choose a positive distance from an explicit uncertainty budget in the projection
+units; this option does not guarantee stable legacy trimming under arbitrary
+coordinate perturbations.
+
 ### `trainedTrace` — Trained footprints
 
 *structure*
@@ -159,6 +177,10 @@ Octave supports TRACE3 through a toolkit-owned regularized Delaunay alpha comple
 ## Version History
 
 ### v0.9.2 — Footprint evaluation and Octave support
+
+Added `opts.boundaryTolerance` (default zero), an explicit Euclidean boundary
+policy shared with pyInstanceSpace. The fitted tolerance is preserved during
+persistence and reused for evaluation and legacy contradiction counts.
 
 Added Octave TRACE3 footprints using regularized Delaunay alpha complexes in 2D/3D. Containment reuses a spatial index over simplex bounds across alpha candidates; queries visit overlapping bounds while preserving inclusive boundaries and region filtering.
 

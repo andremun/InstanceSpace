@@ -72,6 +72,15 @@ function out = TRACE(Z, Ybin, Yhat, P, beta, algolabels, opts, trainedTrace)
 
 narginchk(7, 8);
 isEvalMode = nargin == 8;
+if ~isfield(opts,'boundaryTolerance'), opts.boundaryTolerance=0; end
+if isEvalMode
+    opts.boundaryTolerance=0;
+    if isfield(trainedTrace,'boundaryTolerance')
+        opts.boundaryTolerance=trainedTrace.boundaryTolerance;
+    end
+end
+validateattributes(opts.boundaryTolerance,{'numeric'},{'scalar','real','finite','nonnegative'});
+out.boundaryTolerance=opts.boundaryTolerance;
 is3D       = size(Z, 2) == 3;
 nalgos     = size(Ybin, 2);
 useLegacy  = isfield(opts, 'method') && strcmpi(opts.method, 'legacy');
@@ -103,6 +112,7 @@ if is3D; measureLabel = 'Volume'; else; measureLabel = 'Area'; end
 if isEvalMode
     fprintf('[TRACE] TRACE is evaluating trained footprints on new instances.\n');
     out = trainedTrace;
+    out.boundaryTolerance=opts.boundaryTolerance;
     % Normalise backward-compat: old models stored .area instead of .measure
     if ~isfield(trainedTrace.space, 'measure')
         trainedTrace.space.measure  = trainedTrace.space.area;
@@ -141,18 +151,18 @@ if isEvalMode
              'data) and cannot be safely evaluated.'], ngood, nbest, trainedNalgos);
     end
     for i = 1:min(nalgos, ngood)
-        out.good{i} = TRACErescore(trainedTrace.good{i}, Z, Ybin(:,i), is3D);
+        out.good{i} = TRACErescore(trainedTrace.good{i}, Z, Ybin(:,i), is3D, opts.boundaryTolerance);
     end
     for i = ngood+1:nalgos
         out.good{i} = TRACEthrow3(is3D);
     end
     for i = 1:min(nalgos, nbest)
-        out.best{i} = TRACErescore(trainedTrace.best{i}, Z, P==i, is3D);
+        out.best{i} = TRACErescore(trainedTrace.best{i}, Z, P==i, is3D, opts.boundaryTolerance);
     end
     for i = nbest+1:nalgos
         out.best{i} = TRACEthrow3(is3D);
     end
-    out.hard    = TRACErescore(trainedTrace.hard, Z, ~beta, is3D);
+    out.hard    = TRACErescore(trainedTrace.hard, Z, ~beta, is3D, opts.boundaryTolerance);
     out.summary = TRACEsummaryTable(out.good, out.best, algolabels, trainedTrace.space);
     fprintf('[TRACE] Evaluation complete.\n');
     return;
@@ -168,6 +178,7 @@ if useLegacy
     useContra = ~isfield(opts, 'contra') || opts.contra;
     out = TRACE_legacy(Z, Ybin, P, beta, algolabels, opts, useContra);
     out = normalizeLegacyOut(out, measureLabel, nalgos);
+    out.boundaryTolerance=opts.boundaryTolerance;
     out.summary = TRACEsummaryTable(out.good, out.best, algolabels, out.space);
     fprintf('[TRACE] TRACE (legacy) has completed. Footprint analysis results:\n\n');
     disp(out.summary);
@@ -260,7 +271,7 @@ end
 as = isacompat.makeAlphaShape(Zu);
 
 % Step 5: compute initial metrics
-[footprint, valid] = TRACEmetrics3(as, Z, Ybin, is3D);
+[footprint, valid] = TRACEmetrics3(as, Z, Ybin, is3D, opts.boundaryTolerance);
 footprint.accepted = valid && footprint.purity >= opts.PI;
 footprint.terminationReason = 'spectrumExhausted';
 if footprint.accepted, footprint.terminationReason = 'purityReached'; end
@@ -286,7 +297,7 @@ for ii = 1:numel(alphaVec)
     else
         as.RegionThreshold = area(as) / 20;
     end
-    [footprint, valid] = TRACEmetrics3(as, Z, Ybin, is3D);
+    [footprint, valid] = TRACEmetrics3(as, Z, Ybin, is3D, opts.boundaryTolerance);
 footprint.accepted = valid && footprint.purity >= opts.PI;
 footprint.terminationReason = 'spectrumExhausted';
 if footprint.accepted, footprint.terminationReason = 'purityReached'; end
@@ -302,7 +313,7 @@ end
 end
 
 % =========================================================================
-function [footprint, valid] = TRACEmetrics3(as, Z, Ybin, is3D)
+function [footprint, valid] = TRACEmetrics3(as, Z, Ybin, is3D, tolerance)
 % Compute footprint metrics from an alphaShape object.
 valid = true;
 footprint.polygon = as;
@@ -323,7 +334,7 @@ if m <= 0 || isinf(as.Alpha)
     return;
 end
 footprint.measure      = m;
-inside = inShape(as, Z);
+inside = ISAfootprintContains(as, Z, tolerance);
 footprint.elements     = sum(inside);
 footprint.goodElements = sum(inside & logical(Ybin));
 if footprint.elements == 0
@@ -352,7 +363,7 @@ footprint.purity       = 0;
 end
 
 % =========================================================================
-function footprint = TRACErescore(trainedFp, Z, Ybin, is3D)
+function footprint = TRACErescore(trainedFp, Z, Ybin, is3D, tolerance)
 % Re-evaluate a trained footprint against new instances Z.
 footprint = trainedFp;
 % Backward-compat: old models stored .area; normalise to .measure
@@ -369,9 +380,9 @@ if isempty(poly)
     return;
 end
 if isacompat.isAlphaShape(poly)
-    inside = inShape(poly, Z);
+    inside = ISAfootprintContains(poly, Z, tolerance);
 elseif isa(poly, 'polyshape')
-    inside = isinterior(poly, Z);
+    inside = ISAfootprintContains(poly, Z, tolerance);
 else
     footprint.elements = 0; footprint.goodElements = 0;
     footprint.density  = 0; footprint.purity       = 0;

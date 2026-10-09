@@ -96,12 +96,13 @@ methods
         if isempty(F), return; end
         [U,~,g]=unique(F,'rows'); counts=accumarray(g,1); F=U(counts==1,:);
     end
-    function inside=inShape(obj,Q)
+    function inside=inShape(obj,Q,tolerance)
+        if nargin<3, tolerance=1e-10; end
         [~,~,~,activeIds]=obj.active(); inside=false(size(Q,1),1);
         if isempty(activeIds) || isempty(Q), return; end
         enabled=false(size(obj.Simplices,1),1); enabled(activeIds)=true;
         inside=queryIndex(obj.SpatialIndex,obj.Points,obj.Simplices,enabled,Q, ...
-            (1:size(Q,1))',inside,1e-10);
+            (1:size(Q,1))',inside,tolerance);
     end
     function h=plot(obj,varargin)
         if size(obj.Points,2)==2, F=obj.active(); else, F=boundaryFacets(obj); end

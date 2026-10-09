@@ -47,6 +47,9 @@ function out = TRACE_legacy(Z, Ybin, P, beta, algolabels, opts, useContra)
 % -------------------------------------------------------------------------
 
 if nargin < 7, useContra = true; end
+if ~isfield(opts,'boundaryTolerance'), opts.boundaryTolerance=0; end
+validateattributes(opts.boundaryTolerance,{'numeric'},{'scalar','real','finite','nonnegative'});
+out.boundaryTolerance=opts.boundaryTolerance;
 
 if exist('gcp', 'file') == 2
     pool = gcp('nocreate');
@@ -135,8 +138,8 @@ end
 if isfield(footprint, 'polygon') && ~isempty(footprint.polygon)
     footprint.polygon      = rmslivers(footprint.polygon, 1e-2);
     footprint.area         = area(footprint.polygon);
-    footprint.elements     = sum(isinterior(footprint.polygon, Z));
-    footprint.goodElements = sum(isinterior(footprint.polygon, Z(logical(Ybin),:)));
+    footprint.elements     = sum(ISAfootprintContains(footprint.polygon, Z, opts.boundaryTolerance));
+    footprint.goodElements = sum(ISAfootprintContains(footprint.polygon, Z(logical(Ybin),:), opts.boundaryTolerance));
     footprint.density      = footprint.elements / footprint.area;
     footprint.purity       = footprint.goodElements / footprint.elements;
 else
@@ -154,9 +157,9 @@ maxtries = 3;
 numtries = 1;
 contradiction = intersect(base.polygon, test.polygon);
 while contradiction.NumRegions ~= 0 && numtries <= maxtries
-    numElements          = sum(isinterior(contradiction, Z));
-    numGoodElementsBase  = sum(isinterior(contradiction, Z(logical(Ybase),:)));
-    numGoodElementsTest  = sum(isinterior(contradiction, Z(logical(Ytest),:)));
+    numElements          = sum(ISAfootprintContains(contradiction, Z, opts.boundaryTolerance));
+    numGoodElementsBase  = sum(ISAfootprintContains(contradiction, Z(logical(Ybase),:), opts.boundaryTolerance));
+    numGoodElementsTest  = sum(ISAfootprintContains(contradiction, Z(logical(Ytest),:), opts.boundaryTolerance));
     purityBase = numGoodElementsBase / numElements;
     purityTest = numGoodElementsTest / numElements;
     if purityBase > purityTest
@@ -190,8 +193,8 @@ if isempty(base.polygon)
     base = TRACEthrow;
 else
     base.area         = area(base.polygon);
-    base.elements     = sum(isinterior(base.polygon, Z));
-    base.goodElements = sum(isinterior(base.polygon, Z(logical(Ybase),:)));
+    base.elements     = sum(ISAfootprintContains(base.polygon, Z, opts.boundaryTolerance));
+    base.goodElements = sum(ISAfootprintContains(base.polygon, Z(logical(Ybase),:), opts.boundaryTolerance));
     base.density      = base.elements / base.area;
     base.purity       = base.goodElements / base.elements;
 end
@@ -199,8 +202,8 @@ if isempty(test.polygon)
     test = TRACEthrow;
 else
     test.area         = area(test.polygon);
-    test.elements     = sum(isinterior(test.polygon, Z));
-    test.goodElements = sum(isinterior(test.polygon, Z(logical(Ytest),:)));
+    test.elements     = sum(ISAfootprintContains(test.polygon, Z, opts.boundaryTolerance));
+    test.goodElements = sum(ISAfootprintContains(test.polygon, Z(logical(Ytest),:), opts.boundaryTolerance));
     test.density      = test.elements / test.area;
     test.purity       = test.goodElements / test.elements;
 end
@@ -212,7 +215,7 @@ splits   = regions(polygon);
 nregions = length(splits);
 flags    = true(1, nregions);
 for i = 1:nregions
-    criteria = isinterior(splits(i), Z) & logical(Ybin);
+    criteria = ISAfootprintContains(splits(i), Z, opts.boundaryTolerance) & logical(Ybin);
     polydata = Z(criteria, :);
     if size(polydata,1) < 3
         flags(i) = false;
@@ -253,8 +256,8 @@ if ~all(Ybin)
     for ii = 1:nrow
         tridata  = tri.Points(tri.ConnectivityList(ii,:), :);
         piece    = polyshape(tridata, 'Simplify', true);
-        elements = sum(isinterior(piece, Z));
-        goodElements = sum(isinterior(piece, Z(logical(Ybin),:)));
+        elements = sum(ISAfootprintContains(piece, Z, opts.boundaryTolerance));
+        goodElements = sum(ISAfootprintContains(piece, Z(logical(Ybin),:), opts.boundaryTolerance));
         if elements == 0 || opts.PI > (goodElements/elements)
             polygon = subtract(polygon, piece);
         end

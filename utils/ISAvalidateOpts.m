@@ -153,6 +153,7 @@ checkUnitRange(opts, 'trace', 'PI');
 checkPosInt(opts, 'trace', 'minInstances', false);
 checkUnitRange(opts, 'trace', 'minAreaFrac');
 checkLogical(opts, 'trace', 'contra');
+checkPositive(opts, 'trace', 'boundaryTolerance', true);
 
 checkLogical(opts, 'outputs', 'csv');
 checkLogical(opts, 'outputs', 'png');

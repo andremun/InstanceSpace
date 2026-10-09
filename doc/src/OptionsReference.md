@@ -157,6 +157,7 @@ Footprints. Used by `TRACE`.
 | `PI` | `0.6` | Target purity. TRACE3 marks footprints that do not meet it with `accepted=false`. |
 | `minInstances` | `4` | Minimum number of instances in a footprint. |
 | `minAreaFrac` | `0.01` | Minimum footprint size as a fraction of the whole space. |
+| `boundaryTolerance` | `0` | Finite nonnegative Euclidean boundary distance in projection units; persisted and reused at evaluation. |
 | `contra` | `false` | Legacy method only: remove contradictions between best-algorithm footprints. `true` by default when `method` is `'legacy'`. |
 
 ## opts.outputs

@@ -66,7 +66,7 @@ liveDemoIS.m                              interactive, stage-by-stage walkthroug
 startup.m                                 adds the folders below to the MATLAB path
 Contents.m                                MATLAB Central File Exchange version/date metadata
 CITATION.cff                              machine-readable citation metadata
-core/                                     PRELIM, SIFTED, PILOT, PILOTviewpoint,
+core/                                     INIT, PRELIM, SIFTED, PILOT, PILOTviewpoint,
                                           CLOISTER, PYTHIA, TRACE, TRACE_legacy, FILTER
 output/                                   scriptcsv, scriptpng, scriptweb, scriptfcn,
                                           ISArecallView
@@ -106,11 +106,13 @@ Options can be changed between individual pipeline stages, and only the stages t
 
 ```matlab
 obj = InstanceSpace(rootdir);
-obj = obj.build('stages', {'prelim', 'sifted', 'pilot'});
+obj = obj.build('stages', {'init', 'prelim', 'sifted', 'pilot'});
 obj.opts.pilot.alpha = 2.0;                  % adjust after inspecting the projection
 obj = obj.build('stages', {'pilot'});         % re-runs PILOT only; sifted output is reused
 obj = obj.build('stages', {'cloister', 'pythia', 'trace'});
 ```
+
+`init` loads metadata and caches its output for `prelim`. Rerunning `prelim` reuses that input; rerun `init` to reload changed metadata or change feature/algorithm filtering. Existing calls starting with `prelim` still initialize automatically when no cached input exists.
 
 Both `build()` and `explore()` also accept an optional `'onStage'` callback, invoked once after each stage completes with that stage's name and the model/result at that point — useful for inspecting intermediate results (e.g. PILOT's projection) without splitting a run into several staged calls:
 

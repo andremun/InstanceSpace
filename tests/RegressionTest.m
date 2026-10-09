@@ -161,7 +161,7 @@ classdef RegressionTest < matlab.unittest.TestCase
 
             % Success path must be unaffected by the added check.
             reqObj2 = InstanceSpace(classCaseDir, baseOpts).build('stages', {'prelim', 'sifted'});
-            testCase.verifyEqual(reqObj2.completedStages, {'prelim', 'sifted'}, ...
+            testCase.verifyEqual(reqObj2.completedStages, {'init','prelim', 'sifted'}, ...
                 'checkRequiredFields should not interfere with a normal successful build.');
         end
 

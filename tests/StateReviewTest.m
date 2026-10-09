@@ -109,7 +109,7 @@ classdef StateReviewTest < matlab.unittest.TestCase
         function testPartialSaveResume(tc)
             obj = InstanceSpace(tc.Folder,tc.Opts);
             obj.opts.pythia.skip = true;
-            stages = {'prelim','sifted','pilot','cloister','pythia','trace'};
+            stages = {'init','prelim','sifted','pilot','cloister','pythia','trace'};
             for i = 1:numel(stages)
                 obj = obj.build('stages',stages(i)); obj.save();
                 loaded = InstanceSpace.load(tc.Folder);
@@ -118,6 +118,77 @@ classdef StateReviewTest < matlab.unittest.TestCase
                 tc.verifyEqual(loaded.model.opts,obj.model.opts);
                 obj = loaded;
             end
+        end
+        function testImplicitInitCallback(tc)
+            stages = {}; snapshots = {};
+            obj = InstanceSpace(tc.Folder,tc.Opts).build('stages',{'prelim'},'onStage',@capture);
+            tc.verifyEqual(stages,{'init','prelim'});
+            tc.verifyEqual(snapshots{1}.data,obj.model.init.data);
+            tc.verifyFalse(isfield(snapshots{1},'prelim'));
+            tc.verifyTrue(isfield(snapshots{2},'prelim'));
+            function capture(stage,snapshot)
+                stages{end+1} = stage;
+                snapshots{end+1} = snapshot;
+            end
+        end
+        function testInitStageAndPrelimReplay(tc)
+            obj = InstanceSpace(tc.Folder,tc.Opts).build('stages',{'init'});
+            tc.verifyEqual(obj.completedStages,{'init'});
+            tc.verifyEqual(obj.model.data,obj.model.init.data);
+            tc.verifyFalse(isfield(obj.model,'prelim'));
+            input = obj.model.init.data;
+            obj.save(); loaded = InstanceSpace.load(tc.Folder);
+            tc.verifyEqual(loaded.completedStages,{'init'});
+            tc.verifyEqual(loaded.model.init.data,input);
+            obj = obj.build('stages',{'prelim','sifted','pilot'});
+            expected = obj.model.data;
+            % PRELIM must neither reload the file nor transform its own output.
+            delete(fullfile(tc.Folder,'metadata.csv'));
+            replay = obj.build('stages',{'prelim'});
+            tc.verifyEqual(replay.model.data,expected);
+            tc.verifyEqual(replay.model.init.data,input);
+            tc.verifyEqual(replay.completedStages,{'init','prelim'});
+            tc.verifyFalse(isfield(replay.model,'pilot'));
+            resumed = loaded.build('stages',{'prelim'});
+            tc.verifyEqual(resumed.model.data,expected);
+        end
+        function testInitReloadInvalidatesAndTracksOptions(tc)
+            obj = InstanceSpace(tc.Folder,tc.Opts).build('stages',{'prelim','sifted','pilot'});
+            obj.opts.prelim.nanThreshold = .9;
+            tc.verifyError(@() obj.build('stages',{'prelim'}),'ISA:InstanceSpace:staleOptions');
+            obj = obj.build('stages',{'init'});
+            tc.verifyEqual(obj.completedStages,{'init'});
+            tc.verifyFalse(isfield(obj.model,'prelim'));
+            tc.verifyFalse(isfield(obj.model,'pilot'));
+            tc.verifyFalse(isfield(obj.model,'featsel'));
+            file = fullfile(tc.Folder,'metadata.csv'); T = readtable(file);
+            T.feature_a = T.feature_a + 5; writetable(T,file);
+            previous = obj.model.init.data.X;
+            obj = obj.build('stages',{'init'});
+            tc.verifyEqual(obj.model.init.data.X(:,1),previous(:,1)+5,'AbsTol',1e-12);
+            obj.opts.selvars.feats = {'feature_a','feature_b'};
+            tc.verifyError(@() obj.build('stages',{'prelim'}),'ISA:InstanceSpace:staleOptions');
+            obj = obj.build('stages',{'init','prelim'});
+            tc.verifyEqual(size(obj.model.init.data.X,2),2);
+        end
+        function testLegacyModelWithoutInitSnapshot(tc)
+            opts = tc.Opts; opts.pythia.skip = true;
+            obj = InstanceSpace(tc.Folder,opts).build();
+            expected = obj.model.data;
+            obj.model = rmfield(obj.model,'init');
+            obj.model.stageOptions = rmfield(obj.model.stageOptions,'init');
+            obj.save();
+            copyfile(fullfile(tc.Folder,'metadata.csv'),fullfile(tc.Folder,'metadata_test.csv'));
+            loaded = InstanceSpace.load(tc.Folder);
+            tc.verifyEqual(loaded.completedStages,obj.completedStages);
+            % Old models can still explore without original training metadata.
+            movefile(fullfile(tc.Folder,'metadata.csv'),fullfile(tc.Folder,'training.csv'));
+            loaded = loaded.explore(tc.Folder);
+            tc.verifyEqual(numel(loaded.testResults),1);
+            movefile(fullfile(tc.Folder,'training.csv'),fullfile(tc.Folder,'metadata.csv'));
+            loaded = loaded.build('stages',{'prelim'});
+            tc.verifyEqual(loaded.model.data,expected);
+            tc.verifyTrue(isfield(loaded.model,'init'));
         end
         function testStaleOptions(tc)
             obj = InstanceSpace(tc.Folder,tc.Opts).build('stages',{'prelim','sifted','pilot'});

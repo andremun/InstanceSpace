@@ -121,7 +121,7 @@ including boundaries of holes. Hole interiors farther away remain excluded.
 Zero preserves exact closed-boundary membership. There is no automatic epsilon
 multiplier, coordinate scaling or dependence on the query batch.
 
-The same rule is used for construction metrics, legacy overlap counts and
+`ISAfootprintContains` applies the same rule for construction metrics, legacy overlap counts and
 trimming, and test-set evaluation. Geometry and area/volume are not expanded.
 The fitted value is saved as `out.boundaryTolerance`; evaluation reuses it even
 if a different option is supplied. Older models without this field use zero.

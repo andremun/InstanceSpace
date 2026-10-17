@@ -83,6 +83,7 @@ TOC = [
     ("Utilities", "FunctionList", [
         ("ISAdefaults", "ISAdefaults"),
         ("ISAvalidateOpts", "ISAvalidateOpts"),
+        ("ISAfootprintContains", "ISAfootprintContains"),
         ("ISAgetClassifierFcn", "ISAgetClassifierFcn"),
         ("ISAmigrateModel", "ISAmigrateModel"),
         ("ISAsubsetData", "ISAsubsetData"),

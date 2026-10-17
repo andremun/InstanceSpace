@@ -59,8 +59,8 @@ configuration failure as a supported-runtime test pass.
 
 Local checks completed:
 
-- Generated HTML matches all sources (36 generated files); link validation
-  checks 31 pages with zero problems.
+- Generated HTML matches all sources (37 generated files); link validation
+  checks 32 pages with zero problems.
 - Octave 11.3.0 with the pinned packages passes the portable preprocessing,
   analytic/numerical/PLS projection, KNN/CV/tuning, geometry, workflow edge,
   archive and property contracts. Both 2D and 3D full build/save/load/explore

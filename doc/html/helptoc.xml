@@ -28,6 +28,7 @@
     <tocitem target="ISAdefaults.html" image="HelpIcon.FUNCTION">Utilities
       <tocitem target="ISAdefaults.html" image="HelpIcon.FUNCTION">ISAdefaults</tocitem>
       <tocitem target="ISAvalidateOpts.html" image="HelpIcon.FUNCTION">ISAvalidateOpts</tocitem>
+      <tocitem target="ISAfootprintContains.html" image="HelpIcon.FUNCTION">ISAfootprintContains</tocitem>
       <tocitem target="ISAgetClassifierFcn.html" image="HelpIcon.FUNCTION">ISAgetClassifierFcn</tocitem>
       <tocitem target="ISAmigrateModel.html" image="HelpIcon.FUNCTION">ISAmigrateModel</tocitem>
       <tocitem target="ISAsubsetData.html" image="HelpIcon.FUNCTION">ISAsubsetData</tocitem>

@@ -18,6 +18,10 @@ uses R2026a Update 5. The full Octave workflow is validated with 11.3.0,
 Statistics 2.0.0 and Datatypes 1.5.0. See `octave-compatibility.md` for the exact
 support boundary; portable archives do not imply cross-runtime model loading.
 
+Closed issue #30 proposed optional canonical projection rotation, but that feature
+is not implemented in current PILOT and is excluded from this release. Do not
+use the closed issue state as evidence of implementation.
+
 Issue #63 remains open: numerical PILOT restart ranking can amplify small
 BLAS/thread-level differences. The release does not promise cross-environment
 bitwise reproducibility. `opts.pilot.topoWeight` remains disabled. Classifier CV
@@ -53,8 +57,28 @@ display. On this machine the usable local display is `:101`; the inherited
 remote display name rejected authorization. Do not interpret that initial
 configuration failure as a supported-runtime test pass.
 
-Local verification results will be recorded here before the release PR is
-ready. R2025a and pinned Octave CI checks must also be green on the reviewed PR.
+Local checks completed:
+
+- Generated HTML matches all sources (36 generated files); link validation
+  checks 31 pages with zero problems.
+- Octave 11.3.0 with the pinned packages passes the portable preprocessing,
+  analytic/numerical/PLS projection, KNN/CV/tuning, geometry, workflow edge,
+  archive and property contracts. Both 2D and 3D full build/save/load/explore
+  checks pass with CSV and PNG on the local Qt display. The initial remote
+  display configuration failed its 3D graphics prerequisite; the Qt rerun
+  passes without errors.
+- Octave 6.4.0 passes the separate core-only analytic and preprocessing contracts;
+  this is not full-pipeline support on that runtime.
+- The source candidate archive passes ZIP integrity, version and required-file
+  checks and excludes caches, environments and generated test/package outputs.
+  Archive checksums and command logs are retained in ignored
+  `.cache/release-0.9.2/` (runtime logs originate under `/tmp/`). Rebuild the
+  candidate after changes and the final archive from the reviewed merge commit.
+
+The full MATLAB result and CI status are recorded in
+[release-preparation PR #67](https://github.com/andremun/InstanceSpace/pull/67).
+Require a passing full MATLAB suite and green R2025a/pinned Octave CI checks on
+the reviewed PR before publication.
 
 ## Publication checklist
 

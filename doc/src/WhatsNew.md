@@ -25,7 +25,7 @@ The complete list of changes, including every bug fix, is in `RELEASE_NOTES.md` 
 
 Rebuild experiments from the original metadata to obtain corrected results. Loading an existing model does not apply fixes to its fitted artifacts. Back up models and outputs first; rebuild CLOISTER for older 3D models and preprocessing before rerunning SIFTED if the saved feature-selection input is absent. Raw performance must be nonnegative (zero is allowed), and incomplete training data remaining after ingestion filtering is rejected. See [Migrating a Legacy Model](MigratingLegacyModel.html) for pre-v0.9.0 layouts.
 
-Classifier CV summaries are conditional on the fitted preprocessing, feature selection, projection and tuning. They are not an outer-CV estimate of the full pipeline. Numerical PILOT restart selection can amplify floating-point differences across BLAS implementations and thread settings, so a seed alone does not promise identical projections across environments. `opts.pilot.topoWeight` remains reserved and disabled.
+Classifier CV summaries are conditional on the fitted preprocessing, feature selection, projection and tuning. They are not an outer-CV estimate of the full pipeline. Numerical PILOT restart selection can amplify floating-point differences across BLAS implementations and thread settings, so a seed alone does not promise identical projections across environments. Projection orientation is not canonicalized automatically. `opts.pilot.topoWeight` remains reserved and disabled.
 
 ### Documentation
 

@@ -189,6 +189,8 @@ min  ||X - Z*B'||^2 + alpha*||Y - Z*C||^2    subject to  Z = X*A'
 
 where `X` and `Y` are the preprocessed feature and performance matrices. The analytic solution takes the leading `dims` eigenvectors of `[X Y]'*[X Y]`, with the `Y` block weighted by `sqrt(alpha)` (Muñoz et al., 2018). The numerical solution runs BFGS (`fminunc`) from `opts.ntries` random starts and keeps the trial with the highest correlation between the pairwise distances of the instances before and after projection, so the chosen space also preserves the topology of the data.
 
+The projection has no automatic canonical orientation: equivalent spaces can appear rotated or reflected. A fixed seed also does not guarantee the same numerical restart winner across BLAS implementations or thread settings. Keep the numerical environment fixed when reproducibility is required.
+
 ## GNU Octave
 
 Octave supports serial analytic/numerical standard projection and centered SIMPLS in 2D/3D, including optimized 3D viewpoints. Native MATLAB backends are retained. Optimizer trajectories may differ; parallel execution is rejected under Octave.

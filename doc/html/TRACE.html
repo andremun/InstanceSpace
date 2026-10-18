@@ -13,7 +13,7 @@
 <header class="topbar">
   <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
   <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
-  <span class="version">v0.9.1</span>
+  <span class="version">v0.9.2</span>
   <div class="search" role="search">
     <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
     <ul id="search-results" hidden></ul>
@@ -49,6 +49,7 @@
 <li><details><summary>Utilities</summary><ul>
 <li><a href="ISAdefaults.html">ISAdefaults</a></li>
 <li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a href="ISAfootprintContains.html">ISAfootprintContains</a></li>
 <li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
 <li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
 <li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
@@ -121,7 +122,7 @@ points within this distance of a fitted edge (2D) or triangular face (3D),
 including boundaries of holes. Hole interiors farther away remain excluded.
 Zero preserves exact closed-boundary membership. There is no automatic epsilon
 multiplier, coordinate scaling or dependence on the query batch.</p>
-<p>The same rule is used for construction metrics, legacy overlap counts and
+<p><a class="code-link" href="ISAfootprintContains.html"><code>ISAfootprintContains</code></a> applies the same rule for construction metrics, legacy overlap counts and
 trimming, and test-set evaluation. Geometry and area/volume are not expanded.
 The fitted value is saved as <code>out.boundaryTolerance</code>; evaluation reuses it even
 if a different option is supplied. Older models without this field use zero.

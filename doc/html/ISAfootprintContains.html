@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ISAfootprintContains - Instance Space Analysis Toolbox</title>
+<meta name="description" content="Test footprint membership with an explicit boundary distance">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/search-index.js" defer></script>
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <button class="menu" type="button" aria-label="Show contents" aria-expanded="false">&#9776;</button>
+  <a class="brand" href="index.html">Instance Space Analysis Toolbox</a>
+  <span class="version">v0.9.2</span>
+  <div class="search" role="search">
+    <input type="search" id="search" placeholder="Search documentation" aria-label="Search documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+<a class="toc-home" href="index.html">Instance Space Analysis Toolbox</a>
+<ul>
+<li><details><summary>Getting Started</summary><ul>
+<li><a href="GettingStarted.html">Getting Started with Instance Space Analysis</a></li>
+<li><a href="InteractiveWalkthrough.html">Stage-by-Stage Walkthrough</a></li>
+<li><a href="MetadataFormat.html">Metadata File Format</a></li>
+</ul></details></li>
+<li><details><summary>Pipeline Stages</summary><ul>
+<li><a href="INIT.html">INIT</a></li>
+<li><a href="PRELIM.html">PRELIM</a></li>
+<li><a href="FILTER.html">FILTER</a></li>
+<li><a href="SIFTED.html">SIFTED</a></li>
+<li><a href="PILOT.html">PILOT</a></li>
+<li><a href="PILOTviewpoint.html">PILOTviewpoint</a></li>
+<li><a href="CLOISTER.html">CLOISTER</a></li>
+<li><a href="PYTHIA.html">PYTHIA</a></li>
+<li><a href="TRACE.html">TRACE</a></li>
+</ul></details></li>
+<li><details><summary>Class Interface</summary><ul>
+<li><a href="InstanceSpace.html">InstanceSpace</a></li>
+</ul></details></li>
+<li><details><summary>Backward-Compatible Wrappers</summary><ul>
+<li><a href="buildIS.html">buildIS</a></li>
+<li><a href="exploreIS.html">exploreIS</a></li>
+</ul></details></li>
+<li><details open><summary>Utilities</summary><ul>
+<li><a href="ISAdefaults.html">ISAdefaults</a></li>
+<li><a href="ISAvalidateOpts.html">ISAvalidateOpts</a></li>
+<li><a class="current" aria-current="page" href="ISAfootprintContains.html">ISAfootprintContains</a></li>
+<li><a href="ISAgetClassifierFcn.html">ISAgetClassifierFcn</a></li>
+<li><a href="ISAmigrateModel.html">ISAmigrateModel</a></li>
+<li><a href="ISAsubsetData.html">ISAsubsetData</a></li>
+</ul></details></li>
+<li><details><summary>Output</summary><ul>
+<li><a href="scriptcsv.html">scriptcsv</a></li>
+<li><a href="scriptpng.html">scriptpng</a></li>
+<li><a href="scriptweb.html">scriptweb</a></li>
+<li><a href="ISArecallView.html">ISArecallView</a></li>
+</ul></details></li>
+<li><details><summary>Topics</summary><ul>
+<li><a href="OptionsReference.html">Options Reference</a></li>
+<li><a href="MigratingLegacyModel.html">Migrating a Legacy Model</a></li>
+<li><a href="Deprecated.html">Deprecated Functions</a></li>
+</ul></details></li>
+<li><details><summary>Release Notes</summary><ul>
+<li><a href="WhatsNew.html">What&#x27;s New</a></li>
+</ul></details></li>
+<li class="toc-flat"><a href="FunctionList.html">All Functions</a></li>
+</ul></nav>
+<main class="content" id="content">
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="index.html">Instance Space Analysis Toolbox</a> <span class="sep">›</span> <a href="FunctionList.html">Utilities</a> <span class="sep">›</span> <span>ISAfootprintContains</span></nav>
+<div class="page-head function">
+<h1>ISAfootprintContains</h1>
+<p class="purpose">Test footprint membership with an explicit boundary distance</p>
+</div>
+<section class="refsect" id="syntax"><h2>Syntax</h2><div class="syntax-block">
+<div class="syntax-line"><a href="#desc-1"><code>inside = ISAfootprintContains(geometry,queries)</code></a></div>
+<div class="syntax-line"><a href="#desc-2"><code>inside = ISAfootprintContains(geometry,queries,tolerance)</code></a></div>
+</div></section>
+<section class="refsect" id="description"><h2>Description</h2><p class="syntax-desc" id="desc-1"><code>inside = ISAfootprintContains(geometry,queries)</code> tests whether each query point lies in a footprint, including its boundary. The default distance tolerance is zero.</p>
+<p class="syntax-desc" id="desc-2"><code>inside = ISAfootprintContains(geometry,queries,tolerance)</code> also includes points within the specified Euclidean distance of a boundary edge in 2D or triangular face in 3D. Hole interiors farther from the boundary remain excluded. The geometry and its area or volume are unchanged.</p>
+<p>TRACE uses this helper for footprint metrics and evaluation. Set <a class="code-link" href="OptionsReference.html#opts-trace-boundarytolerance"><code>opts.trace.boundaryTolerance</code></a> to configure the pipeline; TRACE saves the fitted value and reuses it during exploration. The distance is in projected-coordinate units, with no implicit epsilon multiplier, automatic scaling or dependence on other points in the query batch. The membership policy is shared with pyInstanceSpace; floating-point geometry can still differ between implementations.</p></section>
+<section class="refsect" id="examples"><h2>Examples</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="example">Expand all</button></p><details class="example" id="example-include-the-exact-boundary-of-a-square" open><summary>Include the exact boundary of a square</summary><div class="example-body"><p>Run <code>startup</code> first when calling utilities directly from a fresh session.</p>
+<div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>startup
+region = polyshape([<span class="num">0</span> <span class="num">0</span>; <span class="num">1</span> <span class="num">0</span>; <span class="num">1</span> <span class="num">1</span>; <span class="num">0</span> <span class="num">1</span>]);
+queries = [<span class="num">0.5</span> <span class="num">0.5</span>; <span class="num">0.5</span> <span class="num">0</span>; <span class="num">0.5</span> -<span class="num">0.0005</span>; <span class="num">0.5</span> -<span class="num">0.002</span>];
+inside = ISAfootprintContains(region, queries)
+<span class="com">% inside = [true; true; false; false]</span></code></pre></div></div></details>
+<details class="example" id="example-choose-an-explicit-distance-tolerance"><summary>Choose an explicit distance tolerance</summary><div class="example-body"><div class="code matlab"><button class="copy" type="button" aria-label="Copy code">Copy</button><pre><code>inside = ISAfootprintContains(region, queries, <span class="num">0.001</span>)
+<span class="com">% inside = [true; true; true; false]</span></code></pre></div>
+<p>Choose a positive distance from the uncertainty budget of the projected coordinates. A tolerance is not a guarantee that legacy footprint trimming is invariant under arbitrary coordinate perturbations.</p></div></details></section>
+<section class="refsect" id="input-arguments"><h2>Input Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="arg-geometry"><summary><code>geometry</code> <span class="arg-desc">— Footprint geometry</span></summary><div class="arg-body"><p class="arg-type">2D <code>polyshape</code> | 2D or 3D <code>alphaShape</code></p>
+<p>The fitted region, normally a footprint's <code>polygon</code> field. Octave TRACE3 uses the toolkit's compatible alpha-shape class; MATLAB's <code>polyshape</code> and legacy TRACE remain MATLAB-only. An empty geometry produces false for every query.</p></div></details>
+<details class="arg" id="arg-queries"><summary><code>queries</code> <span class="arg-desc">— Points to test</span></summary><div class="arg-body"><p class="arg-type">numeric matrix</p>
+<p>One row per point, with two or three columns matching the geometry's dimensionality. Nonfinite query points are outside.</p></div></details>
+<details class="arg" id="arg-tolerance"><summary><code>tolerance</code> <span class="arg-desc">— Boundary distance</span></summary><div class="arg-body"><p class="arg-type"><code>0</code> (default) | finite nonnegative real scalar</p>
+<p>Euclidean distance in projection units. Positive values include points at distance less than or equal to this value from a boundary, including hole boundaries.</p></div></details></section>
+<section class="refsect" id="output-arguments"><h2>Output Arguments</h2><p class="example-tools"><button type="button" class="toggle-all" data-target="arg">Expand all</button></p><details class="arg" id="out-inside"><summary><code>inside</code> <span class="arg-desc">— Membership mask</span></summary><div class="arg-body"><p class="arg-type">logical column vector</p>
+<p>One value per query row. Testing a point alone or alongside other queries uses the same rule.</p></div></details></section>
+<section class="refsect" id="version-history"><h2>Version History</h2><div class="history"><h3 id="v0-9-2-introduced">v0.9.2 — Introduced</h3><p>Closed-boundary membership with explicit distance tolerance for TRACE construction, legacy contradiction handling and evaluation.</p></div></section>
+<section class="refsect see-also-sect" id="see-also"><h2>See Also</h2><div class="see-also"><p><a class="code-link" href="TRACE.html"><code>TRACE</code></a> | <a class="code-link" href="ISAdefaults.html"><code>ISAdefaults</code></a> | <a href="OptionsReference.html">Options Reference</a></p></div></section>
+<footer class="page-foot">
+<p><a href="https://github.com/andremun/InstanceSpace/issues/new/choose">Report a documentation issue</a> &middot; <a href="https://github.com/andremun/InstanceSpace">Source on GitHub</a></p>
+<p>Copyright &copy; 2026 Mario Andr&eacute;s Mu&ntilde;oz Acosta and contributors, School of Computing and Information Systems, The University of Melbourne. Released under the PolyForm Noncommercial License 1.0.0.</p>
+</footer>
+</main>
+<aside class="onpage" aria-label="On this page"><h2>On this page</h2><ul><li><a href="#syntax">Syntax</a></li><li><a href="#description">Description</a></li><li><a href="#examples">Examples</a></li><li><a href="#input-arguments">Input Arguments</a></li><li><a href="#output-arguments">Output Arguments</a></li><li><a href="#version-history">Version History</a></li><li><a href="#see-also">See Also</a></li></ul></aside>
+</div>
+</body>
+</html>

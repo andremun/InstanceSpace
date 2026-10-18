@@ -38,7 +38,7 @@ obj = InstanceSpace(rootdir, opts);
 obj = obj.build();
 ```
 
-`build` runs the whole pipeline: `PRELIM` labels and normalises the data, `SIFTED` selects features, `PILOT` projects the instances to 2D, `CLOISTER` estimates the boundary of the space, `PYTHIA` trains a classifier per algorithm, and `TRACE` finds the footprints. It then saves `model.mat` and writes CSV and PNG files to `rootdir`. It takes a few minutes, most of it in SIFTED and PYTHIA.
+`build` runs the whole pipeline: `INIT` reads and validates the metadata, `PRELIM` labels and normalises the data, `SIFTED` selects features, `PILOT` projects the instances to 2D, `CLOISTER` estimates the boundary of the space, `PYTHIA` trains a classifier per algorithm, and `TRACE` finds the footprints. It then saves `model.mat` and writes CSV and PNG files to `rootdir`. It takes a few minutes, most of it in SIFTED and PYTHIA.
 
 ## Look at the Results
 

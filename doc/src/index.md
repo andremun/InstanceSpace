@@ -71,6 +71,8 @@ startup          % adds core/, utils/, output/ and deprecated/
 
 Required products: MATLAB R2025a or later with the Statistics and Machine Learning, Optimization, Global Optimization, Parallel Computing, and Financial toolboxes.
 
+A bounded serial GNU Octave workflow is also supported; see [What's New](WhatsNew.html) for supported classifiers, outputs and persistence limits.
+
 With the repository root on the path, this documentation also appears in the MATLAB Help browser under **Supplemental Software**.
 
 ## References

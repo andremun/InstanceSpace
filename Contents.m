@@ -1,7 +1,8 @@
 % Instance Space Analysis Toolkit
-% Version 0.9.1 (R2025a) 20-Aug-2026
+% Version 0.9.2 (R2025a) 17-Oct-2026
 %
 % Standalone pipeline functions
+%   INIT        - Read metadata and validate training/evaluation inputs
 %   PRELIM      - Data preprocessing (outlier bounding, normalisation)
 %   SIFTED      - Feature selection (correlation + GA clustering)
 %   PILOT       - 2D/3D projection (PBLDR algorithm)
@@ -21,6 +22,7 @@
 %   exploreIS   - Thin wrapper around InstanceSpace.explore()
 %
 % Utilities
+%   ISAfootprintContains  - Closed-boundary footprint membership with distance tolerance
 %   ISAdefaults          - Fill in missing opts fields with default values
 %   ISAvalidateOpts      - Validate user-supplied opts fields
 %   ISAsubsetData         - Subset rows (and optionally feature columns) of a data struct

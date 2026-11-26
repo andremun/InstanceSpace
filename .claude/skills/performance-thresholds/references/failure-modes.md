@@ -5,7 +5,7 @@ catches it and what to do about it. `SKILL.md` lists the symptoms. Read
 the entry that matches what you are seeing; if nothing has gone wrong,
 you need none of this.
 
-Field names here come from `scripts/threshold_sweep.py`;
+Field names here come from `scripts/threshold_sweep.m`;
 `sweep-columns.md` says what each one is.
 
 ## No candidate value is acceptable

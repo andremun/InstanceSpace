@@ -1,4 +1,4 @@
-# `threshold_sweep.py` output, field by field
+# `threshold_sweep.m` output, field by field
 
 Load this when you have sweep output in front of you. `SKILL.md` carries
 the rules — which fields rule out a mode, what never to tune against —
@@ -48,7 +48,7 @@ carry them whether or not this file is loaded.
 | `meanJaccard` | Overlap between algorithms' good-sets. **Lower is better** — it means the portfolio is complementary at this threshold. |
 | `uniqueBestFrac` | Instances where exactly one algorithm is good. Direct measure of selection value. |
 | `groupSpread`, `groupRho` | **The degeneracy guard.** Spread of the good-rate across instance groups (a `Source` column, if present), and its rank correlation with group index — `NaN` when the labels carry no unique ordering. Read it against algorithm discrimination, per the rule below. Reject on this; never tune on it. |
-| `nPassengers` | How many algorithms are the *only* good one on almost no instances. A passenger inflates `fracAllBad` while adding nothing to selection. The per-algorithm figures behind it are in `r.unique_by_algo`, not in this table. |
+| `nPassengers` | How many algorithms are the *only* good one on almost no instances. A passenger inflates `fracAllBad` while adding nothing to selection. The per-algorithm figures behind it are in `r.uniqueByAlgo`, not in this table. |
 | `dGoodRate` | Local slope of the good-rate. Large magnitude = cliff. A central difference, so `NaN` at either end of the swept range. |
 | `plateauWidth` | How far `epsilon` can move before `goodRate` shifts by more than 0.05. Wide = the exact value is not doing the work. `NaN` when the good-rate is already saturated — see below. |
 | `screenScore` | See the warning below. `NaN` with fewer than three algorithms. |
@@ -69,12 +69,12 @@ flat. Returning a width would invite reading degeneracy as evidence.
 
 ## The other outputs
 
-- `r.per_algo` — per-algorithm ranges, for generating candidates.
+- `r.perAlgo` — per-algorithm ranges, for generating candidates.
 - `r.curve` — the dense good-rate curve behind `plateauWidth` and
   `dGoodRate`.
-- `r.labels[k]` — the actual `Ybin` for candidate `k`, for checking
+- `r.labels{k}` — the actual `Ybin` for candidate `k`, for checking
   anything this script does not compute.
-- `r.unique_by_algo[k]` — for candidate `k`, each algorithm's unique
+- `r.uniqueByAlgo{k}` — for candidate `k`, each algorithm's unique
   contribution: the share of instances where it is the only good one.
   `r.sweep`'s `nPassengers` counts how many of these fall below 0.01.
 

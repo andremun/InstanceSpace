@@ -90,8 +90,8 @@ Much more efficient. Do this whenever a feature set exists.
    actually explains. Report the clusters, because SIFTED keeps exactly one
    feature from each: a set of thirty columns is going to come out as `K`
    features, ten at the default, whatever you add to it, and which ones
-   survive is decided by who shares a cluster with whom. To run this, pass the set itself to `scripts/evaluate.py` as
-   `--features` and leave `--existing` off — the degeneracy, correlation and
+   survive is decided by who shares a cluster with whom. To run this, pass the set itself to `scripts/evaluate.m` as
+   the features file and leave `Existing` off — the degeneracy, correlation and
    clustering reports then describe that set rather than a batch of candidates.
 2. **The audit tells you what to look for.** What it finds missing is a far
    better starting point than a hunch: *"propose features that explain
@@ -260,7 +260,24 @@ answering separate questions, so report both rather than running them together:
   because on a set already scoring near the ceiling a small gain is a ceiling
   effect rather than evidence the candidate is worthless.
 
-`scripts/evaluate.py` runs both checks and every measurement in this section.
+`scripts/evaluate.m` runs both checks and every measurement in this section.
+It is a MATLAB function that also runs in GNU Octave, and it needs the
+toolkit on the path, because it puts the features and performance through
+the toolkit's own `PRELIM` and reads every default from `ISAdefaults`. On
+four MATILDA problem datasets its correlations, the features it keeps and
+its clusters are identical to `SIFTED`'s, in MATLAB R2026a and in Octave 11.3.
+
+```matlab
+% screen candidates against the set already in use
+evaluate('proposed.csv', 'perf.csv', 'Existing', 'current.csv', ...
+    'MaxPerf', false, 'AbsPerf', false, 'Epsilon', 0.05)
+```
+
+Each file has the instance id in its first column and one feature (or, in
+the performance file, one algorithm) in each numeric column after it.
+Called without an output it prints the report; `r = evaluate(...)` returns
+the same results as a struct. Against a built space, pass the values in its
+`model.opts.perf` and `model.opts.sifted` rather than relying on the defaults.
 
 ## Output
 

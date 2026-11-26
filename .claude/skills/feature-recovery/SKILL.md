@@ -16,7 +16,7 @@ description: >
 # Feature recovery
 
 Given a features CSV, the raw instances, and a problem description, work out
-what each column measures and write a short Python function that reproduces its
+what each column measures and write a short MATLAB function that reproduces its
 values — a plain-language definition plus code, for every column. Reproduce means
 to the precision the column carries, which is often less than it prints.
 Descriptive names make this tractable, usually pointing close to the answer, but
@@ -86,13 +86,15 @@ and where each definition came from. *Output* below says what to do with that.
    the profile together. Weighted or not, normalised by what, per-element or
    aggregate, which boundary convention. The enumeration is the work; the first
    guess is rarely the whole answer.
-4. **Implement them in a `definitions.py`** exposing `load(path) -> {id:
-   instance}` and `DEFINITIONS = {column: callable(instance) -> float}`, then
-   `python scripts/verify.py --features features.csv --defs definitions.py`.
+4. **Implement them in a `definitions.m`**, a function file that returns a
+   struct with two fields: `load`, a handle `@(path)` returning a
+   `containers.Map` from instance id to the parsed instance, and `features`, an
+   N-by-2 cell array of `{column, @(instance) -> scalar}`. Then run
+   `verify('features.csv', 'definitions.m')`, which works in MATLAB and Octave.
    Do the unambiguous columns first: they anchor the instance parsing and the
    alignment, so a mistake there surfaces immediately instead of being blamed on
-   a formula. Score every candidate on a small sample first — `--columns` for
-   the column under study, `--sample 20` or `30` for the rows — and run the full
+   a formula. Score every candidate on a small sample first — `'Columns'` for
+   the column under study, `'Sample', 20` or `30` for the rows — and run the full
    set only once a sample comes back clean. A wrong reading almost always dies in
    the first few rows, so the full run is for confirming a survivor rather than
    for finding the answer.
@@ -124,9 +126,10 @@ path, not the opening move.
 
 **Generate candidates wholesale.** Where a package covers the domain's measures,
 compute its whole set and match it against every column at once, rather than
-deriving one definition at a time. NumPy/SciPy, scikit-learn and networkx cover
-most general ground; domain packages exist for most published families and are
-worth a search on the measure's name.
+deriving one definition at a time. Base MATLAB and the Statistics and Machine
+Learning Toolbox cover most general ground, and `graph`/`digraph` cover graphs
+in MATLAB, though not in Octave. Published families often come with a MATLAB
+implementation, which is worth a search on the measure's name.
 
 **But a library gives you the family, not the conventions.** Defaults rarely
 match the original: normalisation, missing values, multiclass decomposition,
@@ -138,7 +141,7 @@ options were set".
 beats any search — see *Establish which sources are in scope* above for whether
 that one is yours to read.
 
-Bring dependencies in freely for the search; keep the shipped `definitions.py`
+Bring dependencies in freely for the search; keep the shipped `definitions.m`
 lean where a few lines do the job.
 
 ## Keep the search loop cheap
@@ -150,7 +153,7 @@ rewriting one in a faster language is the wrong end twice over. Cut the loop
 first; only then look at the survivor.
 
 **Score a candidate on a small sample first, then confirm on everything.**
-`--sample 30` scores thirty rows, `--columns` restricts to the column under
+`'Sample', 30` scores thirty rows, `'Columns'` restricts to the column under
 study. Twenty or thirty rows is the working size: a structurally wrong reading
 usually dies on the first two or three, so nearly every candidate can be killed
 without touching the corpus. Once a sample comes back clean, rerun that column on
@@ -166,7 +169,7 @@ handled differently. The run prints what the sample covered.
 
 What a sample cannot do is find a *rare* error, and no sample size worth running
 fixes that: as the disagreement narrows towards a single row, the sample you
-would need approaches the whole corpus. So `--sample` is for killing wrong
+would need approaches the whole corpus. So `'Sample'` is for killing wrong
 readings, which is most of the search. Characterising a handful of failing rows —
 the work under *Reading a PARTIAL* — is full-run work, and reading a clean sample
 as though it were a clean run is how a missing branch survives to the write-up.
@@ -177,20 +180,19 @@ sample as pass/fail and nothing finer. And a column can be flat within a sample
 while varying over the CSV; that is reported as `FLAT`, not `CONSTANT`, since the
 two mean opposite things.
 
-**Compute shared intermediates once.** `verify.py` calls one definition per
+**Compute shared intermediates once.** `verify.m` calls one definition per
 column per instance, so anything several columns need — a pairwise distance
 matrix, a sorted array, an expanded element list — is recomputed once per column
-unless the instance object holds it. Cache on the instance, not inside the
-definition:
+unless the instance holds it. Compute it in `load` and store it on the instance,
+not inside the definition:
 
-```python
-class Inst:
-    @cached_property
-    def elements(self):       # a dozen columns below share this
-        ...
+```matlab
+inst.w = w;
+inst.sorted = sort(w, 'descend');   % a dozen columns below share this
+m(id) = inst;
 ```
 
-`load` may also take an optional `ids` keyword; when `--sample` is in use it
+`load` may also take a second argument, the ids; when `'Sample'` is in use it
 receives the ids actually being scored, so only those instances are parsed. Worth
 having when parsing is the expensive half, which it often is.
 
@@ -210,7 +212,7 @@ usually wrong, and the answer decides whether any of this is worth doing.
 | `PARTIAL` | matches some rows | characterise the failures, then refine this reading |
 | `NO MATCH` | this reading is unrelated to the column | discard it and try the next candidate; if the name is exhausted, search |
 | `CONSTANT` | column never varies | unidentifiable from values; record it and move on |
-| `FLAT` | constant within a `--sample`, but not in the column | not a verdict; raise `--sample` or drop it |
+| `FLAT` | constant within a `'Sample'`, but not in the column | not a verdict; raise `'Sample'` or drop it |
 
 The three `EXACT` verdicts are answers. `AFFINE` and `MONOTONE` are not: a
 definition that merely correlates says nothing about how the column was
@@ -249,7 +251,7 @@ the same size on every row**:
 
 - Small everywhere → rounding. Take `EXACT~f32` and move on.
 - Small on most rows, far out on a few → a missing branch, and the far-out rows
-  are the ones to characterise. `verify.py` reports both counts and diagnoses the
+  are the ones to characterise. `verify.m` reports both counts and diagnoses the
   failures at the looser bound, so a handful of genuine misses is not buried
   under hundreds of rounding-level ones.
 
@@ -348,8 +350,8 @@ set that encodes the same quantity twice will distort the projection.
 
 ## Output
 
-One self-contained function per column, standard library plus NumPy/SciPy, the
-plain-language definition in its docstring, and the verification result recorded
+One self-contained function per column, base MATLAB where it will do, the
+plain-language definition in its help text, and the verification result recorded
 beside it — with both the denominator, which is the aligned subset, and the
 precision it holds at: "exact on *k* of the *m* rows that have instances", or
 "exact at single precision on *k* of *m*".

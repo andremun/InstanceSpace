@@ -11,7 +11,7 @@ description: >
   good", "epsilon", "AbsPerf", "absolute or relative", "binarise
   performance", "good/bad label", or a request to review the threshold
   behind an existing instance space. Covers the method, the diagnostics,
-  and `scripts/threshold_sweep.py`. For the surrounding methodology see
+  and `scripts/threshold_sweep.m`. For the surrounding methodology see
   the `instance-space-analysis` skill.
 ---
 
@@ -166,7 +166,7 @@ about this.
 
 **Span the data.** Hour-scale values are absurd when every run finishes
 in under 2 s; 1% is absurd when every gap is 20-80%. The sweep reports
-per-algorithm min/max/range for exactly this (`r.data`). Looking at the
+per-algorithm min/max/range for exactly this (`r.perAlgo`). Looking at the
 *range* before you have named any candidates is safe: a range is not the
 good-rate curve, so it cannot tell you where `screenScore` peaks.
 
@@ -213,27 +213,27 @@ you compare against is what you actually thought beforehand.
 
 ## 4. Check them against the data
 
-`scripts/threshold_sweep.py` needs only numpy and pandas — no MATLAB, no
-`InstanceSpace` toolkit — so it runs on metadata from any project. It
-reads a standard ISA `metadata.csv`, takes its `Instances`, `Source` and
-`algo_*` columns, and replicates PRELIM's label semantics exactly — NaN
-substitution, the zero-best `eps` swap and all — so what it reports is
-what PRELIM will actually produce. Its labels have been checked against
-the `algorithm_bin.csv` of a finished MATLAB run: all 3200 identical, in
-relative mode while maximising.
+`scripts/threshold_sweep.m` is a MATLAB function that also runs in GNU
+Octave, with the datatypes package loaded as the toolkit itself needs. It
+reads a standard ISA `metadata.csv`, takes its `Source` and `algo_*`
+columns, and copies PRELIM's labelling code — NaN handling, the zero-score
+`eps` substitution and all — so what it reports is what PRELIM will
+actually produce. On six MATILDA problem datasets its labels match the
+toolkit's own `PRELIM` in every cell, at 202 candidate thresholds, in
+MATLAB R2026a and in Octave 11.3.
 
-```bash
-# absolute: values are in the metric's own units (here, seconds)
-python threshold_sweep.py runtimes.csv --minimise --absolute \
-    --epsilon 1 10 60 600 3600
+```matlab
+% absolute: values are in the metric's own units (here, seconds)
+threshold_sweep('runtimes.csv', 'MaxPerf', false, 'AbsPerf', true, ...
+    'Epsilon', [1 10 60 600 3600])
 
-# relative: values are fractions of the per-instance best
-python threshold_sweep.py runtimes.csv --minimise --relative \
-    --epsilon 0 0.01 0.02 0.05 0.10
+% relative: values are fractions of the per-instance best
+threshold_sweep('runtimes.csv', 'MaxPerf', false, 'AbsPerf', false, ...
+    'Epsilon', [0 0.01 0.02 0.05 0.10])
 ```
 
-It imports as a library too — `threshold_sweep(path, max_perf=,
-abs_perf=, epsilon=[...])` returns the same results object.
+Called without an output it prints the report; `r = threshold_sweep(...)`
+returns the same results as a struct instead.
 `references/sweep-columns.md` describes every field. What follows is the
 part you need whether or not you load it.
 
